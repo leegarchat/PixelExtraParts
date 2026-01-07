@@ -43,22 +43,28 @@
   ],
   "progress": [
     {
-      "title": "Pixel 8a (Akita)",
+      "title": "Pixel 8a",
       "apiUrl": "https://api.boosty.to/v1/target/770791",
-      "webUrl": "https://boosty.to/leegar/target/770791",
-      "desc": { "en": "For build server", "ru": "На сервер сборки" }
+      "webUrl": "https://boosty.to/leegar/single-payment/donation/770791/target?from=1",
+      "desc": { 
+        "en": "For build server", 
+        "ru": "Для начала поддержки билдов EvolutionX с моими екстра функциями устрйотва akita" }
     },
     {
-      "title": "Pixel 8a (Akita)",
-      "apiUrl": "https://api.boosty.to/v1/target/770791",
-      "webUrl": "https://boosty.to/leegar/target/770791",
-      "desc": { "en": "For build server", "ru": "На сервер сборки" }
+      "title": "Pixel 9",
+      "apiUrl": "https://api.boosty.to/v1/target/770795",
+      "webUrl": "https://boosty.to/leegar/single-payment/donation/770795/target?from=1",
+      "desc": { 
+        "en": "For build server", 
+        "ru": "Для начала поддержки билдов EvolutionX с моими екстра функциями устрйотва tokay" }
     },
     {
-      "title": "Pixel 8a (Akita)",
-      "apiUrl": "https://api.boosty.to/v1/target/770791",
-      "webUrl": "https://boosty.to/leegar/target/770791",
-      "desc": { "en": "For build server", "ru": "На сервер сборки" }
+      "title": "Pixel 9 Pro",
+      "apiUrl": "https://api.boosty.to/v1/target/770796",
+      "webUrl": "https://boosty.to/leegar/single-payment/donation/770796/target?from=1",
+      "desc": { 
+        "en": "For build server", 
+        "ru": "Для начала поддержки билдов EvolutionX с моими екстра функциями устрйотва caiman" }
     }
   ]
 }
