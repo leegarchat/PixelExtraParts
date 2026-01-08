@@ -113,6 +113,16 @@
       },
       "url": "https://4pda.to/forum/index.php?showuser=2166027",
       "icon": "open_in_new"
+    },
+    {
+      "title": {
+        "en": "Source code Zuma QPR1"
+      },
+      "subtitle": {
+        "en": "On github"
+      },
+      "url": "https://github.com/leegarchat/device_google_zuma/tree/A16QPR1",
+      "icon": "code"
     }
   ],
   "progress": [
