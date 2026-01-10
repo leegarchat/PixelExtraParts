@@ -116,7 +116,70 @@
     },
     {
       "title": {
-        "en": "Source code Zuma QPR1"
+        "en": "Pixel 8 EvolutionX 11.5.2 A16 QPR1"
+      },
+      "subtitle": {
+        "en": "My unofficial builds on Google Drive, with native functions from the module built in.",
+        "ru": "Не официальный мои билды на Google Drive, с встроенными нативно функциями из модуля"
+      },
+      "url": "https://drive.google.com/drive/u/0/folders/1FOtCLfG8WQrhwOSEkzfdtrIZ7NRO2f8P",
+      "icon": "open_in_new"
+    },
+    {
+      "title": {
+        "en": "Pixel 8 Pro EvolutionX 11.5.2 A16 QPR1"
+      },
+      "subtitle": {
+        "en": "My unofficial builds on Google Drive, with native functions from the module built in.",
+        "ru": "Не официальный мои билды на Google Drive, с встроенными нативно функциями из модуля"
+      },
+      "url": "https://drive.google.com/drive/u/0/folders/1HlTwCtI1995zSM9QDBekF8P04wbZumgN",
+      "icon": "open_in_new"
+    },
+    {
+      "title": {
+        "en": "Source code shusky QPR1"
+      },
+      "subtitle": {
+        "en": "On github"
+      },
+      "url": "https://github.com/leegarchat/device_google_shusky/tree/A16QPR1",
+      "icon": "code"
+    },
+    {
+      "title": {
+        "en": "Source code gs-common QPR1"
+      },
+      "subtitle": {
+        "en": "On github"
+      },
+      "url": "https://github.com/leegarchat/device_google_gs-common/tree/A16QPR1",
+      "icon": "code"
+    },
+    {
+      "title": {
+        "en": "Pixel 8a EvolutionX 11.5.2 A16 QPR1"
+      },
+      "subtitle": {
+        "en": "My unofficial builds on Google Drive, with native functions from the module built in.",
+        "ru": "Не официальный мои билды на Google Drive, с встроенными нативно функциями из модуля"
+      },
+      "url": "https://drive.google.com/drive/u/0/folders/1RgA1IPPqzDa5qs8es7-zbD-j2C4OH7Tu",
+      "icon": "open_in_new"
+    },
+    {
+      "title": {
+        "en": "Source code akita QPR1"
+      },
+      "subtitle": {
+        "en": "On github"
+      },
+      "url": "https://github.com/leegarchat/android_device_google_akita/tree/A16QPR1",
+      "icon": "code"
+    },
+    {
+      "title": {
+        "en": "Source code zuma QPR1"
       },
       "subtitle": {
         "en": "On github"
@@ -126,23 +189,6 @@
     }
   ],
   "progress": [
-  {
-    "title": "Pixel 8a",
-    "apiUrl": "https://api.boosty.to/v1/target/770791",
-    "webUrl": "https://boosty.to/leegar/single-payment/donation/770791/target?from=1",
-    "desc": {
-      "ru": "Для начала поддержки билдов EvolutionX с моими экстра-функциями для устройства akita",
-      "en": "To start supporting EvolutionX builds with my extra features for the akita device",
-      "es": "Para iniciar el soporte de compilaciones EvolutionX con mis funciones extra para el dispositivo akita",
-      "fr": "Pour démarrer la prise en charge des builds EvolutionX avec mes fonctionnalités supplémentaires pour l’appareil akita",
-      "de": "Zur Unterstützung von EvolutionX-Builds mit meinen Zusatzfunktionen für das Gerät akita",
-      "it": "Per avviare il supporto alle build EvolutionX con le mie funzionalità extra per il dispositivo akita",
-      "pt": "Para iniciar o suporte às builds do EvolutionX com meus recursos extras para o dispositivo akita",
-      "zh": "用于开始支持带有我额外功能的 EvolutionX 构建，适用于 akita 设备",
-      "ja": "akita デバイス向けに、私の追加機能を含む EvolutionX ビルドのサポートを開始するため",
-      "ko": "akita 기기를 위한 내 추가 기능이 포함된 EvolutionX 빌드 지원을 시작하기 위해"
-    }
-  },
   {
     "title": "Pixel 9",
     "apiUrl": "https://api.boosty.to/v1/target/770795",
