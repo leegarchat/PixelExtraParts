@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.pixel.customparts"
+    android:sharedUserId="android.uid.system"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.DEVICE_POWER"/>
+    <uses-permission android:name="android.permission.MONITOR_INPUT"/>
+    <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
+    <uses-permission android:name="android.permission.REAL_GET_TASKS"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
+    <uses-permission android:name="android.permission.STATUS_BAR"/>
+    <uses-permission android:name="android.permission.STATUS_BAR_SERVICE" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
+    <uses-permission android:name="android.permission.REBOOT" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:defaultToDeviceProtectedStorage="true"
+        android:directBootAware="true">
+        
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/main_title"
+            android:exported="true"
+            android:icon="@drawable/ic_settings_outline"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="org.pixel.customparts.action.OPEN_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter android:priority="1">
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="com.android.settings.category"
+                android:value="com.android.settings.category.ia.display" />
+
+            <meta-data
+                android:name="com.android.settings.order"
+                android:value="1000" />
+
+            <meta-data
+                android:name="com.android.settings.summary"
+                android:resource="@string/main_desc" />
+
+            <!-- Иконка прозрачная, как было в старом алиасе дисплея -->
+            <meta-data 
+                android:name="com.android.settings.icon"
+                android:resource="@android:color/transparent" />
+
+            <meta-data
+                android:name="com.android.settings.FRAGMENT_CLASS"
+                android:value=".MainActivity" />
+            
+            <meta-data
+                android:name="com.android.settings.PRIMARY_PROFILE_CONTROLLED"
+                android:value="true" />
+        </activity>
+
+        <!-- ALIAS: Network/Wireless Category -->
+        <activity-alias
+            android:name=".PixelPartsActivityNetwork"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+            </intent-filter>
+            
+            <meta-data
+                android:name="com.android.settings.category"
+                android:value="com.android.settings.category.ia.wireless" />
+            <meta-data
+                android:name="com.android.settings.order"
+                android:value="-200" />
+            <meta-data
+                android:name="com.android.settings.summary"
+                android:resource="@string/main_desc" />
+            <meta-data 
+                android:name="com.android.settings.icon" 
+                android:resource="@drawable/ic_settings_outline" />
+        </activity-alias>
+
+        <!-- ALIAS: Battery Category -->
+        <activity-alias
+            android:name=".PixelPartsActivityBattery"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+            </intent-filter>
+            
+            <meta-data
+                android:name="com.android.settings.category"
+                android:value="com.android.settings.category.ia.battery" />
+            <meta-data
+                android:name="com.android.settings.order"
+                android:value="1000" />
+            <meta-data
+                android:name="com.android.settings.summary"
+                android:resource="@string/main_desc" />
+            <meta-data 
+                android:name="com.android.settings.icon" 
+                android:resource="@android:color/transparent" />
+        </activity-alias>
+
+        <!-- ALIAS: System Category -->
+        <activity-alias
+            android:name=".PixelPartsActivitySystem"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+            </intent-filter>
+            
+            <meta-data
+                android:name="com.android.settings.category"
+                android:value="com.android.settings.category.ia.system" />
+            <meta-data
+                android:name="com.android.settings.order"
+                android:value="1000" />
+            <meta-data
+                android:name="com.android.settings.summary"
+                android:resource="@string/main_desc" />
+            <meta-data 
+                android:name="com.android.settings.icon" 
+                android:resource="@drawable/ic_settings_outline" />
+        </activity-alias>
+
+
+        <activity
+            android:name=".activities.DoubleTapActivity"
+            android:label="@string/dt_category_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.DonateActivity"
+            android:label="@string/donate_title"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+        <activity
+            android:name=".activities.LauncherActivity"
+            android:label="@string/launcher_settings_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".activities.OverscrollActivity"
+            android:label="@string/os_title_activity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".activities.ImsActivity"
+            android:label="@string/ims_category_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".activities.ThermalActivity"
+            android:label="@string/thermal_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <receiver 
+            android:name=".services.SleepReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.pixel.customparts.ACTION_SLEEP" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".receivers.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+            
+    </application>
+</manifest>

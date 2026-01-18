@@ -1,0 +1,382 @@
+<resources>
+    <!-- General / Navigation -->
+    <string name="os_title_activity">Scroll Physics</string>
+    <string name="os_title_playground">Playground</string>
+    <string name="os_btn_back">Back</string>
+    <string name="btn_back">Back</string>
+    <string name="os_btn_reset">Reset Settings</string>
+    <string name="os_msg_reset_done">Settings reset to default</string>
+    <string name="os_msg_import_success">Settings imported successfully</string>
+    <string name="os_msg_app_exists">This app is already in the list</string>
+
+    <!-- Master Switch (Dynamic) -->
+    <!-- Xposed Mode -->
+    <string name="os_label_master_xposed">Xposed Module</string>
+    <string name="os_desc_master_xposed">Uses Xposed Framework to hook the system EdgeEffect class.\n\nAllows injecting physics into all applications without system modification. If the module is not active in LSPosed, effects will only work in this app (demo mode).</string>
+    
+    <!-- Native Mode -->
+    <string name="os_label_master_native">System Integration</string>
+    <string name="os_desc_master_native">Enables the built-in firmware physics implementation (Native).\n\nWorks directly through Pixel Parts system classes without hooks, ensuring maximum performance and compatibility.</string>
+
+    <string name="os_status_active">Active</string>
+    <string name="os_status_disabled">Disabled</string>
+    
+    <!-- Xposed Dialogs -->
+    <string name="os_dialog_xposed_title">Xposed is not active</string>
+    <string name="os_dialog_xposed_msg">Hooks cannot be installed.\n\nThe app did not detect an active LSPosed framework. Without it, intercepting system calls is impossible; settings will only apply within this application.</string>
+
+    <!-- Profiles UI -->
+    <string name="os_group_profiles">Profiles</string>
+    <string name="os_prof_btn_export">Export to File</string>
+    <string name="os_prof_btn_import">Import from File</string>
+    <string name="os_prof_btn_create">Save New Profile</string>
+    <string name="os_prof_header_list">Saved Profiles</string>
+    <string name="os_prof_item_active">Active</string>
+    <string name="os_prof_item_tap">Tap to load</string>
+    <string name="os_prof_dialog_title">New Profile</string>
+    <string name="os_prof_dialog_hint">Enter profile name</string>
+    <string name="os_prof_btn_save">Save</string>
+    <string name="btn_save">Save</string>
+    <string name="os_prof_delete_desc">Delete profile</string>
+
+    <!-- Physics Group -->
+    <string name="os_group_physics">Spring Physics</string>
+
+    <string name="os_lbl_physics_pull">Pull Coefficient</string>
+    <string name="os_desc_physics_pull">Distance multiplier during manual pulling (onPull).\n\n• Value &gt;= 1.0: Linear following of the finger.\n• Value &lt; 1.0: Enables non-linear resistance (rubber band effect) — the further you pull, the stronger the resistance.</string>
+
+    <string name="os_lbl_physics_stiffness">Stiffness</string>
+    <string name="os_desc_physics_stiffness">Spring stiffness constant (k).\n\nDetermines the force returning the list to its original position. Affects the oscillation frequency during bounce.</string>
+
+    <string name="os_lbl_physics_damping">Damping</string>
+    <string name="os_desc_physics_damping">Damping ratio (ζ).\n\nDissipates spring energy. Determines how quickly oscillations settle after releasing the finger or hitting a boundary.</string>
+
+    <string name="os_lbl_physics_fling">Fling Multiplier</string>
+    <string name="os_desc_physics_fling">Incoming velocity multiplier during onAbsorb (inertial impact).\n\nIncreases bounce amplitude during rapid scrolling.\nNote: At high values (&gt;1.0), the code dynamically reduces spring stiffness to make the impact feel "softer".</string>
+
+    <string name="os_lbl_physics_res_exp">Resistance Curve</string>
+    <string name="os_desc_physics_res_exp">Exponent power for the resistance formula.\n\nWorks only if Pull Coefficient &lt; 1.0. Defines the steepness of force increase when pulling the edge.</string>
+
+    <!-- Visual Scales -->
+    <string name="os_mode_off">Off</string>
+    <string name="os_mode_shrink">Shrink</string>
+    <string name="os_mode_grow">Grow</string>
+    <string name="os_lbl_scale_mode">Deformation Mode</string>
+    <string name="os_lbl_scale_int">Intensity</string>
+    <string name="os_lbl_scale_limit">Limit</string>
+    <string name="os_lbl_anchor_x">Pivot X</string>
+    <string name="os_lbl_anchor_y">Pivot Y</string>
+
+    <string name="os_group_visual_vert">Vertical Deformation</string>
+    <string name="os_desc_visual_vert">Changes ScaleY of the RenderNode content vertically.\n\n• Shrink: flattens content on impact.\n• Grow: elongates content (rubber effect).</string>
+
+    <string name="os_group_visual_zoom">Zoom (XY Scale)</string>
+    <string name="os_desc_visual_zoom">Changes the overall scale (ScaleX and ScaleY) of the entire container.\n\nCreates a zoom in/out effect when interacting with the boundary.</string>
+
+    <string name="os_group_visual_horz">Horizontal Deformation</string>
+    <string name="os_desc_visual_horz">Changes ScaleX along the width.\n\nAllows for a "barrel" or narrowing effect when stretching.</string>
+
+    <string name="os_desc_scale_intensity">Coefficient of displacement influence on scale. Higher values mean stronger distortion for the same displacement.</string>
+    <string name="os_desc_scale_limit">Hard distortion limit (min/max scale) to prevent visual artifacts during strong pulls.</string>
+    <string name="os_desc_scale_anchor">Pivot coordinate for scaling (0.0 - 1.0). 0.5 is center.</string>
+
+    <string name="os_lbl_min_vel">Min Velocity</string>
+    <string name="os_desc_min_vel">Spring cutoff velocity threshold.\n\nDetermines when physics calculations are forcibly stopped. If spring velocity falls below this value, animation ends. Helps remove micro-jitter at the end.</string>
+
+    <string name="os_lbl_min_val">Min Value</string>
+    <string name="os_desc_min_val">Amplitude cutoff threshold.\n\nIf residual displacement (in pixels) becomes less than this value, animation is considered complete. Increasing this makes the return to zero visually sharper and faster.</string>
+
+    <!-- Anchor Logic -->
+    <string name="os_lbl_invert_anchor">Smart Pivot</string>
+    <string name="os_desc_invert_anchor">Automatically mirrors anchor coordinates when interacting with the right or bottom edge.\n\n• ON: Coordinate 0.0 always means "the edge being pulled".\n• OFF: Coordinates are absolute (0.0 is always left/top, 1.0 is always right/bottom), regardless of swipe direction.</string>
+
+    <!-- Horizontal Specific Anchors -->
+    <string name="os_lbl_anchor_x_horiz">Pivot X (Horizontal)</string>
+    <string name="os_desc_anchor_x_horiz">Scaling point along the main axis (scroll direction) for horizontal lists.\n\nDetermines which part of the screen width is primarily distorted during pull.</string>
+
+    <string name="os_lbl_anchor_y_horiz">Pivot Y (Horizontal)</string>
+    <string name="os_desc_anchor_y_horiz">Scaling point along the cross axis (height) for horizontal lists.\n\nAllows shifting the center of the effect up or down relative to the list center.</string>
+    <string name="os_lbl_scale_int_horiz">Intensity (Horizontal)</string>
+    <string name="os_desc_scale_int_horiz">Determines effect strength exclusively for horizontal lists (LazyRow, ViewPager). Allows tuning behavior separately from vertical scrolling.</string>
+
+
+    <!-- Advanced -->
+    <string name="os_group_advanced">System Parameters</string>
+    
+    <string name="os_lbl_input_smooth">Input Smooth</string>
+    <string name="os_desc_input_smooth">Low-pass filter for finger coordinates in onPull.\n\nSmoothes sensor noise before passing data to the physics model. High values make the reaction feel "viscous".</string>
+    <string name="os_lbl_lerp_idle">Smoothing: PULL</string>
+    <string name="os_desc_lerp_idle">Interpolation speed (LERP) during direct interaction (onPull).\n\nDetermines how fast the visual catches up to the finger while the spring is NOT running (disabled). Lower = smoother, but with lag.</string>
+
+    <string name="os_lbl_lerp_run">Smoothing: FLING</string>
+    <string name="os_desc_lerp_run">Interpolation speed (LERP) during active animation (onRelease/onAbsorb).\n\nDetermines movement smoothness when the physics model is running (spring active).</string>
+
+    <string name="os_lbl_compose_scale">Compose Divider</string>
+    <string name="os_desc_compose_scale">Normalization coefficient for Jetpack Compose.\n\nCompose passes scroll deltas in different units or aggregates them differently. This divider reduces incoming onPull values to align physics with the View system.</string>
+
+    <!-- Apps -->
+    <string name="os_group_apps">App Configuration</string>
+    <string name="os_btn_add_app">Add Application</string>
+    <string name="os_btn_cancel">Cancel</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_restart_launcher">Apply and restart launcher</string>
+    
+    <!-- App Config Items -->
+    <string name="os_app_filter">Smoothing (Filter)</string>
+    <string name="os_app_ignore">Disable (Ignore)</string>
+    <string name="os_app_scale">Individual Multiplier</string>
+    <string name="os_app_select_title">Select Application</string>
+    <string name="os_app_search_hint">Search by name or package...</string>
+    
+    <!-- Other -->
+    <string name="os_card_example_text">Example content for physics testing.</string>
+
+    <!-- THERMAL MANAGER -->
+    <string name="thermal_title">Thermal Profiles</string>
+    
+    <!-- Info Header -->
+    <string name="thermal_info_title">How it works (Tensor)</string>
+    <string name="thermal_info_summary">Unlike Qualcomm chips, heat management in Google Tensor is handled via configuration files (thermal_info_config.json) rather than direct kernel parameters.\n\nThis module works at the system level: it changes a specific property (prop) that forces the Thermal HAL service to load an alternative configuration file with different throttling thresholds.\n\nThis is a safe, "native" adjustment method provided by Pixel architecture. A reboot is required to apply changes.</string>
+
+    <!-- Sections -->
+    <string name="thermal_sec_battery">Battery</string>
+    <string name="thermal_sec_soc">Processor (SoC)</string>
+
+    <!-- Modes -->
+    <string name="thermal_mode_stock">Stock</string>
+    <string name="thermal_mode_soft">Soft (+5°C)</string>
+    <string name="thermal_mode_medium">Medium (+9°C)</string>
+    <string name="thermal_mode_hard">Hard (+15°C)</string>
+    <string name="thermal_mode_off">Off (Extreme)</string>
+
+    <!-- Battery Descriptions -->
+    <string name="thermal_desc_bat_stock">Standard factory limits. Ensures maximum safety and battery lifespan.</string>
+    <string name="thermal_desc_bat_soft">Slight threshold increase (+5°C). Helps avoid charging slowdowns during moderate heating.</string>
+    <string name="thermal_desc_bat_medium">Balanced profile (+9°C). Compromise between charging speed and body heat.</string>
+    <string name="thermal_desc_bat_hard">WARNING: High limits (+15°C). Noticeable heating possible during fast charging. Accelerates battery chemistry wear.</string>
+    <string name="thermal_desc_bat_off">DANGER: Almost complete disablement of thermal protection (+90°C). High risk of battery swelling and device damage.</string>
+
+    <!-- SoC Descriptions -->
+    <string name="thermal_desc_soc_stock">Standard algorithm. Aggressive frequency reduction (throttling) to keep the body temperature low.</string>
+    <string name="thermal_desc_soc_soft">Soft profile (+5°C). Allows the processor to maintain high frequencies longer under load.</string>
+    <string name="thermal_desc_soc_medium">Optimal for gaming (+9°C). Significantly reduces FPS drops; device will be warm.</string>
+    <string name="thermal_desc_soc_hard">Maximum performance (+15°C). Device may become hot to the touch. Recommended only for short-term tasks.</string>
+    <string name="thermal_desc_soc_off">EXTREME: Throttling disabled. Processor will heat up until emergency power shutdown. Benchmarks only.</string>
+
+    <!-- Dialogs -->
+    <string name="thermal_dialog_reboot_title">Reboot Required</string>
+    <string name="thermal_dialog_safe_msg">New thermal profile selected.\n\nThe Thermal HAL service will read new settings only on the next system boot. Reboot device now?</string>
+    <string name="thermal_dialog_risk_msg">WARNING: You selected an aggressive thermal mode!\n\nThis may lead to severe overheating and accelerated component degradation.\n\nA reboot is required to apply settings.</string>
+    
+    <string name="btn_ok">Got it</string>
+    <string name="btn_reboot">Reboot</string>
+
+    <!-- IMS MANAGER -->
+    <string name="ims_category_title">IMS Configuration</string>
+    <string name="warning_info">These settings forcibly activate Carrier Config capabilities. By default, most of these features are hidden or disabled for uncertified regions.\n\nAirplane Mode toggle is required to apply changes.</string>
+    <string name="ims_footer_info">These settings forcibly activate Carrier Config capabilities. By default, most of these features are hidden or disabled for uncertified regions.\n\nAirplane Mode toggle is required to apply changes.</string>
+
+    <!-- Section Headers -->
+    <string name="ims_sec_voice">Voice Services</string>
+    <string name="ims_sec_network">Network &amp; 5G</string>
+    <string name="ims_sec_advanced">Advanced Settings</string>
+
+    <!-- VoLTE -->
+    <string name="ims_lbl_volte">VoLTE (Voice over LTE)</string>
+    <string name="ims_desc_volte">Forcibly enables VoLTE support in carrier configuration.\n\nAllows making voice calls over 4G/LTE network without switching to 3G/2G. Ensures fast connection, HD sound quality, and simultaneous internet usage during calls. Fixes missing VoLTE toggle in settings.</string>
+
+    <!-- VoWiFi -->
+    <string name="ims_lbl_vowifi">VoWiFi (Wi-Fi Calling)</string>
+    <string name="ims_desc_vowifi">Forcibly enables Wi-Fi Calling support.\n\nAllows phone to register in carrier IMS network via any available Wi-Fi. Indispensable in places with poor cellular reception (basements, thick walls) but internet access. Activates hidden "Wi-Fi Calling" menu.</string>
+
+    <!-- Video Calling (ViLTE) -->
+    <string name="ims_lbl_vt">Video Calling (ViLTE)</string>
+    <string name="ims_desc_vt">Enables native video calling support via carrier.\n\nThis is built-in dialer video function (not via messengers, but standard IR.94 protocol). Works if carrier supports Video over LTE.</string>
+
+    <!-- Cross-SIM -->
+    <string name="ims_lbl_cross_sim">Backup Calling (Cross-SIM)</string>
+    <string name="ims_desc_cross_sim">Backup calling technology via another SIM.\n\nAllows using internet traffic of the second SIM to register IMS services for the first SIM. Useful when the main SIM lost network (e.g., roaming or dead zone) but the second SIM has internet access.</string>
+
+    <!-- VoNR -->
+    <string name="ims_lbl_vonr">VoNR (Voice over 5G)</string>
+    <string name="ims_desc_vonr">Voice over New Radio. Voice calls in pure 5G networks (Standalone).\n\nThe most modern voice transmission standard. Ensures ultra-low latency and better quality than VoLTE. Works only in 5G SA networks and requires Android 14+.</string>
+
+    <!-- 5G Enable -->
+    <string name="ims_lbl_5g">Unlock 5G</string>
+    <string name="ims_desc_5g">Removes software 5G block from configuration side.\n\nMany carriers block 5G access for Pixel devices not in their "whitelist", even if hardware support exists. This switch forcibly adds NR NSA and SA bands to the allowed list.</string>
+
+    <!-- 5G Thresholds -->
+    <string name="ims_lbl_5g_thresh">Aggressive 5G Signal</string>
+    <string name="ims_desc_5g_thresh">Modifies signal level thresholds (RSRP) for network switching.\n\nLowers signal quality requirements for showing 5G icon and staying in 5G network. Helps if phone drops to 4G/LTE too eagerly even when 5G is available.</string>
+
+    <!-- UT Interface -->
+    <string name="ims_lbl_ut">UT Interface (XCAP)</string>
+    <string name="ims_desc_ut">Supplementary service management via IMS.\n\nAllows configuring call forwarding, call waiting, and caller ID via phone settings menu using IP channel instead of obsolete USSD codes. Fixes "Network or SIM card error" when trying to access call settings in LTE-only networks.</string>
+
+    <!-- LAUNCHER SETTINGS -->
+    <string name="launcher_settings_title">Launcher Settings</string>
+    <string name="launcher_search_section">Search &amp; Navigation</string>
+    
+    <string name="launcher_search_title">Native Search</string>
+    <string name="launcher_search_desc">Forcibly enables the built-in search interface in Pixel Launcher.\n\nGoogle often changes search behavior on "server-side", replacing fast local search with slow Google App launch. This option fixes the \'device_config\' flag, restoring fast app and contact search.</string>
+
+
+    <!-- //// -->
+    <string name="donate_progress_title">Прогресс сбора средств</string>
+    <string name="menu_refresh">Обновить</string>
+    <string name="donate_open_target">Открыть страницу сбора</string>
+    <string name="donate_error_loading">Ошибка получения данных</string>
+    <string name="donate_retry">Повторить</string>
+    <string name="donate_title">Поддержка и ссылки</string>
+    <string name="donate_desc_short">GitHub, Telegram, Boosty</string>
+    <string name="donate_header">Поддержать проект</string>
+    <string name="donate_desc_long">Если вам нравится этот модуль и вы хотите поддержать его дальнейшую разработку, вы можете сделать это на Boosty.</string>
+    <string name="donate_btn_boosty">Перейти на Boosty</string>
+    <string name="donate_links_header">Полезные ссылки</string>
+    <string name="error_network">Network Error</string>
+    <string name="refresh_strings">Activity page strings updated</string>
+    <string name="donate_page_updated">Page updated</string>
+    <string name="donate_page_updated_error">Error loading data</string>
+
+    <string name="launcher_clear_all_title">Кнопка «Очистить всё»</string>
+    <string name="launcher_clear_all_desc">Добавляет кнопку закрытия всех приложений в меню многозадачности (Recents).\n\nПоддерживает несколько режимов отображения для интеграции в стандартный интерфейс.</string>
+
+    <string name="launcher_ca_mode_float">Снизу по центру</string>
+    <string name="launcher_ca_mode_screenshot">Заменить «Скриншот»</string>
+    <string name="launcher_ca_mode_select">Заменить «Выбрать»</string>
+
+    <string name="launcher_ca_margin">Позиция (Отступ снизу)</string>
+    <string name="launcher_btn_restart">Перезапустить лаунчер</string>
+    <string name="launcher_ca_margin_desc">Регулирует вертикальное положение плавающей кнопки. Значение — множитель стандартного отступа.</string>
+    <!-- ///// -->
+    <!-- DOUBLE TAP (DT) SETTINGS -->
+    <string name="dt_category_title">Double Tap Gestures</string>
+    <string name="dt_sec_wake">Wake</string>
+    <string name="dt_sec_sleep">Sleep</string>
+
+    <!-- DT2W (Wake) -->
+    <string name="dt2w_title">Double Tap to Wake (DT2W)</string>
+    
+    <string name="dt2w_desc_xposed">Xposed hook for SystemUI.\n\nIntercepts sensor events in DozeTriggers class and emulates wake-up, as hardware support on Pixel is often disabled or limited.</string>
+    <string name="dt2w_desc_native">Native System Integration.\n\nUses built-in firmware code to process touch events in Doze mode, ensuring wake-up without third-party hooks.</string>
+    
+    <string name="dt2w_info_title">How it works</string>
+    <string name="dt2w_info_desc">This is Software Emulation, not a hardware kernel feature.\n\n<b>Mechanism:</b>\nSystem keeps digitizer active in AOD/Doze mode and analyzes touches.\n\n<b>Important:</b>\n• Small delay is possible due to software processing.\n• May slightly affect battery drain (Deep Sleep).</string>
+
+    <string name="dt2w_timeout_title">Tap Interval</string>
+    <string name="dt2w_timeout_desc">Maximum time between two touches (in ms) to register as a double tap.</string>
+
+    <!-- DT2S (Sleep) -->
+    <string name="dt2s_title">Double Tap to Sleep (DT2S)</string>
+    
+    <string name="dt2s_desc_xposed">Xposed hook for Pixel Launcher.\n\nIntercepts \'onTouchEvent\' in launcher Workspace class, allowing screen lock by tapping on empty space.</string>
+    <string name="dt2s_desc_native">Native Injection.\n\nUses modified framework to register \'ActivityLifecycleCallbacks\' in Launcher3 process. Upon activity start, automatically finds root Workspace view and attaches custom \'OnTouchListener\'. Works without Xposed and doesn\'t require root for the launcher itself.</string>
+
+    <string name="dt2s_info_title">DT2S Specifics</string>
+    <string name="dt2s_info_desc">Allows turning off screen by double tapping empty desktop area.\n\n<b>Limitations:</b>\n• Works only in Pixel Launcher.\n• Does not trigger on widgets or icons.\n• May conflict with swipes if "Slop" is set too aggressively.</string>
+
+    <string name="dt2s_timeout_title">Tap Interval</string>
+    <string name="dt2s_slop_title">Touch Slop</string>
+    <string name="dt2s_slop_desc">Maximum distance (in pixels) finger can move between taps. Decrease if taps are often recognized as swipes.</string>
+
+    <!-- COMPONENTS UI -->
+    <string name="common_range_format">Range: %1$d - %2$d</string>
+    <string name="common_input_label">Enter value</string>
+    <string name="common_video_placeholder">Video Demonstration</string>
+
+    <!-- GLOBAL COMMON -->
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="btn_apply">Apply</string>
+    <string name="btn_default">Default</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_exit">Exit</string>
+    
+    <string name="status_active">Active</string>
+    <string name="status_disabled">Disabled</string>
+    <string name="status_error">Error</string>
+
+    <!-- MAIN ACTIVITY -->
+    <string name="main_title">Pixel Extra Parts</string>
+    <string name="main_desc">Custom modules and tweaks</string>
+    
+    <string name="main_header_gesture">Gestures &amp; Input</string>
+    <string name="main_header_system">System</string>
+    <string name="main_header_network">Network &amp; Connectivity</string>
+    
+    <string name="main_root_title">No Root Access</string>
+    <string name="main_root_desc">Application requires Superuser rights (Root) and active Xposed Framework.\n\nPlease install Magisk/KernelSU and grant permissions.</string>
+
+    <string name="dt_desc_activity">Manage wake and sleep gestures</string>
+    <string name="launcher_title_activity">Launcher</string>
+    <string name="os_desc_activity">Scroll elasticity and inertia settings</string>
+    
+    <string name="dt_title_activity">Double Tap</string>
+    
+    <string name="launcher_desc_activity">Pixel Launcher Settings</string>
+    
+    <string name="thermal_title_activity">Thermal Profiles</string>
+    
+    <string name="thermal_desc_activity">Throttling Management (Tensor)</string>
+
+    <string name="os_desc_anchor">Transformation pivot point.</string>
+
+    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
+    <string name="ims_title_activity">IMS Config</string>
+
+
+    <!-- Grid Sizer / App Drawer Customization -->
+    <string name="grid_group_homepage">Homepage Customization</string>
+    <string name="grid_lbl_home_enable">Homepage Grid Customization</string>
+    <string name="grid_desc_home_enable">Enables customization of the home screen grid columns and rows.</string>
+    
+    <string name="grid_lbl_columns">Columns</string>
+    <string name="grid_desc_home_cols">Number of columns on the home screen.</string>
+    
+    <string name="grid_lbl_rows">Rows</string>
+    <string name="grid_desc_home_rows">Number of rows on the home screen.</string>
+    
+    <string name="grid_lbl_hide_text">Hide Icon Text</string>
+    <string name="grid_desc_home_hide_text">Hides icon labels on the home screen.</string>
+
+    <string name="grid_group_drawer">App Drawer Customization</string>
+    <string name="grid_lbl_drawer_enable">App Drawer Customization</string>
+    <string name="grid_desc_drawer_enable">Enables customization of the app drawer grid and layout.</string>
+    
+    <string name="grid_lbl_drawer_cols">Menu Columns</string>
+    <string name="grid_desc_drawer_cols">Number of columns in the app drawer.</string>
+    
+    <string name="grid_lbl_row_height">Row Height</string>
+    <string name="grid_desc_row_height">Adjusts the vertical spacing between rows in the app drawer (100% is standard).</string>
+    
+    <string name="grid_lbl_drawer_hide_text">Hide Menu Text</string>
+    <string name="grid_desc_drawer_hide_text">Hides icon labels in the app drawer.</string>
+    <string name="grid_lbl_search_cols">Search Columns</string>
+    <string name="grid_desc_search_cols">Number of columns for search results and suggestions in the app drawer.</string>
+    <!-- Search Widget & Dock Section -->
+    <string name="search_widget_group_title">Search Widget and Dock</string>
+    
+    <string name="search_widget_enable_dock">Enable Dock Customization</string>
+    <string name="search_widget_desc_dock">Master switch for all dock and search bar modifications below.</string>
+    
+    <string name="search_widget_hide_search">Hide Search Bar</string>
+    <string name="search_widget_desc_hide_search">Hides the search widget at the bottom.</string>
+    
+    <string name="search_widget_hide_dock">Hide Dock Icons</string>
+    <string name="search_widget_desc_hide_dock">Hides the bottom dock (hotseat) icons area.</string>
+    
+    <string name="search_widget_padding_home">Homepage Padding</string>
+    <string name="search_widget_desc_padding_home">Adjusts the bottom padding for the workspace grid icons.</string>
+    
+    <string name="search_widget_padding_dock">Dock Icon Padding</string>
+    <string name="search_widget_desc_padding_dock">Adjusts the vertical position of dock icons (+/-).</string>
+    
+    <string name="search_widget_padding_search">Search Widget Padding</string>
+    <string name="search_widget_desc_padding_search">Adjusts the vertical position of the search widget (+/-).</string>
+
+    <string name="search_widget_padding_dots">Dots Padding</string>
+    <string name="search_widget_desc_padding_dots">Adjusts the vertical position of the page indicator dots.</string>
+    <string name="misc_group_title">Miscellaneous</string>
+    
+    <string name="launcher_feed_title">Disable Google Feed</string>
+    <string name="launcher_feed_desc">Disables the -1 screen (Google Discover/Feed) on the home screen.</string>
+</resources>

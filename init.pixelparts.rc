@@ -1,0 +1,3 @@
+on property:persist.sys.pixelparts.thermal_config=*
+    setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config}
+	restart vendor.thermal-hal

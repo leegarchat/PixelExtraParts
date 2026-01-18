@@ -1,0 +1,293 @@
+<resources>
+    <!-- General / Navigation -->
+    <string name="os_title_activity">Фізика прокрутки</string>
+    <string name="os_title_playground">Пісочниця</string>
+    <string name="os_btn_back">Назад</string>
+    <string name="btn_back">Назад</string>
+    <string name="os_btn_reset">Скинути налаштування</string>
+    <string name="os_msg_reset_done">Налаштування скинуто до стандартних</string>
+    <string name="os_msg_import_success">Налаштування успішно імпортовано</string>
+    <string name="os_msg_app_exists">Ця програма вже є у списку</string>
+
+    <!-- Master Switch (Dynamic) -->
+    <!-- Xposed Mode -->
+    <string name="os_label_master_xposed">Модуль Xposed</string>
+    <string name="os_desc_master_xposed">Використовує Xposed Framework для підміни системного класу EdgeEffect.\n\nДозволяє впровадити фізику у всі додатки без модифікації системи. Якщо модуль не активний в LSPosed, ефекти працюватимуть тільки в цьому додатку (демо-режим).</string>
+    
+    <!-- Native Mode -->
+    <string name="os_label_master_native">Системна інтеграція</string>
+    <string name="os_desc_master_native">Вмикає вбудовану в прошивку реалізацію фізики.\n\nПрацює безпосередньо через системні класи Pixel Parts без використання хуків, забезпечуючи максимальну продуктивність та сумісність.</string>
+
+    <string name="os_status_active">Активно</string>
+    <string name="os_status_disabled">Вимкнено</string>
+    
+    <!-- Xposed Dialogs -->
+    <string name="os_dialog_xposed_title">Xposed не активний</string>
+    <string name="os_dialog_xposed_msg">Хуки не можуть бути встановлені.\n\nДодаток не виявив активний фреймворк LSPosed. Без нього перехоплення системних викликів неможливе, налаштування працюватимуть лише всередині цього додатка.</string>
+
+    <!-- Profiles UI -->
+    <string name="os_group_profiles">Профілі налаштувань</string>
+    <string name="os_prof_btn_export">Експорт у файл</string>
+    <string name="os_prof_btn_import">Імпорт з файлу</string>
+    <string name="os_prof_btn_create">Зберегти новий профіль</string>
+    <string name="os_prof_header_list">Збережені профілі</string>
+    <string name="os_prof_item_active">Активний</string>
+    <string name="os_prof_item_tap">Натисніть, щоб завантажити</string>
+    <string name="os_prof_dialog_title">Новий профіль</string>
+    <string name="os_prof_dialog_hint">Введіть назву профілю</string>
+    <string name="os_prof_btn_save">Зберегти</string>
+    <string name="btn_save">Зберегти</string>
+    <string name="os_prof_delete_desc">Видалити профіль</string>
+
+    <!-- Physics Group -->
+    <string name="os_group_physics">Фізика пружини</string>
+
+    <string name="os_lbl_physics_pull">Тяга</string>
+    <string name="os_desc_physics_pull">Множник відстані при ручному витягуванні.\n\n• Значення &gt;= 1.0: Лінійне слідування за пальцем.\n• Значення &lt; 1.0: Вмикає нелінійний опір (гумку) — чим далі тягнете, тим сильніший опір.</string>
+
+    <string name="os_lbl_physics_stiffness">Жорсткість</string>
+    <string name="os_desc_physics_stiffness">Константа пружності пружини.\n\nВизначає силу, що повертає список у вихідне положення. Впливає на частоту коливань під час відскоку.</string>
+
+    <string name="os_lbl_physics_damping">Затухання</string>
+    <string name="os_desc_physics_damping">Коефіцієнт демпфування.\n\nГасить енергію пружини. Визначає, як швидко затухнуть коливання після відпускання пальця або удару об межу.</string>
+
+    <string name="os_lbl_physics_fling">Імпульс</string>
+    <string name="os_desc_physics_fling">Множник вхідної швидкості при інерційному ударі.\n\nЗбільшує амплітуду відскоку при різкому прокручуванні.\nПримітка: При високих значеннях (&gt;1.0) код динамічно знижує жорсткість пружини, щоб удар відчувався "м\'якшим".</string>
+
+    <string name="os_lbl_physics_res_exp">Крива опору</string>
+    <string name="os_desc_physics_res_exp">Ступінь експоненти для формули опору.\n\nПрацює тільки якщо Тяга &lt; 1.0. Задає крутизну наростання зусилля при відтягуванні краю.</string>
+
+    <!-- Visual Scales -->
+    <string name="os_mode_off">Немає (Вимк)</string>
+    <string name="os_mode_shrink">Стиснення</string>
+    <string name="os_mode_grow">Розтягнення</string>
+    <string name="os_lbl_scale_mode">Режим деформації</string>
+    <string name="os_lbl_scale_int">Інтенсивність</string>
+    <string name="os_lbl_scale_limit">Межа</string>
+    <string name="os_lbl_anchor_x">Точка опори X</string>
+    <string name="os_lbl_anchor_y">Точка опори Y</string>
+
+    <string name="os_group_visual_vert">Вертикальна деформація</string>
+    <string name="os_desc_visual_vert">Змінює масштаб (ScaleY) вмісту RenderNode по вертикалі.\n\n• Стиснення: сплющує контент при ударі.\n• Розтягнення: подовжує контент (ефект гуми).</string>
+
+    <string name="os_group_visual_zoom">Зум</string>
+    <string name="os_desc_visual_zoom">Змінює загальний масштаб (ScaleX та ScaleY) всього контейнера.\n\nСтворює ефект наближення/віддалення списку при взаємодії з межею.</string>
+
+    <string name="os_group_visual_horz">Горизонтальна деформація</string>
+    <string name="os_desc_visual_horz">Змінює масштаб (ScaleX) по ширині.\n\nДозволяє зробити ефект "бочки" або звуження списку при натягуванні.</string>
+
+    <string name="os_desc_scale_intensity">Коефіцієнт впливу зміщення на масштаб. Чим вище значення, тим сильніше спотворення при тому ж зсуві.</string>
+    <string name="os_desc_scale_limit">Жорсткий ліміт спотворення (мін/макс масштаб), щоб запобігти візуальним артефактам при сильних ривках.</string>
+    <string name="os_desc_scale_anchor">Координата точки, навколо якої відбувається масштабування (0.0 - 1.0). 0.5 - центр.</string>
+
+    <string name="os_lbl_min_vel">Відсічка швидкості</string>
+    <string name="os_desc_min_vel">Поріг швидкості затухання пружини.\n\nВизначає момент, коли обчислення фізики примусово зупиняються. Якщо швидкість пружини падає нижче цього значення, анімація завершується. Допомагає прибрати мікро-тремтіння в кінці.</string>
+
+    <string name="os_lbl_min_val">Відсічка зміщення</string>
+    <string name="os_desc_min_val">Поріг амплітуди затухання.\n\nЯкщо залишкове зміщення (у пікселях) стає меншим за це значення, анімація вважається завершеною. Збільшення значення робить повернення у вихідний стан візуально більш різким та швидким.</string>
+
+    <!-- Anchor Logic -->
+    <string name="os_lbl_invert_anchor">Інверсія якоря</string>
+    <string name="os_desc_invert_anchor">Автоматично дзеркалить координати якоря при взаємодії з правою або нижньою межею.\n\n• УВІМК: Координата 0.0 завжди означає "край, за який тягнуть".\n• ВИМК: Координати абсолютні (0.0 — завжди ліво/верх, 1.0 — завжди право/низ), незалежно від напрямку свайпа.</string>
+
+    <!-- Horizontal Specific Anchors -->
+    <string name="os_lbl_anchor_x_horiz">Якір X (Горизонт.)</string>
+    <string name="os_desc_anchor_x_horiz">Точка масштабування по головній осі (вздовж скролла) для горизонтальних списків.\n\nВизначає, в якій частині екрана по ширині відбуватиметься основне спотворення при натягуванні.</string>
+
+    <string name="os_lbl_anchor_y_horiz">Якір Y (Горизонт.)</string>
+    <string name="os_desc_anchor_y_horiz">Точка масштабування по поперечній осі (висоті) для горизонтальних списків.\n\nДозволяє змістити центр ефекту вгору або вниз відносно центру списку.</string>
+    <string name="os_lbl_scale_int_horiz">Інтенсивність (Гориз.)</string>
+    <string name="os_desc_scale_int_horiz">Визначає силу ефекту виключно для горизонтальних списків (LazyRow, ViewPager). Дозволяє налаштувати поведінку окремо від вертикального прокручування.</string>
+
+
+    <!-- Advanced -->
+    <string name="os_group_advanced">Системні параметри</string>
+    
+    <string name="os_lbl_input_smooth">Фільтр введення</string>
+    <string name="os_desc_input_smooth">Low-pass фільтр для координат пальця.\n\nЗгладжує шум сенсора перед передачею даних фізичній моделі. Високі значення роблять реакцію "в\'язкою".</string>
+    <string name="os_lbl_lerp_idle">Згладжування: ПАЛЕЦЬ</string>
+    <string name="os_desc_lerp_idle">Швидкість інтерполяції (LERP) при прямій взаємодії.\n\nВизначає, як швидко візуал наздоганяє палець, поки пружина НЕ запущена (вимкнена). Менше = плавніше, але із затримкою.</string>
+
+    <string name="os_lbl_lerp_run">Згладжування: ПРУЖИНА</string>
+    <string name="os_desc_lerp_run">Швидкість інтерполяції (LERP) при активній анімації.\n\nВизначає плавність руху, коли працює фізична модель (пружина запущена).</string>
+
+    <string name="os_lbl_compose_scale">Дільник Compose</string>
+    <string name="os_desc_compose_scale">Коефіцієнт нормалізації для Jetpack Compose.\n\nCompose передає дельти прокручування в інших одиницях або підсумовує їх інакше. Цей дільник зменшує вхідні значення, щоб привести фізику у відповідність до View-системи.</string>
+
+    <!-- Apps -->
+    <string name="os_group_apps">Налаштування програм</string>
+    <string name="os_btn_add_app">Додати програму</string>
+    <string name="os_btn_cancel">Скасувати</string>
+    <string name="btn_cancel">Скасувати</string>
+    
+    <!-- App Config Items -->
+    <string name="os_app_filter">Згладжування</string>
+    <string name="os_app_ignore">Вимкнути</string>
+    <string name="os_app_scale">Індив. множник</string>
+    <string name="os_app_select_title">Вибір програми</string>
+    <string name="os_app_search_hint">Пошук за назвою або пакетом...</string>
+    
+    <!-- Other -->
+    <string name="os_card_example_text">Приклад контенту для тесту фізики.</string>
+
+    <!-- THERMAL MANAGER -->
+    <string name="thermal_title">Термальні профілі</string>
+    
+    <!-- Info Header -->
+    <string name="thermal_info_title">Принцип роботи</string>
+    <string name="thermal_info_summary">На відміну від чіпів Qualcomm, управління нагріванням у Google Tensor здійснюється не через прямі параметри ядра, а через файли конфігурації (thermal_info_config.json).\n\nЦей модуль працює на системному рівні: він змінює спеціальну властивість, яка змушує службу Thermal HAL завантажувати альтернативний файл конфігурації з іншими порогами тротлінгу.\n\nЦе безпечний, "нативний" метод регулювання, передбачений архітектурою Pixel. Для застосування змін потрібне перезавантаження.</string>
+
+    <!-- Sections -->
+    <string name="thermal_sec_battery">Акумулятор</string>
+    <string name="thermal_sec_soc">Процесор</string>
+
+    <!-- Modes -->
+    <string name="thermal_mode_stock">Заводський</string>
+    <string name="thermal_mode_soft">М\'який (+5°C)</string>
+    <string name="thermal_mode_medium">Середній (+9°C)</string>
+    <string name="thermal_mode_hard">Агресивний (+15°C)</string>
+    <string name="thermal_mode_off">Екстрим (Вимк)</string>
+
+    <!-- Battery Descriptions -->
+    <string name="thermal_desc_bat_stock">Стандартні заводські ліміти. Забезпечують максимальну безпеку та термін служби акумулятора.</string>
+    <string name="thermal_desc_bat_soft">Невелике підвищення порогу (+5°C). Допомагає уникнути уповільнення зарядки при помірному нагріванні.</string>
+    <string name="thermal_desc_bat_medium">Збалансований профіль (+9°C). Компроміс між швидкістю зарядки та нагріванням корпусу.</string>
+    <string name="thermal_desc_bat_hard">УВАГА: Високі ліміти (+15°C). Можливий відчутний нагрів при швидкій зарядці. Прискорює знос хімії батареї.</string>
+    <string name="thermal_desc_bat_off">НЕБЕЗПЕЧНО: Практично повне відключення термозахисту (+90°C). Високий ризик здуття батареї та пошкодження пристрою.</string>
+
+    <!-- SoC Descriptions -->
+    <string name="thermal_desc_soc_stock">Стандартний алгоритм. Агресивне зниження частот (тротлінг) для утримання низької температури корпусу.</string>
+    <string name="thermal_desc_soc_soft">М\'який профіль (+5°C). Дозволяє процесору довше утримувати високі частоти під навантаженням.</string>
+    <string name="thermal_desc_soc_medium">Оптимальний для ігор (+9°C). Значно знижує частоту просадок FPS, корпус буде теплим.</string>
+    <string name="thermal_desc_soc_hard">Максимальна продуктивність (+15°C). Пристрій може стати гарячим на дотик. Рекомендується тільки для короткочасних завдань.</string>
+    <string name="thermal_desc_soc_off">ЕКСТРЕМАЛЬНО: Відключення тротлінгу. Процесор буде грітися до аварійного відключення живлення. Тільки для бенчмарків.</string>
+
+    <!-- Dialogs -->
+    <string name="thermal_dialog_reboot_title">Потрібне перезавантаження</string>
+    <string name="thermal_dialog_safe_msg">Новий термальний профіль обрано.\n\nСлужба Thermal HAL зчитає нові налаштування тільки при наступному запуску системи. Перезавантажити пристрій зараз?</string>
+    <string name="thermal_dialog_risk_msg">УВАГА: Ви обрали агресивний температурний режим!\n\nЦе може призвести до сильного нагрівання корпусу та прискореної деградації компонентів.\n\nДля застосування налаштувань потрібне перезавантаження.</string>
+    
+    <string name="btn_ok">Зрозуміло</string>
+    <string name="btn_reboot">Перезавантажити</string>
+
+    <!-- IMS MANAGER -->
+    <string name="ims_category_title">Конфігурація IMS</string>
+    <string name="warning_info">Ці налаштування примусово активують можливості оператора (Carrier Config). За замовчуванням більшість цих функцій приховано або вимкнено для несертифікованих регіонів.\n\nДля застосування змін необхідно увімкнути та вимкнути "Режим польоту".</string>
+    <string name="ims_footer_info">Ці налаштування примусово активують можливості оператора (Carrier Config). За замовчуванням більшість цих функцій приховано або вимкнено для несертифікованих регіонів.\n\nДля застосування змін необхідно увімкнути та вимкнути "Режим польоту".</string>
+
+    <!-- Section Headers -->
+    <string name="ims_sec_voice">Голосові сервіси</string>
+    <string name="ims_sec_network">Мережа та 5G</string>
+    <string name="ims_sec_advanced">Розширені налаштування</string>
+
+    <!-- VoLTE -->
+    <string name="ims_lbl_volte">VoLTE</string>
+    <string name="ims_desc_volte">Примусово вмикає підтримку VoLTE в конфігурації оператора.\n\nДозволяє здійснювати голосові виклики через мережу 4G/LTE без перемикання в 3G/2G. Забезпечує швидке з\'єднання, HD-якість звуку та одночасну роботу інтернету під час розмови. Виправляє відсутність перемикача VoLTE в налаштуваннях.</string>
+
+    <!-- VoWiFi -->
+    <string name="ims_lbl_vowifi">Дзвінки через Wi-Fi</string>
+    <string name="ims_desc_vowifi">Примусово вмикає підтримку дзвінків через Wi-Fi.\n\nДозволяє телефону реєструватися в IMS-мережі оператора через будь-який доступний Wi-Fi. Незамінне в місцях з поганим прийомом стільникової мережі (підвали, товсті стіни), але наявністю інтернету. Активує приховане меню "Дзвінки через Wi-Fi".</string>
+
+    <!-- Video Calling (ViLTE) -->
+    <string name="ims_lbl_vt">Відеовиклики</string>
+    <string name="ims_desc_vt">Вмикає нативну підтримку відеодзвінків через оператора.\n\nЦе вбудована в "дзвонилку" функція відеозв\'язку (не через месенджери, а через стандартний протокол IR.94). Працює, якщо оператор підтримує Video over LTE.</string>
+
+    <!-- Cross-SIM -->
+    <string name="ims_lbl_cross_sim">Резервні виклики</string>
+    <string name="ims_desc_cross_sim">Технологія резервного виклику через іншу SIM-карту.\n\nДозволяє використовувати інтернет-трафік другої SIM-карти для реєстрації IMS-сервісів першої SIM-карти. Корисно, коли основна SIM-карта втратила мережу (наприклад, у роумінгу або "сліпій зоні"), а друга SIM-карта має доступ до інтернету.</string>
+
+    <!-- VoNR -->
+    <string name="ims_lbl_vonr">VoNR (Дзвінки через 5G)</string>
+    <string name="ims_desc_vonr">Voice over New Radio. Голосові виклики в чистих мережах 5G.\n\nНайсучасніший стандарт передачі голосу. Забезпечує наднизьку затримку та кращу якість, ніж VoLTE. Працює тільки в мережах 5G SA і вимагає Android 14+.</string>
+
+    <!-- 5G Enable -->
+    <string name="ims_lbl_5g">Розблокування 5G</string>
+    <string name="ims_desc_5g">Знімає програмне блокування 5G з боку конфігурації.\n\nБагато операторів блокують доступ до 5G для пристроїв Pixel, яких немає в їхньому "білому списку", навіть якщо апаратна підтримка є. Цей перемикач примусово додає діапазони NR NSA та SA до списку дозволених.</string>
+
+    <!-- 5G Thresholds -->
+    <string name="ims_lbl_5g_thresh">Агресивний сигнал 5G</string>
+    <string name="ims_desc_5g_thresh">Змінює пороги рівня сигналу для перемикання мереж.\n\nЗанижує вимоги до якості сигналу для відображення значка 5G та утримання в мережі 5G. Допомагає, якщо телефон занадто охоче звалюється в 4G/LTE, навіть коли 5G доступний.</string>
+
+    <!-- UT Interface -->
+    <string name="ims_lbl_ut">Інтерфейс UT</string>
+    <string name="ims_desc_ut">Управління додатковими послугами через IMS.\n\nДозволяє налаштовувати переадресацію, очікування виклику та АОН через меню налаштувань телефону, використовуючи IP-канал замість застарілих USSD-кодів. Виправляє помилки типу "Помилка мережі або SIM-карти" при спробі увійти в налаштування викликів у мережах LTE-only.</string>
+
+    <!-- LAUNCHER SETTINGS -->
+    <string name="launcher_settings_title">Налаштування Лаунчера</string>
+    <string name="launcher_search_section">Пошук та навігація</string>
+    
+    <string name="launcher_search_title">Нативний пошук</string>
+    <string name="launcher_search_desc">Примусово вмикає вбудований інтерфейс пошуку в Pixel Launcher.\n\nGoogle часто змінює поведінку пошуку на "серверній стороні", замінюючи швидкий локальний пошук на повільний запуск додатка Google. Ця опція фіксує прапорець \'device_config\', повертаючи швидкий пошук програм та контактів.</string>
+
+    <!-- DOUBLE TAP (DT) SETTINGS -->
+    <string name="dt_category_title">Жести подвійного дотику</string>
+    <string name="dt_sec_wake">Пробудження</string>
+    <string name="dt_sec_sleep">Сон</string>
+
+    <!-- DT2W (Wake) -->
+    <string name="dt2w_title">Пробудження дотиком</string>
+    
+    <string name="dt2w_desc_xposed">Xposed-хук для SystemUI.\n\nПерехоплює події сенсора в класі DozeTriggers та емулює пробудження, оскільки апаратна підтримка на Pixel часто вимкнена або обмежена.</string>
+    <string name="dt2w_desc_native">Системна інтеграція.\n\nВикористовує вбудований у прошивку код для обробки сенсорних подій у режимі Doze, забезпечуючи пробудження без сторонніх хуків.</string>
+    
+    <string name="dt2w_info_title">Як це працює</string>
+    <string name="dt2w_info_desc">Це програмна емуляція, а не апаратна функція ядра.\n\n<b>Принцип роботи:</b>\nСистема тримає сенсор активним у режимі AOD/Doze та аналізує дотики. \n\n<b>Важливо:</b>\n• Через програмну обробку можлива невелика затримка.\n• Може незначно впливати на витрату батареї (Deep Sleep).</string>
+
+    <string name="dt2w_timeout_title">Інтервал дотику</string>
+    <string name="dt2w_timeout_desc">Максимальний час між двома дотиками (в мс), щоб вони зарахувалися як подвійний тап.</string>
+
+    <!-- DT2S (Sleep) -->
+    <string name="dt2s_title">Сон на робочому столі</string>
+    
+    <string name="dt2s_desc_xposed">Xposed-хук для Pixel Launcher.\n\nПерехоплює метод \'onTouchEvent\' у класі Workspace лаунчера, дозволяючи блокувати екран дотиком по порожньому місцю.</string>
+    <string name="dt2s_desc_native">Нативна ін\'єкція коду.\n\nВикористовує модифікований фреймворк для реєстрації эActivityLifecycleCallbacks\' у процесі Launcher3. При запуску актівіті автоматично знаходиться кореневе View робочого столу (Workspace) і до нього прив\'язується кастомний \'OnTouchListener\'. Це працює без Xposed і не вимагає прав суперкористувача для самого лаунчера.</string>
+
+    <string name="dt2s_info_title">Особливості DT2S</string>
+    <string name="dt2s_info_desc">Дозволяє вимкнути екран подвійним тапом по порожній області робочого столу.\n\n<b>Обмеження:</b>\n• Працює тільки в Pixel Launcher.\n• Не спрацьовує на віджетах або іконках.\n• Може конфліктувати зі свайпами, якщо "Допуск зміщення" налаштований занадто агресивно.</string>
+
+    <string name="dt2s_timeout_title">Інтервал дотику</string>
+    <string name="dt2s_slop_title">Допуск зміщення</string>
+    <string name="dt2s_slop_desc">Максимальна відстань (у пікселях), на яку може зміститися палець між натисканнями. Зменшіть, якщо тапи часто розпізнаються як свайпи.</string>
+
+    <!-- COMPONENTS UI -->
+    <string name="common_range_format">Діапазон: %1$d - %2$d</string>
+    <string name="common_input_label">Введіть значення</string>
+    <string name="common_video_placeholder">Демонстрація відео</string>
+
+    <!-- GLOBAL COMMON -->
+    <string name="btn_apply">Застосувати</string>
+    <string name="btn_default">За замовчуванням</string>
+    <string name="btn_close">Закрити</string>
+    <string name="btn_exit">Вихід</string>
+    
+    <string name="status_active">Активно</string>
+    <string name="status_disabled">Вимкнено</string>
+    <string name="status_error">Помилка</string>
+
+    <!-- MAIN ACTIVITY -->
+    <string name="main_desc">Кастомні модулі та твіки</string>
+    
+    <string name="main_header_gesture">Жести та введення</string>
+    <string name="main_header_system">Система</string>
+    <string name="main_header_network">Мережа та зв\'язок</string>
+    
+    <string name="main_root_title">Немає Root доступу</string>
+    <string name="main_root_desc">Для роботи програми необхідні права суперкористувача (Root) та активний Xposed Framework.\n\nБудь ласка, встановіть Magisk/KernelSU та надайте права.</string>
+
+    <string name="dt_desc_activity">Управління жестами пробудження та сну</string>
+    <string name="launcher_title_activity">Лаунчер</string>
+    <string name="os_desc_activity">Налаштування пружності та інерції скролла</string>
+    
+    <string name="dt_title_activity">Подвійний дотик</string>
+    
+    <string name="launcher_desc_activity">Налаштування Pixel Launcher</string>
+    
+    <string name="thermal_title_activity">Термальні профілі</string>
+    
+    <string name="thermal_desc_activity">Управління тротлінгом</string>
+
+    <string name="os_desc_anchor">Точка прив\'язки трансформації.</string>
+
+    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
+    <string name="ims_title_activity">IMS Конфіг</string>
+</resources>

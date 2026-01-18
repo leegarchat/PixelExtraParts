@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:settings="http://schemas.android.com/apk/res-auto"
+    android:key="top_level_settings">
+    <com.android.settingslib.widget.UntitledPreferenceCategory
+        android:order="-140"
+        android:key="top_level_evolution_category">
+        <!-- .... -->
+        <!-- .... -->
+        <com.android.settings.widget.HomepagePreference
+            android:key="top_level_pixel_parts"
+            android:order="-159"
+            android:title="Pixel Extra Parts"
+            android:summary="Additional improvements to your Pixel"
+            android:icon="@drawable/ic_homepage_pixel_extra_parts"
+            settings:controller="com.android.settings.widget.HomepagePreferenceLayoutHelper$HomepagePreferenceController">
+
+            <intent
+                android:action="org.pixel.customparts.action.OPEN_SETTINGS"
+                android:targetPackage="org.pixel.customparts"
+                android:targetClass="org.pixel.customparts.MainActivity" />
+        </com.android.settings.widget.HomepagePreference>
+    </com.android.settingslib.widget.UntitledPreferenceCategory>
+</PreferenceScreen>

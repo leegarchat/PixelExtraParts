@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<permissions>
+    <privapp-permissions package="org.pixel.customparts">
+        <permission name="android.permission.WRITE_SECURE_SETTINGS"/>
+        <permission name="android.permission.DEVICE_POWER"/>
+        <permission name="android.permission.MONITOR_INPUT"/>
+        <permission name="android.permission.MANAGE_ACTIVITY_TASKS"/>
+        <permission name="android.permission.REAL_GET_TASKS"/>
+        <permission name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
+		<permission name="android.permission.STATUS_BAR"/>
+		<permission name="android.permission.STATUS_BAR_SERVICE" />
+		<permission name="android.permission.EXPAND_STATUS_BAR" />
+		<permission name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+        <permission name="android.permission.QUERY_ALL_PACKAGES" />
+        <permission name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        <permission name="android.permission.READ_PHONE_STATE" />
+        <permission name="android.permission.MODIFY_PHONE_STATE" />
+        <permission name="android.permission.REBOOT" />
+        <permission name="android.permission.ACCESS_NETWORK_STATE" />
+        <permission name="android.permission.INTERNET" />
+    </privapp-permissions>
+</permissions>

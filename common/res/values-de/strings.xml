@@ -1,0 +1,293 @@
+<resources>
+    <!-- General / Navigation -->
+    <string name="os_title_activity">Scroll-Physik</string>
+    <string name="os_title_playground">Spielplatz (Test)</string>
+    <string name="os_btn_back">Zurück</string>
+    <string name="btn_back">Zurück</string>
+    <string name="os_btn_reset">Einstellungen zurücksetzen</string>
+    <string name="os_msg_reset_done">Auf Standardeinstellungen zurückgesetzt</string>
+    <string name="os_msg_import_success">Einstellungen erfolgreich importiert</string>
+    <string name="os_msg_app_exists">Diese App ist bereits in der Liste</string>
+
+    <!-- Master Switch (Dynamic) -->
+    <!-- Xposed Mode -->
+    <string name="os_label_master_xposed">Xposed-Modul</string>
+    <string name="os_desc_master_xposed">Nutzt das Xposed Framework, um die Systemklasse EdgeEffect zu hooken.\n\nErmöglicht das Einfügen der Physik in alle Apps ohne Systemmodifikation. Wenn das Modul in LSPosed nicht aktiv ist, funktionieren die Effekte nur in dieser App (Demo-Modus).</string>
+    
+    <!-- Native Mode -->
+    <string name="os_label_master_native">Systemintegration</string>
+    <string name="os_desc_master_native">Aktiviert die in der Firmware integrierte Physik-Implementierung (Native).\n\nArbeitet direkt über die Systemklassen von Pixel Parts ohne Hooks und gewährleistet maximale Leistung und Kompatibilität.</string>
+
+    <string name="os_status_active">Aktiv</string>
+    <string name="os_status_disabled">Deaktiviert</string>
+    
+    <!-- Xposed Dialogs -->
+    <string name="os_dialog_xposed_title">Xposed ist nicht aktiv</string>
+    <string name="os_dialog_xposed_msg">Hooks können nicht installiert werden.\n\nDie App hat kein aktives LSPosed-Framework erkannt. Ohne dieses ist das Abfangen von Systemaufrufen nicht möglich; die Einstellungen funktionieren nur innerhalb dieser App.</string>
+
+    <!-- Profiles UI -->
+    <string name="os_group_profiles">Profile</string>
+    <string name="os_prof_btn_export">In Datei exportieren</string>
+    <string name="os_prof_btn_import">Aus Datei importieren</string>
+    <string name="os_prof_btn_create">Neues Profil speichern</string>
+    <string name="os_prof_header_list">Gespeicherte Profile</string>
+    <string name="os_prof_item_active">Aktiv</string>
+    <string name="os_prof_item_tap">Zum Laden tippen</string>
+    <string name="os_prof_dialog_title">Neues Profil</string>
+    <string name="os_prof_dialog_hint">Profilnamen eingeben</string>
+    <string name="os_prof_btn_save">Speichern</string>
+    <string name="btn_save">Speichern</string>
+    <string name="os_prof_delete_desc">Profil löschen</string>
+
+    <!-- Physics Group -->
+    <string name="os_group_physics">Federphysik</string>
+
+    <string name="os_lbl_physics_pull">Zugfaktor</string>
+    <string name="os_desc_physics_pull">Distanzmultiplikator beim manuellen Ziehen (onPull).\n\n• Wert &gt;= 1.0: Lineares Folgen des Fingers.\n• Wert &lt; 1.0: Aktiviert nichtlinearen Widerstand (Gummiband) — je weiter gezogen wird, desto stärker der Widerstand.</string>
+
+    <string name="os_lbl_physics_stiffness">Steifigkeit</string>
+    <string name="os_desc_physics_stiffness">Federkonstante (k).\n\nBestimmt die Kraft, die die Liste in die Ausgangsposition zurückbringt. Beeinflusst die Schwingungsfrequenz beim Rückprall.</string>
+
+    <string name="os_lbl_physics_damping">Dämpfung</string>
+    <string name="os_desc_physics_damping">Dämpfungsgrad (ζ).\n\nDissipiert die Federenergie. Bestimmt, wie schnell Schwingungen nach dem Loslassen oder dem Aufprall am Rand abklingen.</string>
+
+    <string name="os_lbl_physics_fling">Schwung-Impuls</string>
+    <string name="os_desc_physics_fling">Multiplikator der Eingangsgeschwindigkeit bei onAbsorb (Trägheitsaufprall).\n\nErhöht die Amplitude des Rückpralls bei schnellem Scrollen.\nHinweis: Bei hohen Werten (&gt;1.0) reduziert der Code dynamisch die Federsteifigkeit, damit sich der Aufprall "weicher" anfühlt.</string>
+
+    <string name="os_lbl_physics_res_exp">Widerstandskurve</string>
+    <string name="os_desc_physics_res_exp">Exponentenwert für die Widerstandsformel.\n\nFunktioniert nur, wenn Zugfaktor &lt; 1.0. Bestimmt die Steilheit des Kraftanstiegs beim Ziehen am Rand.</string>
+
+    <!-- Visual Scales -->
+    <string name="os_mode_off">Aus</string>
+    <string name="os_mode_shrink">Stauchen</string>
+    <string name="os_mode_grow">Dehnen</string>
+    <string name="os_lbl_scale_mode">Verformungsmodus</string>
+    <string name="os_lbl_scale_int">Intensität</string>
+    <string name="os_lbl_scale_limit">Limit</string>
+    <string name="os_lbl_anchor_x">Ankerpunkt X</string>
+    <string name="os_lbl_anchor_y">Ankerpunkt Y</string>
+
+    <string name="os_group_visual_vert">Vertikale Verformung</string>
+    <string name="os_desc_visual_vert">Ändert die Skalierung (ScaleY) des RenderNode-Inhalts vertikal.\n\n• Stauchen: flacht den Inhalt beim Aufprall ab.\n• Dehnen: verlängert den Inhalt (Gummieffekt).</string>
+
+    <string name="os_group_visual_zoom">Zoom (XY-Skalierung)</string>
+    <string name="os_desc_visual_zoom">Ändert die Gesamtskalierung (ScaleX und ScaleY) des gesamten Containers.\n\nErzeugt einen Zoom-Effekt beim Interagieren mit dem Rand.</string>
+
+    <string name="os_group_visual_horz">Horizontale Verformung</string>
+    <string name="os_desc_visual_horz">Ändert die Skalierung (ScaleX) entlang der Breite.\n\nErmöglicht einen "Fasseffekt" oder eine Verengung der Liste beim Ziehen.</string>
+
+    <string name="os_desc_scale_intensity">Koeffizient des Einflusses der Verschiebung auf die Skalierung. Je höher der Wert, desto stärker die Verzerrung bei gleicher Verschiebung.</string>
+    <string name="os_desc_scale_limit">Hartes Limit der Verzerrung (min/max Skalierung), um visuelle Artefakte bei starken Zügen zu verhindern.</string>
+    <string name="os_desc_scale_anchor">Koordinate des Punktes, um den skaliert wird (0.0 - 1.0). 0.5 ist die Mitte.</string>
+
+    <string name="os_lbl_min_vel">Geschwindigkeits-Cutoff</string>
+    <string name="os_desc_min_vel">Schwellenwert für das Abklingen der Federgeschwindigkeit.\n\nBestimmt, wann die Physikberechnungen zwangsweise gestoppt werden. Wenn die Federgeschwindigkeit unter diesen Wert fällt, endet die Animation. Hilft, Mikrozittern am Ende zu vermeiden.</string>
+
+    <string name="os_lbl_min_val">Amplituden-Cutoff</string>
+    <string name="os_desc_min_val">Schwellenwert für das Abklingen der Amplitude.\n\nWenn die verbleibende Verschiebung (in Pixeln) kleiner als dieser Wert wird, gilt die Animation als beendet. Eine Erhöhung macht die Rückkehr in den Ausgangszustand visuell schärfer und schneller.</string>
+
+    <!-- Anchor Logic -->
+    <string name="os_lbl_invert_anchor">Smarter Anker</string>
+    <string name="os_desc_invert_anchor">Spiegelt automatisch die Ankerkoordinaten bei Interaktion mit dem rechten oder unteren Rand.\n\n• EIN: Koordinate 0.0 bedeutet immer "der Rand, an dem gezogen wird".\n• AUS: Koordinaten sind absolut (0.0 ist immer links/oben, 1.0 ist immer rechts/unten), unabhängig von der Swipe-Richtung.</string>
+
+    <!-- Horizontal Specific Anchors -->
+    <string name="os_lbl_anchor_x_horiz">Anker X (Horizontal)</string>
+    <string name="os_desc_anchor_x_horiz">Skalierungspunkt entlang der Hauptachse (Scrollrichtung) für horizontale Listen.\n\nBestimmt, welcher Teil der Bildschirmbreite beim Ziehen hauptsächlich verzerrt wird.</string>
+
+    <string name="os_lbl_anchor_y_horiz">Anker Y (Horizontal)</string>
+    <string name="os_desc_anchor_y_horiz">Skalierungspunkt entlang der Querachse (Höhe) für horizontale Listen.\n\nErmöglicht das Verschieben des Effektzentrums nach oben oder unten relativ zur Listenmitte.</string>
+    <string name="os_lbl_scale_int_horiz">Intensität (Horizontal)</string>
+    <string name="os_desc_scale_int_horiz">Bestimmt die Effektstärke ausschließlich für horizontale Listen (LazyRow, ViewPager). Ermöglicht eine separate Einstellung vom vertikalen Scrollen.</string>
+
+
+    <!-- Advanced -->
+    <string name="os_group_advanced">Systemparameter</string>
+    
+    <string name="os_lbl_input_smooth">Eingabefilter</string>
+    <string name="os_desc_input_smooth">Low-Pass-Filter für Fingerkoordinaten bei onPull.\n\nGlättet Sensorrauschen vor der Weitergabe an das Physikmodell. Hohe Werte lassen die Reaktion "zäh" wirken.</string>
+    <string name="os_lbl_lerp_idle">Glättung: FINGER</string>
+    <string name="os_desc_lerp_idle">Interpolationsgeschwindigkeit (LERP) bei direkter Interaktion (onPull).\n\nBestimmt, wie schnell die Grafik dem Finger folgt, solange die Feder NICHT läuft (deaktiviert). Niedriger = weicher, aber mit Verzögerung.</string>
+
+    <string name="os_lbl_lerp_run">Glättung: FEDER</string>
+    <string name="os_desc_lerp_run">Interpolationsgeschwindigkeit (LERP) während aktiver Animation (onRelease/onAbsorb).\n\nBestimmt die Bewegungsglätte, wenn das Physikmodell läuft (Feder aktiv).</string>
+
+    <string name="os_lbl_compose_scale">Compose-Teiler</string>
+    <string name="os_desc_compose_scale">Normalisierungskoeffizient für Jetpack Compose.\n\nCompose übergibt Scroll-Deltas in anderen Einheiten oder summiert sie anders. Dieser Teiler reduziert eingehende onPull-Werte, um die Physik an das View-System anzupassen.</string>
+
+    <!-- Apps -->
+    <string name="os_group_apps">App-Konfiguration</string>
+    <string name="os_btn_add_app">App hinzufügen</string>
+    <string name="os_btn_cancel">Abbrechen</string>
+    <string name="btn_cancel">Abbrechen</string>
+    
+    <!-- App Config Items -->
+    <string name="os_app_filter">Glättung</string>
+    <string name="os_app_ignore">Deaktivieren</string>
+    <string name="os_app_scale">Indiv. Multiplikator</string>
+    <string name="os_app_select_title">App auswählen</string>
+    <string name="os_app_search_hint">Suche nach Name oder Paket...</string>
+    
+    <!-- Other -->
+    <string name="os_card_example_text">Beispielinhalt für den Physiktest.</string>
+
+    <!-- THERMAL MANAGER -->
+    <string name="thermal_title">Thermische Profile</string>
+    
+    <!-- Info Header -->
+    <string name="thermal_info_title">Funktionsweise</string>
+    <string name="thermal_info_summary">Im Gegensatz zu Qualcomm-Chips erfolgt das Hitzemanagement bei Google Tensor nicht über direkte Kernel-Parameter, sondern über Konfigurationsdateien (thermal_info_config.json).\n\nDieses Modul arbeitet auf Systemebene: Es ändert eine spezielle Eigenschaft (prop), die den Thermal-HAL-Dienst zwingt, eine alternative Konfigurationsdatei mit anderen Drosselungsschwellen zu laden.\n\nDies ist eine sichere, "native" Anpassungsmethode, die von der Pixel-Architektur vorgesehen ist. Für Änderungen ist ein Neustart erforderlich.</string>
+
+    <!-- Sections -->
+    <string name="thermal_sec_battery">Akku</string>
+    <string name="thermal_sec_soc">Prozessor (SoC)</string>
+
+    <!-- Modes -->
+    <string name="thermal_mode_stock">Werkszustand</string>
+    <string name="thermal_mode_soft">Sanft (+5°C)</string>
+    <string name="thermal_mode_medium">Mittel (+9°C)</string>
+    <string name="thermal_mode_hard">Aggressiv (+15°C)</string>
+    <string name="thermal_mode_off">Extrem (Aus)</string>
+
+    <!-- Battery Descriptions -->
+    <string name="thermal_desc_bat_stock">Standard-Werkslimits. Gewährleisten maximale Sicherheit und Lebensdauer des Akkus.</string>
+    <string name="thermal_desc_bat_soft">Leichte Erhöhung der Schwelle (+5°C). Hilft, ein Verlangsamen des Ladens bei mäßiger Erwärmung zu vermeiden.</string>
+    <string name="thermal_desc_bat_medium">Ausgewogenes Profil (+9°C). Kompromiss zwischen Ladegeschwindigkeit und Gehäusewärme.</string>
+    <string name="thermal_desc_bat_hard">WARNUNG: Hohe Limits (+15°C). Spürbare Erwärmung beim Schnellladen möglich. Beschleunigt den Verschleiß der Akkuchmie.</string>
+    <string name="thermal_desc_bat_off">GEFAHR: Praktisch vollständige Deaktivierung des Hitzeschutzes (+90°C). Hohes Risiko für Akkuaufblähung und Geräteschäden.</string>
+
+    <!-- SoC Descriptions -->
+    <string name="thermal_desc_soc_stock">Standard-Algorithmus. Aggressive Frequenzsenkung (Drosselung), um die Gehäusetemperatur niedrig zu halten.</string>
+    <string name="thermal_desc_soc_soft">Sanftes Profil (+5°C). Erlaubt dem Prozessor, hohe Frequenzen unter Last länger zu halten.</string>
+    <string name="thermal_desc_soc_medium">Optimal für Spiele (+9°C). Reduziert FPS-Einbrüche erheblich, Gehäuse wird warm.</string>
+    <string name="thermal_desc_soc_hard">Maximale Leistung (+15°C). Gerät kann sich heiß anfühlen. Nur für kurzzeitige Aufgaben empfohlen.</string>
+    <string name="thermal_desc_soc_off">EXTREM: Drosselung deaktiviert. Prozessor erhitzt sich bis zur Notabschaltung. Nur für Benchmarks.</string>
+
+    <!-- Dialogs -->
+    <string name="thermal_dialog_reboot_title">Neustart erforderlich</string>
+    <string name="thermal_dialog_safe_msg">Neues thermisches Profil ausgewählt.\n\nDer Thermal-HAL-Dienst liest die neuen Einstellungen erst beim nächsten Systemstart. Gerät jetzt neu starten?</string>
+    <string name="thermal_dialog_risk_msg">ACHTUNG: Sie haben einen aggressiven Temperaturmodus gewählt!\n\nDies kann zu starker Gehäuseerhitzung und beschleunigter Degradation der Komponenten führen.\n\nFür die Anwendung der Einstellungen ist ein Neustart erforderlich.</string>
+    
+    <string name="btn_ok">Verstanden</string>
+    <string name="btn_reboot">Neustarten</string>
+
+    <!-- IMS MANAGER -->
+    <string name="ims_category_title">IMS-Konfiguration</string>
+    <string name="warning_info">Diese Einstellungen aktivieren zwangsweise Funktionen der Betreiberkonfiguration. Standardmäßig sind die meisten dieser Funktionen für nicht zertifizierte Regionen ausgeblendet oder deaktiviert.\n\nZum Anwenden der Änderungen muss der Flugmodus ein- und ausgeschaltet werden.</string>
+    <string name="ims_footer_info">Diese Einstellungen aktivieren zwangsweise Funktionen der Betreiberkonfiguration. Standardmäßig sind die meisten dieser Funktionen für nicht zertifizierte Regionen ausgeblendet oder deaktiviert.\n\nZum Anwenden der Änderungen muss der Flugmodus ein- und ausgeschaltet werden.</string>
+
+    <!-- Section Headers -->
+    <string name="ims_sec_voice">Sprachdienste</string>
+    <string name="ims_sec_network">Netzwerk &amp; 5G</string>
+    <string name="ims_sec_advanced">Erweiterte Einstellungen</string>
+
+    <!-- VoLTE -->
+    <string name="ims_lbl_volte">VoLTE</string>
+    <string name="ims_desc_volte">Erzwingt VoLTE-Unterstützung in der Betreiberkonfiguration.\n\nErmöglicht Sprachanrufe über das 4G/LTE-Netzwerk ohne Wechsel zu 3G/2G. Gewährleistet schnelle Verbindung, HD-Tonqualität und gleichzeitige Internetnutzung während des Gesprächs. Behebt den fehlenden VoLTE-Schalter in den Einstellungen.</string>
+
+    <!-- VoWiFi -->
+    <string name="ims_lbl_vowifi">WLAN-Anrufe</string>
+    <string name="ims_desc_vowifi">Erzwingt Unterstützung für WLAN-Anrufe (Wi-Fi Calling).\n\nErlaubt dem Telefon, sich über jedes verfügbare WLAN im IMS-Netzwerk des Betreibers zu registrieren. Unverzichtbar an Orten mit schlechtem Mobilfunkempfang (Keller, dicke Wände), aber vorhandenem Internet. Aktiviert das versteckte Menü "WLAN-Anrufe".</string>
+
+    <!-- Video Calling (ViLTE) -->
+    <string name="ims_lbl_vt">Videoanrufe</string>
+    <string name="ims_desc_vt">Aktiviert native Unterstützung für Videoanrufe über den Betreiber.\n\nDies ist die in die Telefon-App integrierte Videofunktion (nicht über Messenger, sondern über das Standardprotokoll IR.94). Funktioniert, wenn der Betreiber Video over LTE unterstützt.</string>
+
+    <!-- Cross-SIM -->
+    <string name="ims_lbl_cross_sim">Backup-Anrufe</string>
+    <string name="ims_desc_cross_sim">Technologie für Backup-Anrufe über eine andere SIM-Karte.\n\nErlaubt die Nutzung des Datenverkehrs der zweiten SIM-Karte für die IMS-Registrierung der ersten SIM-Karte. Nützlich, wenn die Haupt-SIM das Netz verloren hat (z. B. im Roaming oder Funkloch), die zweite SIM aber Internetzugang hat.</string>
+
+    <!-- VoNR -->
+    <string name="ims_lbl_vonr">VoNR (Anrufe über 5G)</string>
+    <string name="ims_desc_vonr">Voice over New Radio. Sprachanrufe in reinen 5G-Netzen (Standalone).\n\nDer modernste Standard für Sprachübertragung. Gewährleistet extrem niedrige Latenz und bessere Qualität als VoLTE. Funktioniert nur in 5G SA-Netzen und erfordert Android 14+.</string>
+
+    <!-- 5G Enable -->
+    <string name="ims_lbl_5g">5G Entsperren</string>
+    <string name="ims_desc_5g">Entfernt die softwareseitige 5G-Sperre in der Konfiguration.\n\nViele Betreiber blockieren den 5G-Zugang für Pixel-Geräte, die nicht auf ihrer "Whitelist" stehen, auch wenn Hardwareunterstützung vorhanden ist. Dieser Schalter fügt NR NSA und SA Bänder zwangsweise zur Liste der erlaubten hinzu.</string>
+
+    <!-- 5G Thresholds -->
+    <string name="ims_lbl_5g_thresh">Aggressives 5G-Signal</string>
+    <string name="ims_desc_5g_thresh">Ändert die Signalschwellenwerte für den Netzwerkwechsel.\n\nSenkt die Anforderungen an die Signalqualität für die Anzeige des 5G-Symbols und das Verbleiben im 5G-Netz. Hilft, wenn das Telefon zu schnell auf 4G/LTE zurückfällt, obwohl 5G verfügbar ist.</string>
+
+    <!-- UT Interface -->
+    <string name="ims_lbl_ut">UT-Schnittstelle</string>
+    <string name="ims_desc_ut">Verwaltung von Zusatzdiensten über IMS.\n\nErmöglicht das Einstellen von Rufumleitung, Anklopfen und Rufnummernübermittlung über das Einstellungsmenü des Telefons unter Verwendung des IP-Kanals statt veralteter USSD-Codes. Behebt Fehler wie "Netzwerk- oder SIM-Kartenfehler" beim Versuch, Anrufeinstellungen in LTE-only-Netzen aufzurufen.</string>
+
+    <!-- LAUNCHER SETTINGS -->
+    <string name="launcher_settings_title">Launcher-Einstellungen</string>
+    <string name="launcher_search_section">Suche &amp; Navigation</string>
+    
+    <string name="launcher_search_title">Native Suche</string>
+    <string name="launcher_search_desc">Erzwingt die Aktivierung der integrierten Suchoberfläche im Pixel Launcher.\n\nGoogle ändert das Suchverhalten oft "server-seitig" und ersetzt die schnelle lokale Suche durch den langsamen Start der Google App. Diese Option fixiert das \'device_config\'-Flag und stellt die schnelle Suche nach Apps und Kontakten wieder her.</string>
+
+    <!-- DOUBLE TAP (DT) SETTINGS -->
+    <string name="dt_category_title">Doppeltipp-Gesten</string>
+    <string name="dt_sec_wake">Aufwecken</string>
+    <string name="dt_sec_sleep">Schlafen</string>
+
+    <!-- DT2W (Wake) -->
+    <string name="dt2w_title">Doppeltippen zum Aufwecken</string>
+    
+    <string name="dt2w_desc_xposed">Xposed-Hook für SystemUI.\n\nFängt Sensorereignisse in der DozeTriggers-Klasse ab und emuliert das Aufwecken, da die Hardwareunterstützung auf Pixel-Geräten oft deaktiviert oder eingeschränkt ist.</string>
+    <string name="dt2w_desc_native">Systemintegration (Nativ).\n\nNutzt den in der Firmware integrierten Code zur Verarbeitung von Berührungsereignissen im Doze-Modus und gewährleistet das Aufwecken ohne Hooks von Drittanbietern.</string>
+    
+    <string name="dt2w_info_title">Funktionsweise</string>
+    <string name="dt2w_info_desc">Dies ist eine Software-Emulation, keine Hardware-Kernel-Funktion.\n\n<b>Prinzip:</b>\nDas System hält den Digitizer im AOD/Doze-Modus aktiv und analysiert Berührungen.\n\n<b>Wichtig:</b>\n• Aufgrund der Softwareverarbeitung ist eine kleine Verzögerung möglich.\n• Kann den Akkuverbrauch geringfügig beeinflussen (Deep Sleep).</string>
+
+    <string name="dt2w_timeout_title">Tipp-Intervall</string>
+    <string name="dt2w_timeout_desc">Maximale Zeit zwischen zwei Berührungen (in ms), damit sie als Doppeltipp gewertet werden.</string>
+
+    <!-- DT2S (Sleep) -->
+    <string name="dt2s_title">Schlafen auf Desktop</string>
+    
+    <string name="dt2s_desc_xposed">Xposed-Hook für Pixel Launcher.\n\nFängt die Methode \'onTouchEvent\' in der Workspace-Klasse des Launchers ab und ermöglicht das Sperren des Bildschirms durch Tippen auf eine leere Stelle.</string>
+    <string name="dt2s_desc_native">Native Code-Injektion.\n\nNutzt das modifizierte Framework zur Registrierung von \'ActivityLifecycleCallbacks\' im Launcher3-Prozess. Beim Start der Activity wird automatisch der Root-Workspace-View gefunden und ein benutzerdefinierter \'OnTouchListener\' angehängt. Dies funktioniert ohne Xposed und erfordert keine Root-Rechte für den Launcher selbst.</string>
+
+    <string name="dt2s_info_title">DT2S Besonderheiten</string>
+    <string name="dt2s_info_desc">Ermöglicht das Ausschalten des Bildschirms durch Doppeltippen auf einen leeren Bereich des Desktops.\n\n<b>Einschränkungen:</b>\n• Funktioniert nur im Pixel Launcher.\n• Reagiert nicht auf Widgets oder Icons.\n• Kann mit Wischgesten kollidieren, wenn die "Verschiebungstoleranz" zu aggressiv eingestellt ist.</string>
+
+    <string name="dt2s_timeout_title">Tipp-Intervall</string>
+    <string name="dt2s_slop_title">Verschiebungstoleranz</string>
+    <string name="dt2s_slop_desc">Maximale Distanz (in Pixeln), die sich der Finger zwischen den Berührungen bewegen darf. Verringern Sie den Wert, wenn Tipps oft als Wischen erkannt werden.</string>
+
+    <!-- COMPONENTS UI -->
+    <string name="common_range_format">Bereich: %1$d - %2$d</string>
+    <string name="common_input_label">Wert eingeben</string>
+    <string name="common_video_placeholder">Video-Demonstration</string>
+
+
+    <string name="btn_apply">Anwenden</string>
+    <string name="btn_default">Standard</string>
+    <string name="btn_close">Schließen</string>
+    <string name="btn_exit">Beenden</string>
+    
+    <string name="status_active">Aktiv</string>
+    <string name="status_disabled">Deaktiviert</string>
+    <string name="status_error">Fehler</string>
+
+
+    <string name="main_desc">Benutzerdefinierte Module und Tweaks</string>
+    
+    <string name="main_header_gesture">Gesten &amp; Eingabe</string>
+    <string name="main_header_system">System</string>
+    <string name="main_header_network">Netzwerk &amp; Verbindung</string>
+    
+    <string name="main_root_title">Kein Root-Zugriff</string>
+    <string name="main_root_desc">Die App benötigt Superuser-Rechte (Root) und ein aktives Xposed Framework.\n\nBitte installieren Sie Magisk/KernelSU und gewähren Sie die Rechte.</string>
+
+    <string name="dt_desc_activity">Verwaltung von Aufwach- und Schlafgesten</string>
+    <string name="launcher_title_activity">Launcher</string>
+    <string name="os_desc_activity">Einstellungen für Scrollelastizität und Trägheit</string>
+    
+    <string name="dt_title_activity">Doppeltipp</string>
+    
+    <string name="launcher_desc_activity">Pixel Launcher Einstellungen</string>
+    
+    <string name="thermal_title_activity">Thermische Profile</string>
+    
+    <string name="thermal_desc_activity">Drosselungsmanagement</string>
+
+    <string name="os_desc_anchor">Transformationsankerpunkt.</string>
+
+    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
+    <string name="ims_title_activity">IMS-Konfig</string>
+</resources>
