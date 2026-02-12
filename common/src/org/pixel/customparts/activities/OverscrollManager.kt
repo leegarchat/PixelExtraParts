@@ -19,7 +19,7 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 
 object OverscrollManager {
     val KEY_ENABLED: String
-        get() = if (AppConfig.IS_XPOSED) "overscroll_enabled_xposed" else "overscroll_enabled"
+        get() = if (AppConfig.IS_XPOSED) "overscroll_enabled_xposed" else "overscroll_enabled_pine"
     private const val KEY_DT2W_TIMEOUT = "doze_double_tap_timeout"
     
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"
@@ -63,14 +63,14 @@ object OverscrollManager {
     const val KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle"
     const val KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run"
 
-    fun isMasterEnabled(context: Context) = Settings.Secure.getInt(context.contentResolver, KEY_ENABLED, 1) == 1
+    fun isMasterEnabled(context: Context) = Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1) == 1
     
     suspend fun setMasterEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
-        Settings.Secure.putInt(context.contentResolver, KEY_ENABLED, if (enabled) 1 else 0)
+        Settings.Global.putInt(context.contentResolver, KEY_ENABLED, if (enabled) 1 else 0)
     }
 
     fun getSavedProfiles(context: Context): List<SavedProfile> {
-        val raw = Settings.Secure.getString(context.contentResolver, KEY_SAVED_PROFILES) ?: return emptyList()
+        val raw = Settings.Global.getString(context.contentResolver, KEY_SAVED_PROFILES) ?: return emptyList()
         val list = mutableListOf<SavedProfile>()
         try {
             val arr = JSONArray(raw)
@@ -83,12 +83,12 @@ object OverscrollManager {
     }
 
     fun getActiveProfileName(context: Context): String? {
-        return Settings.Secure.getString(context.contentResolver, KEY_ACTIVE_PROFILE)
+        return Settings.Global.getString(context.contentResolver, KEY_ACTIVE_PROFILE)
     }
 
     fun clearActiveProfile(context: Context) {
-        if (Settings.Secure.getString(context.contentResolver, KEY_ACTIVE_PROFILE) != null) {
-            Settings.Secure.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
+        if (Settings.Global.getString(context.contentResolver, KEY_ACTIVE_PROFILE) != null) {
+            Settings.Global.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
         }
     }
 
@@ -97,27 +97,27 @@ object OverscrollManager {
         val profiles = getSavedProfiles(context).toMutableList()
         profiles.removeAll { it.name == name }
         profiles.add(SavedProfile(name, currentJson))
-        saveProfilesToSecure(context, profiles)
-        Settings.Secure.putString(context.contentResolver, KEY_ACTIVE_PROFILE, name)
+        saveProfilesToGlobal(context, profiles)
+        Settings.Global.putString(context.contentResolver, KEY_ACTIVE_PROFILE, name)
     }
 
     suspend fun deleteProfile(context: Context, profile: SavedProfile) = withContext(Dispatchers.IO) {
         val profiles = getSavedProfiles(context).toMutableList()
         profiles.removeIf { it.name == profile.name }
-        saveProfilesToSecure(context, profiles)
+        saveProfilesToGlobal(context, profiles)
         
         val active = getActiveProfileName(context)
         if (active == profile.name) {
-            Settings.Secure.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
+            Settings.Global.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
         }
     }
 
     suspend fun loadProfile(context: Context, profile: SavedProfile) = withContext(Dispatchers.IO) {
         applySettingsFromJson(context, profile.jsonData)
-        Settings.Secure.putString(context.contentResolver, KEY_ACTIVE_PROFILE, profile.name)
+        Settings.Global.putString(context.contentResolver, KEY_ACTIVE_PROFILE, profile.name)
     }
 
-    private fun saveProfilesToSecure(context: Context, profiles: List<SavedProfile>) {
+    private fun saveProfilesToGlobal(context: Context, profiles: List<SavedProfile>) {
         val arr = JSONArray()
         profiles.forEach { 
             val obj = JSONObject()
@@ -125,11 +125,11 @@ object OverscrollManager {
             obj.put("data", it.jsonData)
             arr.put(obj)
         }
-        Settings.Secure.putString(context.contentResolver, KEY_SAVED_PROFILES, arr.toString())
+        Settings.Global.putString(context.contentResolver, KEY_SAVED_PROFILES, arr.toString())
     }
 
     fun getAppConfigs(context: Context): List<AppConfigItem> {
-        val raw = Settings.Secure.getString(context.contentResolver, KEY_PACKAGES_CONFIG) ?: return emptyList()
+        val raw = Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG) ?: return emptyList()
         val list = mutableListOf<AppConfigItem>()
         if (raw.isBlank()) return list
         
@@ -150,33 +150,33 @@ object OverscrollManager {
             sb.append(item.toString())
             if (index < list.size - 1) sb.append(" ")
         }
-        Settings.Secure.putString(context.contentResolver, KEY_PACKAGES_CONFIG, sb.toString())
+        Settings.Global.putString(context.contentResolver, KEY_PACKAGES_CONFIG, sb.toString())
     }
 
     private fun collectCurrentSettingsJson(context: Context): JSONObject {
         val json = JSONObject()
-        json.put(KEY_ENABLED, Settings.Secure.getInt(context.contentResolver, KEY_ENABLED, 1))
-        json.put(KEY_LOGGING, Settings.Secure.getInt(context.contentResolver, KEY_LOGGING, 0))
-        json.put(KEY_INVERT_ANCHOR, Settings.Secure.getInt(context.contentResolver, KEY_INVERT_ANCHOR, 1))
-        json.put(KEY_PACKAGES_CONFIG, Settings.Secure.getString(context.contentResolver, KEY_PACKAGES_CONFIG))
+        json.put(KEY_ENABLED, Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1))
+        json.put(KEY_LOGGING, Settings.Global.getInt(context.contentResolver, KEY_LOGGING, 0))
+        json.put(KEY_INVERT_ANCHOR, Settings.Global.getInt(context.contentResolver, KEY_INVERT_ANCHOR, 1))
+        json.put(KEY_PACKAGES_CONFIG, Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG))
 
         val floatKeys = listOf(
             KEY_PULL_COEFF, KEY_STIFFNESS, KEY_DAMPING, KEY_FLING, KEY_RESISTANCE_EXPONENT,
             KEY_PHYSICS_MIN_VEL, KEY_PHYSICS_MIN_VAL, KEY_INPUT_SMOOTH_FACTOR,
             KEY_LERP_MAIN_IDLE, KEY_LERP_MAIN_RUN, KEY_COMPOSE_SCALE 
         )
-        for (k in floatKeys) json.put(k, Settings.Secure.getFloat(context.contentResolver, k, 0f).toDouble())
+        for (k in floatKeys) json.put(k, Settings.Global.getFloat(context.contentResolver, k, 0f).toDouble())
 
         val prefixes = listOf("overscroll_scale", "overscroll_zoom", "overscroll_h_scale")
         for (pre in prefixes) {
-            json.put(pre + "_mode", Settings.Secure.getInt(context.contentResolver, pre + "_mode", 0))
-            json.put(pre + "_intensity", Settings.Secure.getFloat(context.contentResolver, pre + "_intensity", 0f).toDouble())
-            json.put(pre + "_intensity_horiz", Settings.Secure.getFloat(context.contentResolver, pre + "_intensity_horiz", 0f).toDouble())
-            json.put(pre + "_limit_min", Settings.Secure.getFloat(context.contentResolver, pre + "_limit_min", 0f).toDouble())
-            json.put(pre + "_anchor_x", Settings.Secure.getFloat(context.contentResolver, pre + "_anchor_x", 0f).toDouble())
-            json.put(pre + "_anchor_y", Settings.Secure.getFloat(context.contentResolver, pre + "_anchor_y", 0f).toDouble())
-            json.put(pre + "_anchor_x_horiz", Settings.Secure.getFloat(context.contentResolver, pre + "_anchor_x_horiz", 0f).toDouble())
-            json.put(pre + "_anchor_y_horiz", Settings.Secure.getFloat(context.contentResolver, pre + "_anchor_y_horiz", 0f).toDouble())
+            json.put(pre + "_mode", Settings.Global.getInt(context.contentResolver, pre + "_mode", 0))
+            json.put(pre + "_intensity", Settings.Global.getFloat(context.contentResolver, pre + "_intensity", 0f).toDouble())
+            json.put(pre + "_intensity_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_intensity_horiz", 0f).toDouble())
+            json.put(pre + "_limit_min", Settings.Global.getFloat(context.contentResolver, pre + "_limit_min", 0f).toDouble())
+            json.put(pre + "_anchor_x", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_x", 0f).toDouble())
+            json.put(pre + "_anchor_y", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_y", 0f).toDouble())
+            json.put(pre + "_anchor_x_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_x_horiz", 0f).toDouble())
+            json.put(pre + "_anchor_y_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_y_horiz", 0f).toDouble())
         }
         return json
     }
@@ -190,57 +190,57 @@ object OverscrollManager {
             val valObj = json.get(key)
             if (valObj is Number) { 
                 if (key.endsWith("_mode") || key == KEY_ENABLED || key == KEY_LOGGING || key == KEY_INVERT_ANCHOR) {
-                    Settings.Secure.putInt(context.contentResolver, key, valObj.toInt())
+                    Settings.Global.putInt(context.contentResolver, key, valObj.toInt())
                 } else {
-                    Settings.Secure.putFloat(context.contentResolver, key, valObj.toFloat())
+                    Settings.Global.putFloat(context.contentResolver, key, valObj.toFloat())
                 }
             } else if (valObj is String) {
-                Settings.Secure.putString(context.contentResolver, key, valObj)
+                Settings.Global.putString(context.contentResolver, key, valObj)
             }
         }
     }
 
     suspend fun resetAll(context: Context) = withContext(Dispatchers.IO) {
         val cr = context.contentResolver
-        Settings.Secure.putInt(cr, KEY_ENABLED, 1)
-        Settings.Secure.putInt(cr, KEY_LOGGING, 0)
-        Settings.Secure.putString(cr, KEY_ACTIVE_PROFILE, null)
-        Settings.Secure.putInt(cr, KEY_INVERT_ANCHOR, 1)
-        Settings.Secure.putFloat(cr, KEY_PULL_COEFF, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_STIFFNESS, 450f)
-        Settings.Secure.putFloat(cr, KEY_DAMPING, 0.7f)
-        Settings.Secure.putFloat(cr, KEY_FLING, 0.6f)
-        Settings.Secure.putFloat(cr, KEY_RESISTANCE_EXPONENT, 4.0f)
-        Settings.Secure.putFloat(cr, KEY_PHYSICS_MIN_VEL, 80.0f)
-        Settings.Secure.putFloat(cr, KEY_PHYSICS_MIN_VAL, 4.0f)
-        Settings.Secure.putFloat(cr, KEY_INPUT_SMOOTH_FACTOR, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_LERP_MAIN_IDLE, 0.4f)
-        Settings.Secure.putFloat(cr, KEY_LERP_MAIN_RUN, 0.7f)
-        Settings.Secure.putFloat(cr, KEY_COMPOSE_SCALE, 3.33f)
-        Settings.Secure.putInt(cr, KEY_SCALE_MODE, 0)
-        Settings.Secure.putFloat(cr, KEY_SCALE_INTENSITY, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_INTENSITY_HORIZ, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_LIMIT_MIN, 0.3f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_ANCHOR_X, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_ANCHOR_Y, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_ANCHOR_X_HORIZ, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_SCALE_ANCHOR_Y_HORIZ, 0.5f)
-        Settings.Secure.putInt(cr, KEY_ZOOM_MODE, 0)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_INTENSITY, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_INTENSITY_HORIZ, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_LIMIT_MIN, 0.3f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_ANCHOR_X, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_ANCHOR_Y, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_ANCHOR_X_HORIZ, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_ZOOM_ANCHOR_Y_HORIZ, 0.5f)
-        Settings.Secure.putInt(cr, KEY_H_SCALE_MODE, 0)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_INTENSITY, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_INTENSITY_HORIZ, 0.0f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_LIMIT_MIN, 0.3f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_ANCHOR_X, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_ANCHOR_Y, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_ANCHOR_X_HORIZ, 0.5f)
-        Settings.Secure.putFloat(cr, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f)
+        Settings.Global.putInt(cr, KEY_ENABLED, 1)
+        Settings.Global.putInt(cr, KEY_LOGGING, 0)
+        Settings.Global.putString(cr, KEY_ACTIVE_PROFILE, null)
+        Settings.Global.putInt(cr, KEY_INVERT_ANCHOR, 1)
+        Settings.Global.putFloat(cr, KEY_PULL_COEFF, 0.5f)
+        Settings.Global.putFloat(cr, KEY_STIFFNESS, 450f)
+        Settings.Global.putFloat(cr, KEY_DAMPING, 0.7f)
+        Settings.Global.putFloat(cr, KEY_FLING, 0.6f)
+        Settings.Global.putFloat(cr, KEY_RESISTANCE_EXPONENT, 4.0f)
+        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VEL, 80.0f)
+        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VAL, 4.0f)
+        Settings.Global.putFloat(cr, KEY_INPUT_SMOOTH_FACTOR, 0.5f)
+        Settings.Global.putFloat(cr, KEY_LERP_MAIN_IDLE, 0.4f)
+        Settings.Global.putFloat(cr, KEY_LERP_MAIN_RUN, 0.7f)
+        Settings.Global.putFloat(cr, KEY_COMPOSE_SCALE, 3.33f)
+        Settings.Global.putInt(cr, KEY_SCALE_MODE, 0)
+        Settings.Global.putFloat(cr, KEY_SCALE_INTENSITY, 0.0f)
+        Settings.Global.putFloat(cr, KEY_SCALE_INTENSITY_HORIZ, 0.0f)
+        Settings.Global.putFloat(cr, KEY_SCALE_LIMIT_MIN, 0.3f)
+        Settings.Global.putFloat(cr, KEY_SCALE_ANCHOR_X, 0.5f)
+        Settings.Global.putFloat(cr, KEY_SCALE_ANCHOR_Y, 0.5f)
+        Settings.Global.putFloat(cr, KEY_SCALE_ANCHOR_X_HORIZ, 0.5f)
+        Settings.Global.putFloat(cr, KEY_SCALE_ANCHOR_Y_HORIZ, 0.5f)
+        Settings.Global.putInt(cr, KEY_ZOOM_MODE, 0)
+        Settings.Global.putFloat(cr, KEY_ZOOM_INTENSITY, 0.0f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_INTENSITY_HORIZ, 0.0f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_LIMIT_MIN, 0.3f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_ANCHOR_X, 0.5f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_ANCHOR_Y, 0.5f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_ANCHOR_X_HORIZ, 0.5f)
+        Settings.Global.putFloat(cr, KEY_ZOOM_ANCHOR_Y_HORIZ, 0.5f)
+        Settings.Global.putInt(cr, KEY_H_SCALE_MODE, 0)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_INTENSITY, 0.0f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_INTENSITY_HORIZ, 0.0f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_LIMIT_MIN, 0.3f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_X, 0.5f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_Y, 0.5f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_X_HORIZ, 0.5f)
+        Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f)
     }
 
     suspend fun exportSettings(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
@@ -262,7 +262,7 @@ object OverscrollManager {
                 }
             }
             applySettingsFromJson(context, JSONObject(sb.toString()))
-            Settings.Secure.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
+            Settings.Global.putString(context.contentResolver, KEY_ACTIVE_PROFILE, null)
             true
         } catch (e: Exception) { 
             e.printStackTrace()

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.pixel.customparts.xposed"
+    android:versionCode="7"
+    android:versionName="beta-0.7-RC">
+
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" 
+        android:protectionLevel="signatureOrSystem" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.DEVICE_POWER"/>
+    <uses-permission android:name="android.permission.MONITOR_INPUT"/>
+    <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
+    <uses-permission android:name="android.permission.REAL_GET_TASKS"/>
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL"/>
+    <uses-permission android:name="android.permission.STATUS_BAR"/>
+    <uses-permission android:name="android.permission.STATUS_BAR_SERVICE" />
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+    <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- umount -fl /system/framework/PineInject.jar ; cp -f /sdcard/PineInject.jar /data/adb/ ; chown 0:0 /data/adb/PineInject.jar ; chcon u:object_r:system_file:s0 /data/adb/PineInject.jar ; chmod 644 /data/adb/PineInject.jar ; mount /data/adb/PineInject.jar /system/framework/PineInject.jar -->
+    <application
+        android:label="Pixel Extra Parts"
+        android:icon="@mipmap/ic_launcher"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:defaultToDeviceProtectedStorage="true"
+        android:directBootAware="true">
+
+        <meta-data android:name="xposedmodule" android:value="true" />
+        <meta-data android:name="xposeddescription" android:value="Pixel Custom Parts Module" />
+        <meta-data android:name="xposedminversion" android:value="82" />
+        <meta-data android:name="xposedscope" android:resource="@array/xposed_scope" />
+
+        <activity
+            android:name="org.pixel.customparts.MainActivity"
+            android:label="Pixel Extra Parts"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="org.pixel.customparts.activities.DoubleTapActivity"
+            android:label="@string/dt_category_title"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+
+        <activity
+            android:name="org.pixel.customparts.activities.LauncherActivity"
+            android:label="@string/launcher_settings_title"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+
+        <activity
+            android:name="org.pixel.customparts.activities.RecentsMenuActivity"
+            android:label="Recents Menu"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.SearchAndFeedActivity"
+            android:label="Search &amp; Feed"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.GridSettingsActivity"
+            android:label="Grid Settings"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.OverscrollActivity"
+            android:label="@string/os_title_activity"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+        <activity
+            android:name="org.pixel.customparts.activities.DonateActivity"
+            android:label="@string/donate_title"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+        <activity
+            android:name="org.pixel.customparts.activities.ImsActivity"
+            android:label="@string/ims_category_title"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:exported="false" />
+
+        <receiver
+            android:name="org.pixel.customparts.services.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

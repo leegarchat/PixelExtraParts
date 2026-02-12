@@ -3,6 +3,7 @@
 -keep class org.pixel.customparts.activities.* { *; }
 -keep class org.pixel.customparts.services.* { *; }
 -keep class org.pixel.customparts.xposed.XposedInit { *; }
+-keep class org.pixel.customparts.manager.xposed.XposedInit { *; }
 -keep class * implements de.robv.android.xposed.IXposedHookLoadPackage { *; }
 -keep class * implements de.robv.android.xposed.IXposedHookZygoteInit { *; }
 -keep class * implements de.robv.android.xposed.IXposedHookInitPackageResources { *; }

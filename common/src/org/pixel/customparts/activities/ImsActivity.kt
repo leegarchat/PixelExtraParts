@@ -30,6 +30,7 @@ import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.InfoDialog
+import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.utils.RootUtils
 import java.io.BufferedReader
@@ -66,6 +67,7 @@ fun ImsScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { Text(

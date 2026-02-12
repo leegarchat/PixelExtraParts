@@ -36,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.activities.*
+import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.utils.RootUtils
 import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.dynamicStringResource
@@ -124,6 +125,7 @@ fun MainDashboard() {
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             LargeTopAppBar(
                 title = {
@@ -152,7 +154,7 @@ fun MainDashboard() {
                     IconButton(onClick = {
                         scope.launch {
                             val success = RemoteStringsManager.forceRefresh(context)
-                            // val message = RemoteStringsManager.getString(context, R.string.donate_page_updated)
+                            
                             val message = if (success) RemoteStringsManager.getString(context, R.string.refresh_strings) else RemoteStringsManager.getString(context, R.string.error_network)
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             

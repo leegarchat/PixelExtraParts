@@ -3,25 +3,34 @@ package org.pixel.customparts.activities
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.ui.InfoDialog
-import org.pixel.customparts.ui.launcher.*
+import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.SettingsGroupCard
+import org.pixel.customparts.ui.launcher.RecentsSection
 import org.pixel.customparts.utils.dynamicStringResource
 
 class LauncherActivity : ComponentActivity() {
@@ -48,25 +57,14 @@ class LauncherActivity : ComponentActivity() {
 @Composable
 fun LauncherScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var infoDialogTitle by remember { mutableStateOf<String?>(null) }
-    var infoDialogText by remember { mutableStateOf<String?>(null) }
-    var infoDialogVideo by remember { mutableStateOf<String?>(null) }
-    var showXposedWarning by remember { mutableStateOf(false) }
     
-    var nativeSearchEnabled by remember { mutableStateOf(LauncherManager.isNativeSearchEnabled(context)) }
     
-    var refreshKey by remember { mutableIntStateOf(0) }
     
-    var isClearAllRestartVisible by remember { mutableStateOf(false) }
-    var isSearchRestartVisible by remember { mutableStateOf(false) }
-    var isGridRestartVisible by remember { mutableStateOf(false) }
-    var isIconPackRestartVisible by remember { mutableStateOf(false) }
     
-    val isBottomRestartVisible = isClearAllRestartVisible || isSearchRestartVisible || isGridRestartVisible || isIconPackRestartVisible
-
+    
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { Text(
@@ -74,7 +72,7 @@ fun LauncherScreen(onBack: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     ) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back)) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -89,135 +87,51 @@ fun LauncherScreen(onBack: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            
+            
             item {
-                AnimatedVisibility(
-                    visible = !isBottomRestartVisible,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Button(
-                        onClick = { 
-                            scope.launch { LauncherManager.restartLauncher(context) }
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer, 
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        )
+                SettingsGroupCard(title = dynamicStringResource(R.string.launcher_group_general)) {
+                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { context.startActivity(android.content.Intent(context, SearchAndFeedActivity::class.java)) }
+                            .padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Restart Launcher") 
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = dynamicStringResource(R.string.launcher_search_feed_title), style = MaterialTheme.typography.titleMedium)
+                            Text(text = dynamicStringResource(R.string.launcher_search_feed_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.Filled.ChevronRight, null)
+                    }
+                }
+            }
+
+            
+            item {
+                SettingsGroupCard(title = dynamicStringResource(R.string.launcher_group_appearance)) {
+                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { context.startActivity(android.content.Intent(context, GridSettingsActivity::class.java)) }
+                            .padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = dynamicStringResource(R.string.launcher_grid_title), style = MaterialTheme.typography.titleMedium)
+                            Text(text = dynamicStringResource(R.string.launcher_grid_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        androidx.compose.material3.Icon(Icons.Filled.ChevronRight, null)
                     }
                 }
             }
 
             item {
-                NativeSearchSection(
-                    context = context,
-                    scope = scope,
-                    nativeSearchEnabled = nativeSearchEnabled,
-                    onNativeSearchChanged = { checked: Boolean ->
-                        nativeSearchEnabled = checked
-                        scope.launch { LauncherManager.setNativeSearchEnabled(context, checked) }
-                    },
-                    onInfoClick = { t: String, s: String, v: String? ->
-                        infoDialogTitle = t
-                        infoDialogText = s
-                        infoDialogVideo = v
-                    }
-                )
+                
+                RecentsSection(context = context, scope = rememberCoroutineScope(), onShowBottomRestartChange = {})
             }
 
-            item {
-                SearchWidgetSection(
-                    context = context,
-                    scope = scope,
-                    showXposedDialog = { showXposedWarning = true },
-                    onInfoClick = { t: String, s: String, v: String? ->
-                        infoDialogTitle = t
-                        infoDialogText = s
-                        infoDialogVideo = v
-                    },
-                    onShowBottomRestartChange = { isVisible: Boolean ->
-                        isSearchRestartVisible = isVisible
-                    }
-                )
-            }
-
-            item {
-                GridSizerSection(
-                    context = context,
-                    scope = scope,
-                    onInfoClick = { t: String, s: String, v: String? ->
-                        infoDialogTitle = t
-                        infoDialogText = s
-                        infoDialogVideo = v
-                    },
-                    onShowBottomRestartChange = { isVisible: Boolean ->
-                        isGridRestartVisible = isVisible
-                    }
-                )
-            }
-
-            item {
-                ClearAllSection(
-                    context = context,
-                    scope = scope,
-                    refreshKey = refreshKey,
-                    onSettingChanged = { refreshKey++ },
-                    onInfo = { t: String, s: String, v: String? ->
-                        infoDialogTitle = t
-                        infoDialogText = s
-                        infoDialogVideo = v
-                    },
-                    onShowBottomRestartChange = { isVisible: Boolean ->
-                        isClearAllRestartVisible = isVisible
-                    },
-                    onShowXposedDialog = { showXposedWarning = true }
-                )
-            }
-            
-            item {
-                Dt2sUiSection(
-                    context = context,
-                    scope = scope,
-                    onInfoClick = { t: String, s: String, v: String? ->
-                        infoDialogTitle = t
-                        infoDialogText = s
-                        infoDialogVideo = v
-                    },
-                    showXposedDialog = {
-                        showXposedWarning = true
-                    }
-                )
-            }
         }
     }
 
-    if (infoDialogTitle != null && infoDialogText != null) {
-        InfoDialog(
-            title = infoDialogTitle!!,
-            text = infoDialogText!!,
-            videoResName = infoDialogVideo,
-            onDismiss = {
-                infoDialogTitle = null
-                infoDialogText = null
-                infoDialogVideo = null
-            }
-        )
-    }
-    
-    if (showXposedWarning) {
-        AlertDialog(
-            onDismissRequest = { showXposedWarning = false },
-            title = { Text(dynamicStringResource(R.string.os_dialog_xposed_title)) },
-            text = { Text(dynamicStringResource(R.string.os_dialog_xposed_msg)) },
-            confirmButton = {
-                TextButton(onClick = { showXposedWarning = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 }

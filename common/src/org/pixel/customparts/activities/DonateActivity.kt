@@ -47,6 +47,7 @@ import org.json.JSONObject
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.utils.dynamicStringResource
 import java.net.HttpURLConnection
 import java.net.URL
@@ -171,7 +172,7 @@ fun DonateScreen(onBack: () -> Unit) {
     var pageData by remember { mutableStateOf<DonatePageData?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
-    var refreshKey by remember { mutableIntStateOf(0) } // Ключ для принудительного обновления
+    var refreshKey by remember { mutableIntStateOf(0) } 
 
     val targetStates = remember { mutableStateMapOf<String, TargetState>() }
 
@@ -188,14 +189,14 @@ fun DonateScreen(onBack: () -> Unit) {
             isLoading = true
             loadError = null
             
-            // 1. Загружаем конфиг страницы
+            
             val result = fetchDonatePageData(rawJsonUrl)
             
             if (result != null) {
                 pageData = result
                 isLoading = false
                 
-                // Перезагружаем данные всех карточек (последовательно)
+                
                 result.progress.forEach { config ->
                     targetStates[config.apiUrl] = TargetState.Loading
                     val state = fetchCardState(config)
@@ -223,6 +224,7 @@ fun DonateScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { Text(dynamicStringResource(R.string.donate_title), fontWeight = FontWeight.Bold) },
@@ -473,9 +475,9 @@ private suspend fun fetchDonatePageData(jsonUrl: String): DonatePageData? = with
         conn.apply { 
             connectTimeout = 10000
             readTimeout = 10000
-            useCaches = false // Отключаем локальный кэш
+            useCaches = false 
             setRequestProperty("User-Agent", "Android")
-            setRequestProperty("Cache-Control", "no-cache") // Запрос к серверу/прокси не использовать кэш
+            setRequestProperty("Cache-Control", "no-cache") 
         }
         if (conn.responseCode == 200) {
             val response = conn.inputStream.bufferedReader().use { it.readText() }

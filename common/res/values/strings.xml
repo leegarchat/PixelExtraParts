@@ -76,6 +76,8 @@
     <string name="os_group_visual_horz">Horizontal Deformation</string>
     <string name="os_desc_visual_horz">Changes ScaleX along the width.\n\nAllows for a "barrel" or narrowing effect when stretching.</string>
 
+    <string name="misc_group_title">Misc</string>
+
     <string name="os_desc_scale_intensity">Coefficient of displacement influence on scale. Higher values mean stronger distortion for the same displacement.</string>
     <string name="os_desc_scale_limit">Hard distortion limit (min/max scale) to prevent visual artifacts during strong pulls.</string>
     <string name="os_desc_scale_anchor">Pivot coordinate for scaling (0.0 - 1.0). 0.5 is center.</string>
@@ -170,6 +172,16 @@
     
     <string name="btn_ok">Got it</string>
     <string name="btn_reboot">Reboot</string>
+    <string name="btn_confirm">Confirm</string>
+
+    <!-- Reboot Bubble -->
+    <string name="reboot_launcher">Restart Launcher</string>
+    <string name="reboot_systemui">Restart SystemUI</string>
+    <string name="reboot_system">Reboot System</string>
+    <string name="reboot_confirm_system_title">Reboot device?</string>
+    <string name="reboot_confirm_system_msg">The device will be rebooted immediately. Save your work before proceeding.</string>
+    <string name="reboot_confirm_sysui_title">Restart SystemUI?</string>
+    <string name="reboot_confirm_sysui_msg">SystemUI will be restarted. Navigation bar, status bar and notifications will briefly disappear.</string>
 
     <!-- IMS MANAGER -->
     <string name="ims_category_title">IMS Configuration</string>
@@ -216,6 +228,23 @@
     <!-- LAUNCHER SETTINGS -->
     <string name="launcher_settings_title">Launcher Settings</string>
     <string name="launcher_search_section">Search &amp; Navigation</string>
+
+    <!-- Launcher Navigation Items -->
+    <string name="launcher_group_general">General</string>
+    <string name="launcher_search_feed_title">Search &amp; Feed</string>
+    <string name="launcher_search_feed_subtitle">Configure native search and Google Feed</string>
+    <string name="launcher_group_appearance">Appearance</string>
+    <string name="launcher_grid_title">Grid Settings</string>
+    <string name="launcher_grid_subtitle">Customize workspace rows and columns</string>
+    <string name="launcher_group_recents_features">Recents Features</string>
+    <string name="launcher_clear_all_nav_title">Clear All Button</string>
+    <string name="launcher_clear_all_nav_subtitle">Customize the clear all button behavior</string>
+    <string name="launcher_group_gestures">Gestures</string>
+    <string name="launcher_gestures_title">Gestures</string>
+    <string name="launcher_gestures_subtitle">Double tap to sleep and more</string>
+    <string name="launcher_group_recents_customization">Recents Customization</string>
+    <string name="launcher_recents_menu_title">Recents Menu</string>
+    <string name="launcher_recents_menu_subtitle">Configure Carousel, Scaling, Blur and more</string>
     
     <string name="launcher_search_title">Native Search</string>
     <string name="launcher_search_desc">Forcibly enables the built-in search interface in Pixel Launcher.\n\nGoogle often changes search behavior on "server-side", replacing fast local search with slow Google App launch. This option fixes the \'device_config\' flag, restoring fast app and contact search.</string>
@@ -290,6 +319,12 @@
     <string name="btn_default">Default</string>
     <string name="btn_close">Close</string>
     <string name="btn_exit">Exit</string>
+    <string name="btn_restart">Restart</string>
+    <string name="nav_back">Back</string>
+
+    <!-- Shared Dialogs -->
+    <string name="xposed_required_title">Xposed Required</string>
+    <string name="xposed_required_message">This feature requires Xposed module to be active.</string>
     
     <string name="status_active">Active</string>
     <string name="status_disabled">Disabled</string>
@@ -338,6 +373,17 @@
     <string name="grid_lbl_hide_text">Hide Icon Text</string>
     <string name="grid_desc_home_hide_text">Hides icon labels on the home screen.</string>
 
+    <string name="grid_lbl_icon_size">Icon Size</string>
+    <string name="grid_desc_home_icon_size">Adjusts the size of icons on the home screen (100%% is standard).</string>
+    <string name="grid_desc_drawer_icon_size">Adjusts the size of icons in the app drawer (100%% is standard).</string>
+    <string name="grid_desc_dock_icon_size">Adjusts the size of icons in the dock (100%% is standard).</string>
+
+    <string name="grid_lbl_text_mode">Text Display Mode</string>
+    <string name="grid_desc_text_mode">How icon labels are displayed when text is visible.</string>
+    <string name="grid_text_mode_default">Truncate</string>
+    <string name="grid_text_mode_two_line">Two Lines</string>
+    <string name="grid_text_mode_marquee">Marquee</string>
+
     <string name="grid_group_drawer">App Drawer Customization</string>
     <string name="grid_lbl_drawer_enable">App Drawer Customization</string>
     <string name="grid_desc_drawer_enable">Enables customization of the app drawer grid and layout.</string>
@@ -350,6 +396,14 @@
     
     <string name="grid_lbl_drawer_hide_text">Hide Menu Text</string>
     <string name="grid_desc_drawer_hide_text">Hides icon labels in the app drawer.</string>
+
+    <!-- Dock Grid Section -->
+    <string name="grid_group_dock">Dock Customization</string>
+    <string name="grid_lbl_dock_icons">Dock Icon Count</string>
+    <string name="grid_desc_dock_icons">Number of icons in the dock bar.</string>
+    <string name="grid_lbl_dock_hide_text">Hide Dock Text</string>
+    <string name="grid_desc_dock_hide_text">Hides icon labels in the dock.</string>
+
     <string name="grid_lbl_search_cols">Search Columns</string>
     <string name="grid_desc_search_cols">Number of columns for search results and suggestions in the app drawer.</string>
     <!-- Search Widget & Dock Section -->
@@ -363,9 +417,14 @@
     
     <string name="search_widget_hide_dock">Hide Dock Icons</string>
     <string name="search_widget_desc_hide_dock">Hides the bottom dock (hotseat) icons area.</string>
+    <string name="pref_recents_size_summary">pref_recents_size_summary</string>
+    <string name="info_recents_size">info_recents_size</string>
     
-    <string name="search_widget_padding_home">Homepage Padding</string>
-    <string name="search_widget_desc_padding_home">Adjusts the bottom padding for the workspace grid icons.</string>
+    <string name="search_widget_padding_home">Homepage Top Padding</string>
+    <string name="search_widget_desc_padding_home">Adjusts the top padding for the workspace grid icons (stretches from top).</string>
+    
+    <string name="search_widget_padding_home_bottom">Homepage Bottom Padding</string>
+    <string name="search_widget_desc_padding_home_bottom">Adjusts the bottom padding for the workspace grid icons (stretches from bottom).</string>
     
     <string name="search_widget_padding_dock">Dock Icon Padding</string>
     <string name="search_widget_desc_padding_dock">Adjusts the vertical position of dock icons (+/-).</string>
@@ -375,8 +434,83 @@
 
     <string name="search_widget_padding_dots">Dots Padding</string>
     <string name="search_widget_desc_padding_dots">Adjusts the vertical position of the page indicator dots.</string>
-    <string name="misc_group_title">Miscellaneous</string>
+    <string name="search_widget_padding_dots_x">Dots Horizontal Offset</string>
+    <string name="search_widget_desc_padding_dots_x">Adjusts the horizontal position of the page indicator dots.</string>
+
+    <!-- Recents Size -->
+    <string name="title_recents_size">Recents Task Size</string>
+    <string name="desc_recents_size">Adjust the size of task cards in Overview</string>
+    <string name="pref_recents_size_enable">Enable Custom Size</string>
+    <string name="pref_recents_size_scale">Scale Percentage</string>
+    <string name="pref_recents_carousel_enable">Carousel Effect (OnePlus Style)</string>
+    <string name="pref_recents_icons_enable">App Icons Row</string>
+
+    <!-- Recents Menu Screen -->
+    <string name="recents_menu_screen_title">Recents Menu</string>
+    <string name="recents_group_general">General Manager</string>
+    <string name="recents_enable_modding">Enable Recents Modding</string>
+    <string name="recents_disable_live_tile">Disable Live Tile</string>
+    <string name="recents_disable_live_tile_desc">Forces snapshot instead of live view</string>
+    <string name="recents_group_scaling">Base Card Scaling</string>
+    <string name="recents_enable_static_scale">Enable Static Scale</string>
+    <string name="recents_scale_percent">Scale Percent</string>
+    <string name="recents_group_carousel_geometry">Carousel: Geometry</string>
+    <string name="recents_carousel_min_scale">Min Scale (Edge)</string>
+    <string name="recents_carousel_spacing">Spacing / Overlap</string>
+    <string name="recents_carousel_min_alpha">Min Alpha (Edge)</string>
+    <string name="recents_group_carousel_blur">Carousel: Blur</string>
+    <string name="recents_carousel_blur_radius">Max Blur Radius</string>
+    <string name="recents_blur_overflow">Blur Overflow (Full Card)</string>
+    <string name="recents_blur_overflow_desc">Apply to entire card instead of just thumbnail</string>
+    <string name="recents_group_carousel_tint">Carousel: Tint</string>
+    <string name="recents_tint_intensity">Tint Intensity</string>
+    <string name="recents_select_tint_color">Select Tint Color</string>
+    <string name="recents_group_icon_offset">Carousel: Icon Offset</string>
+    <string name="recents_icon_offset_x">Icon Offset X</string>
+    <string name="recents_icon_offset_y">Icon Offset Y</string>
+
+    <!-- Gestures Screen -->
+    <string name="gestures_screen_title">Gestures</string>
+
+    <!-- Clear All Screen-->
+    <string name="clear_all_screen_title">Clear All Button</string>
+
+    <!-- Grid Settings Screen -->
+    <string name="grid_screen_title">Grid Settings</string>
+    <string name="grid_homepage_title">Home Screen Settings</string>
+    <string name="grid_homepage_dock_title">Dock Panel</string>
+    <string name="grid_menupage_title">Menu Page</string>
+    <string name="grid_menupage_enable">Menu Page Customization</string>
+    <string name="grid_menupage_search_title">Search Results</string>
+    <string name="grid_menupage_suggestions_title">Suggestions List</string>
+    <string name="grid_menupage_apps_title">Apps List</string>
+    <string name="grid_menupage_suggestions_disable">Disable suggestions list</string>
+    <string name="grid_text_mode_hide">Hide Text</string>
+
+    <!-- Search &amp; Feed Screen -->
+    <string name="search_feed_screen_title">Search &amp; Feed</string>
+
+    <!-- Quickstep Section -->
+    <string name="quickstep_warning_title">Experimental Feature</string>
+    <string name="quickstep_warning_text">This feature completely replaces the native Quickstep recents view with a custom implementation. It may cause visual glitches or crashes. Use at your own risk. Disable this option if you experience issues.</string>
+    <string name="quickstep_engine_title">Custom Quickstep Engine</string>
+    <string name="quickstep_engine_summary">Replace native recents with custom implementation</string>
+    <string name="quickstep_engine_info">Enables a fully custom recents view with different visual styles and animations. This bypasses the stock Pixel Launcher recents completely.</string>
+    <string name="quickstep_style_title">Recents Style</string>
+    <string name="quickstep_style_stock">Stock</string>
+    <string name="quickstep_style_stock_desc">Clean horizontal cards layout</string>
+    <string name="quickstep_style_ios">iOS Style</string>
+    <string name="quickstep_style_ios_desc">Vertical stacked cards with 3D effect</string>
+    <string name="quickstep_style_oneplus">OnePlus Style</string>
+    <string name="quickstep_style_oneplus_desc">Carousel with focused center card</string>
+    <string name="quickstep_style_minimal">Minimal</string>
+    <string name="quickstep_style_minimal_desc">Small cards with app icons only</string>
+    <string name="content_desc_selected">Selected</string>
+
     
     <string name="launcher_feed_title">Disable Google Feed</string>
     <string name="launcher_feed_desc">Disables the -1 screen (Google Discover/Feed) on the home screen.</string>
+
+    <string name="launcher_top_widget_title">Disable Top Widget</string>
+    <string name="launcher_top_widget_desc">Removes the persistent "At a Glance" widget from the first screen and allows icons to be placed there.</string>
 </resources>

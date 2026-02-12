@@ -1,7 +1,7 @@
 
 java_import {
     name: "xposed_api_82",
-    jars: ["libs/api-82.jar"],
+    jars: ["xposed-pine/libs/xposed/api-82.jar"],
     sdk_version: "current",
 }
 
@@ -13,6 +13,7 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+
 prebuilt_etc {
     name: "init.pixelparts.rc",
     src: "init.pixelparts.rc",
@@ -21,18 +22,23 @@ prebuilt_etc {
 }
 android_app {
     name: "PixelCustomPartsXposed",
-    manifest: "xposed/AndroidManifest.xml",
+    manifest: "xposed-pine/AndroidManifest.xml",
     resource_dirs: [
         "common/res",
-        "xposed/res"
+        "xposed-pine/res"
     ],
     srcs: [
         "common/src/**/*.kt",
         "common/src/**/*.java",
-        "xposed/src/**/*.kt",
-        "xposed/src/**/*.java"
+        "xposed-pine/src/org/pixel/customparts/core/**/*.kt",
+        // Общие хуки (код реализации)
+        "xposed-pine/src/org/pixel/customparts/hooks/**/*.kt",
+        "xposed-pine/src/org/pixel/customparts/hooks/**/*.java",
+        // Pine-специфичный менеджер
+        "xposed-pine/src/org/pixel/customparts/manager/xposed/**/*.kt",
+        "xposed-pine/src/org/pixel/customparts/manager/xposed/**/*.java"
     ],
-    asset_dirs: ["xposed/assets"],
+    asset_dirs: ["xposed-pine/assets"],
 
     static_libs: [
         "androidx.core_core",
@@ -74,8 +80,7 @@ android_app {
 
     manifest: "system/AndroidManifest.xml",
     resource_dirs: [
-        "common/res",
-        "system/res"
+        "common/res"
     ],
     srcs: [
         "common/src/**/*.kt",
@@ -118,40 +123,51 @@ android_app {
         "init.pixelparts.rc"
     ],
 }
-android_app {
-    name: "PixelCustomPartsTest",
 
-    manifest: "test/AndroidManifest.xml",
-    resource_dirs: [
-        "common/res",
-        "test/res"
-    ],
-    srcs: [
-        "common/src/**/*.kt",
-        "common/src/**/*.java",
-        "test/src/**/*.kt",
-        "test/src/**/*.java"
-    ],
-
-    static_libs: [
-        "androidx.core_core",
-        "androidx.appcompat_appcompat",
-        "com.google.android.material_material",
-        "androidx.core_core-ktx",
-        "androidx.activity_activity-compose",
-        "androidx.lifecycle_lifecycle-runtime-ktx",
-        "androidx.lifecycle_lifecycle-viewmodel-compose",
-        "androidx.compose.runtime_runtime",
-        "androidx.compose.foundation_foundation",
-        "androidx.compose.foundation_foundation-layout",
-        "androidx.compose.ui_ui",
-        "androidx.compose.ui_ui-tooling-preview",
-        "androidx.compose.material3_material3",
-        "androidx.compose.material_material-icons-extended",
-        "SettingsLib",
-    ],
-    aaptflags: ["--custom-package", "org.pixel.customparts"],
-    certificate: "testkey",
-    platform_apis: true,
-    system_ext_specific: true,
+java_import {
+    name: "pine-core-jar",
+    jars: ["xposed-pine/libs/pine/pine-core.jar"],
+    sdk_version: "current",
 }
+
+java_import {
+    name: "pine-xposed-jar",
+    jars: ["xposed-pine/libs/pine/pine-xposed.jar"],
+    sdk_version: "current",
+}
+
+cc_prebuilt_library_shared {
+    name: "libpine",
+    srcs: ["xposed-pine/libs/pine/arm64-v8a/libpine.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
+    system_ext_specific: false,
+    installable: true,
+}
+
+java_library {
+    name: "PineInject",
+    srcs: [
+        // Общий интерфейс IHookEnvironment
+        "xposed-pine/src/org/pixel/customparts/core/**/*.kt",
+        // Общие хуки (код реализации)
+        "xposed-pine/src/org/pixel/customparts/hooks/**/*.kt",
+        "xposed-pine/src/org/pixel/customparts/hooks/**/*.java",
+        // Pine-специфичный менеджер
+        "xposed-pine/src/org/pixel/customparts/manager/pine/**/*.kt",
+        "xposed-pine/src/org/pixel/customparts/manager/pine/**/*.java"
+    ],
+    installable: true,
+    libs: [
+        "framework",
+    ],
+    static_libs: [
+        "pine-core-jar",
+        "pine-xposed-jar",
+        "kotlin-stdlib",
+    ],
+    kotlincflags: ["-Xjvm-default=all"],
+}
+

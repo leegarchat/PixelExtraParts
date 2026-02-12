@@ -177,7 +177,8 @@ fun SliderSetting(
     valueText: String? = null,
     infoText: String? = null,
     videoResName: String? = null,
-    onInfoClick: ((String, String, String?) -> Unit)? = null
+    onInfoClick: ((String, String, String?) -> Unit)? = null,
+    onValueChangeFinished: (() -> Unit)? = null
 ) {
     SliderSettingFloat(
         title = title,
@@ -191,7 +192,8 @@ fun SliderSetting(
         isInteger = true,
         infoText = infoText,
         videoResName = videoResName,
-        onInfoClick = onInfoClick
+        onInfoClick = onInfoClick,
+        onValueChangeFinished = onValueChangeFinished
     )
 }
 
@@ -208,7 +210,8 @@ fun SliderSettingFloat(
     isInteger: Boolean = false,
     infoText: String? = null,
     videoResName: String? = null,
-    onInfoClick: ((String, String, String?) -> Unit)? = null
+    onInfoClick: ((String, String, String?) -> Unit)? = null,
+    onValueChangeFinished: (() -> Unit)? = null
 ) {
     var showManualInput by remember { mutableStateOf(false) }
     val contentAlpha = if (enabled) 1f else 0.4f
@@ -267,7 +270,8 @@ fun SliderSettingFloat(
                 onValueChange = onValueChange,
                 valueRange = range,
                 enabled = enabled,
-                modifier = Modifier.weight(1f).alpha(contentAlpha)
+                modifier = Modifier.weight(1f).alpha(contentAlpha),
+                onValueChangeFinished = onValueChangeFinished
             )
 
             if (onInfoClick != null && infoText != null) {
@@ -298,6 +302,7 @@ fun SliderSettingFloat(
             onDismiss = { showManualInput = false },
             onConfirm = { 
                 onValueChange(it)
+                onValueChangeFinished?.invoke()
                 showManualInput = false 
             },
             onDefault = {
@@ -413,6 +418,25 @@ fun SettingsGroupCard(
             )
             content()
         }
+    }
+}
+
+@Composable
+fun RestartLauncherButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    ) {
+        Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(dynamicStringResource(R.string.btn_restart_launcher))
     }
 }
 
@@ -561,7 +585,7 @@ fun InfoDialog(
                             
                             val webUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/main/VideoSample/$videoResName.mp4"
                             
-                            // 1. Проверяем ресурсы APK
+                            
                             val resId = context.resources.getIdentifier(videoResName, "raw", context.packageName)
                             if (resId != 0) {
                                 currentUri = Uri.parse("android.resource://${context.packageName}/$resId")

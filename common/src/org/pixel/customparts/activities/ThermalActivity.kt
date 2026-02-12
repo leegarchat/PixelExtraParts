@@ -44,6 +44,7 @@ import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.ExpandableWarningCard
+import org.pixel.customparts.ui.RebootBubble
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import org.pixel.customparts.utils.dynamicStringResource
@@ -89,6 +90,7 @@ fun ThermalScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { 

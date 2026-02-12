@@ -24,17 +24,12 @@ object RootUtils {
         var process: Process? = null
         return try {
             process = Runtime.getRuntime().exec("su")
-            
-            // [FIX] Обязательно вычитываем потоки вывода и ошибок, иначе процесс может зависнуть (deadlock),
-            // если буфер переполнится сообщениями от системы.
             Thread { try { process?.inputStream?.readBytes() } catch (ignored: Exception) {} }.start()
             Thread { try { process?.errorStream?.readBytes() } catch (ignored: Exception) {} }.start()
-
             val os = DataOutputStream(process.outputStream)
             os.writeBytes("exit\n")
             os.flush()
-            os.close() // [FIX] Закрываем поток, чтобы отправить EOF и su точно завершился
-            
+            os.close()
             val exitValue = process.waitFor()
             exitValue == 0
         } catch (e: Exception) {
@@ -71,14 +66,14 @@ object RootUtils {
         try {
             process = Runtime.getRuntime().exec("su")
             
-            // [FIX] Вычитываем потоки для предотвращения зависания
+            
             Thread { try { process?.inputStream?.readBytes() } catch (ignored: Exception) {} }.start()
             Thread { try { process?.errorStream?.readBytes() } catch (ignored: Exception) {} }.start()
 
             val os = DataOutputStream(process.outputStream)
             os.writeBytes(command)
             os.flush()
-            os.close() // [FIX] Закрываем поток
+            os.close() 
             
             process.waitFor()
         } catch (e: Exception) {

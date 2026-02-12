@@ -1,8 +1,12 @@
 package org.pixel.customparts.ui.launcher
 
 import android.content.Context
-import android.provider.Settings
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,12 +16,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.SelectAll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -28,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.activities.ClearAllMode
@@ -38,6 +47,7 @@ import org.pixel.customparts.ui.ModuleStatus
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.utils.dynamicStringResource
+import org.pixel.customparts.utils.SettingsCompat
 
 @Composable
 fun ClearAllSection(
@@ -46,23 +56,15 @@ fun ClearAllSection(
     refreshKey: Int,
     onSettingChanged: () -> Unit,
     onInfo: (String, String, String?) -> Unit,
-    onShowBottomRestartChange: (Boolean) -> Unit,
     onShowXposedDialog: () -> Unit
 ) {
     val keyEnabled = LauncherManager.KEY_CLEAR_ALL_ENABLED
     val keyMode = LauncherManager.KEY_CLEAR_ALL_MODE
     val keyMargin = LauncherManager.KEY_CLEAR_ALL_MARGIN
     
-    var enabled by remember(refreshKey) { mutableStateOf(Settings.Secure.getInt(context.contentResolver, keyEnabled, 0) == 1) }
-    var mode by remember(refreshKey) { mutableIntStateOf(Settings.Secure.getInt(context.contentResolver, keyMode, 0)) }
-    val initialLoadedMargin = remember(refreshKey) { Settings.Secure.getFloat(context.contentResolver, keyMargin, 3.0f) }
-    var margin by remember(refreshKey) { mutableFloatStateOf(initialLoadedMargin) }
-    var baselineMargin by remember(refreshKey) { mutableFloatStateOf(initialLoadedMargin) }
-    val isMarginModified = margin != baselineMargin
-    
-    LaunchedEffect(isMarginModified) {
-        onShowBottomRestartChange(isMarginModified)
-    }
+    var enabled by remember(refreshKey) { mutableStateOf(SettingsCompat.getInt(context, keyEnabled, 0) == 1) }
+    var mode by remember(refreshKey) { mutableIntStateOf(SettingsCompat.getInt(context, keyMode, 0)) }
+    var margin by remember(refreshKey) { mutableFloatStateOf(SettingsCompat.getFloat(context, keyMargin, 3.0f)) }
 
     SettingsGroupCard(title = dynamicStringResource(R.string.launcher_clear_all_title)) {
         GenericSwitchRow(
@@ -75,8 +77,7 @@ fun ClearAllSection(
                 } else {
                     enabled = checked
                     scope.launch(Dispatchers.IO) {
-                        Settings.Secure.putInt(context.contentResolver, keyEnabled, if (checked) 1 else 0)
-                        LauncherManager.restartLauncher(context)
+                        SettingsCompat.putInt(context, keyEnabled, if (checked) 1 else 0)
                         launch(Dispatchers.Main) { onSettingChanged() }
                     }
                 }
@@ -116,8 +117,7 @@ fun ClearAllSection(
                             if (mode != item.id) {
                                 mode = item.id
                                 scope.launch(Dispatchers.IO) {
-                                    Settings.Secure.putInt(context.contentResolver, keyMode, item.id)
-                                    LauncherManager.restartLauncher(context)
+                                    SettingsCompat.putInt(context, keyMode, item.id)
                                     launch(Dispatchers.Main) { onSettingChanged() }
                                 }
                             }
@@ -177,50 +177,22 @@ fun ClearAllSection(
             onValueChange = { 
                 margin = it
                 scope.launch(Dispatchers.IO) {
-                    Settings.Secure.putFloat(context.contentResolver, keyMargin, it)
+                    SettingsCompat.putFloat(context, keyMargin, it)
                 }
             },
             onDefault = {
                 val def = 3.0f
                 margin = def
                 scope.launch(Dispatchers.IO) {
-                    Settings.Secure.putFloat(context.contentResolver, keyMargin, def)
+                    SettingsCompat.putFloat(context, keyMargin, def)
+                    launch(Dispatchers.Main) { onSettingChanged() }
                 }
+            },
+            onValueChangeFinished = {
+                onSettingChanged()
             },
             infoText = dynamicStringResource(R.string.launcher_ca_margin_desc),
             onInfoClick = onInfo
         )
-
-        AnimatedVisibility(
-            visible = isMarginModified,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            LauncherManager.restartLauncher(context)
-                            withContext(Dispatchers.Main) {
-                                baselineMargin = margin
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(dynamicStringResource(R.string.btn_restart_launcher))
-                }
-            }
-        }
-
-        if (!isMarginModified) {
-            Spacer(Modifier.height(8.dp))
-        }
     }
 }

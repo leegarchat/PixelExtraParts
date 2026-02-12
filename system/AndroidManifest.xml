@@ -5,7 +5,8 @@
     android:versionCode="1"
     android:versionName="1.0">
 
-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" 
+        android:protectionLevel="signature" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.DEVICE_POWER"/>
@@ -21,6 +22,7 @@
     <uses-permission android:name="android.permission.MODIFY_PHONE_STATE" />
     <uses-permission android:name="android.permission.REBOOT" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_OVERLAY_PACKAGES" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -160,6 +162,21 @@
         <activity
             android:name=".activities.LauncherActivity"
             android:label="@string/launcher_settings_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.SearchAndFeedActivity"
+            android:label="Search &amp; Feed"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name="org.pixel.customparts.activities.GridSettingsActivity"
+            android:label="Grid Settings"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".activities.RecentsMenuActivity"
+            android:label="Recents Menu"
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity

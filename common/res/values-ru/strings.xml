@@ -312,4 +312,7 @@
 
     <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
     <string name="ims_title_activity">IMS Конфиг</string>
+
+    <string name="launcher_top_widget_title">Отключить верхний виджет</string>
+    <string name="launcher_top_widget_desc">Убирает неотключаемый виджет "Самое главное" с первого экрана и позволяет размещать там иконки.</string>
 </resources>

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.pixel.customparts.AppConfig
+import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
@@ -136,6 +137,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { 
@@ -214,7 +216,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         scope = scope,
                         profiles = profiles,
                         onProfilesChanged = { profiles = it },
-                        onProfileLoaded = { /*...*/ },
+                        onProfileLoaded = {  },
                         exportLauncher = exportLauncher,
                         importLauncher = importLauncher,
                         refreshKey = refreshKey
@@ -448,7 +450,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     )
 
                     val invertKey = "overscroll_invert_anchor"
-                    var invert by remember(refreshKey) { mutableStateOf(Settings.Secure.getInt(context.contentResolver, invertKey, 1) == 1) }
+                    var invert by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, invertKey, 1) == 1) }
                     
                     val invertTitle = dynamicStringResource(R.string.os_lbl_invert_anchor)
                     val invertDesc = dynamicStringResource(R.string.os_desc_invert_anchor)
@@ -478,7 +480,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                             onCheckedChange = { 
                                 invert = it
                                 scope.launch(Dispatchers.IO) { 
-                                    Settings.Secure.putInt(context.contentResolver, invertKey, if (it) 1 else 0) 
+                                    Settings.Global.putInt(context.contentResolver, invertKey, if (it) 1 else 0) 
                                     launch(Dispatchers.Main) { onSettingChanged() }
                                 }
                             }
@@ -760,7 +762,7 @@ private fun OverscrollFloatSlider(
     onChange: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var value by remember(refreshKey) { mutableFloatStateOf(Settings.Secure.getFloat(context.contentResolver, key, defVal)) }
+    var value by remember(refreshKey) { mutableFloatStateOf(Settings.Global.getFloat(context.contentResolver, key, defVal)) }
 
     SliderSettingFloat(
         title = title,
@@ -771,14 +773,14 @@ private fun OverscrollFloatSlider(
         onValueChange = { 
             value = it
             scope.launch(Dispatchers.IO) { 
-                Settings.Secure.putFloat(context.contentResolver, key, it) 
+                Settings.Global.putFloat(context.contentResolver, key, it) 
                 launch(Dispatchers.Main) { onChange() }
             }
         },
         onDefault = {
             value = defVal
             scope.launch(Dispatchers.IO) { 
-                Settings.Secure.putFloat(context.contentResolver, key, defVal)
+                Settings.Global.putFloat(context.contentResolver, key, defVal)
                 launch(Dispatchers.Main) { onChange() }
             }
         },
@@ -810,7 +812,7 @@ private fun ScaleGroup(
         val scope = rememberCoroutineScope()
         val modeKey = "${prefix}_mode"
         var mode by remember(refreshKey) { 
-            mutableIntStateOf(Settings.Secure.getInt(context.contentResolver, modeKey, 0))
+            mutableIntStateOf(Settings.Global.getInt(context.contentResolver, modeKey, 0))
         }
         val modes = listOf(
             dynamicStringResource(R.string.os_mode_off),
@@ -828,7 +830,7 @@ private fun ScaleGroup(
             onSelect = { 
                 mode = it 
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, modeKey, it) 
+                    Settings.Global.putInt(context.contentResolver, modeKey, it) 
                     launch(Dispatchers.Main) { onChange() }
                 }
             },

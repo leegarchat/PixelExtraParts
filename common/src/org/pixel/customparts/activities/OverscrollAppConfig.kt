@@ -60,7 +60,7 @@ fun AppConfigCard(
                 val info = pm.getApplicationInfo(item.pkg, 0)
                 appName = pm.getApplicationLabel(info).toString()
                 appIcon = pm.getApplicationIcon(info)
-            } catch (e: Exception) { /* App not found */ }
+            } catch (e: Exception) {  }
         }
     }
 

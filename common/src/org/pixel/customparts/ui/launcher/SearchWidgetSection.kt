@@ -1,11 +1,8 @@
 package org.pixel.customparts.ui.launcher
 
 import android.content.Context
-import android.provider.Settings
-import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -13,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.activities.LauncherManager
@@ -21,6 +17,7 @@ import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.ModuleStatus
+import org.pixel.customparts.utils.SettingsCompat
 import org.pixel.customparts.utils.dynamicStringResource
 
 @Composable
@@ -29,7 +26,7 @@ fun SearchWidgetSection(
     scope: CoroutineScope,
     showXposedDialog: () -> Unit,
     onInfoClick: (String, String, String?) -> Unit,
-    onShowBottomRestartChange: (Boolean) -> Unit
+    onSettingChanged: () -> Unit = {}
 ) {
     val keyDockEnable = LauncherManager.KEY_DOCK_ENABLE
     val keyHideSearch = LauncherManager.KEY_HIDE_SEARCH
@@ -38,37 +35,28 @@ fun SearchWidgetSection(
     val keyPaddingDock = LauncherManager.KEY_PADDING_DOCK
     val keyPaddingSearch = LauncherManager.KEY_PADDING_SEARCH
     val keyPaddingDots = LauncherManager.KEY_PADDING_DOTS
+    val keyPaddingDotsX = LauncherManager.KEY_PADDING_DOTS_X
     val videoKeyHideSearch = LauncherManager.KEY_HIDE_SEARCH_BASE
     val videoKeyHideDock = "launcher_hidden_dock"
     
-    var dockCustomizationEnabled by remember { mutableStateOf(Settings.Secure.getInt(context.contentResolver, keyDockEnable, 0) == 1) }
-    var hideSearchEnabled by remember { mutableStateOf(Settings.Secure.getInt(context.contentResolver, keyHideSearch, 0) == 1) }
-    var hideDockEnabled by remember { mutableStateOf(Settings.Secure.getInt(context.contentResolver, keyHideDock, 0) == 1) }
+    var dockCustomizationEnabled by remember { mutableStateOf(SettingsCompat.getInt(context, keyDockEnable, 0) == 1) }
+    var hideSearchEnabled by remember { mutableStateOf(SettingsCompat.getInt(context, keyHideSearch, 0) == 1) }
+    var hideDockEnabled by remember { mutableStateOf(SettingsCompat.getInt(context, keyHideDock, 0) == 1) }
     
-    val initPaddingHomepage = remember { Settings.Secure.getInt(context.contentResolver, keyPaddingHomepage, 165) }
+    val initPaddingHomepage = remember { SettingsCompat.getInt(context, keyPaddingHomepage, 165) }
     var paddingHomepage by remember { mutableIntStateOf(initPaddingHomepage) }
-    var baselinePaddingHomepage by remember { mutableIntStateOf(initPaddingHomepage) }
-    
-    val initPaddingDock = remember { Settings.Secure.getInt(context.contentResolver, keyPaddingDock, 0) }
+
+    val initPaddingDock = remember { SettingsCompat.getInt(context, keyPaddingDock, 0) }
     var paddingDock by remember { mutableIntStateOf(initPaddingDock) }
-    var baselinePaddingDock by remember { mutableIntStateOf(initPaddingDock) }
-    
-    val initPaddingSearch = remember { Settings.Secure.getInt(context.contentResolver, keyPaddingSearch, 0) }
+
+    val initPaddingSearch = remember { SettingsCompat.getInt(context, keyPaddingSearch, 0) }
     var paddingSearch by remember { mutableIntStateOf(initPaddingSearch) }
-    var baselinePaddingSearch by remember { mutableIntStateOf(initPaddingSearch) }
-    
-    val initPaddingDots = remember { Settings.Secure.getInt(context.contentResolver, keyPaddingDots, 0) }
+
+    val initPaddingDots = remember { SettingsCompat.getInt(context, keyPaddingDots, 0) }
     var paddingDots by remember { mutableIntStateOf(initPaddingDots) }
-    var baselinePaddingDots by remember { mutableIntStateOf(initPaddingDots) }
-    
-    val isAnyPaddingModified = paddingHomepage != baselinePaddingHomepage || 
-                                paddingDock != baselinePaddingDock || 
-                                paddingSearch != baselinePaddingSearch ||
-                                paddingDots != baselinePaddingDots
-    
-    LaunchedEffect(isAnyPaddingModified) {
-        onShowBottomRestartChange(isAnyPaddingModified)
-    }
+
+    val initPaddingDotsX = remember { SettingsCompat.getInt(context, keyPaddingDotsX, 0) }
+    var paddingDotsX by remember { mutableIntStateOf(initPaddingDotsX) }
 
     SettingsGroupCard(title = dynamicStringResource(R.string.search_widget_group_title)) {
         GenericSwitchRow(
@@ -81,9 +69,9 @@ fun SearchWidgetSection(
                 } else {
                     dockCustomizationEnabled = checked
                     scope.launch(Dispatchers.IO) {
-                        Settings.Secure.putInt(context.contentResolver, keyDockEnable, if (checked) 1 else 0)
-                        LauncherManager.restartLauncher(context)
+                        SettingsCompat.putInt(context, keyDockEnable, if (checked) 1 else 0)
                     }
+                    onSettingChanged()
                 }
             },
             infoText = dynamicStringResource(R.string.search_widget_desc_dock),
@@ -100,9 +88,9 @@ fun SearchWidgetSection(
             onCheckedChange = { checked ->
                 hideSearchEnabled = checked
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyHideSearch, if (checked) 1 else 0)
-                    LauncherManager.restartLauncher(context)
+                    SettingsCompat.putInt(context, keyHideSearch, if (checked) 1 else 0)
                 }
+                onSettingChanged()
             },
             infoText = dynamicStringResource(R.string.search_widget_desc_hide_search),
             videoResName = videoKeyHideSearch,
@@ -118,9 +106,9 @@ fun SearchWidgetSection(
             onCheckedChange = { checked ->
                 hideDockEnabled = checked
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyHideDock, if (checked) 1 else 0)
-                    LauncherManager.restartLauncher(context)
+                    SettingsCompat.putInt(context, keyHideDock, if (checked) 1 else 0)
                 }
+                onSettingChanged()
             },
             infoText = dynamicStringResource(R.string.search_widget_desc_hide_dock),
             videoResName = videoKeyHideDock,
@@ -138,15 +126,17 @@ fun SearchWidgetSection(
             onValueChange = {
                 paddingHomepage = it
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingHomepage, it)
+                    SettingsCompat.putInt(context, keyPaddingHomepage, it)
                 }
             },
             onDefault = {
                 paddingHomepage = 165
                 scope.launch(Dispatchers.IO) {
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingHomepage, 165)
+                    SettingsCompat.putInt(context, keyPaddingHomepage, 165)
                 }
+                onSettingChanged()
             },
+            onValueChangeFinished = { onSettingChanged() },
             infoText = dynamicStringResource(R.string.search_widget_desc_padding_home),
             videoResName = keyPaddingHomepage,
             onInfoClick = onInfoClick
@@ -163,15 +153,17 @@ fun SearchWidgetSection(
             onValueChange = {
                 paddingDock = it
                 scope.launch(Dispatchers.IO) {
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingDock, it)
+                    SettingsCompat.putInt(context, keyPaddingDock, it)
                 }
             },
             onDefault = {
                 paddingDock = 0
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingDock, 0)
+                    SettingsCompat.putInt(context, keyPaddingDock, 0)
                 }
+                onSettingChanged()
             },
+            onValueChangeFinished = { onSettingChanged() },
             infoText = dynamicStringResource(R.string.search_widget_desc_padding_dock),
             videoResName = keyPaddingDock,
             onInfoClick = onInfoClick
@@ -188,15 +180,17 @@ fun SearchWidgetSection(
             onValueChange = {
                 paddingSearch = it
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingSearch, it)
+                    SettingsCompat.putInt(context, keyPaddingSearch, it)
                 }
             },
             onDefault = {
                 paddingSearch = 0
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingSearch, 0)
+                    SettingsCompat.putInt(context, keyPaddingSearch, 0)
                 }
+                onSettingChanged()
             },
+            onValueChangeFinished = { onSettingChanged() },
             infoText = dynamicStringResource(R.string.search_widget_desc_padding_search),
             videoResName = keyPaddingSearch,
             onInfoClick = onInfoClick
@@ -204,7 +198,7 @@ fun SearchWidgetSection(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        // Dots Padding
+        
         SliderSetting(
             title = dynamicStringResource(R.string.search_widget_padding_dots),
             value = paddingDots,
@@ -214,53 +208,47 @@ fun SearchWidgetSection(
             onValueChange = { 
                 paddingDots = it
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingDots, it)
+                    SettingsCompat.putInt(context, keyPaddingDots, it)
                 }
             },
             onDefault = {
-                paddingDots = -30
+                paddingDots = -50
                 scope.launch(Dispatchers.IO) { 
-                    Settings.Secure.putInt(context.contentResolver, keyPaddingDots, -30)
+                    SettingsCompat.putInt(context, keyPaddingDots, -50)
                 }
+                onSettingChanged()
             },
+            onValueChangeFinished = { onSettingChanged() },
             infoText = dynamicStringResource(R.string.search_widget_desc_padding_dots),
             videoResName = keyPaddingDots,
             onInfoClick = onInfoClick
         )
 
-        AnimatedVisibility(
-            visible = isAnyPaddingModified,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            LauncherManager.restartLauncher(context)
-                            withContext(Dispatchers.Main) {
-                                baselinePaddingHomepage = paddingHomepage
-                                baselinePaddingDock = paddingDock
-                                baselinePaddingSearch = paddingSearch
-                                baselinePaddingDots = paddingDots
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(dynamicStringResource(R.string.btn_restart_launcher))
-                }
-            }
-        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        if (!isAnyPaddingModified) {
-            Spacer(Modifier.height(8.dp))
-        }
+        SliderSetting(
+            title = dynamicStringResource(R.string.search_widget_padding_dots_x),
+            value = paddingDotsX,
+            range = -300..300,
+            unit = "px",
+            enabled = dockCustomizationEnabled,
+            onValueChange = { 
+                paddingDotsX = it
+                scope.launch(Dispatchers.IO) { 
+                    SettingsCompat.putInt(context, keyPaddingDotsX, it)
+                }
+            },
+            onDefault = {
+                paddingDotsX = 0
+                scope.launch(Dispatchers.IO) { 
+                    SettingsCompat.putInt(context, keyPaddingDotsX, 0)
+                }
+                onSettingChanged()
+            },
+            onValueChangeFinished = { onSettingChanged() },
+            infoText = dynamicStringResource(R.string.search_widget_desc_padding_dots_x),
+            videoResName = keyPaddingDotsX,
+            onInfoClick = onInfoClick
+        )
     }
 }

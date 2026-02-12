@@ -1,7 +1,6 @@
 package org.pixel.customparts.ui.launcher
 
 import android.content.Context
-import android.provider.Settings
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +15,7 @@ import org.pixel.customparts.activities.LauncherManager
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.utils.dynamicStringResource
+import org.pixel.customparts.utils.SettingsCompat
 
 @Composable
 fun NativeSearchSection(
@@ -23,10 +23,14 @@ fun NativeSearchSection(
     scope: CoroutineScope,
     nativeSearchEnabled: Boolean,
     onNativeSearchChanged: (Boolean) -> Unit,
-    onInfoClick: (String, String, String?) -> Unit
+    onInfoClick: (String, String, String?) -> Unit,
+    onSettingChanged: () -> Unit
 ) {
     var feedDisabled by remember { 
-        mutableStateOf(Settings.Secure.getInt(context.contentResolver, LauncherManager.KEY_DISABLE_GOOGLE_FEED, 0) == 1) 
+        mutableStateOf(SettingsCompat.getInt(context, LauncherManager.KEY_DISABLE_GOOGLE_FEED, 0) == 1) 
+    }
+    var topWidgetDisabled by remember { 
+        mutableStateOf(SettingsCompat.getInt(context, LauncherManager.KEY_DISABLE_TOP_WIDGET, 0) == 1) 
     }
     SettingsGroupCard(title = dynamicStringResource(R.string.misc_group_title)) {
         GenericSwitchRow(
@@ -49,16 +53,40 @@ fun NativeSearchSection(
             onCheckedChange = { checked ->
                 feedDisabled = checked
                 scope.launch(Dispatchers.IO) {
-                    Settings.Secure.putInt(
-                        context.contentResolver, 
+                    SettingsCompat.putInt(
+                        context, 
                         LauncherManager.KEY_DISABLE_GOOGLE_FEED, 
                         if (checked) 1 else 0
                     )
-                    LauncherManager.restartLauncher(context)
                 }
+                onSettingChanged()
             },
             summary = null,
             infoText = dynamicStringResource(R.string.launcher_feed_desc),
+            videoResName = null,
+            onInfoClick = onInfoClick
+        )
+
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        GenericSwitchRow(
+            title = dynamicStringResource(R.string.launcher_top_widget_title),
+            checked = topWidgetDisabled,
+            onCheckedChange = { checked ->
+                topWidgetDisabled = checked
+                scope.launch(Dispatchers.IO) {
+                    SettingsCompat.putInt(
+                        context, 
+                        LauncherManager.KEY_DISABLE_TOP_WIDGET, 
+                        if (checked) 1 else 0
+                    )
+                }
+                onSettingChanged()
+            },
+            summary = null,
+            infoText = dynamicStringResource(R.string.launcher_top_widget_desc),
             videoResName = null,
             onInfoClick = onInfoClick
         )
