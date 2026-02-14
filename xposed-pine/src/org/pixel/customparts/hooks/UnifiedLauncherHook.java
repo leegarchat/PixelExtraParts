@@ -1171,22 +1171,46 @@ public class UnifiedLauncherHook extends BaseHook {
     }
 
     private boolean isWorkspaceView(View view) {
+        try {
+            if (view instanceof TextView && view.getClass().getName().contains("BubbleTextView")) {
+                int mDisplay = XposedHelpers.getIntField(view, "mDisplay");
+                if (mDisplay != DISPLAY_WORKSPACE && mDisplay != DISPLAY_FOLDER) {
+                    return false;
+                }
+            }
+        } catch (Throwable e) {
+        }
+
         if (view.getParent() instanceof View) {
             View curr = (View) view.getParent();
             while (curr != null) {
                 String name = curr.getClass().getName();
+                
                 if (name.contains("Hotseat")) return false;
+                
+                if (name.contains("AllApps") || name.contains("AlphabeticalAppsList") || name.contains("RecyclerView")) {
+                    return false;
+                }
+                
+                if (name.contains("SearchResult") || name.contains("SearchContainer")) {
+                    return false;
+                }
+
                 if (name.contains("Workspace") || name.contains("Folder")) return true;
+                
                 if (curr.getParent() instanceof View) curr = (View) curr.getParent();
                 else break;
             }
         }
+        
         Object tag = view.getTag();
         if (tag == null) return false;
         try {
             int container = XposedHelpers.getIntField(tag, "container");
             return container != CONTAINER_HOTSEAT && container != CONTAINER_HOTSEAT_PREDICTION && container != -104;
-        } catch (Throwable e) { return false; }
+        } catch (Throwable e) { 
+            return false; 
+        }
     }
 
     private boolean isHotseatView(View view) {
