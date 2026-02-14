@@ -14,9 +14,7 @@ public final class ActivityThread extends ClientTransactionHandler
     // --- [PixelParts] CONSTANTS ---
     private static final java.util.Set<String> PIXEL_PARTS_DEFAULT_WHITELIST = new java.util.HashSet<>(java.util.Arrays.asList(
             "com.android.systemui",
-            "com.android.launcher3",
-            "com.google.android.apps.nexuslauncher",
-            "com.google.android.apps.pixel.launcher"
+            "com.google.android.apps.nexuslauncher"
     ));
     private static final String PIXEL_PARTS_INJECT_PREFIX = "pixel_extra_parts_inject_package_";
     // ------------------------------
