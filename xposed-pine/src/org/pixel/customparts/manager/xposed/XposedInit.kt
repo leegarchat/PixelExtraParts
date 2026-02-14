@@ -44,8 +44,8 @@ class XposedInit : IXposedHookLoadPackage {
             environment.log(TAG, "MATCHED Launcher package: ${lpparam.packageName}")
             
             val hooks: List<BaseHook> = listOf(
-                GridSizeAppMenuHook()
-                UnifiedLauncherHook()
+                GridSizeAppMenuHook(),
+                UnifiedLauncherHook(),
                 RecentsUnifiedHook()
             ).sortedByDescending { it.priority }
 
