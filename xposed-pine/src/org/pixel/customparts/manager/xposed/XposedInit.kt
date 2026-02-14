@@ -44,32 +44,9 @@ class XposedInit : IXposedHookLoadPackage {
             environment.log(TAG, "MATCHED Launcher package: ${lpparam.packageName}")
             
             val hooks: List<BaseHook> = listOf(
-                
-                DT2SHook(),
-                DisableGoogleFeedHook(),
-
-                
-                ClearAllHook(),
-                TopWidgetHook(),
-
-                
-                GridSizeHomePageHook(),
-                GridSizeAppMenuHook(),
-                DockScaleHook(),
-                DockSearchWidgetHook(),
-                HomepageSizeHook(),
-                DotsHomepageHook(),
-
-                
-                RecentsLifecycleHook(),
-                RecentsCommonScaleHook(),
-                RecentsEdgeCardsScaleHook(),
-                RecentsEdgeCardsAlphaHook(),
-                RecentsEdgeCardsBlurHook(),
-                RecentsEdgeCardsTintHook(),
-                RecentsEdgeCardsSpacingHook(),
-                RecentsTextIconOffsetHook(),
-                RecentsDisableLiveTileHook()
+                GridSizeAppMenuHook()
+                UnifiedLauncherHook()
+                RecentsUnifiedHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)

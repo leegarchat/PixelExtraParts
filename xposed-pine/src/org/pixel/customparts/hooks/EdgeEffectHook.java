@@ -20,48 +20,19 @@ import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 
-
-
-
-
-
-
-
-
-
-
 public class EdgeEffectHook {
     private static final String TAG = "PixelPartsOverscroll";
-
-    
-    
-    
-
-    
     private static String sKeySuffix = "_xposed";
-
-    
-
-
-
-
-
-
     public static void configure(boolean useGlobal, String suffix) {
         if (!useGlobal) {
             Log.w(TAG, "Settings.Secure is no longer supported. Forcing Settings.Global.");
         }
         sKeySuffix = suffix;
     }
-
     private static String resolveKey(String key) {
         String base = key.replaceAll("_(xposed|pine)$", "");
         return base + sKeySuffix;
     }
-
-    
-    
-    
 
     private static final String FIELD_SPRING = "mCustomSpring";
     private static final String FIELD_CONTEXT = "mCustomContext";
@@ -80,10 +51,6 @@ public class EdgeEffectHook {
     private static final String FIELD_SMOOTH_H_SCALE = "mCustomSmoothHScale";
     private static final String FIELD_MATRIX = "mCustomMatrix";
     private static final String FIELD_POINTS = "mCustomPoints";
-
-    
-    
-    
 
     private static final String KEY_ENABLED = "overscroll_enabled";
     private static final String KEY_PACKAGES_CONFIG = "overscroll_packages_config";
@@ -120,14 +87,9 @@ public class EdgeEffectHook {
     private static final String KEY_H_SCALE_INTENSITY_HORIZ = "overscroll_h_scale_intensity_horiz";
     private static final String KEY_INVERT_ANCHOR = "overscroll_invert_anchor";
     private static final float FILTER_THRESHOLD = 0.08f;
-
     private static final WeakHashMap<Object, Boolean> sComposeCache = new WeakHashMap<>();
     private static Method sSetTranslationX, sSetTranslationY, sSetScaleX, sSetScaleY, sSetPivotX, sSetPivotY;
     private static boolean sReflectionInited = false;
-
-    
-
-
 
     public static void initWithClassLoader(ClassLoader classLoader) {
         Class<?> edgeClass = XposedHelpers.findClass("android.widget.EdgeEffect", classLoader);
@@ -573,9 +535,6 @@ public class EdgeEffectHook {
         });
     }
 
-    
-    
-    
 
     private static boolean isComposeCaller(Object thiz) {
         if (sComposeCache.containsKey(thiz)) return Boolean.TRUE.equals(sComposeCache.get(thiz));
@@ -646,9 +605,6 @@ public class EdgeEffectHook {
         XposedHelpers.setAdditionalInstanceField(thiz, FIELD_CFG_IGNORE, myIgnore);
     }
 
-    
-    
-    
 
     private static void ensureReset(Object thiz) { resetState(thiz); }
 
@@ -661,10 +617,6 @@ public class EdgeEffectHook {
         XposedHelpers.setAdditionalInstanceField(thiz, FIELD_CURRENT_FINGER_X, 0.5f);
         XposedHelpers.setAdditionalInstanceField(thiz, FIELD_FIRST_TOUCH, true);
     }
-
-    
-    
-    
 
     private static void ensureReflection() {
         if (sReflectionInited) return;
@@ -699,10 +651,6 @@ public class EdgeEffectHook {
         } catch (Throwable ignored) {}
     }
 
-    
-    
-    
-
     private static float calcScale(Context ctx, String modeKey, String intKey, String limKey, float ratio) {
         int mode = getIntSetting(ctx, modeKey, 0);
         float intensity = getFloatSetting(ctx, intKey, 0.0f);
@@ -721,10 +669,6 @@ public class EdgeEffectHook {
         Float val = (Float) XposedHelpers.getAdditionalInstanceField(obj, field);
         return (val != null) ? val : def;
     }
-
-    
-    
-    
 
     private static boolean isBounceEnabled(Context ctx, Object thiz) {
         if (ctx == null) return true;
@@ -761,10 +705,6 @@ public class EdgeEffectHook {
             return Settings.Global.getString(ctx.getContentResolver(), resolved);
         } catch (Exception ignored) { return null; }
     }
-
-    
-    
-    
 
     public static class SpringDynamics {
         private float mStiffness = 450.0f;
