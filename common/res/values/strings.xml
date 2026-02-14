@@ -107,6 +107,8 @@
     
     <string name="os_lbl_input_smooth">Input Smooth</string>
     <string name="os_desc_input_smooth">Low-pass filter for finger coordinates in onPull.\n\nSmoothes sensor noise before passing data to the physics model. High values make the reaction feel "viscous".</string>
+    <string name="os_lbl_anim_speed">Animation Speed (%)</string>
+    <string name="os_desc_anim_speed">Global animation speed multiplier.\n\nApplied on top of all physics and visual settings.\n100%% = default speed, below 100%% slows down, above 100%% speeds up.</string>
     <string name="os_lbl_lerp_idle">Smoothing: PULL</string>
     <string name="os_desc_lerp_idle">Interpolation speed (LERP) during direct interaction (onPull).\n\nDetermines how fast the visual catches up to the finger while the spring is NOT running (disabled). Lower = smoother, but with lag.</string>
 

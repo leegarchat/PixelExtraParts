@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.provider.Settings;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
@@ -51,6 +52,7 @@ public class EdgeEffectHook {
     private static final String FIELD_SMOOTH_H_SCALE = "mCustomSmoothHScale";
     private static final String FIELD_MATRIX = "mCustomMatrix";
     private static final String FIELD_POINTS = "mCustomPoints";
+    private static final String FIELD_SETTINGS_CACHE = "mCustomSettingsCache";
 
     private static final String KEY_ENABLED = "overscroll_enabled";
     private static final String KEY_PACKAGES_CONFIG = "overscroll_packages_config";
@@ -61,6 +63,7 @@ public class EdgeEffectHook {
     private static final String KEY_PHYSICS_MIN_VEL = "overscroll_physics_min_vel";
     private static final String KEY_PHYSICS_MIN_VAL = "overscroll_physics_min_val";
     private static final String KEY_INPUT_SMOOTH_FACTOR = "overscroll_input_smooth";
+    private static final String KEY_ANIMATION_SPEED = "overscroll_anim_speed";
     private static final String KEY_RESISTANCE_EXPONENT = "overscroll_res_exponent";
     private static final String KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle";
     private static final String KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run";
@@ -87,9 +90,48 @@ public class EdgeEffectHook {
     private static final String KEY_H_SCALE_INTENSITY_HORIZ = "overscroll_h_scale_intensity_horiz";
     private static final String KEY_INVERT_ANCHOR = "overscroll_invert_anchor";
     private static final float FILTER_THRESHOLD = 0.08f;
+    private static final long SETTINGS_CACHE_TTL_MS = 120L;
     private static final WeakHashMap<Object, Boolean> sComposeCache = new WeakHashMap<>();
     private static Method sSetTranslationX, sSetTranslationY, sSetScaleX, sSetScaleY, sSetPivotX, sSetPivotY;
     private static boolean sReflectionInited = false;
+
+    private static class SettingsCache {
+        long updatedAt;
+        float pullCoeff;
+        float stiffness;
+        float damping;
+        float fling;
+        float minVel;
+        float minVal;
+        float inputSmooth;
+        float animationSpeedPercent;
+        float animationSpeedMul;
+        float resExponent;
+        float lerpMainIdle;
+        float lerpMainRun;
+        float composeScale;
+        int scaleMode;
+        float scaleIntensity;
+        float scaleIntensityHoriz;
+        float scaleLimitMin;
+        int zoomMode;
+        float zoomIntensity;
+        float zoomIntensityHoriz;
+        float zoomLimitMin;
+        float zoomAnchorX;
+        float zoomAnchorY;
+        float zoomAnchorXHoriz;
+        float zoomAnchorYHoriz;
+        int hScaleMode;
+        float hScaleIntensity;
+        float hScaleIntensityHoriz;
+        float hScaleLimitMin;
+        float scaleAnchorY;
+        float hScaleAnchorX;
+        float scaleAnchorXHoriz;
+        float hScaleAnchorYHoriz;
+        boolean invertAnchor;
+    }
 
     public static void initWithClassLoader(ClassLoader classLoader) {
         Class<?> edgeClass = XposedHelpers.findClass("android.widget.EdgeEffect", classLoader);
@@ -125,15 +167,28 @@ public class EdgeEffectHook {
 
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
                 Float smoothY = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SMOOTH_OFFSET_Y);
-                float minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 4.0f);
+                SettingsCache cache = getSettingsCache(ctx, thiz, false);
+                float minVal = cache.minVal;
 
                 if (mSpring != null) {
+                    mSpring.setSpeedMultiplier(cache.animationSpeedMul);
+                    if (mSpring.isRunning()) {
+                        mSpring.doFrame(System.nanoTime());
+                    }
+
+                    float smooth = (smoothY != null) ? smoothY : 0f;
+                    smooth += (mSpring.mValue - smooth) * 0.35f;
+                    if (Math.abs(mSpring.mValue) < 0.1f && Math.abs(smooth) < minVal * 2f) {
+                        smooth = 0f;
+                    }
+                    XposedHelpers.setAdditionalInstanceField(thiz, FIELD_SMOOTH_OFFSET_Y, smooth);
+
                     boolean physicsDone = !mSpring.isRunning() && Math.abs(mSpring.mValue) < minVal;
-                    boolean visualDone = (smoothY == null || Math.abs(smoothY) < minVal);
+                    boolean visualDone = Math.abs(smooth) < minVal;
                     boolean fullyFinished = physicsDone && visualDone;
 
-                    if (physicsDone && !visualDone && smoothY != null) {
-                        float diff = Math.abs(smoothY);
+                    if (physicsDone && !visualDone) {
+                        float diff = Math.abs(smooth);
                         if (diff < minVal * 3) {
                             XposedHelpers.setAdditionalInstanceField(thiz, FIELD_SMOOTH_OFFSET_Y, 0f);
                             fullyFinished = true;
@@ -141,9 +196,7 @@ public class EdgeEffectHook {
                     }
 
                     if (fullyFinished) {
-                        ensureReset(thiz);
-                        XposedHelpers.setIntField(thiz, "mState", 0);
-                        XposedHelpers.setFloatField(thiz, "mDistance", 0f);
+                        forceFinish(thiz, mSpring);
                     }
                     return fullyFinished;
                 }
@@ -169,9 +222,7 @@ public class EdgeEffectHook {
                     mSpring.mVelocity = 0;
                 }
 
-                XposedHelpers.setIntField(thiz, "mState", 0);
-                XposedHelpers.setFloatField(thiz, "mDistance", 0f);
-                resetState(thiz);
+                forceFinish(thiz, mSpring);
                 return null;
             }
         });
@@ -198,6 +249,8 @@ public class EdgeEffectHook {
 
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
                 if (mSpring == null) return deltaDistance;
+                SettingsCache cache = getSettingsCache(ctx, thiz, true);
+                mSpring.setSpeedMultiplier(cache.animationSpeedMul);
 
                 Float cfgScaleObj = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_CFG_SCALE);
                 Boolean cfgFilterObj = (Boolean) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_CFG_FILTER);
@@ -207,7 +260,7 @@ public class EdgeEffectHook {
                 if (cfgFilter && Math.abs(deltaDistance) > FILTER_THRESHOLD) return deltaDistance;
                 float correctedDelta = (Math.abs(cfgScale) > 0.001f) ? deltaDistance / cfgScale : deltaDistance;
 
-                float inputSmoothFactor = getFloatSetting(ctx, KEY_INPUT_SMOOTH_FACTOR, 0.5f);
+                float inputSmoothFactor = cache.inputSmooth;
                 Float lastDeltaObj = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_LAST_DELTA);
                 float lastDelta = (lastDeltaObj != null) ? lastDeltaObj : 0f;
                 Boolean firstTouchObj = (Boolean) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_FIRST_TOUCH);
@@ -236,8 +289,8 @@ public class EdgeEffectHook {
                 if (effectiveSize < 1f) effectiveSize = screenHeight;
 
                 float rawMove = filteredDelta * effectiveSize;
-                float pullCoeff = getFloatSetting(ctx, KEY_PULL_COEFF, 0.5f);
-                float resExponent = getFloatSetting(ctx, KEY_RESISTANCE_EXPONENT, 4.0f);
+                float pullCoeff = cache.pullCoeff;
+                float resExponent = cache.resExponent;
 
                 boolean isPullingAway = (currentTranslation > 0 && rawMove > 0) || (currentTranslation < 0 && rawMove < 0);
                 float change;
@@ -281,11 +334,13 @@ public class EdgeEffectHook {
                 }
 
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
+                SettingsCache cache = getSettingsCache(ctx, thiz, true);
                 if (mSpring != null && Math.abs(mSpring.mValue) > 0.5f) {
-                    float stiffness = getFloatSetting(ctx, KEY_STIFFNESS, 450f);
-                    float damping = getFloatSetting(ctx, KEY_DAMPING, 0.7f);
-                    float minVel = getFloatSetting(ctx, KEY_PHYSICS_MIN_VEL, 80.0f);
-                    float minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 4.0f);
+                    mSpring.setSpeedMultiplier(cache.animationSpeedMul);
+                    float stiffness = cache.stiffness;
+                    float damping = cache.damping;
+                    float minVel = cache.minVel;
+                    float minVal = cache.minVal;
 
                     mSpring.setParams(stiffness, damping, minVel, minVal);
                     mSpring.setTargetValue(0);
@@ -318,15 +373,17 @@ public class EdgeEffectHook {
                 int velocity = (int) param.args[0];
                 XposedHelpers.setIntField(thiz, "mState", 3);
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
+                SettingsCache cache = getSettingsCache(ctx, thiz, true);
 
                 if (mSpring != null) {
+                    mSpring.setSpeedMultiplier(cache.animationSpeedMul);
                     mSpring.cancel();
 
-                    float flingMult = getFloatSetting(ctx, KEY_FLING, 0.6f);
-                    float stiffness = getFloatSetting(ctx, KEY_STIFFNESS, 450f);
-                    float damping = getFloatSetting(ctx, KEY_DAMPING, 0.7f);
-                    float minVel = getFloatSetting(ctx, KEY_PHYSICS_MIN_VEL, 80.0f);
-                    float minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 4.0f);
+                    float flingMult = cache.fling;
+                    float stiffness = cache.stiffness;
+                    float damping = cache.damping;
+                    float minVel = cache.minVel;
+                    float minVal = cache.minVal;
 
                     float velocityPx = velocity * flingMult;
                     if (flingMult > 1.0f) stiffness /= flingMult;
@@ -358,18 +415,33 @@ public class EdgeEffectHook {
                 Context ctx = (Context) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_CONTEXT);
 
                 if (!isBounceEnabled(ctx, thiz)) return XposedBridge.invokeOriginalMethod(param.method, thiz, param.args);
-                if (!canvas.isHardwareAccelerated()) return false;
+                if (!canvas.isHardwareAccelerated()) {
+                    forceFinish(thiz, mSpringFrom(thiz));
+                    return false;
+                }
 
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
-                if (mSpring == null) return false;
+                if (mSpring == null) {
+                    forceFinish(thiz, null);
+                    return false;
+                }
+
+                SettingsCache cache = getSettingsCache(ctx, thiz, false);
+                mSpring.setSpeedMultiplier(cache.animationSpeedMul);
 
                 if (mSpring.isRunning()) mSpring.doFrame(System.nanoTime());
 
                 Object renderNode = null;
                 try {
                     renderNode = XposedHelpers.getObjectField(canvas, "mNode");
-                } catch (Throwable t) { return false; }
-                if (renderNode == null) return false;
+                } catch (Throwable t) {
+                    forceFinish(thiz, mSpring);
+                    return false;
+                }
+                if (renderNode == null) {
+                    forceFinish(thiz, mSpring);
+                    return false;
+                }
 
                 ensureReflection();
 
@@ -393,16 +465,17 @@ public class EdgeEffectHook {
 
                 boolean isVertical = (vy != 0);
 
-                float lerpMainIdle = getFloatSetting(ctx, KEY_LERP_MAIN_IDLE, 0.4f);
-                float lerpMainRun = getFloatSetting(ctx, KEY_LERP_MAIN_RUN, 0.7f);
+                float lerpMainIdle = cache.lerpMainIdle;
+                float lerpMainRun = cache.lerpMainRun;
                 float lerpFactorMain = mSpring.isRunning() ? lerpMainRun : lerpMainIdle;
+                lerpFactorMain = Math.min(1.0f, lerpFactorMain * cache.animationSpeedMul);
 
                 float targetOffset = mSpring.mValue;
                 Float currentOffsetObj = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SMOOTH_OFFSET_Y);
                 float currentOffset = (currentOffsetObj != null) ? currentOffsetObj : 0f;
                 float newOffset = currentOffset + (targetOffset - currentOffset) * lerpFactorMain;
 
-                float minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 4.0f);
+                float minVal = cache.minVal;
                 if (Math.abs(targetOffset - newOffset) < 0.5f) newOffset = targetOffset;
                 if (Math.abs(targetOffset) < 0.1f && Math.abs(newOffset) < minVal) newOffset = 0f;
 
@@ -417,20 +490,22 @@ public class EdgeEffectHook {
                 float ratio = (maxDistance > 0) ? Math.min(Math.abs(newOffset) / maxDistance, 1.0f) : 0f;
                 boolean isActive = Math.abs(newOffset) > 1.0f;
 
-                boolean zoomActive = getIntSetting(ctx, KEY_ZOOM_MODE, 0) != 0;
-                boolean scaleActive = getIntSetting(ctx, KEY_SCALE_MODE, 0) != 0;
-                boolean hScaleActive = getIntSetting(ctx, KEY_H_SCALE_MODE, 0) != 0;
+                boolean zoomActive = cache.zoomMode != 0;
+                boolean scaleActive = cache.scaleMode != 0;
+                boolean hScaleActive = cache.hScaleMode != 0;
 
                 float targetScaleV = 1f, targetScaleZ = 1f, targetScaleH = 1f;
 
                 if (isActive) {
-                    String keyScaleInt = isVertical ? KEY_SCALE_INTENSITY : KEY_SCALE_INTENSITY_HORIZ;
-                    String keyZoomInt = isVertical ? KEY_ZOOM_INTENSITY : KEY_ZOOM_INTENSITY_HORIZ;
-                    String keyHScaleInt = isVertical ? KEY_H_SCALE_INTENSITY : KEY_H_SCALE_INTENSITY_HORIZ;
-
-                    targetScaleV = calcScale(ctx, KEY_SCALE_MODE, keyScaleInt, KEY_SCALE_LIMIT_MIN, ratio);
-                    targetScaleZ = calcScale(ctx, KEY_ZOOM_MODE, keyZoomInt, KEY_ZOOM_LIMIT_MIN, ratio);
-                    targetScaleH = calcScale(ctx, KEY_H_SCALE_MODE, keyHScaleInt, KEY_H_SCALE_LIMIT_MIN, ratio);
+                        targetScaleV = calcScale(cache.scaleMode,
+                            isVertical ? cache.scaleIntensity : cache.scaleIntensityHoriz,
+                            cache.scaleLimitMin, ratio);
+                        targetScaleZ = calcScale(cache.zoomMode,
+                            isVertical ? cache.zoomIntensity : cache.zoomIntensityHoriz,
+                            cache.zoomLimitMin, ratio);
+                        targetScaleH = calcScale(cache.hScaleMode,
+                            isVertical ? cache.hScaleIntensity : cache.hScaleIntensityHoriz,
+                            cache.hScaleLimitMin, ratio);
                 }
 
                 float newScaleV = lerp(getF(thiz, FIELD_SMOOTH_SCALE, 1f), targetScaleV, lerpFactorMain);
@@ -444,6 +519,7 @@ public class EdgeEffectHook {
                 boolean isResting = Math.abs(newOffset) < 0.1f && Math.abs(newScaleV - 1f) < 0.001f;
                 if (isResting && !mSpring.isRunning()) {
                     safeResetRenderNode(renderNode);
+                    forceFinish(thiz, mSpring);
                     return false;
                 }
 
@@ -480,29 +556,29 @@ public class EdgeEffectHook {
 
                         if (isVertical) {
                             if (zoomActive) {
-                                ax = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X, 0.5f);
-                                ay = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y, 0.5f);
+                                ax = cache.zoomAnchorX;
+                                ay = cache.zoomAnchorY;
                             } else if (scaleActive) {
                                 ax = 0.5f;
-                                ay = getFloatSetting(ctx, KEY_SCALE_ANCHOR_Y, 0.5f);
+                                ay = cache.scaleAnchorY;
                             } else if (hScaleActive) {
-                                ax = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_X, 0.5f);
+                                ax = cache.hScaleAnchorX;
                                 ay = 0.5f;
                             }
                         } else {
                             if (zoomActive) {
-                                ax = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X_HORIZ, 0.5f);
-                                ay = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y_HORIZ, 0.5f);
+                                ax = cache.zoomAnchorXHoriz;
+                                ay = cache.zoomAnchorYHoriz;
                             } else if (scaleActive) {
-                                ax = getFloatSetting(ctx, KEY_SCALE_ANCHOR_X_HORIZ, 0.5f);
+                                ax = cache.scaleAnchorXHoriz;
                                 ay = 0.5f;
                             } else if (hScaleActive) {
                                 ax = 0.5f;
-                                ay = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f);
+                                ay = cache.hScaleAnchorYHoriz;
                             }
                         }
 
-                        boolean invertAnchor = getIntSetting(ctx, KEY_INVERT_ANCHOR, 1) == 1;
+                        boolean invertAnchor = cache.invertAnchor;
 
                         float pivotX, pivotY;
 
@@ -530,7 +606,17 @@ public class EdgeEffectHook {
                     XposedHelpers.callMethod(renderNode, "stretch", 0f, 0f, mWidth, mHeight);
                 } catch (Throwable t) {}
 
-                return true;
+                boolean continueAnim = mSpring.isRunning()
+                        || Math.abs(newOffset) >= minVal
+                        || Math.abs(newScaleV - 1f) >= 0.001f
+                        || Math.abs(newScaleZ - 1f) >= 0.001f
+                        || Math.abs(newScaleH - 1f) >= 0.001f;
+
+                if (!continueAnim) {
+                    safeResetRenderNode(renderNode);
+                    forceFinish(thiz, mSpring);
+                }
+                return continueAnim;
             }
         });
     }
@@ -608,6 +694,22 @@ public class EdgeEffectHook {
 
     private static void ensureReset(Object thiz) { resetState(thiz); }
 
+    private static SpringDynamics mSpringFrom(Object thiz) {
+        Object spring = XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
+        return (spring instanceof SpringDynamics) ? (SpringDynamics) spring : null;
+    }
+
+    private static void forceFinish(Object thiz, SpringDynamics spring) {
+        if (spring != null) {
+            spring.cancel();
+            spring.mValue = 0f;
+            spring.mVelocity = 0f;
+        }
+        ensureReset(thiz);
+        XposedHelpers.setIntField(thiz, "mState", 0);
+        XposedHelpers.setFloatField(thiz, "mDistance", 0f);
+    }
+
     private static void resetState(Object thiz) {
         XposedHelpers.setAdditionalInstanceField(thiz, FIELD_SMOOTH_OFFSET_Y, 0f);
         XposedHelpers.setAdditionalInstanceField(thiz, FIELD_SMOOTH_SCALE, 1.0f);
@@ -651,10 +753,67 @@ public class EdgeEffectHook {
         } catch (Throwable ignored) {}
     }
 
-    private static float calcScale(Context ctx, String modeKey, String intKey, String limKey, float ratio) {
-        int mode = getIntSetting(ctx, modeKey, 0);
-        float intensity = getFloatSetting(ctx, intKey, 0.0f);
-        float limit = getFloatSetting(ctx, limKey, 0.3f);
+    private static SettingsCache getSettingsCache(Context ctx, Object thiz, boolean force) {
+        Object cacheObj = XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SETTINGS_CACHE);
+        SettingsCache cache = (cacheObj instanceof SettingsCache) ? (SettingsCache) cacheObj : null;
+        long now = SystemClock.uptimeMillis();
+
+        if (cache == null) {
+            cache = new SettingsCache();
+            force = true;
+        }
+
+        if (!force && (now - cache.updatedAt) < SETTINGS_CACHE_TTL_MS) {
+            return cache;
+        }
+
+        cache.pullCoeff = getFloatSetting(ctx, KEY_PULL_COEFF, 0.5f);
+        cache.stiffness = getFloatSetting(ctx, KEY_STIFFNESS, 450f);
+        cache.damping = getFloatSetting(ctx, KEY_DAMPING, 0.7f);
+        cache.fling = getFloatSetting(ctx, KEY_FLING, 0.6f);
+        cache.minVel = getFloatSetting(ctx, KEY_PHYSICS_MIN_VEL, 8.0f);
+        cache.minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 0.6f);
+        cache.inputSmooth = getFloatSetting(ctx, KEY_INPUT_SMOOTH_FACTOR, 0.5f);
+        cache.animationSpeedPercent = getFloatSetting(ctx, KEY_ANIMATION_SPEED, 100.0f);
+        if (cache.animationSpeedPercent < 1.0f) cache.animationSpeedPercent = 1.0f;
+        if (cache.animationSpeedPercent > 300.0f) cache.animationSpeedPercent = 300.0f;
+        cache.animationSpeedMul = cache.animationSpeedPercent / 100.0f;
+        cache.resExponent = getFloatSetting(ctx, KEY_RESISTANCE_EXPONENT, 4.0f);
+        cache.lerpMainIdle = getFloatSetting(ctx, KEY_LERP_MAIN_IDLE, 0.4f);
+        cache.lerpMainRun = getFloatSetting(ctx, KEY_LERP_MAIN_RUN, 0.7f);
+        cache.composeScale = getFloatSetting(ctx, KEY_COMPOSE_SCALE, 3.33f);
+
+        cache.scaleMode = getIntSetting(ctx, KEY_SCALE_MODE, 0);
+        cache.scaleIntensity = getFloatSetting(ctx, KEY_SCALE_INTENSITY, 0.0f);
+        cache.scaleIntensityHoriz = getFloatSetting(ctx, KEY_SCALE_INTENSITY_HORIZ, 0.0f);
+        cache.scaleLimitMin = getFloatSetting(ctx, KEY_SCALE_LIMIT_MIN, 0.3f);
+
+        cache.zoomMode = getIntSetting(ctx, KEY_ZOOM_MODE, 0);
+        cache.zoomIntensity = getFloatSetting(ctx, KEY_ZOOM_INTENSITY, 0.0f);
+        cache.zoomIntensityHoriz = getFloatSetting(ctx, KEY_ZOOM_INTENSITY_HORIZ, 0.0f);
+        cache.zoomLimitMin = getFloatSetting(ctx, KEY_ZOOM_LIMIT_MIN, 0.3f);
+        cache.zoomAnchorX = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X, 0.5f);
+        cache.zoomAnchorY = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y, 0.5f);
+        cache.zoomAnchorXHoriz = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X_HORIZ, 0.5f);
+        cache.zoomAnchorYHoriz = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y_HORIZ, 0.5f);
+
+        cache.hScaleMode = getIntSetting(ctx, KEY_H_SCALE_MODE, 0);
+        cache.hScaleIntensity = getFloatSetting(ctx, KEY_H_SCALE_INTENSITY, 0.0f);
+        cache.hScaleIntensityHoriz = getFloatSetting(ctx, KEY_H_SCALE_INTENSITY_HORIZ, 0.0f);
+        cache.hScaleLimitMin = getFloatSetting(ctx, KEY_H_SCALE_LIMIT_MIN, 0.3f);
+
+        cache.scaleAnchorY = getFloatSetting(ctx, KEY_SCALE_ANCHOR_Y, 0.5f);
+        cache.hScaleAnchorX = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_X, 0.5f);
+        cache.scaleAnchorXHoriz = getFloatSetting(ctx, KEY_SCALE_ANCHOR_X_HORIZ, 0.5f);
+        cache.hScaleAnchorYHoriz = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f);
+        cache.invertAnchor = getIntSetting(ctx, KEY_INVERT_ANCHOR, 1) == 1;
+
+        cache.updatedAt = now;
+        XposedHelpers.setAdditionalInstanceField(thiz, FIELD_SETTINGS_CACHE, cache);
+        return cache;
+    }
+
+    private static float calcScale(int mode, float intensity, float limit, float ratio) {
         if (mode == 0 || intensity <= 0) return 1.0f;
         if (mode == 1) return Math.max(1.0f - (ratio * intensity), limit);
         if (mode == 2) return 1.0f + (ratio * intensity);
@@ -711,6 +870,7 @@ public class EdgeEffectHook {
         private float mDampingRatio = 0.7f;
         private float mMinVel = 1.0f;
         private float mMinVal = 0.5f;
+        private float mSpeedMultiplier = 1.0f;
 
         public float mValue;
         public float mVelocity;
@@ -723,6 +883,11 @@ public class EdgeEffectHook {
             mDampingRatio = damping >= 0 ? damping : 0;
             mMinVel = minVel;
             mMinVal = minVal;
+        }
+
+        public void setSpeedMultiplier(float speedMultiplier) {
+            if (speedMultiplier < 0.01f) speedMultiplier = 0.01f;
+            mSpeedMultiplier = speedMultiplier;
         }
 
         public void setTargetValue(float targetValue) { mTargetValue = targetValue; }
@@ -741,7 +906,7 @@ public class EdgeEffectHook {
             long deltaTimeNanos = frameTimeNanos - mLastFrameTimeNanos;
             if (deltaTimeNanos > 100_000_000) deltaTimeNanos = 16_000_000;
             mLastFrameTimeNanos = frameTimeNanos;
-            float dt = deltaTimeNanos / 1_000_000_000.0f;
+            float dt = (deltaTimeNanos / 1_000_000_000.0f) * mSpeedMultiplier;
 
             float displacement = mValue - mTargetValue;
             float dampingCoefficient = 2 * mDampingRatio * (float) Math.sqrt(mStiffness);

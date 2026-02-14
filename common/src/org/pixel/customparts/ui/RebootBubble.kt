@@ -27,6 +27,12 @@ import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.utils.dynamicStringResource
 import java.io.DataOutputStream
+import android.os.Process
+import android.util.Log
+import java.lang.reflect.Method
+
+private const val TAG = "SystemUI_Restarter"
+
 
 @Composable
 fun RebootBubble(modifier: Modifier = Modifier) {
@@ -201,12 +207,76 @@ private fun performRebootSystemUI(context: Context) {
     if (AppConfig.IS_XPOSED) {
         runRootCommand("killall com.android.systemui")
     } else {
+        Log.d(TAG, "Starting SystemUI restart sequence...")
+
+        // --- Попытка №1: ActivityManager.forceStopPackage (через Reflection) ---
+        // Это самый "чистый" системный метод.
+        // try {
+        //     Log.d(TAG, "Attempt 1: forceStopPackage via Reflection")
+        //     val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        //     val forceStopPackage: Method = am.javaClass.getMethod("forceStopPackage", String::class.java)
+        //     forceStopPackage.invoke(am, "com.android.systemui")
+        //     Log.d(TAG, "Attempt 1 success (invoked)")
+        //     return 
+        // } catch (e: Exception) {
+        //     Log.e(TAG, "Attempt 1 failed: ${e.message}")
+        // }
+
+        // --- Попытка №2: IActivityManager.killApplicationProcess ---
+        // Прямое обращение к системному сервису.
         try {
-            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            am.forceStopPackage("com.android.systemui")
+            Log.d(TAG, "Attempt 2: IActivityManager.killApplicationProcess")
+            val amNative = Class.forName("android.app.ActivityManagerNative")
+            val getDefault = amNative.getMethod("getDefault")
+            val iam = getDefault.invoke(null)
+            
+            // В разных версиях Android сигнатура может отличаться (наличие userId)
+            val killMethod = iam.javaClass.getMethod("killApplicationProcess", String::class.java, Int::class.javaPrimitiveType)
+            killMethod.invoke(iam, "com.android.systemui", 0) // 0 - USER_SYSTEM
+            Log.d(TAG, "Attempt 2 success")
+            return
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Attempt 2 failed: ${e.message}")
         }
+
+        // --- Попытка №3: Прямой поиск PID и Process.killProcess ---
+        // Самый надежный способ, если есть системный UID.
+        try {
+            Log.d(TAG, "Attempt 3: Manual PID hunt and killProcess")
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val processes = am.runningAppProcesses
+            processes?.forEach { info ->
+                if (info.processName == "com.android.systemui") {
+                    Log.d(TAG, "Found SystemUI PID: ${info.pid}. Killing...")
+                    Process.killProcess(info.pid)
+                    // Можно также попробовать Process.sendSignal(info.pid, 9)
+                    Log.d(TAG, "Attempt 3 success")
+                    return
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Attempt 3 failed: ${e.message}")
+        }
+
+        // --- Попытка №4: Альтернативный IActivityManager (через ServiceManager) ---
+        try {
+            Log.d(TAG, "Attempt 4: IActivityManager via ServiceManager")
+            val serviceManager = Class.forName("android.os.ServiceManager")
+            val getService = serviceManager.getMethod("getService", String::class.java)
+            val binder = getService.invoke(null, Context.ACTIVITY_SERVICE) as android.os.IBinder
+            val iAmStub = Class.forName("android.app.IActivityManager\$Stub")
+            val asInterface = iAmStub.getMethod("asInterface", android.os.IBinder::class.java)
+            val iam = asInterface.invoke(null, binder)
+            
+            iam.javaClass.getMethod("forceStopPackage", String::class.java, Int::class.javaPrimitiveType)
+                .invoke(iam, "com.android.systemui", 0)
+            Log.d(TAG, "Attempt 4 success")
+            return
+        } catch (e: Exception) {
+            Log.e(TAG, "Attempt 4 failed: ${e.message}")
+        }
+
+        Log.e(TAG, "All restart attempts failed. Check SELinux or UID.")
     }
 }
 

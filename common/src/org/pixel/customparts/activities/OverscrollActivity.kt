@@ -238,7 +238,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_physics_pull),
-                        key = "overscroll_pull",
+                        key = OverscrollManager.KEY_PULL_COEFF,
                         range = 0.1f..3.0f,
                         defVal = 0.5f,
                         infoText = dynamicStringResource(R.string.os_desc_physics_pull),
@@ -253,7 +253,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_physics_stiffness),
-                        key = "overscroll_stiffness",
+                        key = OverscrollManager.KEY_STIFFNESS,
                         range = 10f..1000f,
                         defVal = 450f,
                         infoText = dynamicStringResource(R.string.os_desc_physics_stiffness),
@@ -268,7 +268,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_physics_damping),
-                        key = "overscroll_damping",
+                        key = OverscrollManager.KEY_DAMPING,
                         range = 0.1f..2.0f,
                         defVal = 0.7f,
                         infoText = dynamicStringResource(R.string.os_desc_physics_damping),
@@ -283,7 +283,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_physics_fling),
-                        key = "overscroll_fling",
+                        key = OverscrollManager.KEY_FLING,
                         range = 0.1f..3.0f,
                         defVal = 0.6f,
                         infoText = dynamicStringResource(R.string.os_desc_physics_fling),
@@ -297,11 +297,25 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_physics_res_exp),
-                        key = "overscroll_res_exponent",
+                        key = OverscrollManager.KEY_RESISTANCE_EXPONENT,
                         range = 1f..8f,
                         defVal = 4.0f,
                         infoText = dynamicStringResource(R.string.os_desc_physics_res_exp),
                         video = "overscroll_res_exponent",
+                        onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
+                        refreshKey = refreshKey,
+                        enabled = isMasterEnabled,
+                        onChange = onSettingChanged
+                    )
+
+                    OverscrollFloatSlider(
+                        context = context,
+                        title = dynamicStringResource(R.string.os_lbl_anim_speed),
+                        key = OverscrollManager.KEY_ANIMATION_SPEED,
+                        range = 1f..300f,
+                        defVal = 100.0f,
+                        infoText = dynamicStringResource(R.string.os_desc_anim_speed),
+                        video = "overscroll_anim_speed",
                         onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
                         refreshKey = refreshKey,
                         enabled = isMasterEnabled,
@@ -368,7 +382,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_input_smooth),
-                        key = "overscroll_input_smooth",
+                        key = OverscrollManager.KEY_INPUT_SMOOTH_FACTOR,
                         range = 0f..0.95f,
                         defVal = 0.5f,
                         infoText = dynamicStringResource(R.string.os_desc_input_smooth),
@@ -382,9 +396,9 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_min_vel),
-                        key = "overscroll_physics_min_vel_v2",
+                        key = OverscrollManager.KEY_PHYSICS_MIN_VEL,
                         range = 0f..400f,
-                        defVal = 80.0f,
+                        defVal = 8.0f,
                         infoText = dynamicStringResource(R.string.os_desc_min_vel),
                         video = "overscroll_physics_min_vel",
                         onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
@@ -396,9 +410,9 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_min_val),
-                        key = "overscroll_physics_min_val_v2",
+                        key = OverscrollManager.KEY_PHYSICS_MIN_VAL,
                         range = 0f..20f,
-                        defVal = 4.0f,
+                        defVal = 0.6f,
                         infoText = dynamicStringResource(R.string.os_desc_min_val),
                         video = "overscroll_physics_min_val",
                         onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
@@ -410,7 +424,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_lerp_idle),
-                        key = "overscroll_lerp_main_idle",
+                        key = OverscrollManager.KEY_LERP_MAIN_IDLE,
                         range = 0f..1f,
                         defVal = 0.4f,
                         infoText = dynamicStringResource(R.string.os_desc_lerp_idle),
@@ -424,7 +438,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_lerp_run),
-                        key = "overscroll_lerp_main_run",
+                        key = OverscrollManager.KEY_LERP_MAIN_RUN,
                         range = 0f..1f,
                         defVal = 0.7f,
                         infoText = dynamicStringResource(R.string.os_desc_lerp_run),
@@ -438,7 +452,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     OverscrollFloatSlider(
                         context = context,
                         title = dynamicStringResource(R.string.os_lbl_compose_scale),
-                        key = "overscroll_compose_scale",
+                        key = OverscrollManager.KEY_COMPOSE_SCALE,
                         range = 0.01f..10.0f,
                         defVal = 3.33f,
                         infoText = dynamicStringResource(R.string.os_desc_compose_scale),
@@ -449,7 +463,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
-                    val invertKey = "overscroll_invert_anchor"
+                    val invertKey = OverscrollManager.KEY_INVERT_ANCHOR
                     var invert by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, invertKey, 1) == 1) }
                     
                     val invertTitle = dynamicStringResource(R.string.os_lbl_invert_anchor)
@@ -810,7 +824,10 @@ private fun ScaleGroup(
         onExpandChange = onExpandChange
     ) {
         val scope = rememberCoroutineScope()
-        val modeKey = "${prefix}_mode"
+        // IMPORTANT: Calculate suffix here to ensure UI matches current environment (Pine/Xposed)
+        val suffix = if (AppConfig.IS_XPOSED) "_xposed" else "_pine"
+        
+        val modeKey = "${prefix}_mode$suffix"
         var mode by remember(refreshKey) { 
             mutableIntStateOf(Settings.Global.getInt(context.contentResolver, modeKey, 0))
         }
@@ -839,39 +856,39 @@ private fun ScaleGroup(
             onInfoClick = onInfo
         )
 
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int), "${prefix}_intensity", 0f..10f, 0f, 
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int), "${prefix}_intensity$suffix", 0f..10f, 0f, 
             infoText = dynamicStringResource(R.string.os_desc_scale_intensity), video = "${prefix}_intensity", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
         
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int_horiz), "${prefix}_intensity_horiz", 0f..10f, 0f, 
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int_horiz), "${prefix}_intensity_horiz$suffix", 0f..10f, 0f, 
             infoText = dynamicStringResource(R.string.os_desc_scale_int_horiz), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
 
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_limit), "${prefix}_limit_min", 0.1f..10f, 0.3f, 
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_limit), "${prefix}_limit_min$suffix", 0.1f..10f, 0.3f, 
             infoText = dynamicStringResource(R.string.os_desc_scale_limit), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
         
         val anchorTitle = dynamicStringResource(R.string.os_desc_anchor)
         
         when (prefix) {
             "overscroll_scale" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_scale_anchor_y", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_scale_anchor_y$suffix", 0f..1f, 0.5f, 
                     infoText = anchorTitle, video = "overscroll_scale_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_scale_anchor_x_horiz", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_scale_anchor_x_horiz$suffix", 0f..1f, 0.5f, 
                     infoText = dynamicStringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_scale_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_h_scale" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_h_scale_anchor_x", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_h_scale_anchor_x$suffix", 0f..1f, 0.5f, 
                     infoText = anchorTitle, video = "overscroll_h_scale_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_h_scale_anchor_y_horiz", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_h_scale_anchor_y_horiz$suffix", 0f..1f, 0.5f, 
                     infoText = dynamicStringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_h_scale_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_zoom" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_zoom_anchor_x", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_zoom_anchor_x$suffix", 0f..1f, 0.5f, 
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_zoom_anchor_y", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_zoom_anchor_y$suffix", 0f..1f, 0.5f, 
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
                 
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_zoom_anchor_x_horiz", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_zoom_anchor_x_horiz$suffix", 0f..1f, 0.5f, 
                     infoText = dynamicStringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_zoom_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_zoom_anchor_y_horiz", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_zoom_anchor_y_horiz$suffix", 0f..1f, 0.5f, 
                     infoText = dynamicStringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_zoom_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
         }

@@ -18,50 +18,62 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 }
 
 object OverscrollManager {
-    val KEY_ENABLED: String
-        get() = if (AppConfig.IS_XPOSED) "overscroll_enabled_xposed" else "overscroll_enabled_pine"
-    private const val KEY_DT2W_TIMEOUT = "doze_double_tap_timeout"
-    
+
+    // Автоматический выбор суффикса среды
+    private val SUFFIX: String
+        get() = if (AppConfig.IS_XPOSED) "_xposed" else "_pine"
+
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"
     const val KEY_ACTIVE_PROFILE = "overscroll_active_profile_name"
-    const val KEY_PACKAGES_CONFIG = "overscroll_packages_config"
-    const val KEY_LOGGING = "overscroll_logging"
-    const val KEY_COMPOSE_SCALE = "overscroll_compose_scale"
-    const val KEY_INVERT_ANCHOR = "overscroll_invert_anchor"
-    const val KEY_PULL_COEFF = "overscroll_pull"
-    const val KEY_STIFFNESS = "overscroll_stiffness"
-    const val KEY_DAMPING = "overscroll_damping"
-    const val KEY_FLING = "overscroll_fling"
-    const val KEY_RESISTANCE_EXPONENT = "overscroll_res_exponent"
-    const val KEY_SCALE_MODE = "overscroll_scale_mode"
-    const val KEY_SCALE_INTENSITY = "overscroll_scale_intensity"
-    const val KEY_SCALE_INTENSITY_HORIZ = "overscroll_scale_intensity_horiz"
-    const val KEY_SCALE_LIMIT_MIN = "overscroll_scale_limit_min"
-    const val KEY_SCALE_ANCHOR_X = "overscroll_scale_anchor_x"
-    const val KEY_SCALE_ANCHOR_Y = "overscroll_scale_anchor_y"
-    const val KEY_SCALE_ANCHOR_X_HORIZ = "overscroll_scale_anchor_x_horiz"
-    const val KEY_SCALE_ANCHOR_Y_HORIZ = "overscroll_scale_anchor_y_horiz"
-    const val KEY_ZOOM_MODE = "overscroll_zoom_mode"
-    const val KEY_ZOOM_INTENSITY = "overscroll_zoom_intensity"
-    const val KEY_ZOOM_INTENSITY_HORIZ = "overscroll_zoom_intensity_horiz"
-    const val KEY_ZOOM_LIMIT_MIN = "overscroll_zoom_limit_min"
-    const val KEY_ZOOM_ANCHOR_X = "overscroll_zoom_anchor_x"
-    const val KEY_ZOOM_ANCHOR_Y = "overscroll_zoom_anchor_y"
-    const val KEY_ZOOM_ANCHOR_X_HORIZ = "overscroll_zoom_anchor_x_horiz"
-    const val KEY_ZOOM_ANCHOR_Y_HORIZ = "overscroll_zoom_anchor_y_horiz"
-    const val KEY_H_SCALE_MODE = "overscroll_h_scale_mode"
-    const val KEY_H_SCALE_INTENSITY = "overscroll_h_scale_intensity"
-    const val KEY_H_SCALE_INTENSITY_HORIZ = "overscroll_h_scale_intensity_horiz"
-    const val KEY_H_SCALE_LIMIT_MIN = "overscroll_h_scale_limit_min"
-    const val KEY_H_SCALE_ANCHOR_X = "overscroll_h_scale_anchor_x"
-    const val KEY_H_SCALE_ANCHOR_Y = "overscroll_h_scale_anchor_y"
-    const val KEY_H_SCALE_ANCHOR_X_HORIZ = "overscroll_h_scale_anchor_x_horiz"
-    const val KEY_H_SCALE_ANCHOR_Y_HORIZ = "overscroll_h_scale_anchor_y_horiz"
-    const val KEY_INPUT_SMOOTH_FACTOR = "overscroll_input_smooth"
-    const val KEY_PHYSICS_MIN_VEL = "overscroll_physics_min_vel_v2"
-    const val KEY_PHYSICS_MIN_VAL = "overscroll_physics_min_val_v2"
-    const val KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle"
-    const val KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run"
+
+    val KEY_ENABLED get() = "overscroll_enabled$SUFFIX"
+    val KEY_PACKAGES_CONFIG get() = "overscroll_packages_config$SUFFIX"
+    val KEY_LOGGING get() = "overscroll_logging$SUFFIX"
+    val KEY_COMPOSE_SCALE get() = "overscroll_compose_scale$SUFFIX"
+    val KEY_INVERT_ANCHOR get() = "overscroll_invert_anchor$SUFFIX"
+    val KEY_PULL_COEFF get() = "overscroll_pull$SUFFIX"
+    val KEY_STIFFNESS get() = "overscroll_stiffness$SUFFIX"
+    val KEY_DAMPING get() = "overscroll_damping$SUFFIX"
+    val KEY_FLING get() = "overscroll_fling$SUFFIX"
+    val KEY_RESISTANCE_EXPONENT get() = "overscroll_res_exponent$SUFFIX"
+    
+    // Scale Visuals
+    val KEY_SCALE_MODE get() = "overscroll_scale_mode$SUFFIX"
+    val KEY_SCALE_INTENSITY get() = "overscroll_scale_intensity$SUFFIX"
+    val KEY_SCALE_INTENSITY_HORIZ get() = "overscroll_scale_intensity_horiz$SUFFIX"
+    val KEY_SCALE_LIMIT_MIN get() = "overscroll_scale_limit_min$SUFFIX"
+    val KEY_SCALE_ANCHOR_X get() = "overscroll_scale_anchor_x$SUFFIX"
+    val KEY_SCALE_ANCHOR_Y get() = "overscroll_scale_anchor_y$SUFFIX"
+    val KEY_SCALE_ANCHOR_X_HORIZ get() = "overscroll_scale_anchor_x_horiz$SUFFIX"
+    val KEY_SCALE_ANCHOR_Y_HORIZ get() = "overscroll_scale_anchor_y_horiz$SUFFIX"
+    
+    // Zoom Visuals
+    val KEY_ZOOM_MODE get() = "overscroll_zoom_mode$SUFFIX"
+    val KEY_ZOOM_INTENSITY get() = "overscroll_zoom_intensity$SUFFIX"
+    val KEY_ZOOM_INTENSITY_HORIZ get() = "overscroll_zoom_intensity_horiz$SUFFIX"
+    val KEY_ZOOM_LIMIT_MIN get() = "overscroll_zoom_limit_min$SUFFIX"
+    val KEY_ZOOM_ANCHOR_X get() = "overscroll_zoom_anchor_x$SUFFIX"
+    val KEY_ZOOM_ANCHOR_Y get() = "overscroll_zoom_anchor_y$SUFFIX"
+    val KEY_ZOOM_ANCHOR_X_HORIZ get() = "overscroll_zoom_anchor_x_horiz$SUFFIX"
+    val KEY_ZOOM_ANCHOR_Y_HORIZ get() = "overscroll_zoom_anchor_y_horiz$SUFFIX"
+    
+    // Horizontal Scale Visuals
+    val KEY_H_SCALE_MODE get() = "overscroll_h_scale_mode$SUFFIX"
+    val KEY_H_SCALE_INTENSITY get() = "overscroll_h_scale_intensity$SUFFIX"
+    val KEY_H_SCALE_INTENSITY_HORIZ get() = "overscroll_h_scale_intensity_horiz$SUFFIX"
+    val KEY_H_SCALE_LIMIT_MIN get() = "overscroll_h_scale_limit_min$SUFFIX"
+    val KEY_H_SCALE_ANCHOR_X get() = "overscroll_h_scale_anchor_x$SUFFIX"
+    val KEY_H_SCALE_ANCHOR_Y get() = "overscroll_h_scale_anchor_y$SUFFIX"
+    val KEY_H_SCALE_ANCHOR_X_HORIZ get() = "overscroll_h_scale_anchor_x_horiz$SUFFIX"
+    val KEY_H_SCALE_ANCHOR_Y_HORIZ get() = "overscroll_h_scale_anchor_y_horiz$SUFFIX"
+    
+    // Advanced
+    val KEY_INPUT_SMOOTH_FACTOR get() = "overscroll_input_smooth$SUFFIX"
+    val KEY_PHYSICS_MIN_VEL get() = "overscroll_physics_min_vel$SUFFIX" 
+    val KEY_PHYSICS_MIN_VAL get() = "overscroll_physics_min_val$SUFFIX" 
+    val KEY_ANIMATION_SPEED get() = "overscroll_anim_speed$SUFFIX"
+    val KEY_LERP_MAIN_IDLE get() = "overscroll_lerp_main_idle$SUFFIX"
+    val KEY_LERP_MAIN_RUN get() = "overscroll_lerp_main_run$SUFFIX"
 
     fun isMasterEnabled(context: Context) = Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1) == 1
     
@@ -158,44 +170,65 @@ object OverscrollManager {
         json.put(KEY_ENABLED, Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1))
         json.put(KEY_LOGGING, Settings.Global.getInt(context.contentResolver, KEY_LOGGING, 0))
         json.put(KEY_INVERT_ANCHOR, Settings.Global.getInt(context.contentResolver, KEY_INVERT_ANCHOR, 1))
-        json.put(KEY_PACKAGES_CONFIG, Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG))
+        json.put(KEY_PACKAGES_CONFIG, Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG) ?: "")
 
         val floatKeys = listOf(
             KEY_PULL_COEFF, KEY_STIFFNESS, KEY_DAMPING, KEY_FLING, KEY_RESISTANCE_EXPONENT,
-            KEY_PHYSICS_MIN_VEL, KEY_PHYSICS_MIN_VAL, KEY_INPUT_SMOOTH_FACTOR,
+            KEY_PHYSICS_MIN_VEL, KEY_PHYSICS_MIN_VAL, KEY_ANIMATION_SPEED, KEY_INPUT_SMOOTH_FACTOR,
             KEY_LERP_MAIN_IDLE, KEY_LERP_MAIN_RUN, KEY_COMPOSE_SCALE 
         )
         for (k in floatKeys) json.put(k, Settings.Global.getFloat(context.contentResolver, k, 0f).toDouble())
 
-        val prefixes = listOf("overscroll_scale", "overscroll_zoom", "overscroll_h_scale")
-        for (pre in prefixes) {
-            json.put(pre + "_mode", Settings.Global.getInt(context.contentResolver, pre + "_mode", 0))
-            json.put(pre + "_intensity", Settings.Global.getFloat(context.contentResolver, pre + "_intensity", 0f).toDouble())
-            json.put(pre + "_intensity_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_intensity_horiz", 0f).toDouble())
-            json.put(pre + "_limit_min", Settings.Global.getFloat(context.contentResolver, pre + "_limit_min", 0f).toDouble())
-            json.put(pre + "_anchor_x", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_x", 0f).toDouble())
-            json.put(pre + "_anchor_y", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_y", 0f).toDouble())
-            json.put(pre + "_anchor_x_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_x_horiz", 0f).toDouble())
-            json.put(pre + "_anchor_y_horiz", Settings.Global.getFloat(context.contentResolver, pre + "_anchor_y_horiz", 0f).toDouble())
-        }
+        val modeKeys = listOf(KEY_SCALE_MODE, KEY_ZOOM_MODE, KEY_H_SCALE_MODE)
+        for (k in modeKeys) json.put(k, Settings.Global.getInt(context.contentResolver, k, 0))
+
+        val scaleFloatKeys = listOf(
+            KEY_SCALE_INTENSITY, KEY_SCALE_INTENSITY_HORIZ, KEY_SCALE_LIMIT_MIN, KEY_SCALE_ANCHOR_X, KEY_SCALE_ANCHOR_Y, KEY_SCALE_ANCHOR_X_HORIZ, KEY_SCALE_ANCHOR_Y_HORIZ,
+            KEY_ZOOM_INTENSITY, KEY_ZOOM_INTENSITY_HORIZ, KEY_ZOOM_LIMIT_MIN, KEY_ZOOM_ANCHOR_X, KEY_ZOOM_ANCHOR_Y, KEY_ZOOM_ANCHOR_X_HORIZ, KEY_ZOOM_ANCHOR_Y_HORIZ,
+            KEY_H_SCALE_INTENSITY, KEY_H_SCALE_INTENSITY_HORIZ, KEY_H_SCALE_LIMIT_MIN, KEY_H_SCALE_ANCHOR_X, KEY_H_SCALE_ANCHOR_Y, KEY_H_SCALE_ANCHOR_X_HORIZ, KEY_H_SCALE_ANCHOR_Y_HORIZ
+        )
+        for (k in scaleFloatKeys) json.put(k, Settings.Global.getFloat(context.contentResolver, k, 0f).toDouble())
+        
         return json
     }
 
     private fun applySettingsFromJson(context: Context, json: JSONObject) {
         val iter = json.keys()
         while(iter.hasNext()) {
-            val key = iter.next()
-            if (key == KEY_ACTIVE_PROFILE) continue 
+            val originalKey = iter.next()
+            if (originalKey == KEY_ACTIVE_PROFILE) continue 
+            if (originalKey == "name") continue // Игнорируем мета-поле имени, если оно есть
 
-            val valObj = json.get(key)
-            if (valObj is Number) { 
-                if (key.endsWith("_mode") || key == KEY_ENABLED || key == KEY_LOGGING || key == KEY_INVERT_ANCHOR) {
-                    Settings.Global.putInt(context.contentResolver, key, valObj.toInt())
-                } else {
-                    Settings.Global.putFloat(context.contentResolver, key, valObj.toFloat())
+            var baseKey = originalKey.removeSuffix("_pine").removeSuffix("_xposed")
+            
+            if (baseKey.endsWith("_v2")) {
+                baseKey = baseKey.removeSuffix("_v2")
+            }
+
+            val key = if (baseKey.startsWith("overscroll_")) baseKey + SUFFIX else baseKey
+
+            val valObj = json.get(originalKey)
+            
+            try {
+                if (valObj is Number) {
+                    val isInt = key.endsWith("_mode") || 
+                               key.contains("enabled") || 
+                               key.contains("logging") || 
+                               key.contains("invert_anchor")
+                    
+                    if (isInt) {
+                        Settings.Global.putInt(context.contentResolver, key, valObj.toInt())
+                    } else {
+                        Settings.Global.putFloat(context.contentResolver, key, valObj.toFloat())
+                    }
+                } else if (valObj is String) {
+                    Settings.Global.putString(context.contentResolver, key, valObj)
+                } else if (valObj is Boolean) {
+                    // Обработка Boolean как Int (1/0), так как Settings.Global не хранит Boolean напрямую
+                     Settings.Global.putInt(context.contentResolver, key, if (valObj) 1 else 0)
                 }
-            } else if (valObj is String) {
-                Settings.Global.putString(context.contentResolver, key, valObj)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -211,8 +244,9 @@ object OverscrollManager {
         Settings.Global.putFloat(cr, KEY_DAMPING, 0.7f)
         Settings.Global.putFloat(cr, KEY_FLING, 0.6f)
         Settings.Global.putFloat(cr, KEY_RESISTANCE_EXPONENT, 4.0f)
-        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VEL, 80.0f)
-        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VAL, 4.0f)
+        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VEL, 8.0f)
+        Settings.Global.putFloat(cr, KEY_PHYSICS_MIN_VAL, 0.6f)
+        Settings.Global.putFloat(cr, KEY_ANIMATION_SPEED, 100.0f)
         Settings.Global.putFloat(cr, KEY_INPUT_SMOOTH_FACTOR, 0.5f)
         Settings.Global.putFloat(cr, KEY_LERP_MAIN_IDLE, 0.4f)
         Settings.Global.putFloat(cr, KEY_LERP_MAIN_RUN, 0.7f)

@@ -75,7 +75,7 @@ fun Dt2sUiSection(
                 onSettingChanged()
             },
             onValueChangeFinished = { onSettingChanged() },
-            infoText = dynamicStringResource(R.string.dt2s_timeout_title), 
+            infoText = dynamicStringResource(R.string.dt2w_timeout_desc),
             onInfoClick = onInfoClick
         )
     }
