@@ -1,0 +1,12 @@
+This is Android 16 with December 2025 security patches
+
+Notes:
+==============================
+- ssssas
+Device changes:
+==============================
+- ssss
+
+Notable ROM changes:
+==============================
+- sssss
