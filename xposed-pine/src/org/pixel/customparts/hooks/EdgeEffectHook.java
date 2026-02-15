@@ -68,6 +68,7 @@ public class EdgeEffectHook {
     private static final String KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle";
     private static final String KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run";
     private static final String KEY_COMPOSE_SCALE = "overscroll_compose_scale";
+    private static final String KEY_DISABLE_ARBITRARY_RENDERING = "overscroll_disable_arbitrary_rendering";
     private static final String KEY_SCALE_MODE = "overscroll_scale_mode";
     private static final String KEY_SCALE_INTENSITY = "overscroll_scale_intensity";
     private static final String KEY_SCALE_LIMIT_MIN = "overscroll_scale_limit_min";
@@ -90,6 +91,9 @@ public class EdgeEffectHook {
     private static final String KEY_H_SCALE_INTENSITY_HORIZ = "overscroll_h_scale_intensity_horiz";
     private static final String KEY_INVERT_ANCHOR = "overscroll_invert_anchor";
     private static final float FILTER_THRESHOLD = 0.08f;
+    private static final float MICRO_DELTA_EPS = 0.00035f;
+    private static final float DIRECTION_FLIP_DAMPING = 0.2f;
+    private static final float NORMAL_FLIP_DAMPING = 0.65f;
     private static final long SETTINGS_CACHE_TTL_MS = 120L;
     private static final WeakHashMap<Object, Boolean> sComposeCache = new WeakHashMap<>();
     private static Method sSetTranslationX, sSetTranslationY, sSetScaleX, sSetScaleY, sSetPivotX, sSetPivotY;
@@ -110,6 +114,7 @@ public class EdgeEffectHook {
         float lerpMainIdle;
         float lerpMainRun;
         float composeScale;
+        boolean disableArbitraryRendering;
         int scaleMode;
         float scaleIntensity;
         float scaleIntensityHoriz;
@@ -215,6 +220,8 @@ public class EdgeEffectHook {
                     return XposedBridge.invokeOriginalMethod(param.method, thiz, param.args);
                 }
 
+                SettingsCache cache = getSettingsCache(ctx, thiz, false);
+
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
                 if (mSpring != null) {
                     mSpring.cancel();
@@ -247,9 +254,11 @@ public class EdgeEffectHook {
                     deltaDistance /= composeDivisor;
                 }
 
+                SettingsCache cache = getSettingsCache(ctx, thiz, true);
+                boolean strictHold = cache.disableArbitraryRendering;
+
                 SpringDynamics mSpring = (SpringDynamics) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_SPRING);
                 if (mSpring == null) return deltaDistance;
-                SettingsCache cache = getSettingsCache(ctx, thiz, true);
                 mSpring.setSpeedMultiplier(cache.animationSpeedMul);
 
                 Float cfgScaleObj = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_CFG_SCALE);
@@ -259,6 +268,9 @@ public class EdgeEffectHook {
 
                 if (cfgFilter && Math.abs(deltaDistance) > FILTER_THRESHOLD) return deltaDistance;
                 float correctedDelta = (Math.abs(cfgScale) > 0.001f) ? deltaDistance / cfgScale : deltaDistance;
+                if (Math.abs(correctedDelta) < MICRO_DELTA_EPS) {
+                    correctedDelta = 0f;
+                }
 
                 float inputSmoothFactor = cache.inputSmooth;
                 Float lastDeltaObj = (Float) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_LAST_DELTA);
@@ -272,7 +284,20 @@ public class EdgeEffectHook {
                 }
 
                 boolean directionChanged = (correctedDelta > 0 && lastDelta < 0) || (correctedDelta < 0 && lastDelta > 0);
-                float filteredDelta = directionChanged ? correctedDelta : (correctedDelta * (1.0f - inputSmoothFactor) + lastDelta * inputSmoothFactor);
+                float filteredDelta;
+                if (directionChanged) {
+                    if (strictHold) {
+                        if (Math.abs(correctedDelta) < Math.abs(lastDelta) * 1.2f) {
+                            filteredDelta = 0f;
+                        } else {
+                            filteredDelta = correctedDelta * DIRECTION_FLIP_DAMPING + lastDelta * (1.0f - DIRECTION_FLIP_DAMPING);
+                        }
+                    } else {
+                        filteredDelta = correctedDelta * NORMAL_FLIP_DAMPING + lastDelta * (1.0f - NORMAL_FLIP_DAMPING);
+                    }
+                } else {
+                    filteredDelta = correctedDelta * (1.0f - inputSmoothFactor) + lastDelta * inputSmoothFactor;
+                }
                 XposedHelpers.setAdditionalInstanceField(thiz, FIELD_LAST_DELTA, filteredDelta);
                 XposedHelpers.setAdditionalInstanceField(thiz, FIELD_TARGET_FINGER_X, displacement);
 
@@ -310,6 +335,9 @@ public class EdgeEffectHook {
                 float nextTranslation = currentTranslation + change;
                 if ((currentTranslation > 0 && nextTranslation < 0) || (currentTranslation < 0 && nextTranslation > 0)) {
                     nextTranslation = 0f;
+                }
+                if (strictHold && directionChanged && Math.abs(filteredDelta) <= Math.abs(lastDelta)) {
+                    nextTranslation = currentTranslation;
                 }
 
                 mSpring.mValue = nextTranslation;
@@ -415,6 +443,7 @@ public class EdgeEffectHook {
                 Context ctx = (Context) XposedHelpers.getAdditionalInstanceField(thiz, FIELD_CONTEXT);
 
                 if (!isBounceEnabled(ctx, thiz)) return XposedBridge.invokeOriginalMethod(param.method, thiz, param.args);
+                SettingsCache cache = getSettingsCache(ctx, thiz, false);
                 if (!canvas.isHardwareAccelerated()) {
                     forceFinish(thiz, mSpringFrom(thiz));
                     return false;
@@ -426,7 +455,6 @@ public class EdgeEffectHook {
                     return false;
                 }
 
-                SettingsCache cache = getSettingsCache(ctx, thiz, false);
                 mSpring.setSpeedMultiplier(cache.animationSpeedMul);
 
                 if (mSpring.isRunning()) mSpring.doFrame(System.nanoTime());
@@ -782,6 +810,7 @@ public class EdgeEffectHook {
         cache.lerpMainIdle = getFloatSetting(ctx, KEY_LERP_MAIN_IDLE, 0.4f);
         cache.lerpMainRun = getFloatSetting(ctx, KEY_LERP_MAIN_RUN, 0.7f);
         cache.composeScale = getFloatSetting(ctx, KEY_COMPOSE_SCALE, 3.33f);
+        cache.disableArbitraryRendering = getIntSetting(ctx, KEY_DISABLE_ARBITRARY_RENDERING, 0) == 1;
 
         cache.scaleMode = getIntSetting(ctx, KEY_SCALE_MODE, 0);
         cache.scaleIntensity = getFloatSetting(ctx, KEY_SCALE_INTENSITY, 0.0f);

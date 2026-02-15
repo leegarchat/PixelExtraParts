@@ -282,6 +282,7 @@ public class EdgeEffect {
     private static final String KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle_pine";
     private static final String KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run_pine";
     private static final String KEY_COMPOSE_SCALE = "overscroll_compose_scale_pine";
+    private static final String KEY_DISABLE_ARBITRARY_RENDERING = "overscroll_disable_arbitrary_rendering_pine";
     private static final String KEY_SCALE_MODE = "overscroll_scale_mode_pine";
     private static final String KEY_SCALE_INTENSITY = "overscroll_scale_intensity_pine";
     private static final String KEY_SCALE_LIMIT_MIN = "overscroll_scale_limit_min_pine";
@@ -305,6 +306,9 @@ public class EdgeEffect {
     private static final String KEY_INVERT_ANCHOR = "overscroll_invert_anchor_pine";
     
     private static final float FILTER_THRESHOLD = 0.08f;
+    private static final float MICRO_DELTA_EPS = 0.00035f;
+    private static final float DIRECTION_FLIP_DAMPING = 0.2f;
+    private static final float NORMAL_FLIP_DAMPING = 0.65f;
 
     // [OPTIMIZATION] CACHED SETTINGS VARIABLES
     // Эти переменные хранят значения настроек, чтобы не читать базу данных в каждом кадре draw()
@@ -323,6 +327,7 @@ public class EdgeEffect {
     private float mCachedLerpRun;
     private float mCachedComposeScale;
     private boolean mCachedInvertAnchor;
+    private boolean mCachedDisableArbitraryRendering;
     
     // Cached Visuals
     private int mCachedScaleMode;
@@ -422,6 +427,7 @@ public class EdgeEffect {
         // =========================================================================================
         // [CUSTOM INJECTION START] - isFinished Logic
         // =========================================================================================
+        updateSettings();
         if (mCachedEnabled && !mCfgIgnore) {
             float minVal = mCachedMinVal; // [OPTIMIZATION] Use cached
 
@@ -505,6 +511,7 @@ public class EdgeEffect {
         updateSettings(); // [OPTIMIZATION] Update settings cache at start of gesture
 
         if (mCachedEnabled && !mCfgIgnore) {
+            final boolean strictHold = mCachedDisableArbitraryRendering;
             if (isComposeCaller()) {
                 float composeDivisor = mCachedComposeScale;
                 if (composeDivisor < 0.01f) composeDivisor = 1.0f;
@@ -517,6 +524,9 @@ public class EdgeEffect {
             if (mCfgFilter && Math.abs(deltaDistance) > FILTER_THRESHOLD) return;
             
             float correctedDelta = (Math.abs(mCfgScale) > 0.001f) ? deltaDistance / mCfgScale : deltaDistance;
+            if (Math.abs(correctedDelta) < MICRO_DELTA_EPS) {
+                correctedDelta = 0f;
+            }
 
             float inputSmoothFactor = mCachedInputSmooth;
             
@@ -526,7 +536,20 @@ public class EdgeEffect {
             }
 
             boolean directionChanged = (correctedDelta > 0 && mCustomLastDelta < 0) || (correctedDelta < 0 && mCustomLastDelta > 0);
-            float filteredDelta = directionChanged ? correctedDelta : (correctedDelta * (1.0f - inputSmoothFactor) + mCustomLastDelta * inputSmoothFactor);
+            float filteredDelta;
+            if (directionChanged) {
+                if (strictHold) {
+                    if (Math.abs(correctedDelta) < Math.abs(mCustomLastDelta) * 1.2f) {
+                        filteredDelta = 0f;
+                    } else {
+                        filteredDelta = correctedDelta * DIRECTION_FLIP_DAMPING + mCustomLastDelta * (1.0f - DIRECTION_FLIP_DAMPING);
+                    }
+                } else {
+                    filteredDelta = correctedDelta * NORMAL_FLIP_DAMPING + mCustomLastDelta * (1.0f - NORMAL_FLIP_DAMPING);
+                }
+            } else {
+                filteredDelta = correctedDelta * (1.0f - inputSmoothFactor) + mCustomLastDelta * inputSmoothFactor;
+            }
             
             mCustomLastDelta = filteredDelta;
             mCustomTargetFingerX = displacement;
@@ -562,6 +585,9 @@ public class EdgeEffect {
             // Предотвращение пересечения нуля
             if ((currentTranslation > 0 && nextTranslation < 0) || (currentTranslation < 0 && nextTranslation > 0)) {
                 nextTranslation = 0f;
+            }
+            if (strictHold && directionChanged && Math.abs(filteredDelta) <= Math.abs(mCustomLastDelta)) {
+                nextTranslation = currentTranslation;
             }
 
             mCustomSpring.mValue = nextTranslation;
@@ -650,6 +676,7 @@ public class EdgeEffect {
         // =========================================================================================
         // [CUSTOM INJECTION START] - onRelease Logic
         // =========================================================================================
+        updateSettings();
         if (mCachedEnabled && !mCfgIgnore) {
             mPullDistance = 0;
             if (mCustomSpring != null && Math.abs(mCustomSpring.mValue) > 0.5f) {
@@ -788,6 +815,7 @@ public class EdgeEffect {
         // =========================================================================================
         // [CUSTOM INJECTION START] - draw Logic
         // =========================================================================================
+        updateSettings();
         if (mCachedEnabled && !mCfgIgnore) {
             if (!canvas.isHardwareAccelerated()) {
                 finish();
@@ -1328,6 +1356,7 @@ public class EdgeEffect {
              mCachedLerpRun = getFloatSetting(KEY_LERP_MAIN_RUN, 0.7f);
              mCachedComposeScale = getFloatSetting(KEY_COMPOSE_SCALE, 3.33f);
              mCachedInvertAnchor = getIntSetting(KEY_INVERT_ANCHOR, 1) == 1;
+             mCachedDisableArbitraryRendering = getIntSetting(KEY_DISABLE_ARBITRARY_RENDERING, 0) == 1;
              
              // Visuals
              mCachedScaleMode = getIntSetting(KEY_SCALE_MODE, 0);
@@ -1352,6 +1381,8 @@ public class EdgeEffect {
              mCachedHScaleLimit = getFloatSetting(KEY_H_SCALE_LIMIT_MIN, 0.3f);
              mCachedHScaleAnchorX = getFloatSetting(KEY_H_SCALE_ANCHOR_X, 0.5f);
              mCachedHScaleAnchorYHoriz = getFloatSetting(KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f);
+           } else {
+               mCachedDisableArbitraryRendering = false;
         }
     }
 
