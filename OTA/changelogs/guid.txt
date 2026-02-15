@@ -1,0 +1,5 @@
+timestamp stat -c "%Y" EvolutionX-16.0-20251215-shiba-11.6.1-Official.zip
+size stat -c "%s" EvolutionX-16.0-20251215-shiba-11.6.1-Official.zip
+
+sha256sum EvolutionX-16.0-20251215-shiba-11.6.1-Official.zip
+md5sum EvolutionX-16.0-20251215-shiba-11.6.1-Official.zip
