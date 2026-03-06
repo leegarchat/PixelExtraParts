@@ -1,0 +1,88 @@
+{
+    "id": "test_visual_hook",
+    "entryClass": "com.example.addon.test.SimpleTestHook",
+    "name": "Visual Test Hook",
+    "author": "LeeGarChat",
+    "description": "Показывает дополнительную кнопках",
+    "version": "1.1",
+    "targetPackages": [
+        "com.android.settings"
+    ],
+    "enabled": true,
+
+    "settings": [
+        {
+            "key": "test_hook_intensity",
+            "title": "Hook Intensity",
+            "description": "Уровень интенсивности хука (0–100)",
+            "type": "int",
+            "provider": "global",
+            "default": 50,
+            "min": 0,
+            "max": 100,
+            "step": 5,
+            "unit": "%"
+        },
+        {
+            "key": "test_hook_scale",
+            "title": "Scale Factor",
+            "description": "Масштаб эффекта (0.0–3.0)",
+            "type": "float",
+            "provider": "global",
+            "default": 1.0,
+            "min": 0.0,
+            "max": 3.0,
+            "step": 0.05,
+            "unit": "x"
+        },
+        {
+            "key": "test_hook_message",
+            "title": "Toast Message",
+            "description": "Текст сообщения для Toast",
+            "type": "string",
+            "provider": "global",
+            "default": "Hello from addon!"
+        },
+        {
+            "key": "test_hook_mode",
+            "title": "Operating Mode",
+            "description": "Выберите режим работы хука",
+            "type": "select",
+            "provider": "global",
+            "default": "normal",
+            "options": [
+                { "value": "silent",  "label": "Silent — без уведомлений" },
+                { "value": "normal",  "label": "Normal — стандартный режим" },
+                { "value": "verbose", "label": "Verbose — подробный лог" },
+                { "value": "debug",   "label": "Debug — отладочный режим" }
+            ]
+        },
+        {
+            "key": "test_hook_config_file",
+            "title": "Config File",
+            "description": "Внешний конфиг-файл для хука (JSON/XML)",
+            "type": "file",
+            "mimeType": "*/*"
+        },
+        {
+            "key": "demo_feature_toggle",
+            "title": "Enable Feature",
+            "description": "Включает доп. обработку",
+            "type": "toggle",
+            "default": true
+        },
+        {
+            "key": "demo_dark_override",
+            "title": "Dark Mode Override",
+            "type": "switch",
+            "default": false
+        },
+        {
+            "key": "demo_debug_info",
+            "title": "Show Debug Info",
+            "description": "Отладочная информация",
+            "type": "checkbox",
+            "default": false
+        }
+    ]
+}
