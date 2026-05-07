@@ -61,7 +61,7 @@ import java.lang.annotation.RetentionPolicy;
  * The edge effect may then be drawn on top of the view's content using the
  * {@link #draw(Canvas)} method.</p>
  */
-public class EdgeEffectOriginal {
+public class EdgeEffect {
     /**
      * This sets the edge effect to use stretch instead of glow.
      *

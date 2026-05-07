@@ -6037,7 +6037,7 @@ public class Activity extends ContextThemeWrapper
 
             cancelInputsAndStartExitTransition(options);
             // Evolution X: fallback for open transition (split-screen etc.)
-            CustomTransitionHelper.applyOpenTransitionFallback(this);
+            CustomTransitionHelper.applyOpenTransitionFallback(this, intent);
             // TODO Consider clearing/flushing other event sources and events for child windows.
         } else {
             if (options != null) {
@@ -10282,6 +10282,10 @@ public class Activity extends ContextThemeWrapper
         private static final String KEY_CUSTOM_CLOSE_PACKAGE =
                 "activity_close_custom_package_pine";
 
+        private static final String ACTION_REVIEW = "android.provider.action.REVIEW";
+        private static final String ACTION_REVIEW_SECURE =
+            "android.provider.action.REVIEW_SECURE";
+
         // Mode constants
         static final int MODE_DISABLED     = 0;
         static final int MODE_CUSTOM       = -1;
@@ -10440,6 +10444,12 @@ public class Activity extends ContextThemeWrapper
             }
         }
 
+        private static boolean shouldSkipOpenTransition(Intent intent) {
+            if (intent == null) return false;
+            final String action = intent.getAction();
+            return ACTION_REVIEW.equals(action) || ACTION_REVIEW_SECURE.equals(action);
+        }
+
         // ── Resource resolution ─────────────────────────────────────
 
         /**
@@ -10530,6 +10540,8 @@ public class Activity extends ContextThemeWrapper
             if (Boolean.TRUE.equals(sInHook.get())) return options;
             sInHook.set(Boolean.TRUE);
             try {
+                if (shouldSkipOpenTransition(intent)) return options;
+
                 int mode = getOpenMode(activity);
                 if (mode == MODE_DISABLED) return options;
 
@@ -10599,8 +10611,10 @@ public class Activity extends ContextThemeWrapper
          * {@code overridePendingTransition}.
          * Called after {@code execStartActivity}.
          */
-        static void applyOpenTransitionFallback(Activity activity) {
+        static void applyOpenTransitionFallback(Activity activity, Intent intent) {
             try {
+            if (shouldSkipOpenTransition(intent)) return;
+
                 int mode = getOpenMode(activity);
                 if (mode == MODE_DISABLED || mode == MODE_NO_ANIMATION) return;
                 if (!ensureResources(activity)) return;

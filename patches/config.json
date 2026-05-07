@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "bypass_paths": [
+    "packages/apps/PixelExtraParts/changebe/packages/apps/Settings/res"
+  ],
+  "patches": {
+    "settings-res": {
+      "mode": "bypass",
+      "reason": "Settings/res in changebe is ROM-specific. Apply manually, run with --apply-bypassed, or switch this patch to mode=apply when the ROM tree should be managed by the patcher."
+    }
+  }
+}

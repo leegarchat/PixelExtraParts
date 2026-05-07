@@ -332,13 +332,7 @@ public final class ActivityThread extends ClientTransactionHandler
     private static DdmSyncStageUpdater newDdmSyncStageUpdater() {
         return new DdmSyncStageUpdater();
     }
-    // --- [PixelParts] CONSTANTS ---
-    private static final java.util.Set<String> PIXEL_PARTS_DEFAULT_WHITELIST = new java.util.HashSet<>(java.util.Arrays.asList(
-            "com.android.systemui",
-            "com.google.android.apps.nexuslauncher"
-    ));
-    private static final String PIXEL_PARTS_INJECT_PREFIX = "pixel_extra_parts_inject_package_";
-    // ------------------------------
+
     /** @hide */
     public static final String TAG = "ActivityThread";
     static final boolean localLOGV = false;
@@ -8164,65 +8158,6 @@ public final class ActivityThread extends ClientTransactionHandler
                 throw new RuntimeException(
                     "Exception thrown in onCreate() of " + data.instrumentationName, e);
             }
-            // --- [PixelParts] INJECTION START ---
-            if (data.appInfo.packageName != null) {
-                boolean shouldInject = false;
-                String pkgName = data.appInfo.packageName;
-
-                // 1. Проверка по дефолтному списку (Hardcoded Whitelist)
-                if (PIXEL_PARTS_DEFAULT_WHITELIST.contains(pkgName)) {
-                    shouldInject = true;
-                }
-
-                // 2. Проверка динамических настроек (Settings.Global)
-                // Формируем ключ: pixel_extra_parts_inject_package_com.example.app
-                try {
-                    // чтобы не конфликтовать с существующей переменной AOSP.
-                    Context injectContext = ContextImpl.createAppContext(this, data.info);
-                    
-                    if (injectContext != null) {
-                        String key = PIXEL_PARTS_INJECT_PREFIX + pkgName;
-                        
-                        int override = android.provider.Settings.Global.getInt(
-                                injectContext.getContentResolver(), key, -1);
-
-                        if (override == 1) {
-                            shouldInject = true;
-                        } else if (override == 0) {
-                            shouldInject = false;
-                        }
-                    }
-                } catch (Throwable t) {
-                    android.util.Log.w("PixelParts", "Failed to check inject settings", t);
-                }
-
-                // 3. Сама инъекция (только если shouldInject == true)
-                if (shouldInject) {
-                    try {
-                        final String jarPath = "/system/framework/PineInject.jar";
-                        final java.io.File jarFile = new java.io.File(jarPath);
-
-                        if (jarFile.exists()) {
-                            final ClassLoader appCl = data.info.getClassLoader();
-                            if (appCl instanceof dalvik.system.BaseDexClassLoader) {
-                                dalvik.system.BaseDexClassLoader dexLoader =
-                                        (dalvik.system.BaseDexClassLoader) appCl;
-                                
-                                dexLoader.addDexPath(jarPath);
-
-                                Class<?> entry = appCl.loadClass("org.pixel.customparts.pineinject.ModEntry");
-                                java.lang.reflect.Method m = entry.getDeclaredMethod("init");
-                                m.invoke(null);
-                                
-                                // android.util.Log.i("PixelParts", "Injected into: " + pkgName);
-                            }
-                        }
-                    } catch (Throwable t) {
-                        android.util.Log.e("PixelParts", "Injection failed for " + pkgName, t);
-                    }
-                }
-            }
-            // --- [PixelParts] INJECTION END ---
             try {
                 timestampApplicationOnCreateNs = SystemClock.uptimeNanos();
                 mInstrumentation.callApplicationOnCreate(app);

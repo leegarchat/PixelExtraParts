@@ -68,11 +68,6 @@ import java.lang.annotation.RetentionPolicy;
  * {@link #draw(Canvas)} method.</p>
  */
 public class EdgeEffect {
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  Original AOSP constants
-    // ═══════════════════════════════════════════════════════════════════
-
     /**
      * This sets the edge effect to use stretch instead of glow.
      *
@@ -188,10 +183,6 @@ public class EdgeEffect {
     private static final float SIN = (float) Math.sin(ANGLE);
     private static final float COS = (float) Math.cos(ANGLE);
     private static final float RADIUS_FACTOR = 0.6f;
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  Original AOSP fields
-    // ═══════════════════════════════════════════════════════════════════
 
     private float mGlowAlpha;
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
@@ -448,7 +439,6 @@ public class EdgeEffect {
      * @param attrs The attributes of the XML tag that is inflating the view
      */
     public EdgeEffect(@NonNull Context context, @Nullable AttributeSet attrs) {
-        // ── Original AOSP constructor logic ──
         final TypedArray a = context.obtainStyledAttributes(
                 attrs, com.android.internal.R.styleable.EdgeEffect);
         final int themeColor = a.getColor(
@@ -466,10 +456,6 @@ public class EdgeEffect {
         initCustomInstance(context);
     }
 
-    // ═══════════════════════════════════════════════════════════════════
-    //  Original AOSP helpers
-    // ═══════════════════════════════════════════════════════════════════
-
     @EdgeEffectType
     private int getCurrentEdgeEffectBehavior() {
         if (!ValueAnimator.areAnimatorsEnabled()) {
@@ -478,10 +464,6 @@ public class EdgeEffect {
             return mEdgeEffectType;
         }
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  Public API
-    // ═══════════════════════════════════════════════════════════════════
 
     /**
      * Set the size of this edge effect in pixels.
@@ -516,7 +498,7 @@ public class EdgeEffect {
     public boolean isFinished() {
         if (!isBounceEnabled()) {
             // ── Original AOSP logic ──
-            return mState == STATE_IDLE;
+        return mState == STATE_IDLE;
         }
 
         // ── Custom bounce logic ──
@@ -643,7 +625,7 @@ public class EdgeEffect {
             if (strictHold) {
                 if (Math.abs(correctedDelta) < Math.abs(lastDelta) * 1.2f) {
                     filteredDelta = 0f;
-                } else {
+            } else {
                     filteredDelta = correctedDelta * DIRECTION_FLIP_DAMPING + lastDelta * (1.0f - DIRECTION_FLIP_DAMPING);
                 }
             } else {
@@ -831,7 +813,7 @@ public class EdgeEffect {
             mCustomSpring.setTargetValue(0);
             mCustomSpring.setVelocity(0);
             mCustomSpring.start();
-            mState = STATE_RECEDE;
+        mState = STATE_RECEDE;
         } else {
             // Value <= 0.5 — negligible pull, reset immediately
             if (mCustomSpring != null) {
@@ -867,8 +849,8 @@ public class EdgeEffect {
         }
 
         // ── Custom bounce logic ──
-        mState = STATE_RECEDE;
-        SettingsCache cache = getSettingsCache(mCustomContext, true);
+            mState = STATE_RECEDE;
+            SettingsCache cache = getSettingsCache(mCustomContext, true);
 
         if (mCustomSpring != null) {
             mCustomSpring.setSpeedMultiplier(cache.animationSpeedMul);
@@ -1364,6 +1346,8 @@ public class EdgeEffect {
                 }
             }
         } else {
+            // Animations have been disabled or this is TYPE_STRETCH and drawing into a Canvas
+            // that isn't a Recording Canvas, so no effect can be shown. Just end the effect.
             mState = STATE_IDLE;
             mDistance = 0;
             mVelocity = 0;
@@ -1377,10 +1361,6 @@ public class EdgeEffect {
 
         return mState != STATE_IDLE || oneLastFrame;
     }
-
-    // ═══════════════════════════════════════════════════════════════════
-    //  Original AOSP private helpers
-    // ═══════════════════════════════════════════════════════════════════
 
     private float min(float f1, float f2, float f3, float f4) {
         float min = Math.min(f1, f2);
@@ -1417,6 +1397,7 @@ public class EdgeEffect {
                     mGlowAlphaStart = mGlowAlpha;
                     mGlowScaleYStart = mGlowScaleY;
 
+                    // After absorb, the glow should fade to nothing.
                     mGlowAlphaFinish = 0.f;
                     mGlowScaleYFinish = 0.f;
                     break;
@@ -1428,6 +1409,7 @@ public class EdgeEffect {
                     mGlowAlphaStart = mGlowAlpha;
                     mGlowScaleYStart = mGlowScaleY;
 
+                    // After pull, the glow should fade to nothing.
                     mGlowAlphaFinish = 0.f;
                     mGlowScaleYFinish = 0.f;
                     break;
@@ -1453,10 +1435,13 @@ public class EdgeEffect {
                 && Math.abs(mDistance * mHeight) < LINEAR_DISTANCE_TAKE_OVER
                 && Math.signum(mVelocity) == -Math.signum(mDistance)
         ) {
+            // This is close. The spring will slowly reach the destination. Instead, we
+            // will interpolate linearly so that it arrives at its destination quicker.
             mVelocity = Math.signum(mVelocity) * LINEAR_VELOCITY_TAKE_OVER;
 
             float targetDistance = mDistance + (mVelocity * deltaT / mHeight);
             if (Math.signum(targetDistance) != Math.signum(mDistance)) {
+                // We have arrived
                 mDistance = 0;
                 mVelocity = 0;
             } else {
@@ -1466,6 +1451,7 @@ public class EdgeEffect {
         }
         final double mDampedFreq = NATURAL_FREQUENCY * Math.sqrt(1 - DAMPING_RATIO * DAMPING_RATIO);
 
+        // We're always underdamped, so we can use only those equations:
         double cosCoeff = mDistance * mHeight;
         double sinCoeff = (1 / mDampedFreq) * (DAMPING_RATIO * NATURAL_FREQUENCY
                 * mDistance * mHeight + mVelocity);
@@ -1493,6 +1479,8 @@ public class EdgeEffect {
      */
     private float calculateDistanceFromGlowValues(float scale, float alpha) {
         if (scale >= 1f) {
+            // It should asymptotically approach 1, but not reach there.
+            // Here, we're just choosing a value that is large.
             return 1f;
         }
         if (scale > 0f) {
@@ -1510,6 +1498,9 @@ public class EdgeEffect {
         double displacement = mDistance * mHeight;
         double velocity = mVelocity;
 
+        // Don't allow displacement to drop below 0. We don't want it stretching the opposite
+        // direction if it is flung that way. We also want to stop the animation as soon as
+        // it gets very close to its destination.
         return displacement < 0 || (Math.abs(velocity) < VELOCITY_THRESHOLD
                 && displacement < VALUE_THRESHOLD);
     }
