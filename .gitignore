@@ -9,3 +9,6 @@
 /.lh
 /ThermalConfigs/__pycache__
 /ThermalConfigs/configs
+/OTA/__pycache__
+/patches/subpatches/__pycache__
+/patches/__pycache__
