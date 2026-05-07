@@ -56,6 +56,9 @@ public class ActivityTransitionHook extends BaseHook {
     private static final String KEY_CUSTOM_OPEN_PACKAGE  = "activity_open_custom_package";
     private static final String KEY_CUSTOM_CLOSE_PACKAGE = "activity_close_custom_package";
 
+    private static final String ACTION_REVIEW = "android.provider.action.REVIEW";
+    private static final String ACTION_REVIEW_SECURE = "android.provider.action.REVIEW_SECURE";
+
     // ── Mode constants ──────────────────────────────────────────────────
 
     static final int MODE_DISABLED      = 0;
@@ -240,6 +243,12 @@ public class ActivityTransitionHook extends BaseHook {
         String pkg = getStringSetting(context, KEY_CUSTOM_CLOSE_PACKAGE, null);
         // Fallback to legacy shared key
         return (pkg != null && !pkg.isEmpty()) ? pkg : getCustomPackage(context);
+    }
+
+    private boolean shouldSkipOpenTransition(Intent intent) {
+        if (intent == null) return false;
+        String action = intent.getAction();
+        return ACTION_REVIEW.equals(action) || ACTION_REVIEW_SECURE.equals(action);
     }
 
     // ── init ────────────────────────────────────────────────────────────
@@ -551,6 +560,10 @@ public class ActivityTransitionHook extends BaseHook {
                 }
 
                 Activity activity = (Activity) param.thisObject;
+                if (intentIdx >= 0 && shouldSkipOpenTransition((Intent) param.args[intentIdx])) {
+                    return;
+                }
+
                 int mode = getOpenMode(activity);
                 if (mode == MODE_DISABLED) return;
 
@@ -605,6 +618,17 @@ public class ActivityTransitionHook extends BaseHook {
         protected void afterHookedMethod(MethodHookParam param) {
             // Split-screen fallback: also apply via overridePendingTransition
             try {
+                int intentIdx = -1;
+                for (int i = 0; i < param.args.length; i++) {
+                    if (param.args[i] instanceof Intent) {
+                        intentIdx = i;
+                        break;
+                    }
+                }
+                if (intentIdx >= 0 && shouldSkipOpenTransition((Intent) param.args[intentIdx])) {
+                    return;
+                }
+
                 Activity activity = (Activity) param.thisObject;
                 int mode = getOpenMode(activity);
                 if (mode == MODE_DISABLED || mode == MODE_NO_ANIMATION) return;
