@@ -315,6 +315,8 @@
     <string name="launcher_hidden_apps_system_title">Show system apps</string>
     <string name="launcher_hidden_apps_system_summary">Include launchable system apps in this list</string>
     <string name="launcher_hidden_apps_list_title">Applications</string>
+    <string name="launcher_hidden_apps_search_hint">Search by app or package name</string>
+    <string name="launcher_hidden_apps_restart_warning">Restart the launcher to apply hidden app changes.</string>
     <string name="launcher_hidden_apps_empty">No applications to show</string>
     <string name="launcher_hidden_apps_error">Failed to load application list</string>
     <string name="launcher_hidden_apps_apply_error">Failed to update hidden app state</string>

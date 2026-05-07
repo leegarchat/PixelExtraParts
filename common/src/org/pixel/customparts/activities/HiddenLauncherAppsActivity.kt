@@ -11,6 +11,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,7 +39,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -43,6 +51,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -126,11 +135,13 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
     val lazyListState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
+    var needsRestart by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
     var loadFailed by remember { mutableStateOf(false) }
     var apps by remember { mutableStateOf<List<HiddenLauncherApp>>(emptyList()) }
     var hiddenPackages by remember { mutableStateOf<Set<String>>(emptySet()) }
     var showSystemApps by rememberSaveable { mutableStateOf(true) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         val result = loadHiddenLauncherApps(context)
@@ -140,8 +151,17 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
         isLoading = false
     }
 
-    val visibleApps = remember(apps, showSystemApps) {
-        if (showSystemApps) apps else apps.filterNot { it.isSystem }
+    val visibleApps = remember(apps, showSystemApps, searchQuery) {
+        val query = searchQuery.trim().lowercase(Locale.getDefault())
+        val filteredApps = if (showSystemApps) apps else apps.filterNot { it.isSystem }
+        if (query.isEmpty()) {
+            filteredApps
+        } else {
+            filteredApps.filter { app ->
+                app.label.lowercase(Locale.getDefault()).contains(query) ||
+                    app.packageName.lowercase(Locale.US).contains(query)
+            }
+        }
     }
 
     Scaffold(
@@ -158,6 +178,30 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                    }
+                },
+                actions = {
+                    AnimatedVisibility(
+                        visible = needsRestart,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally()
+                    ) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    LauncherManager.restartLauncher(context)
+                                    needsRestart = false
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(16.dp))
+                            Text(dynamicStringResource(R.string.btn_restart))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -183,6 +227,10 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
+                    RestartWarningCard()
+                }
+
+                item {
                     SettingsGroupCard(title = dynamicStringResource(R.string.launcher_hidden_apps_controls_title)) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.launcher_hidden_apps_system_title),
@@ -191,6 +239,16 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                             summary = dynamicStringResource(R.string.launcher_hidden_apps_system_summary)
                         )
                     }
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text(dynamicStringResource(R.string.launcher_hidden_apps_search_hint)) }
+                    )
                 }
 
                 when {
@@ -249,6 +307,8 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                                                 context.getString(R.string.launcher_hidden_apps_apply_error),
                                                 Toast.LENGTH_SHORT
                                             ).show()
+                                        } else {
+                                            needsRestart = true
                                         }
                                     }
                                 }
@@ -271,6 +331,24 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
 }
 
 @Composable
+private fun RestartWarningCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
+        )
+    ) {
+        Text(
+            text = dynamicStringResource(R.string.launcher_hidden_apps_restart_warning),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
+}
+
+@Composable
 private fun HiddenLauncherAppRow(
     app: HiddenLauncherApp,
     checked: Boolean,
@@ -283,7 +361,9 @@ private fun HiddenLauncherAppRow(
             .clickable(onClick = onToggle),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (checked) {
+            containerColor = if (app.isSystem) {
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.42f else 0.22f)
+            } else if (checked) {
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
             } else {
                 MaterialTheme.colorScheme.surface
@@ -313,29 +393,26 @@ private fun HiddenLauncherAppRow(
             Spacer(Modifier.width(14.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = app.label,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false)
+                Text(
+                    text = app.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (app.isSystem) {
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
+                                maxLines = 1
+                            )
+                        },
+                        enabled = false,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
                     )
-                    if (app.isSystem) {
-                        Spacer(Modifier.width(8.dp))
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
-                                    maxLines = 1
-                                )
-                            },
-                            enabled = false
-                        )
-                    }
                 }
                 Text(
                     text = app.packageName,

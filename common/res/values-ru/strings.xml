@@ -316,6 +316,8 @@
     <string name="launcher_hidden_apps_system_title">Показывать системные приложения</string>
     <string name="launcher_hidden_apps_system_summary">Добавлять в список системные приложения с иконкой запуска</string>
     <string name="launcher_hidden_apps_list_title">Приложения</string>
+    <string name="launcher_hidden_apps_search_hint">Поиск по названию приложения или имени пакета</string>
+    <string name="launcher_hidden_apps_restart_warning">Для применения скрытия приложений требуется перезапустить лаунчер.</string>
     <string name="launcher_hidden_apps_empty">Нет приложений для отображения</string>
     <string name="launcher_hidden_apps_error">Не удалось загрузить список приложений</string>
     <string name="launcher_hidden_apps_apply_error">Не удалось изменить состояние скрытия приложения</string>
