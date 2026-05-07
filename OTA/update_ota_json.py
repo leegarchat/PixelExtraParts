@@ -43,8 +43,8 @@ VARIANT_RULES = {
     ),
 }
 SOURCE_RULES = (
-    # SourceRule(order=0, version_suffix="SF"),
-    SourceRule(order=1, version_suffix=""),
+    SourceRule(order=0, version_suffix="SourceForge"),
+    SourceRule(order=1, version_suffix="leegarhost"),
 )
 REQUIRED_SOURCE_KEYS = (
     "maintainer",
@@ -71,7 +71,7 @@ def repo_root() -> Path:
 
 
 def default_release_root() -> Path:
-    return repo_root().parent / "release"
+    return repo_root().parent / ".." / ".." / "device" / "google" / "release"
 
 
 def builds_dir() -> Path:
