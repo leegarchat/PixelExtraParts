@@ -1,20 +1,23 @@
 {
+  "changelogurl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/main/OTA/changelogs/shiba.txt",
   "response": [
     {
       "maintainer": "LeeGarChat",
       "currently_maintained": true,
       "oem": "Google",
       "device": "Pixel 8",
-      "filename": "EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "timestamp": 1778078659,
-      "md5": "d5d3c6d5c800826b8f73ef9065eef5c4",
-      "sha256": "5c3efa7651d900a03f50c5f5bc28e4e1a839f0079c96cb5fd3e6262dd35d080e",
-      "size": 3233065023,
+      "filename": "EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
+      "timestamp": 1778174871,
+      "md5": "e1bce438079c51186eaa232ba8371ce5",
+      "sha256": "835f22f26d5b05ed088af2a9ad22b17e3708ab913d39e1954d2a797744fe886a",
+      "size": 3239065359,
       "buildtype": "user",
       "forum": "https://t.me/EvoX_LeeGarChat",
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
+      "websource": "SourceForge",
+      "description": "Test description for Sultan WildKSU test build.",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -22,24 +25,26 @@
         "vendor_boot"
       ],
       "extra_images": [],
-      "download": "https://leegarchat.mooo.com/files/shiba/20260506/Build-GKI-stock/EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "version": "11.7 Stock GKI"
+      "download": "https://leegarchat.mooo.com/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
+      "version": "11.7 Sultan WildKSU test"
     },
     {
       "maintainer": "LeeGarChat",
       "currently_maintained": true,
       "oem": "Google",
       "device": "Pixel 8",
-      "filename": "EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "timestamp": 1778078659,
-      "md5": "6aab072492d02cc2d8e2af7e828359a3",
-      "sha256": "9b773cd3bf120d11d43655bad435fbd18ecc98e5717d19156aceb7348a626828",
-      "size": 3232965294,
+      "filename": "EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
+      "timestamp": 1778174871,
+      "md5": "e1bce438079c51186eaa232ba8371ce5",
+      "sha256": "835f22f26d5b05ed088af2a9ad22b17e3708ab913d39e1954d2a797744fe886a",
+      "size": 3239065359,
       "buildtype": "user",
       "forum": "https://t.me/EvoX_LeeGarChat",
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
+      "websource": "leegarchat.mooo.com",
+      "description": "Test description for Sultan 2 WildKSU test build.",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -47,33 +52,8 @@
         "vendor_boot"
       ],
       "extra_images": [],
-      "download": "https://leegarchat.mooo.com/files/shiba/20260506/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "version": "11.7 Sultan WildKSU"
-    },
-    {
-      "maintainer": "LeeGarChat",
-      "currently_maintained": true,
-      "oem": "Google",
-      "device": "Pixel 8",
-      "filename": "EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "timestamp": 1778078659,
-      "md5": "86f8ce5d706e76a5cd0631155c4f7785",
-      "sha256": "73ecf4934166874ed300e6a075cdb582010b78062e3b1007dd50489f44644aae",
-      "size": 3233586268,
-      "buildtype": "user",
-      "forum": "https://t.me/EvoX_LeeGarChat",
-      "firmware": "",
-      "paypal": "https://boosty.to/leegar/",
-      "github": "leegarchat",
-      "initial_installation_images": [
-        "boot",
-        "dtbo",
-        "vendor_kernel_boot",
-        "vendor_boot"
-      ],
-      "extra_images": [],
-      "download": "https://leegarchat.mooo.com/files/shiba/20260506/Build-GKI-WKSU-SUSFS-r19/EvolutionX-16.0-20260506-shiba-11.7-Unofficial.zip",
-      "version": "11.7 GKI WildKSU"
+      "download": "https://leegarchat.mooo.com/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
+      "version": "11.7 Sultan WildKSU leegarhost"
     }
   ]
 }
