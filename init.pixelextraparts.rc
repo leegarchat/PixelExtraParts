@@ -5,6 +5,11 @@ on post-fs-data
     mkdir /data/pixelparts/system_addons_data 0777 system system
     restorecon_recursive /data/pixelparts
 
+# PixelExtraParts thermal config switch
+on init
+    setprop persist.sys.pixelparts.thermal_available true
+
 on property:persist.sys.pixelparts.thermal_config=*
     setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config}
     restart vendor.thermal-hal
+# End PixelExtraParts thermal config switch

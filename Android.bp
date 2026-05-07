@@ -15,8 +15,8 @@ prebuilt_etc {
 
 
 prebuilt_etc {
-    name: "init.pixelparts.rc",
-    src: "init.pixelparts.rc",
+    name: "init.pixelextraparts.rc",
+    src: "init.pixelextraparts.rc",
     sub_dir: "init",
     system_ext_specific: true,
 }
@@ -153,7 +153,7 @@ android_app {
     },
     required: [
         "privapp_whitelist_org.pixel.customparts",
-        "init.pixelparts.rc",
+        "init.pixelextraparts.rc",
         "aapt2_pixelparts"
     ],
 }

@@ -1,0 +1,10 @@
+allow system_app system_pixelparts_prop:property_service set;
+get_prop(system_app, system_pixelparts_prop)
+allow system_app pixelparts_data_file:dir create_dir_perms;
+allow system_app pixelparts_data_file:file create_file_perms;
+allow appdomain pixelparts_data_file:dir r_dir_perms;
+allow appdomain pixelparts_data_file:file r_file_perms;
+allow shell pixelparts_data_file:dir create_dir_perms;
+allow shell pixelparts_data_file:file create_file_perms;
+allow appdomain pixelparts_system_file:dir r_dir_perms;
+allow appdomain pixelparts_system_file:file r_file_perms;

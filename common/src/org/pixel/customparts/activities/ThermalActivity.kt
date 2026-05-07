@@ -41,6 +41,7 @@ import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
@@ -58,6 +59,10 @@ import org.pixel.customparts.utils.RemoteStringsManager
 class ThermalActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!AppConfig.ENABLE_THERMALS) {
+            finish()
+            return
+        }
         enableEdgeToEdge()
         setContent {
             val darkTheme = isSystemInDarkTheme()
@@ -465,6 +470,10 @@ object ThermalManager {
     }
 
     fun onBoot(context: Context) {
+        if (!AppConfig.ENABLE_THERMALS) {
+            Log.d(TAG, "Thermal configs are unavailable on this target")
+            return
+        }
         Log.d(TAG, "onBoot: Re-applying Thermal config")
         updateThermalProps(context)
     }

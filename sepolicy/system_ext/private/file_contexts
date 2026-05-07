@@ -1,0 +1,2 @@
+/data/pixelparts(/.*)? u:object_r:pixelparts_data_file:s0
+/system_ext/etc/pixelparts/addons(/.*)? u:object_r:pixelparts_system_file:s0
