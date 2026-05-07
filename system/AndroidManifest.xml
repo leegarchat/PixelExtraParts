@@ -169,6 +169,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name=".activities.HiddenLauncherAppsActivity"
+            android:label="@string/launcher_hidden_apps_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name="org.pixel.customparts.activities.SearchAndFeedActivity"
             android:label="Search &amp; Feed"
             android:exported="false"

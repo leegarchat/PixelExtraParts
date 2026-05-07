@@ -40,6 +40,7 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.WeakDivider
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.ui.launcher.RecentsSection
@@ -122,6 +123,22 @@ fun LauncherScreen(onBack: () -> Unit) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = dynamicStringResource(R.string.launcher_search_feed_title), style = MaterialTheme.typography.titleMedium)
                             Text(text = dynamicStringResource(R.string.launcher_search_feed_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.Filled.ChevronRight, null)
+                    }
+
+                    WeakDivider()
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { context.startActivity(android.content.Intent(context, HiddenLauncherAppsActivity::class.java)) }
+                            .padding(16.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = dynamicStringResource(R.string.launcher_hidden_apps_title), style = MaterialTheme.typography.titleMedium)
+                            Text(text = dynamicStringResource(R.string.launcher_hidden_apps_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Filled.ChevronRight, null)
                     }
