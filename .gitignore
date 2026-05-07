@@ -1,8 +1,11 @@
 
-mempalace.yaml
-entities.json
+/mempalace.yaml
+/entities.json
 /.vscode
 /.github
 /test.files
 /.history
+/ThermalConfigs/ThermalConfigCopyRules.mk
 /.lh
+/ThermalConfigs/__pycache__
+/ThermalConfigs/configs
