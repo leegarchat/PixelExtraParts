@@ -6,8 +6,8 @@
       "oem": "Google",
       "device": "Pixel 8",
       "filename": "EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
-      "timestamp": 1778191371,
-      "md5": "e1bce438079c51186eaa232ba2271ce5",
+      "timestamp": 1779191371,
+      "md5": "e1bce438079c51186easss232ba2271ce5",
       "sha256": "835f22f26d5b05ed088af2a9ad22b17e3708a222239e1954d2a797744fe886a",
       "size": 3239065359,
       "buildtype": "user",
@@ -15,8 +15,8 @@
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
-      "websource": "SourceForge",
-      "description": "Test description for Sultan WildKSU test build.",
+      "websource": "SourceForge 1 ",
+      "description": "Test  1111 description for Sultan WildKSU test build.",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -33,8 +33,8 @@
       "oem": "Google",
       "device": "Pixel 8",
       "filename": "EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
-      "timestamp": 1778191371,
-      "md5": "e1bce438079c51186eaa232ba2271ce5",
+      "timestamp": 1779191371,
+      "md5": "e1bce438079c51186easss232ba2271ce5",
       "sha256": "835f22f26d5b05ed088af2a9ad22b17e3708a222239e1954d2a797744fe886a",
       "size": 3239065359,
       "buildtype": "user",
@@ -42,8 +42,8 @@
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
-      "websource": "leegarchat.mooo.com",
-      "description": "Test description for Sultan 2 WildKSU test build.",
+      "websource": "leegarchat.mooo.com 2 ",
+      "description": "Test 2222 description for Sultan 2 WildKSU test build.",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -52,7 +52,7 @@
       ],
       "extra_images": [],
       "download": "https://leegarchat.mooo.com/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
-      "version": "11.7 Sultan WildKSU leegarhost"
+      "version": "11.17 Sultan WildKSU leegarhost"
     }
   ],
   "changelogurl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/main/OTA/changelogs/shiba.txt"
