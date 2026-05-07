@@ -1,6 +1,8 @@
 package org.pixel.customparts.hooks.systemui;
 
 import android.content.Context;
+import android.os.PowerManager;
+import android.os.SystemClock;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -11,6 +13,8 @@ import java.util.Collection;
 
 public class DozeTapDozeHook extends BaseHook {
     
+    private static final int WAKE_REASON_TAP = 15;
+
     private int dozeTapReason = 9; // Default fallback
 
     @Override
@@ -87,22 +91,31 @@ public class DozeTapDozeHook extends BaseHook {
                         if (floatCount < 2) return;
 
                         int timeout = getIntSetting(context, DozeTapManager.KEY_TIMEOUT, DozeTapManager.DEFAULT_TIMEOUT);
+                        final int tapReason = pulseReason;
+                        final float tapX = screenX;
+                        final float tapY = screenY;
                         
-                        boolean consumed = DozeTapManager.processTap(
+                        DozeTapManager.TapResult tapResult = DozeTapManager.processTap(
                             context,
-                            screenX,
-                            screenY,
+                            tapX,
+                            tapY,
                             true,
                             timeout,
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    reregisterTapSensor(dozeTriggers);
+                                    prepareTapSensorForNextTap(dozeTriggers);
+                                }
+                            },
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    wakeFromSystemDoze(dozeTriggers, tapReason, tapX, tapY);
                                 }
                             }
                         );
 
-                        if (consumed) {
+                        if (tapResult != DozeTapManager.TapResult.IGNORED) {
                             param.setResult(null); // Блокируем выполнение оригинального метода
                         }
                     } catch (Throwable t) {
@@ -114,6 +127,86 @@ public class DozeTapDozeHook extends BaseHook {
             log("DozeTapDozeHook: Hook applied successfully");
         } catch (Throwable e) {
             logError("DozeTapDozeHook: Failed to apply hook", e);
+        }
+    }
+
+    private void prepareTapSensorForNextTap(Object dozeTriggers) {
+        enableNativeTapSensorReregister(dozeTriggers);
+        reregisterTapSensor(dozeTriggers);
+    }
+
+    private boolean enableNativeTapSensorReregister(Object dozeTriggers) {
+        try {
+            Object dozeSensors = XposedHelpers.getObjectField(dozeTriggers, "mDozeSensors");
+            if (dozeSensors == null) return false;
+
+            Object triggerSensors = XposedHelpers.getObjectField(dozeSensors, "mTriggerSensors");
+            if (triggerSensors == null) return false;
+
+            boolean updated = false;
+            if (triggerSensors instanceof Object[]) {
+                for (Object sensor : (Object[]) triggerSensors) {
+                    updated |= enableNativeTapSensorReregisterForSensor(sensor);
+                }
+            } else if (triggerSensors instanceof Collection) {
+                for (Object sensor : (Collection<?>) triggerSensors) {
+                    updated |= enableNativeTapSensorReregisterForSensor(sensor);
+                }
+            }
+            return updated;
+        } catch (Throwable t) {
+            logError("DozeTapDozeHook: enableNativeTapSensorReregister failed", t);
+            return false;
+        }
+    }
+
+    private boolean enableNativeTapSensorReregisterForSensor(Object sensor) {
+        if (sensor == null) return false;
+        try {
+            int reason = XposedHelpers.getIntField(sensor, "mPulseReason");
+            if (reason != dozeTapReason) return false;
+            XposedHelpers.setBooleanField(sensor, "mImmediatelyReRegister", true);
+            log("DozeTapDozeHook: native tap sensor re-register enabled");
+            return true;
+        } catch (Throwable t) {
+            log("DozeTapDozeHook: native re-register enable failed: " + t.getMessage());
+            return false;
+        }
+    }
+
+    private void wakeFromSystemDoze(Object dozeTriggers, int reason, float screenX, float screenY) {
+        try {
+            Object host = XposedHelpers.getObjectField(dozeTriggers, "mDozeHost");
+            if (host != null) {
+                XposedHelpers.callMethod(host, "onSlpiTap", screenX, screenY);
+            }
+        } catch (Throwable ignored) {
+        }
+
+        try {
+            Object machine = XposedHelpers.getObjectField(dozeTriggers, "mMachine");
+            if (machine != null) {
+                XposedHelpers.callMethod(machine, "wakeUp", reason);
+                log("DozeTapDozeHook: double tap woke via DozeMachine");
+                return;
+            }
+        } catch (Throwable t) {
+            log("DozeTapDozeHook: DozeMachine wake failed: " + t.getMessage());
+        }
+
+        try {
+            Context context = (Context) XposedHelpers.getObjectField(dozeTriggers, "mContext");
+            if (context == null) return;
+            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+                Method wakeUp = PowerManager.class.getMethod(
+                    "wakeUp", long.class, int.class, String.class);
+                wakeUp.invoke(powerManager, SystemClock.uptimeMillis(),
+                    WAKE_REASON_TAP, "PixelPartsDozeDoubleTap");
+                log("DozeTapDozeHook: double tap woke via PowerManager fallback");
+            }
+        } catch (Throwable t) {
+            logError("DozeTapDozeHook: PowerManager wake fallback failed", t);
         }
     }
 

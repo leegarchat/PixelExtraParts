@@ -1,13 +1,19 @@
 package org.pixel.customparts.hooks.systemui;
 
 import android.content.Context;
+import android.os.PowerManager;
+import android.os.SystemClock;
 import android.view.MotionEvent;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import org.pixel.customparts.core.BaseHook;
 
+import java.lang.reflect.Method;
+
 public class DozeTapShadeHook extends BaseHook {
+
+    private static final int WAKE_REASON_TAP = 15;
 
     private boolean loggedHook = false;
     private int tapLogCount = 0;
@@ -82,26 +88,34 @@ public class DozeTapShadeHook extends BaseHook {
                         }
 
                         int timeout = getIntSetting(context, DozeTapManager.KEY_TIMEOUT, DozeTapManager.DEFAULT_TIMEOUT);
-                        boolean consumed = false;
+                        DozeTapManager.TapResult tapResult = DozeTapManager.TapResult.IGNORED;
+                        Runnable wakeAction = new Runnable() {
+                            @Override
+                            public void run() {
+                                wakeFromSystemUi(context);
+                            }
+                        };
 
                         if (param.args.length == 1 && param.args[0] instanceof MotionEvent) {
                             MotionEvent event = (MotionEvent) param.args[0];
-                            consumed = DozeTapManager.processTap(
+                            tapResult = DozeTapManager.processTap(
                                 context,
                                 event.getX(),
                                 event.getY(),
                                 true,
                                 timeout,
-                                null
+                                null,
+                                wakeAction
                             );
                         } else if (param.args.length >= 2 && param.args[0] instanceof Float && param.args[1] instanceof Float) {
-                            consumed = DozeTapManager.processTap(
+                            tapResult = DozeTapManager.processTap(
                                 context,
                                 (Float) param.args[0],
                                 (Float) param.args[1],
                                 true,
                                 timeout,
-                                null
+                                null,
+                                wakeAction
                             );
                         } else {
                             if (tapLogCount <= 10) {
@@ -111,10 +125,10 @@ public class DozeTapShadeHook extends BaseHook {
                         }
 
                         if (tapLogCount <= 10) {
-                            log("DozeTapShadeHook: consumed=" + consumed);
+                            log("DozeTapShadeHook: tapResult=" + tapResult);
                         }
                         
-                        if (consumed) {
+                        if (tapResult != DozeTapManager.TapResult.IGNORED) {
                             log("DozeTapShadeHook: Pulsing tap consumed");
                             param.setResult(true);
                         }
@@ -128,6 +142,20 @@ public class DozeTapShadeHook extends BaseHook {
             log("DozeTapShadeHook: Hook applied successfully");
         } catch (Throwable e) {
             log("DozeTapShadeHook: Failed to apply hook: " + e.getMessage());
+        }
+    }
+
+    private void wakeFromSystemUi(Context context) {
+        try {
+            PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (powerManager == null) return;
+            Method wakeUp = PowerManager.class.getMethod(
+                "wakeUp", long.class, int.class, String.class);
+            wakeUp.invoke(powerManager, SystemClock.uptimeMillis(),
+                WAKE_REASON_TAP, "PixelPartsDozeDoubleTapShade");
+            log("DozeTapShadeHook: double tap woke via PowerManager");
+        } catch (Throwable t) {
+            log("DozeTapShadeHook: wake failed: " + t.getMessage());
         }
     }
 

@@ -18,6 +18,12 @@ public class DozeTapManager {
     private static float lastTapY = -1f;
     private static int doubleTapSlop = -1;
 
+    public enum TapResult {
+        IGNORED,
+        FIRST_TAP,
+        SECOND_TAP
+    }
+
     private static final Runnable timeoutRunnable = new Runnable() {
         @Override
         public void run() {
@@ -31,15 +37,16 @@ public class DozeTapManager {
         lastTapY = -1f;
     }
 
-    public static boolean processTap(
+    public static TapResult processTap(
             Context context,
             float x,
             float y,
             boolean isEnabled,
             int timeoutMs,
-            Runnable resetSensorAction
+            Runnable firstTapAction,
+            Runnable doubleTapAction
     ) {
-        if (!isEnabled) return false;
+        if (!isEnabled) return TapResult.IGNORED;
 
         if (doubleTapSlop < 0) {
             doubleTapSlop = ViewConfiguration.get(context).getScaledDoubleTapSlop();
@@ -53,10 +60,10 @@ public class DozeTapManager {
             handler.removeCallbacks(timeoutRunnable);
             handler.postDelayed(timeoutRunnable, timeoutMs);
 
-            if (resetSensorAction != null) {
-                resetSensorAction.run();
+            if (firstTapAction != null) {
+                firstTapAction.run();
             }
-            return true;
+            return TapResult.FIRST_TAP;
         }
 
         float dx = Math.abs(x - lastTapX);
@@ -67,12 +74,12 @@ public class DozeTapManager {
         boolean isClose = invalidCoords || (dx < doubleTapSlop && dy < doubleTapSlop);
 
         if (isClose) {
-            // Второй тап произошел быстро и рядом -> это двойной тап!
-            // Мы возвращаем false, чтобы НЕ поглощать событие, 
-            // позволяя системе обработать его как пробуждение.
             resetState();
             handler.removeCallbacks(timeoutRunnable);
-            return false;
+            if (doubleTapAction != null) {
+                doubleTapAction.run();
+            }
+            return TapResult.SECOND_TAP;
         } else {
             // Тап далеко от предыдущего -> начинаем ожидание заново
             lastTapX = x;
@@ -81,10 +88,10 @@ public class DozeTapManager {
             handler.removeCallbacks(timeoutRunnable);
             handler.postDelayed(timeoutRunnable, timeoutMs);
 
-            if (resetSensorAction != null) {
-                resetSensorAction.run();
+            if (firstTapAction != null) {
+                firstTapAction.run();
             }
-            return true;
+            return TapResult.FIRST_TAP;
         }
     }
 }
