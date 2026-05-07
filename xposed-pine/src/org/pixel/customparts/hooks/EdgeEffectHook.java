@@ -485,7 +485,8 @@ public class EdgeEffectHook {
                 float screenHeight = (screenHObj != null) ? screenHObj : 2200f;
                 if (effectiveSize < 1f) effectiveSize = screenHeight;
 
-                float currentDistance = Math.abs(mSpring.mValue) / effectiveSize;
+                float currentValue = mSpring.mValue;
+                float currentDistance = Math.abs(currentValue) / effectiveSize;
                 float finalDistance = Math.max(0f, deltaDistance + currentDistance);
                 float delta = finalDistance - currentDistance;
 
@@ -493,8 +494,11 @@ public class EdgeEffectHook {
                     return 0f;
                 }
 
-                // Delegate to our onPull logic
-                XposedHelpers.callMethod(thiz, "onPull", delta, displacement);
+                // onPullDistance() works in non-negative EdgeEffect distance space, while
+                // our spring value is signed. Preserve AOSP consumed distance, but feed
+                // onPull() a signed delta that moves the spring away/toward the edge.
+                float pullDelta = currentValue < 0f ? -delta : delta;
+                XposedHelpers.callMethod(thiz, "onPull", pullDelta, displacement);
                 return delta;
             }
         });
