@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -39,10 +40,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -51,9 +51,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -70,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -82,10 +83,8 @@ import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
-import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -172,7 +171,9 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                 title = {
                     Text(
                         dynamicStringResource(R.string.launcher_hidden_apps_title),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 navigationIcon = {
@@ -186,21 +187,25 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                         enter = fadeIn() + expandHorizontally(),
                         exit = fadeOut() + shrinkHorizontally()
                     ) {
-                        Button(
+                        IconButton(
                             onClick = {
                                 scope.launch {
                                     LauncherManager.restartLauncher(context)
                                     needsRestart = false
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f))
                         ) {
-                            Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(16.dp))
-                            Text(dynamicStringResource(R.string.btn_restart))
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = dynamicStringResource(R.string.btn_restart),
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 },
@@ -226,28 +231,23 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                item {
-                    RestartWarningCard()
-                }
-
-                item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.launcher_hidden_apps_controls_title)) {
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.launcher_hidden_apps_system_title),
-                            checked = showSystemApps,
-                            onCheckedChange = { showSystemApps = it },
-                            summary = dynamicStringResource(R.string.launcher_hidden_apps_system_summary)
-                        )
+                if (needsRestart) {
+                    item {
+                        RestartWarningCard()
                     }
                 }
 
                 item {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        placeholder = { Text(dynamicStringResource(R.string.launcher_hidden_apps_search_hint)) }
+                    SystemAppsFilterRow(
+                        checked = showSystemApps,
+                        onCheckedChange = { showSystemApps = it }
+                    )
+                }
+
+                item {
+                    CompactSearchField(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it }
                     )
                 }
 
@@ -334,17 +334,130 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
 private fun RestartWarningCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.24f)
         )
     ) {
         Text(
             text = dynamicStringResource(R.string.launcher_hidden_apps_restart_warning),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
         )
+    }
+}
+
+@Composable
+private fun SystemAppsFilterRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = dynamicStringResource(R.string.launcher_hidden_apps_system_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = dynamicStringResource(R.string.launcher_hidden_apps_system_summary),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                modifier = Modifier.padding(start = 12.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactSearchField(
+    query: String,
+    onQueryChange: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = dynamicStringResource(R.string.launcher_hidden_apps_search_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (query.isNotEmpty()) {
+                IconButton(
+                    onClick = { onQueryChange("") },
+                    modifier = Modifier.size(30.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = dynamicStringResource(R.string.btn_close),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -357,12 +470,12 @@ private fun HiddenLauncherAppRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onToggle),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (app.isSystem) {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.42f else 0.22f)
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.14f else 0.07f)
             } else if (checked) {
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
             } else {
@@ -373,24 +486,24 @@ private fun HiddenLauncherAppRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (app.icon != null) {
                 Image(
                     bitmap = app.icon.toBitmap().asImageBitmap(),
                     contentDescription = null,
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(40.dp)
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(40.dp)
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape)
                 )
             }
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -401,26 +514,23 @@ private fun HiddenLauncherAppRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (app.isSystem) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
-                                maxLines = 1
-                            )
-                        },
-                        enabled = false,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                Row(
+                    modifier = Modifier.padding(top = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (app.isSystem) {
+                        SystemAppBadge()
+                        Spacer(Modifier.width(6.dp))
+                    }
+
+                    Text(
+                        text = app.packageName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    text = app.packageName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
 
             Checkbox(
@@ -429,6 +539,33 @@ private fun HiddenLauncherAppRow(
                 modifier = Modifier.padding(start = 12.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun SystemAppBadge() {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier
+            .size(18.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.38f))
+            .clickable {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.launcher_hidden_apps_system_toast),
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
     }
 }
 
