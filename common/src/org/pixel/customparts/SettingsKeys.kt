@@ -4,6 +4,9 @@ import org.pixel.customparts.AppConfig.IS_XPOSED
 
 object SettingsKeys {
 
+    const val SATURATION_ENABLED = "pixelparts_saturation_enabled"
+    const val SATURATION_PERCENT = "pixelparts_saturation_percent"
+
     val isPineOverride: Boolean
         get() {
             if (!IS_XPOSED) return false

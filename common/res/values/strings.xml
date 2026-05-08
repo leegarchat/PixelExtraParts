@@ -19,6 +19,26 @@
     <string name="os_desc_master_native">Enables the built-in firmware physics implementation (Native).\n\nWorks directly through Pixel Parts system classes without hooks, ensuring maximum performance and compatibility.</string>
 
     <!-- SystemUI Settings -->
+    <string name="display_title">Display</string>
+    <string name="display_desc">Screen color and brightness controls</string>
+    <string name="display_section_screen">Screen</string>
+
+    <string name="saturation_title">Saturation</string>
+    <string name="saturation_summary">Control display color saturation</string>
+    <string name="saturation_enable_title">Use custom saturation</string>
+    <string name="saturation_enable_summary">Apply the selected saturation level immediately</string>
+    <string name="saturation_level_title">Saturation level</string>
+    <string name="saturation_preview_title">Preview</string>
+    <string name="saturation_footer_summary">Changing the color mode in Android display settings can override this value and may require reapplying it.</string>
+    <string name="saturation_add_tile">Add Saturation tile</string>
+    <string name="saturation_tile_active">Custom saturation on</string>
+    <string name="saturation_tile_inactive">Custom saturation off</string>
+    <string name="saturation_apply_failed">Unable to apply display saturation</string>
+    <string name="tile_added">Tile added</string>
+    <string name="tile_not_added">Tile was not added</string>
+    <string name="tile_already_added">Tile is already added</string>
+    <string name="tile_request_unavailable">Tile request is unavailable on this build</string>
+
     <string name="sysui_settings_title">SystemUI Settings</string>
     <string name="sysui_lockscreen_title">Lockscreen Settings</string>
     <string name="sysui_lockscreen_subtitle">Configure lockscreen charging info and gesture</string>

@@ -20,6 +20,26 @@
     <string name="os_desc_master_native">Включает встроенную в прошивку реализацию физики.\n\nРаботает напрямую через системные классы Pixel Parts без использования хуков, обеспечивая максимальную производительность и совместимость.</string>
 
     <!-- SystemUI Settings -->
+    <string name="display_title">Экран</string>
+    <string name="display_desc">Цвета экрана и управление яркостью</string>
+    <string name="display_section_screen">Экран</string>
+
+    <string name="saturation_title">Насыщенность</string>
+    <string name="saturation_summary">Управление насыщенностью цветов дисплея</string>
+    <string name="saturation_enable_title">Использовать свою насыщенность</string>
+    <string name="saturation_enable_summary">Применять выбранный уровень насыщенности сразу</string>
+    <string name="saturation_level_title">Уровень насыщенности</string>
+    <string name="saturation_preview_title">Предпросмотр</string>
+    <string name="saturation_footer_summary">Изменение цветового режима в настройках экрана Android может переопределить это значение, после чего его нужно применить заново.</string>
+    <string name="saturation_add_tile">Добавить плитку насыщенности</string>
+    <string name="saturation_tile_active">Своя насыщенность включена</string>
+    <string name="saturation_tile_inactive">Своя насыщенность выключена</string>
+    <string name="saturation_apply_failed">Не удалось применить насыщенность экрана</string>
+    <string name="tile_added">Плитка добавлена</string>
+    <string name="tile_not_added">Плитка не добавлена</string>
+    <string name="tile_already_added">Плитка уже добавлена</string>
+    <string name="tile_request_unavailable">Добавление плитки недоступно в этой сборке</string>
+
     <string name="sysui_settings_title">Настройки SystemUI</string>
     <string name="sysui_lockscreen_title">Настройки экрана блокировки</string>
     <string name="sysui_lockscreen_subtitle">Настройка информации о зарядке и жестов на экране блокировки</string>

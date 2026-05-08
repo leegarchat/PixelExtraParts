@@ -241,6 +241,17 @@ fun MainDashboard() {
                 item {
                     SettingsGroupCard(title = dynamicStringResource(R.string.main_header_system)) {
                         MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.display_title),
+                            subtitle = dynamicStringResource(R.string.display_desc),
+                            icon = Icons.Rounded.Palette,
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
+                        )
+
+                        HorizontalDivider()
+
+                        MainMenuNavigationRow(
                             title = dynamicStringResource(R.string.sysui_settings_title),
                             subtitle = "Configure SystemUI components",
                             icon = Icons.Rounded.SettingsSystemDaydream,
