@@ -58,7 +58,7 @@
     <string name="auto_hbm_add_tile">Add Auto HBM tile</string>
     <string name="auto_hbm_status_monitoring">Monitoring ambient light</string>
     <string name="auto_hbm_status_active">High brightness is active</string>
-    <string name="auto_hbm_status_format">Threshold: %1$d lx • Brightness: %2$d • SoC: %3$s</string>
+    <string name="auto_hbm_status_format">Threshold: %1$d lx • Brightness: %2$d/%3$d • %4$s: %5$s</string>
     <string name="auto_hbm_unsupported_title">Panel brightness node unavailable</string>
     <string name="auto_hbm_unsupported_summary">Auto HBM needs /sys/class/backlight/panel0-backlight/brightness and max_brightness. This build or device does not expose the expected Pixel panel nodes.</string>
     <string name="auto_hbm_tile_off">Off</string>

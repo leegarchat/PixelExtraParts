@@ -59,7 +59,7 @@
     <string name="auto_hbm_add_tile">Добавить плитку Auto HBM</string>
     <string name="auto_hbm_status_monitoring">Отслеживание освещения</string>
     <string name="auto_hbm_status_active">Максимальная яркость активна</string>
-    <string name="auto_hbm_status_format">Порог: %1$d lx • Яркость: %2$d • SoC: %3$s</string>
+    <string name="auto_hbm_status_format">Порог: %1$d lx • Яркость: %2$d/%3$d • %4$s: %5$s</string>
     <string name="auto_hbm_unsupported_title">Узел яркости панели недоступен</string>
     <string name="auto_hbm_unsupported_summary">Auto HBM нужны /sys/class/backlight/panel0-backlight/brightness и max_brightness. Эта сборка или устройство не открывает ожидаемые узлы панели Pixel.</string>
     <string name="auto_hbm_tile_off">Выкл.</string>

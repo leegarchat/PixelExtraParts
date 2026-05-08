@@ -147,6 +147,7 @@ class AutoHbmService : Service(), SensorEventListener {
                         shouldContinue = {
                             evaluatorRunning &&
                                 AutoHbmController.isEnabled(this) &&
+                                AutoHbmController.isSmoothRampEnabled(this) &&
                                 isInteractive() &&
                                 lastLux >= AutoHbmController.getThreshold(this)
                         }

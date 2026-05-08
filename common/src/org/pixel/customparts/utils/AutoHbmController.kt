@@ -39,6 +39,7 @@ object AutoHbmController {
     const val EXTRA_LUX = "lux"
     const val EXTRA_ACTIVE = "active"
     const val EXTRA_BRIGHTNESS = "brightness"
+    const val EXTRA_MAX_BRIGHTNESS = "max_brightness"
     const val EXTRA_TEMPERATURE = "temperature"
 
     private const val TAG = "AutoHbmController"
@@ -122,7 +123,7 @@ object AutoHbmController {
     }
 
     fun isSmoothRampEnabled(context: Context): Boolean {
-        return SettingsCompat.isEnabled(context, SettingsKeys.AUTO_HBM_SMOOTH_RAMP_ENABLED, false)
+        return SettingsCompat.isEnabled(context, SettingsKeys.AUTO_HBM_SMOOTH_RAMP_ENABLED, true)
     }
 
     fun setSmoothRampEnabled(context: Context, enabled: Boolean) {
@@ -220,6 +221,10 @@ object AutoHbmController {
 
     fun getLastBrightness(context: Context): Int {
         return SettingsCompat.getInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, readBrightness() ?: 0)
+    }
+
+    fun getSocModel(): String {
+        return readSystemProperty("ro.soc.model") ?: "SoC"
     }
 
     fun setEnabled(context: Context, enabled: Boolean) {
@@ -340,6 +345,7 @@ object AutoHbmController {
             .putExtra(EXTRA_LUX, lux)
             .putExtra(EXTRA_ACTIVE, isHbmActive(context))
             .putExtra(EXTRA_BRIGHTNESS, getLastBrightness(context))
+            .putExtra(EXTRA_MAX_BRIGHTNESS, readMaxBrightness() ?: 0)
         if (temperatureCelsius != null) {
             intent.putExtra(EXTRA_TEMPERATURE, temperatureCelsius)
         }
@@ -352,11 +358,12 @@ object AutoHbmController {
     fun readMaxBrightness(): Int? = readIntFile(MAX_BRIGHTNESS_PATH)
 
     fun readSocTemperatureC(): Float? {
+        val thermalKeywords = getSocThermalKeywords()
         val thermalTemps = runCatching {
             File(THERMAL_ROOT).listFiles { file -> file.name.startsWith("thermal_zone") }
                 ?.mapNotNull { zone ->
                     val type = File(zone, "type").readTextOrNull()?.trim()?.lowercase() ?: return@mapNotNull null
-                    if (SOC_THERMAL_KEYWORDS.none { type.contains(it) }) return@mapNotNull null
+                    if (thermalKeywords.none { type.contains(it) }) return@mapNotNull null
                     File(zone, "temp").readTextOrNull()?.trim()?.toLongOrNull()?.let(::normalizeTemperature)
                 }
                 ?.filter { it in 0f..150f }
@@ -425,6 +432,30 @@ object AutoHbmController {
         }
             .onFailure { Log.w(TAG, "Unable to write screen brightness mode", it) }
             .getOrDefault(false)
+    }
+
+    private fun getSocThermalKeywords(): List<String> {
+        val model = readSystemProperty("ro.soc.model")?.lowercase().orEmpty()
+        if (model.isBlank()) return SOC_THERMAL_KEYWORDS
+
+        val modelTokens = model.split(Regex("[^a-z0-9]+"))
+            .filter { it.length >= 2 }
+        val compactModel = model.filter { it.isLetterOrDigit() }
+
+        return (SOC_THERMAL_KEYWORDS + modelTokens + compactModel)
+            .filter { it.isNotBlank() }
+            .distinct()
+    }
+
+    private fun readSystemProperty(name: String): String? {
+        return runCatching {
+            val clazz = Class.forName("android.os.SystemProperties")
+            val method = clazz.getMethod("get", String::class.java, String::class.java)
+            method.invoke(null, name, "") as? String
+        }
+            .getOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
     }
 
     private fun normalizeTemperature(rawValue: Long): Float {

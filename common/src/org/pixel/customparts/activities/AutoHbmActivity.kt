@@ -132,6 +132,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     }
     var hbmActive by remember { mutableStateOf(AutoHbmController.isHbmActive(context)) }
     var brightness by remember { mutableIntStateOf(AutoHbmController.getLastBrightness(context)) }
+    var maxBrightness by remember { mutableIntStateOf(AutoHbmController.readMaxBrightness() ?: 0) }
+    val socModel = remember { AutoHbmController.getSocModel() }
     val supported = remember { AutoHbmController.isSupported() }
 
     DisposableEffect(Unit) {
@@ -156,6 +158,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 currentLux = intent.getFloatExtra(AutoHbmController.EXTRA_LUX, currentLux)
                 hbmActive = intent.getBooleanExtra(AutoHbmController.EXTRA_ACTIVE, AutoHbmController.isHbmActive(context))
                 brightness = intent.getIntExtra(AutoHbmController.EXTRA_BRIGHTNESS, brightness)
+                maxBrightness = intent.getIntExtra(AutoHbmController.EXTRA_MAX_BRIGHTNESS, maxBrightness)
                 if (intent.hasExtra(AutoHbmController.EXTRA_TEMPERATURE)) {
                     currentTemperature = intent.getFloatExtra(AutoHbmController.EXTRA_TEMPERATURE, currentTemperature ?: 0f)
                 }
@@ -223,6 +226,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         threshold = threshold,
                         hbmActive = hbmActive,
                         brightness = brightness,
+                        maxBrightness = maxBrightness,
+                        socModel = socModel,
                         currentTemperature = currentTemperature
                     )
                 }
@@ -239,6 +244,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 AutoHbmController.setEnabled(context, it)
                                 hbmActive = AutoHbmController.isHbmActive(context)
                                 brightness = AutoHbmController.getLastBrightness(context)
+                                maxBrightness = AutoHbmController.readMaxBrightness() ?: maxBrightness
                             }
                         )
 
@@ -433,6 +439,8 @@ private fun AutoHbmLuxCard(
     threshold: Int,
     hbmActive: Boolean,
     brightness: Int,
+    maxBrightness: Int,
+    socModel: String,
     currentTemperature: Float?
 ) {
     val progress = (currentLux / threshold.coerceAtLeast(1)).coerceIn(0f, 1f)
@@ -479,7 +487,14 @@ private fun AutoHbmLuxCard(
             )
 
             Text(
-                text = dynamicStringResource(R.string.auto_hbm_status_format, threshold, brightness, temperatureText),
+                text = dynamicStringResource(
+                    R.string.auto_hbm_status_format,
+                    threshold,
+                    brightness,
+                    maxBrightness,
+                    socModel,
+                    temperatureText
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
