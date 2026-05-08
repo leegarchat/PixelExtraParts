@@ -33,8 +33,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,7 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -87,17 +84,6 @@ class SaturationActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { SaturationAppSurface { SaturationScreen(onBack = { finish() }) } }
-    }
-}
-
-class SaturationTileDialogActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            SaturationAppSurface {
-                SaturationSettingsDialog(onDismiss = { finish() })
-            }
-        }
     }
 }
 
@@ -240,54 +226,10 @@ private fun SaturationScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun SaturationSettingsDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    var enabled by remember { mutableStateOf(SaturationController.isEnabled(context)) }
-    var percent by remember { mutableIntStateOf(SaturationController.getPercent(context)) }
-
-    fun updateEnabled(value: Boolean) {
-        enabled = value
-        SaturationController.setEnabled(context, value)
-    }
-
-    fun updatePercent(value: Int) {
-        percent = value.coerceIn(SaturationController.MIN_PERCENT, SaturationController.MAX_PERCENT)
-        SaturationController.setPercent(context, percent)
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Rounded.Palette, null) },
-        title = { Text(dynamicStringResource(R.string.saturation_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SaturationPreviewCard(
-                    percent = if (enabled) percent else SaturationController.DEFAULT_PERCENT,
-                    compact = true
-                )
-                SaturationControls(
-                    enabled = enabled,
-                    percent = percent,
-                    compact = true,
-                    onEnabledChange = ::updateEnabled,
-                    onPercentChange = ::updatePercent,
-                    onValueChangeFinished = { SaturationController.applyEffectiveSaturation(context) }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(dynamicStringResource(R.string.btn_apply))
-            }
-        }
-    )
-}
-
 @Composable
 private fun SaturationControls(
     enabled: Boolean,
     percent: Int,
-    compact: Boolean = false,
     onEnabledChange: (Boolean) -> Unit,
     onPercentChange: (Int) -> Unit,
     onValueChangeFinished: () -> Unit
@@ -295,7 +237,7 @@ private fun SaturationControls(
     Column(modifier = Modifier.fillMaxWidth()) {
         GenericSwitchRow(
             title = dynamicStringResource(R.string.saturation_enable_title),
-            summary = if (compact) null else dynamicStringResource(R.string.saturation_enable_summary),
+            summary = dynamicStringResource(R.string.saturation_enable_summary),
             checked = enabled,
             onCheckedChange = onEnabledChange
         )
@@ -318,7 +260,7 @@ private fun SaturationControls(
 }
 
 @Composable
-private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
+private fun SaturationPreviewCard(percent: Int) {
     var page by remember { mutableIntStateOf(0) }
     val images = listOf(
         R.drawable.image_preview1,
@@ -332,21 +274,19 @@ private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.padding(if (compact) 12.dp else 16.dp)) {
-            if (!compact) {
-                Text(
-                    text = dynamicStringResource(R.string.saturation_preview_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(12.dp))
-            }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = dynamicStringResource(R.string.saturation_preview_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(12.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(if (compact) 2.2f else 1.65f)
+                    .aspectRatio(1.65f)
                     .clip(RoundedCornerShape(20.dp))
             ) {
                 Image(
@@ -406,18 +346,16 @@ private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
                 }
             }
 
-            if (!compact) {
-                Text(
-                    text = "$percent%",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                )
-            }
+            Text(
+                text = "$percent%",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
         }
     }
 }

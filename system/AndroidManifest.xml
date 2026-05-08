@@ -196,11 +196,6 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
-            android:name=".activities.SaturationTileDialogActivity"
-            android:label="@string/saturation_title"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
             android:name=".activities.AutoHbmActivity"
             android:label="@string/auto_hbm_title"
             android:exported="false"

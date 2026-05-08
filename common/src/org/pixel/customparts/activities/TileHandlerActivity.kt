@@ -29,7 +29,7 @@ class TileHandlerActivity : Activity() {
     private fun resolvePreferencesIntent(source: Intent): Intent {
         val tile = source.getParcelableExtra(Intent.EXTRA_COMPONENT_NAME) as? ComponentName
         val target = when (tile?.className) {
-            SaturationTileService::class.java.name -> Intent(this, SaturationTileDialogActivity::class.java)
+            SaturationTileService::class.java.name -> Intent(this, SaturationActivity::class.java)
             AutoHbmTileService::class.java.name -> Intent(this, AutoHbmActivity::class.java)
             else -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", tile?.packageName ?: packageName, null)
