@@ -10,9 +10,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -84,7 +88,7 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets.navigationBars,
+        contentWindowInsets = WindowInsets.navigationBars,
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
@@ -145,8 +149,7 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
 
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
-                topBarHeight = 64.dp + androidx.compose.foundation.layout.WindowInsets.statusBars
-                    .asPaddingValues().calculateTopPadding(),
+                topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                 blurState = blurState,
                 isScrolled = isScrolled
             )
