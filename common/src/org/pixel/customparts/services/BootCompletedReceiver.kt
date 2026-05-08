@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.pixel.customparts.activities.ImsManager
 import org.pixel.customparts.activities.ThermalManager
+import org.pixel.customparts.utils.AutoHbmController
 import org.pixel.customparts.utils.SaturationController
 
 class BootCompletedReceiver : BroadcastReceiver() {
@@ -22,6 +23,7 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 ImsManager.onBoot(context)
                 ThermalManager.onBoot(context)
                 SaturationController.applyEffectiveSaturation(context)
+                AutoHbmController.syncService(context)
             } catch (e: Exception) {
                 Log.e("PixelParts", "Error during boot initialization", e)
             } finally {

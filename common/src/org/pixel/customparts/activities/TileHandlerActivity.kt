@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.service.quicksettings.TileService
 import android.util.Log
+import org.pixel.customparts.services.AutoHbmTileService
 import org.pixel.customparts.services.SaturationTileService
 
 class TileHandlerActivity : Activity() {
@@ -29,6 +30,7 @@ class TileHandlerActivity : Activity() {
         val tile = source.getParcelableExtra(Intent.EXTRA_COMPONENT_NAME) as? ComponentName
         val target = when (tile?.className) {
             SaturationTileService::class.java.name -> Intent(this, SaturationTileDialogActivity::class.java)
+            AutoHbmTileService::class.java.name -> Intent(this, AutoHbmActivity::class.java)
             else -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", tile?.packageName ?: packageName, null)
             }

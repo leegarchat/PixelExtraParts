@@ -201,6 +201,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name=".activities.AutoHbmActivity"
+            android:label="@string/auto_hbm_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name=".activities.TileHandlerActivity"
             android:exported="true"
             android:noHistory="true"
@@ -288,6 +293,24 @@
             android:name=".services.SaturationTileService"
             android:label="@string/saturation_title"
             android:icon="@drawable/ic_saturation_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.AutoHbmService"
+            android:exported="false" />
+
+        <service
+            android:name=".services.AutoHbmTileService"
+            android:label="@string/auto_hbm_title"
+            android:icon="@drawable/ic_auto_hbm_tile"
             android:exported="true"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

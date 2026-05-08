@@ -7,6 +7,15 @@ object SettingsKeys {
     const val SATURATION_ENABLED = "pixelparts_saturation_enabled"
     const val SATURATION_PERCENT = "pixelparts_saturation_percent"
 
+    const val AUTO_HBM_ENABLED = "pixelparts_auto_hbm_enabled"
+    const val AUTO_HBM_THRESHOLD = "pixelparts_auto_hbm_threshold"
+    const val AUTO_HBM_ENABLE_TIME = "pixelparts_auto_hbm_enable_time"
+    const val AUTO_HBM_DISABLE_TIME = "pixelparts_auto_hbm_disable_time"
+    const val AUTO_HBM_ORIGINAL_BRIGHTNESS = "pixelparts_auto_hbm_original_brightness"
+    const val AUTO_HBM_ACTIVE = "pixelparts_auto_hbm_active"
+    const val AUTO_HBM_LAST_LUX = "pixelparts_auto_hbm_last_lux"
+    const val AUTO_HBM_LAST_BRIGHTNESS = "pixelparts_auto_hbm_last_brightness"
+
     val isPineOverride: Boolean
         get() {
             if (!IS_XPOSED) return false

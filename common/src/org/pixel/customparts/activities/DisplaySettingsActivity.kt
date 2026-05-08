@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.WbSunny
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -122,6 +124,17 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                             iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             onClick = { context.startActivity(Intent(context, SaturationActivity::class.java)) }
+                        )
+
+                        HorizontalDivider()
+
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.auto_hbm_title),
+                            subtitle = dynamicStringResource(R.string.auto_hbm_summary),
+                            icon = Icons.Rounded.WbSunny,
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = { context.startActivity(Intent(context, AutoHbmActivity::class.java)) }
                         )
                     }
                 }

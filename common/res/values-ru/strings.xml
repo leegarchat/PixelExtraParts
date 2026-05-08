@@ -40,6 +40,24 @@
     <string name="tile_already_added">Плитка уже добавлена</string>
     <string name="tile_request_unavailable">Добавление плитки недоступно в этой сборке</string>
 
+    <string name="auto_hbm_title">Auto HBM</string>
+    <string name="auto_hbm_summary">Автоматически поднимает яркость панели при сильном освещении</string>
+    <string name="auto_hbm_enable_title">Использовать Auto HBM</string>
+    <string name="auto_hbm_current_lux_title">Текущий уровень света</string>
+    <string name="auto_hbm_threshold_title">Порог освещения</string>
+    <string name="auto_hbm_enable_time_title">Задержка включения</string>
+    <string name="auto_hbm_disable_time_title">Задержка выключения</string>
+    <string name="auto_hbm_add_tile">Добавить плитку Auto HBM</string>
+    <string name="auto_hbm_status_monitoring">Отслеживание освещения</string>
+    <string name="auto_hbm_status_active">Максимальная яркость активна</string>
+    <string name="auto_hbm_status_format">Порог: %1$d lx • Яркость: %2$d</string>
+    <string name="auto_hbm_unsupported_title">Узел яркости панели недоступен</string>
+    <string name="auto_hbm_unsupported_summary">Auto HBM нужны /sys/class/backlight/panel0-backlight/brightness и max_brightness. Эта сборка или устройство не открывает ожидаемые узлы панели Pixel.</string>
+    <string name="auto_hbm_tile_off">Выкл.</string>
+    <string name="auto_hbm_tile_monitoring">Мониторинг</string>
+    <string name="auto_hbm_tile_active">Макс. яркость</string>
+    <string name="auto_hbm_tile_unsupported">Не поддерживается</string>
+
     <string name="sysui_settings_title">Настройки SystemUI</string>
     <string name="sysui_lockscreen_title">Настройки экрана блокировки</string>
     <string name="sysui_lockscreen_subtitle">Настройка информации о зарядке и жестов на экране блокировки</string>
