@@ -14,37 +14,46 @@ class VariantRule:
     order: int
     version_label: str
     sourceforge_dir: str
+    description: str
 
 
 @dataclass(frozen=True)
 class SourceRule:
     order: int
-    version_suffix: str
+    websource: str
+    use_sourceforge: bool = False
 
 
 SUPPORTED_DEVICES = ("shiba", "husky", "akita")
 SOURCEFORGE_PROJECT = "evolutionx-unofficial-leegar"
 GDRIVE_BASE_URL = "https://leegarchat.mooo.com/files"
+CHANGELOG_BASE_URL = (
+    "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/main/"
+    "OTA/changelogs"
+)
 VARIANT_RULES = {
     "stock": VariantRule(
         order=0,
         version_label="Stock GKI",
         sourceforge_dir="Build-GKI-stock",
+        description="Build with Stock GKI kernel",
     ),
     "sultan-wksu-r6": VariantRule(
         order=1,
         version_label="Sultan WildKSU",
         sourceforge_dir="Build-Sultan-WKSU-SUSFS-r6",
+        description="Build with Sultan WildKSU kernel",
     ),
     "wksu-r19-6.1.145": VariantRule(
         order=2,
         version_label="GKI WildKSU",
         sourceforge_dir="Build-GKI-WKSU-SUSFS-r19",
+        description="Build with GKI WildKSU kernel",
     ),
 }
 SOURCE_RULES = (
-    SourceRule(order=0, version_suffix="SourceForge"),
-    SourceRule(order=1, version_suffix="leegarhost"),
+    # SourceRule(order=0, websource="SourceForge", use_sourceforge=True),
+    SourceRule(order=1, websource="leegarchat.mooo.com"),
 )
 REQUIRED_SOURCE_KEYS = (
     "maintainer",
@@ -183,13 +192,17 @@ def build_download_url(
     sourceforge_dir: str,
     filename: str,
 ) -> str:
-    if source_rule.version_suffix == "SourceForge":
+    if source_rule.use_sourceforge:
         return (
             f"https://sourceforge.net/projects/{SOURCEFORGE_PROJECT}/files/"
             f"{device_code}/{release_date}/{sourceforge_dir}/{filename}/download"
         )
 
     return f"{GDRIVE_BASE_URL}/{device_code}/{release_date}/{sourceforge_dir}/{filename}"
+
+
+def build_changelog_url(device_code: str) -> str:
+    return f"{CHANGELOG_BASE_URL}/{device_code}.txt"
 
 
 def normalize_entries(
@@ -201,7 +214,6 @@ def normalize_entries(
 ) -> list[dict[str, Any]]:
     filename = str(source_entry["filename"])
     base_version = parse_filename(filename, device_code, release_date)
-    version_base = f"{base_version} {variant_rule.version_label}".strip()
     entry_base = {
         "maintainer": source_entry["maintainer"],
         "currently_maintained": source_entry["currently_maintained"],
@@ -217,13 +229,16 @@ def normalize_entries(
         "firmware": source_entry["firmware"],
         "paypal": source_entry["paypal"],
         "github": source_entry["github"],
-        "initial_installation_images": source_entry["initial_installation_images"],
-        "extra_images": source_entry["extra_images"],
     }
+    description = source_entry.get("description", variant_rule.description)
 
     entries = []
     for source_rule in sorted(SOURCE_RULES, key=lambda item: item.order):
         entry = dict(entry_base)
+        entry["websource"] = source_rule.websource
+        entry["description"] = description
+        entry["initial_installation_images"] = source_entry["initial_installation_images"]
+        entry["extra_images"] = source_entry["extra_images"]
         entry["download"] = build_download_url(
             source_rule,
             device_code,
@@ -231,7 +246,7 @@ def normalize_entries(
             variant_rule.sourceforge_dir,
             filename,
         )
-        entry["version"] = f"{version_base} {source_rule.version_suffix}".strip()
+        entry["version"] = base_version
         entries.append(entry)
 
     return entries
@@ -279,14 +294,20 @@ def collect_device_entries(release_dir: Path, device_code: str) -> list[dict[str
     return normalized
 
 
-def render_payload(entries: list[dict[str, Any]]) -> str:
-    return json.dumps({"response": entries}, indent=2) + "\n"
+def render_payload(entries: list[dict[str, Any]], device_code: str) -> str:
+    return json.dumps(
+        {
+            "response": entries,
+            "changelogurl": build_changelog_url(device_code),
+        },
+        indent=2,
+    ) + "\n"
 
 
 def update_device_builds(release_dir: Path, device_code: str, dry_run: bool) -> tuple[Path, int, int]:
     entries = collect_device_entries(release_dir, device_code)
     output_path = builds_dir() / f"{device_code}.json"
-    payload = render_payload(entries)
+    payload = render_payload(entries, device_code)
 
     if not dry_run:
         output_path.write_text(payload, encoding="utf-8")
