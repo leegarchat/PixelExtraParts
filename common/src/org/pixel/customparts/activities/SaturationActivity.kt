@@ -5,8 +5,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -60,10 +59,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -321,7 +320,12 @@ private fun SaturationControls(
 @Composable
 private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
     var page by remember { mutableIntStateOf(0) }
-    val pages = 3
+    val images = listOf(
+        R.drawable.image_preview1,
+        R.drawable.image_preview2,
+        R.drawable.image_preview3
+    )
+    val pages = images.size
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -345,7 +349,12 @@ private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
                     .aspectRatio(if (compact) 2.2f else 1.65f)
                     .clip(RoundedCornerShape(20.dp))
             ) {
-                SaturationPreviewCanvas(page = page, percent = percent)
+                Image(
+                    painter = painterResource(images[page]),
+                    contentDescription = dynamicStringResource(R.string.saturation_preview_content_description),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
 
                 Row(
                     modifier = Modifier
@@ -387,16 +396,12 @@ private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(pages) { index ->
-                    val dotColor by animateColorAsState(
-                        targetValue = if (index == page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                        label = "saturationDot"
-                    )
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
                             .size(if (index == page) 9.dp else 7.dp)
                             .clip(CircleShape)
-                            .background(dotColor)
+                            .background(if (index == page) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
                     )
                 }
             }
@@ -412,48 +417,6 @@ private fun SaturationPreviewCard(percent: Int, compact: Boolean = false) {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SaturationPreviewCanvas(page: Int, percent: Int) {
-    val primary = SaturationController.previewColor(Color(0xFF4E8CFF), percent)
-    val secondary = SaturationController.previewColor(Color(0xFFFF6B7A), percent)
-    val tertiary = SaturationController.previewColor(Color(0xFF2DCB8F), percent)
-    val accent = SaturationController.previewColor(Color(0xFFFFC857), percent)
-    val violet = SaturationController.previewColor(Color(0xFF8F6BFF), percent)
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.linearGradient(
-                when (page) {
-                    0 -> listOf(primary, tertiary, accent)
-                    1 -> listOf(secondary, violet, primary)
-                    else -> listOf(tertiary, accent, secondary)
-                }
-            )
-        )
-
-        when (page) {
-            0 -> {
-                drawCircle(Color.White.copy(alpha = 0.82f), radius = size.minDimension * 0.2f, center = center)
-                drawCircle(violet.copy(alpha = 0.75f), radius = size.minDimension * 0.12f, center = center.copy(x = center.x * 0.72f))
-                drawCircle(secondary.copy(alpha = 0.75f), radius = size.minDimension * 0.1f, center = center.copy(x = center.x * 1.28f))
-            }
-            1 -> {
-                val stripeWidth = size.width / 6f
-                listOf(primary, secondary, tertiary, accent, violet, Color.White.copy(alpha = 0.85f)).forEachIndexed { index, color ->
-                    drawRect(color, topLeft = androidx.compose.ui.geometry.Offset(index * stripeWidth, 0f), size = androidx.compose.ui.geometry.Size(stripeWidth, size.height))
-                }
-                drawCircle(Color.Black.copy(alpha = 0.16f), radius = size.minDimension * 0.32f, center = center, style = Stroke(width = 8.dp.toPx()))
-            }
-            else -> {
-                drawCircle(primary.copy(alpha = 0.86f), radius = size.minDimension * 0.28f, center = center.copy(x = size.width * 0.32f, y = size.height * 0.42f))
-                drawCircle(secondary.copy(alpha = 0.82f), radius = size.minDimension * 0.24f, center = center.copy(x = size.width * 0.66f, y = size.height * 0.54f))
-                drawCircle(accent.copy(alpha = 0.78f), radius = size.minDimension * 0.18f, center = center.copy(x = size.width * 0.52f, y = size.height * 0.27f))
-                drawRect(Color.White.copy(alpha = 0.28f), topLeft = androidx.compose.ui.geometry.Offset(0f, size.height * 0.7f))
             }
         }
     }

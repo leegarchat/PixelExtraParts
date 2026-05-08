@@ -30,6 +30,7 @@
     <string name="saturation_enable_summary">Применять выбранный уровень насыщенности сразу</string>
     <string name="saturation_level_title">Уровень насыщенности</string>
     <string name="saturation_preview_title">Предпросмотр</string>
+    <string name="saturation_preview_content_description">Изображение для предпросмотра насыщенности экрана</string>
     <string name="saturation_footer_summary">Изменение цветового режима в настройках экрана Android может переопределить это значение, после чего его нужно применить заново.</string>
     <string name="saturation_add_tile">Добавить плитку насыщенности</string>
     <string name="saturation_tile_active">Своя насыщенность включена</string>

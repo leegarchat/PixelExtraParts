@@ -169,10 +169,8 @@ object AutoHbmController {
     }
 
     private fun writeBrightness(value: Int): Boolean {
-        val directWrite = runCatching { File(BRIGHTNESS_PATH).writeText(value.toString()) }.isSuccess
-        if (!directWrite) {
-            runRootCommand("printf '%s' '$value' > '$BRIGHTNESS_PATH'")
-        }
-        return readBrightness() == value
+        return runCatching { File(BRIGHTNESS_PATH).writeText(value.toString()) }
+            .onFailure { Log.e(TAG, "Unable to write $BRIGHTNESS_PATH", it) }
+            .isSuccess && readBrightness() == value
     }
 }

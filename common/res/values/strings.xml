@@ -29,6 +29,7 @@
     <string name="saturation_enable_summary">Apply the selected saturation level immediately</string>
     <string name="saturation_level_title">Saturation level</string>
     <string name="saturation_preview_title">Preview</string>
+    <string name="saturation_preview_content_description">Display saturation preview image</string>
     <string name="saturation_footer_summary">Changing the color mode in Android display settings can override this value and may require reapplying it.</string>
     <string name="saturation_add_tile">Add Saturation tile</string>
     <string name="saturation_tile_active">Custom saturation on</string>

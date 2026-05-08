@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.pixel.customparts.AppConfig
 import org.pixel.customparts.MainMenuNavigationRow
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
@@ -115,27 +116,29 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.display_section_screen)) {
-                        MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.saturation_title),
-                            subtitle = dynamicStringResource(R.string.saturation_summary),
-                            icon = Icons.Rounded.Palette,
-                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { context.startActivity(Intent(context, SaturationActivity::class.java)) }
-                        )
+                if (!AppConfig.IS_XPOSED) {
+                    item {
+                        SettingsGroupCard(title = dynamicStringResource(R.string.display_section_screen)) {
+                            MainMenuNavigationRow(
+                                title = dynamicStringResource(R.string.saturation_title),
+                                subtitle = dynamicStringResource(R.string.saturation_summary),
+                                icon = Icons.Rounded.Palette,
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                onClick = { context.startActivity(Intent(context, SaturationActivity::class.java)) }
+                            )
 
-                        HorizontalDivider()
+                            HorizontalDivider()
 
-                        MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.auto_hbm_title),
-                            subtitle = dynamicStringResource(R.string.auto_hbm_summary),
-                            icon = Icons.Rounded.WbSunny,
-                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            onClick = { context.startActivity(Intent(context, AutoHbmActivity::class.java)) }
-                        )
+                            MainMenuNavigationRow(
+                                title = dynamicStringResource(R.string.auto_hbm_title),
+                                subtitle = dynamicStringResource(R.string.auto_hbm_summary),
+                                icon = Icons.Rounded.WbSunny,
+                                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                onClick = { context.startActivity(Intent(context, AutoHbmActivity::class.java)) }
+                            )
+                        }
                     }
                 }
             }

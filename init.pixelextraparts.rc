@@ -5,6 +5,11 @@ on post-fs-data
     mkdir /data/pixelparts/system_addons_data 0777 system system
     restorecon_recursive /data/pixelparts
 
+# PixelExtraParts Auto HBM panel brightness access
+on boot
+    chown system system /sys/class/backlight/panel0-backlight/brightness
+    chmod 0664 /sys/class/backlight/panel0-backlight/brightness
+
 # PixelExtraParts thermal config switch
 on init
     setprop persist.sys.pixelparts.thermal_available true

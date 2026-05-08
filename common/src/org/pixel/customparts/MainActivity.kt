@@ -240,16 +240,18 @@ fun MainDashboard() {
 
                 item {
                     SettingsGroupCard(title = dynamicStringResource(R.string.main_header_system)) {
-                        MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.display_title),
-                            subtitle = dynamicStringResource(R.string.display_desc),
-                            icon = Icons.Rounded.Palette,
-                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
-                        )
+                        if (!AppConfig.IS_XPOSED) {
+                            MainMenuNavigationRow(
+                                title = dynamicStringResource(R.string.display_title),
+                                subtitle = dynamicStringResource(R.string.display_desc),
+                                icon = Icons.Rounded.Palette,
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
+                            )
 
-                        HorizontalDivider()
+                            HorizontalDivider()
+                        }
 
                         MainMenuNavigationRow(
                             title = dynamicStringResource(R.string.sysui_settings_title),

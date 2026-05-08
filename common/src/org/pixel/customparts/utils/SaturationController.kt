@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Parcel
 import android.os.ServiceManager
 import android.util.Log
-import androidx.compose.ui.graphics.Color
 import org.pixel.customparts.SettingsKeys
 
 object SaturationController {
@@ -65,14 +64,4 @@ object SaturationController {
         return if (percent == DEFAULT_PERCENT) 1.001f else percent / 100f
     }
 
-    fun previewColor(color: Color, percent: Int): Color {
-        val scale = toSurfaceFlingerScale(percent.coerceIn(MIN_PERCENT, MAX_PERCENT))
-        val gray = color.red * 0.299f + color.green * 0.587f + color.blue * 0.114f
-        return Color(
-            red = (gray + (color.red - gray) * scale).coerceIn(0f, 1f),
-            green = (gray + (color.green - gray) * scale).coerceIn(0f, 1f),
-            blue = (gray + (color.blue - gray) * scale).coerceIn(0f, 1f),
-            alpha = color.alpha
-        )
-    }
 }
