@@ -15,6 +15,14 @@ object SettingsKeys {
     const val AUTO_HBM_ACTIVE = "pixelparts_auto_hbm_active"
     const val AUTO_HBM_LAST_LUX = "pixelparts_auto_hbm_last_lux"
     const val AUTO_HBM_LAST_BRIGHTNESS = "pixelparts_auto_hbm_last_brightness"
+    const val AUTO_HBM_SMOOTH_RAMP_ENABLED = "pixelparts_auto_hbm_smooth_ramp_enabled"
+    const val AUTO_HBM_RAMP_TIME_MS = "pixelparts_auto_hbm_ramp_time_ms"
+    const val AUTO_HBM_MAX_ACTIVE_TIME = "pixelparts_auto_hbm_max_active_time"
+    const val AUTO_HBM_COOLDOWN_TIME = "pixelparts_auto_hbm_cooldown_time"
+    const val AUTO_HBM_CHECK_INTERVAL_MS = "pixelparts_auto_hbm_check_interval_ms"
+    const val AUTO_HBM_TEMPERATURE_LIMIT = "pixelparts_auto_hbm_temperature_limit"
+    const val AUTO_HBM_AUTO_BRIGHTNESS_WAS_ENABLED = "pixelparts_auto_hbm_auto_brightness_was_enabled"
+    const val AUTO_HBM_LAST_TEMPERATURE = "pixelparts_auto_hbm_last_temperature"
 
     val isPineOverride: Boolean
         get() {

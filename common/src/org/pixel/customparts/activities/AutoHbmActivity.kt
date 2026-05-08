@@ -82,6 +82,7 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoHbmController
 import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
+import java.util.Locale
 
 class AutoHbmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,7 +120,16 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     var threshold by remember { mutableIntStateOf(AutoHbmController.getThreshold(context)) }
     var enableTime by remember { mutableIntStateOf(AutoHbmController.getEnableTime(context)) }
     var disableTime by remember { mutableIntStateOf(AutoHbmController.getDisableTime(context)) }
+    var smoothRampEnabled by remember { mutableStateOf(AutoHbmController.isSmoothRampEnabled(context)) }
+    var rampTimeMs by remember { mutableIntStateOf(AutoHbmController.getRampTimeMs(context)) }
+    var maxActiveTime by remember { mutableIntStateOf(AutoHbmController.getMaxActiveTime(context)) }
+    var cooldownTime by remember { mutableIntStateOf(AutoHbmController.getCooldownTime(context)) }
+    var checkIntervalMs by remember { mutableIntStateOf(AutoHbmController.getCheckIntervalMs(context)) }
+    var temperatureLimit by remember { mutableIntStateOf(AutoHbmController.getTemperatureLimit(context)) }
     var currentLux by remember { mutableFloatStateOf(AutoHbmController.getLastLux(context)) }
+    var currentTemperature by remember {
+        mutableStateOf(AutoHbmController.getLastTemperature(context) ?: AutoHbmController.readSocTemperatureC())
+    }
     var hbmActive by remember { mutableStateOf(AutoHbmController.isHbmActive(context)) }
     var brightness by remember { mutableIntStateOf(AutoHbmController.getLastBrightness(context)) }
     val supported = remember { AutoHbmController.isSupported() }
@@ -146,6 +156,9 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 currentLux = intent.getFloatExtra(AutoHbmController.EXTRA_LUX, currentLux)
                 hbmActive = intent.getBooleanExtra(AutoHbmController.EXTRA_ACTIVE, AutoHbmController.isHbmActive(context))
                 brightness = intent.getIntExtra(AutoHbmController.EXTRA_BRIGHTNESS, brightness)
+                if (intent.hasExtra(AutoHbmController.EXTRA_TEMPERATURE)) {
+                    currentTemperature = intent.getFloatExtra(AutoHbmController.EXTRA_TEMPERATURE, currentTemperature ?: 0f)
+                }
             }
         }
         ContextCompat.registerReceiver(
@@ -209,7 +222,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         currentLux = currentLux,
                         threshold = threshold,
                         hbmActive = hbmActive,
-                        brightness = brightness
+                        brightness = brightness,
+                        currentTemperature = currentTemperature
                     )
                 }
 
@@ -278,6 +292,104 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 AutoHbmController.setDisableTime(context, disableTime)
                             }
                         )
+
+                        GenericSwitchRow(
+                            title = dynamicStringResource(R.string.auto_hbm_smooth_ramp_title),
+                            summary = dynamicStringResource(R.string.auto_hbm_smooth_ramp_summary),
+                            checked = smoothRampEnabled,
+                            enabled = enabled && supported,
+                            onCheckedChange = {
+                                smoothRampEnabled = it
+                                AutoHbmController.setSmoothRampEnabled(context, it)
+                            }
+                        )
+
+                        if (smoothRampEnabled) {
+                            SliderSetting(
+                                title = dynamicStringResource(R.string.auto_hbm_ramp_time_title),
+                                value = rampTimeMs,
+                                range = AutoHbmController.MIN_RAMP_TIME_MS..AutoHbmController.MAX_RAMP_TIME_MS,
+                                unit = "ms",
+                                enabled = enabled && supported,
+                                valueText = "$rampTimeMs ms",
+                                onValueChange = {
+                                    rampTimeMs = it
+                                    AutoHbmController.setRampTimeMs(context, it)
+                                },
+                                onDefault = {
+                                    rampTimeMs = AutoHbmController.DEFAULT_RAMP_TIME_MS
+                                    AutoHbmController.setRampTimeMs(context, rampTimeMs)
+                                }
+                            )
+                        }
+
+                        SliderSetting(
+                            title = dynamicStringResource(R.string.auto_hbm_max_active_time_title),
+                            value = maxActiveTime,
+                            range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
+                            unit = "s",
+                            enabled = enabled && supported,
+                            valueText = "$maxActiveTime s",
+                            onValueChange = {
+                                maxActiveTime = it
+                                AutoHbmController.setMaxActiveTime(context, it)
+                            },
+                            onDefault = {
+                                maxActiveTime = AutoHbmController.DEFAULT_MAX_ACTIVE_TIME_SECONDS
+                                AutoHbmController.setMaxActiveTime(context, maxActiveTime)
+                            }
+                        )
+
+                        SliderSetting(
+                            title = dynamicStringResource(R.string.auto_hbm_cooldown_time_title),
+                            value = cooldownTime,
+                            range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
+                            unit = "s",
+                            enabled = enabled && supported,
+                            valueText = "$cooldownTime s",
+                            onValueChange = {
+                                cooldownTime = it
+                                AutoHbmController.setCooldownTime(context, it)
+                            },
+                            onDefault = {
+                                cooldownTime = AutoHbmController.DEFAULT_COOLDOWN_TIME_SECONDS
+                                AutoHbmController.setCooldownTime(context, cooldownTime)
+                            }
+                        )
+
+                        SliderSetting(
+                            title = dynamicStringResource(R.string.auto_hbm_check_interval_title),
+                            value = checkIntervalMs,
+                            range = AutoHbmController.MIN_CHECK_INTERVAL_MS..AutoHbmController.MAX_CHECK_INTERVAL_MS,
+                            unit = "ms",
+                            enabled = enabled && supported,
+                            valueText = "$checkIntervalMs ms",
+                            onValueChange = {
+                                checkIntervalMs = it
+                                AutoHbmController.setCheckIntervalMs(context, it)
+                            },
+                            onDefault = {
+                                checkIntervalMs = AutoHbmController.DEFAULT_CHECK_INTERVAL_MS
+                                AutoHbmController.setCheckIntervalMs(context, checkIntervalMs)
+                            }
+                        )
+
+                        SliderSetting(
+                            title = dynamicStringResource(R.string.auto_hbm_temperature_limit_title),
+                            value = temperatureLimit,
+                            range = AutoHbmController.MIN_TEMPERATURE_LIMIT_C..AutoHbmController.MAX_TEMPERATURE_LIMIT_C,
+                            unit = "°C",
+                            enabled = enabled && supported,
+                            valueText = "$temperatureLimit°C",
+                            onValueChange = {
+                                temperatureLimit = it
+                                AutoHbmController.setTemperatureLimit(context, it)
+                            },
+                            onDefault = {
+                                temperatureLimit = AutoHbmController.DEFAULT_TEMPERATURE_LIMIT_C
+                                AutoHbmController.setTemperatureLimit(context, temperatureLimit)
+                            }
+                        )
                     }
                 }
 
@@ -320,9 +432,12 @@ private fun AutoHbmLuxCard(
     currentLux: Float,
     threshold: Int,
     hbmActive: Boolean,
-    brightness: Int
+    brightness: Int,
+    currentTemperature: Float?
 ) {
     val progress = (currentLux / threshold.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val temperatureText = currentTemperature?.let { String.format(Locale.US, "%.1f°C", it) }
+        ?: dynamicStringResource(R.string.auto_hbm_temperature_unknown)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -364,7 +479,7 @@ private fun AutoHbmLuxCard(
             )
 
             Text(
-                text = dynamicStringResource(R.string.auto_hbm_status_format, threshold, brightness),
+                text = dynamicStringResource(R.string.auto_hbm_status_format, threshold, brightness, temperatureText),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
