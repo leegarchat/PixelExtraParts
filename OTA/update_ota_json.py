@@ -183,7 +183,7 @@ def build_download_url(
     sourceforge_dir: str,
     filename: str,
 ) -> str:
-    if source_rule.version_suffix == "SF":
+    if source_rule.version_suffix == "SourceForge":
         return (
             f"https://sourceforge.net/projects/{SOURCEFORGE_PROJECT}/files/"
             f"{device_code}/{release_date}/{sourceforge_dir}/{filename}/download"

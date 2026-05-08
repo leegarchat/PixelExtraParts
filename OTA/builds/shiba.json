@@ -15,8 +15,8 @@
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
-      "websource": "SourceForge 1 ",
-      "description": "Test  1111 description for Sultan WildKSU test build.",
+      "websource": "SourceForge",
+      "description": "Build with Sultan WildKSU kernel",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -24,8 +24,8 @@
         "vendor_boot"
       ],
       "extra_images": [],
-      "download": "https://leegarchat.mooo.com/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
-      "version": "11.7 Sultan WildKSU test"
+      "download": "https://sourceforge.net/projects/evolutionx-unofficial-leegar/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
+      "version": "11.7"
     },
     {
       "maintainer": "LeeGarChat",
@@ -42,8 +42,8 @@
       "firmware": "",
       "paypal": "https://boosty.to/leegar/",
       "github": "leegarchat",
-      "websource": "leegarchat.mooo.com 2 ",
-      "description": "Test 2222 description for Sultan 2 WildKSU test build.",
+      "websource": "leegarchat.mooo.com",
+      "description": "Build with Sultan WildKSU kernel",
       "initial_installation_images": [
         "boot",
         "dtbo",
@@ -52,7 +52,7 @@
       ],
       "extra_images": [],
       "download": "https://leegarchat.mooo.com/files/shiba/20260507/Build-Sultan-WKSU-SUSFS-r6/EvolutionX-16.0-20260507-shiba-11.7-Unofficial.zip",
-      "version": "11.17 Sultan WildKSU leegarhost"
+      "version": "11.7"
     }
   ],
   "changelogurl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/main/OTA/changelogs/shiba.txt"
