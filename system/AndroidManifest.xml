@@ -186,9 +186,6 @@
             <meta-data
                 android:name="com.android.settings.summary"
                 android:resource="@string/display_desc" />
-            <meta-data
-                android:name="com.android.settings.icon"
-                android:resource="@drawable/ic_saturation_tile" />
         </activity>
         <activity
             android:name=".activities.SaturationActivity"
