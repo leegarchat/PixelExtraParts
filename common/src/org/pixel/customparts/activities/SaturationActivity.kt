@@ -226,7 +226,6 @@ private fun SaturationScreen(onBack: () -> Unit) {
 }
 
 @Composable
-@Composable
 private fun SaturationControls(
     enabled: Boolean,
     percent: Int,
