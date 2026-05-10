@@ -251,6 +251,17 @@ fun MainDashboard() {
                             )
 
                             HorizontalDivider()
+
+                            MainMenuNavigationRow(
+                                title = dynamicStringResource(R.string.app_icons_title),
+                                subtitle = dynamicStringResource(R.string.app_icons_summary),
+                                icon = Icons.Rounded.Apps,
+                                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                onClick = { context.startActivity(Intent(context, AppIconsActivity::class.java)) }
+                            )
+
+                            HorizontalDivider()
                         }
 
                         MainMenuNavigationRow(

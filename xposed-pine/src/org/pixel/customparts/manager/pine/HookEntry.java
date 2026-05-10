@@ -114,6 +114,7 @@ public class HookEntry {
     private static void initLauncherHooks(Context context, ClassLoader classLoader) {
         List<BaseHook> hooks = new ArrayList<>();
 
+        hooks.add(new LauncherIconOverrideHook());
         hooks.add(new GridSizeAppMenuHook());
         hooks.add(new UnifiedLauncherHook());
         hooks.add(new RecentsUnifiedHook());
@@ -130,6 +131,7 @@ public class HookEntry {
         hooks.add(new KeyguardBatteryPowerHook());
         hooks.add(new ShadeUnifiedSurfaceHook());
         hooks.add(new ShadeCompactMediaHook());
+        hooks.add(new NotificationIconShapeHook());
         hooks.add(new SystemUIRestartHook());
 
         applyHooks(hooks, context, classLoader, "systemui");

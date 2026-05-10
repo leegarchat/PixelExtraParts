@@ -16,6 +16,7 @@ import org.pixel.customparts.hooks.recents.*
 import org.pixel.customparts.hooks.systemui.DozeTapDozeHook
 import org.pixel.customparts.hooks.systemui.DozeTapShadeHook
 import org.pixel.customparts.hooks.systemui.KeyguardBatteryPowerHook
+import org.pixel.customparts.hooks.systemui.NotificationIconShapeHook
 import org.pixel.customparts.hooks.systemui.ShadeCompactMediaHook
 import org.pixel.customparts.hooks.systemui.ShadeUnifiedSurfaceHook
 
@@ -48,6 +49,7 @@ class XposedInit : IXposedHookLoadPackage {
             environment.log(TAG, "MATCHED Launcher package: ${lpparam.packageName}")
             
             val hooks: List<BaseHook> = listOf(
+                LauncherIconOverrideHook(),
                 GridSizeAppMenuHook(),
                 UnifiedLauncherHook(),
                 // OxygenRecentsIconStripHook(),
@@ -66,7 +68,8 @@ class XposedInit : IXposedHookLoadPackage {
                 DozeTapShadeHook(),
                 KeyguardBatteryPowerHook(),
                 ShadeUnifiedSurfaceHook(),
-                ShadeCompactMediaHook()
+                ShadeCompactMediaHook(),
+                NotificationIconShapeHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)

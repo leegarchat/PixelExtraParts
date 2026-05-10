@@ -43,6 +43,7 @@ public class GridSizeAppMenuHook extends BaseHook {
     private static final int DISPLAY_SEARCH_RESULT_APP_ROW = 9;
 
     private static final String EXTRA_BASE_ICON_SIZE = "cpr_base_icon_size";
+    private static final String EXTRA_BASE_ALL_APPS_CELL_HEIGHT = "cpr_base_all_apps_cell_height";
 
     @Override
     public String getHookId() {
@@ -245,8 +246,17 @@ public class GridSizeAppMenuHook extends BaseHook {
             Object allAppsProfile = XposedHelpers.getObjectField(deviceProfile, "mAllAppsProfile");
             if (allAppsProfile != null) {
                 int currentHeight = XposedHelpers.getIntField(allAppsProfile, "cellHeightPx");
-                if (currentHeight > 0) {
-                    int newHeight = (int) (currentHeight * scale);
+                Object storedBaseHeightObj = XposedHelpers.getAdditionalInstanceField(allAppsProfile, EXTRA_BASE_ALL_APPS_CELL_HEIGHT);
+                Integer storedBaseHeight = (storedBaseHeightObj instanceof Integer) ? (Integer) storedBaseHeightObj : null;
+                int baseHeight = (storedBaseHeight != null) ? storedBaseHeight : currentHeight;
+
+                if (storedBaseHeight == null && baseHeight > 0) {
+                    XposedHelpers.setAdditionalInstanceField(allAppsProfile, EXTRA_BASE_ALL_APPS_CELL_HEIGHT, baseHeight);
+                }
+
+                if (baseHeight > 0) {
+                    int newHeight = Math.max(1, (int) (baseHeight * scale));
+                    if (currentHeight == newHeight) return;
                     XposedHelpers.setIntField(allAppsProfile, "cellHeightPx", newHeight);
                     log("AllApps cell height scaled to " + newHeight + " (" + rowHeightRaw + "%)");
                 }

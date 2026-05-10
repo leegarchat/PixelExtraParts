@@ -331,7 +331,7 @@ private fun performRebootLauncher(context: Context) {
     }
 }
 
-private fun performRebootSystem(context: Context) {
+fun performRebootSystem(context: Context) {
     if (AppConfig.IS_XPOSED) {
         runRootCommand("svc power reboot")
     } else {

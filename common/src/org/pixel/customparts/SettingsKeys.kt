@@ -24,6 +24,23 @@ object SettingsKeys {
     const val AUTO_HBM_AUTO_BRIGHTNESS_WAS_ENABLED = "pixelparts_auto_hbm_auto_brightness_was_enabled"
     const val AUTO_HBM_LAST_TEMPERATURE = "pixelparts_auto_hbm_last_temperature"
 
+    const val APP_ICONS_ENABLED = "pixelparts_app_icons_enabled"
+    const val APP_ICONS_LAUNCHER_ENABLED = "pixelparts_app_icons_launcher_enabled"
+    const val APP_ICONS_SYSTEM_STRETCH_SHAPE = "pixelparts_app_icons_system_stretch_shape"
+    const val APP_ICONS_SYSTEM_REMOVE_SHAPE = "pixelparts_app_icons_system_remove_shape"
+    const val APP_ICONS_SYSTEM_SHAPE_SCALE = "pixelparts_app_icons_system_shape_scale"
+    const val APP_ICONS_NOTIFICATION_STRETCH_SHAPE = "pixelparts_app_icons_notification_stretch_shape"
+    const val APP_ICONS_NOTIFICATION_REMOVE_SHAPE = "pixelparts_app_icons_notification_remove_shape"
+    const val APP_ICONS_NOTIFICATION_SHAPE_SCALE = "pixelparts_app_icons_notification_shape_scale"
+    const val APP_ICONS_LAUNCHER_STRETCH_SHAPE = "pixelparts_app_icons_launcher_stretch_shape"
+    const val APP_ICONS_LAUNCHER_REMOVE_SHAPE = "pixelparts_app_icons_launcher_remove_shape"
+    const val APP_ICONS_LAUNCHER_SHAPE_SCALE = "pixelparts_app_icons_launcher_shape_scale"
+    const val APP_ICONS_SHAPE_BACKGROUND_TINT_MODE = "pixelparts_app_icons_shape_background_tint_mode"
+    const val APP_ICONS_SHAPE_BACKGROUND_TINT_COLOR = "pixelparts_app_icons_shape_background_tint_color"
+    const val APP_ICONS_SHAPE_FOREGROUND_TINT_MODE = "pixelparts_app_icons_shape_foreground_tint_mode"
+    const val APP_ICONS_SHAPE_FOREGROUND_TINT_COLOR = "pixelparts_app_icons_shape_foreground_tint_color"
+
+
     val isPineOverride: Boolean
         get() {
             if (!IS_XPOSED) return false

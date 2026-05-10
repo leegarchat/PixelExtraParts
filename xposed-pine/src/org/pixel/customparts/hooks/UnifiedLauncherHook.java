@@ -71,6 +71,9 @@ public class UnifiedLauncherHook extends BaseHook {
     private static final int CONTAINER_HOTSEAT_PREDICTION = -103;
     private static final int TAG_VIEW_LISTENER = 0x7f010002;
     private static final int TAG_DT2S_LISTENER = 0x7f010004;
+    private static final int TAG_DOTS_BASE_MARGIN = 0x7f010005;
+    private static final int TAG_PIVOT_UPDATE_POSTED = 0x7f010006;
+    private static final int TAG_VIEW_ORIGINAL_HEIGHT = 0x7f010007;
     private int lastAppliedPaddingHash = 0;
     private int lastAppliedDockHash = 0;
     private static Field doubleTapTimeoutField = null;
@@ -913,12 +916,18 @@ public class UnifiedLauncherHook extends BaseHook {
         if (getIntSetting(activity, KEY_DOCK_ENABLE, 0) != 1) return;
         
         int paddingSetting = getIntSetting(activity, KEY_PADDING_HOMEPAGE, SETTINGS_DEFAULT_PADDING);
-        if (lastAppliedPaddingHash == paddingSetting) return;
 
         try {
             Object deviceProfile = XposedHelpers.getObjectField(activity, "mDeviceProfile");
             View workspace = (View) XposedHelpers.getObjectField(activity, "mWorkspace");
             ViewGroup hotseat = (ViewGroup) XposedHelpers.getObjectField(activity, "mHotseat");
+
+            int currentHash = (((31 * System.identityHashCode(activity)
+                + System.identityHashCode(deviceProfile)) * 31
+                + System.identityHashCode(workspace)) * 31
+                + System.identityHashCode(hotseat)) * 31
+                + paddingSetting;
+            if (lastAppliedPaddingHash == currentHash) return;
 
             Rect paddingObj = null;
             try { paddingObj = (Rect) XposedHelpers.getObjectField(deviceProfile, "workspacePadding"); } catch(Throwable t) {}
@@ -940,7 +949,7 @@ public class UnifiedLauncherHook extends BaseHook {
                     triggerNativeUpdate(workspace, deviceProfile);
                     if (hotseat != null) triggerNativeUpdate(hotseat, deviceProfile);
                 }
-                lastAppliedPaddingHash = paddingSetting;
+                lastAppliedPaddingHash = currentHash;
             }
         } catch (Throwable e) { /* ignore */ }
     }
@@ -953,15 +962,19 @@ public class UnifiedLauncherHook extends BaseHook {
         int paddingDock = getIntSetting(activity, KEY_PADDING_DOCK, 0);
         int paddingSearch = getIntSetting(activity, KEY_PADDING_SEARCH, 0);
 
-        String hashString = hideSearch + "|" + hideDock + "|" + paddingDock + "|" + paddingSearch;
-        int currentHash = hashString.hashCode();
-        if (lastAppliedDockHash == currentHash) return;
-
         try {
             ViewGroup hotseat = (ViewGroup) XposedHelpers.getObjectField(activity, "mHotseat");
             if (hotseat != null) {
                 View qsbView = findQsbView(hotseat, activity);
                 View dockIconsView = findHotseatCellLayout(hotseat);
+
+                String hashString = System.identityHashCode(activity) + "|"
+                    + System.identityHashCode(hotseat) + "|"
+                    + System.identityHashCode(qsbView) + "|"
+                    + System.identityHashCode(dockIconsView) + "|"
+                    + hideSearch + "|" + hideDock + "|" + paddingDock + "|" + paddingSearch;
+                int currentHash = hashString.hashCode();
+                if (lastAppliedDockHash == currentHash) return;
 
                 if (qsbView != null) {
                     float tY = (paddingSearch != 0) ? -toPx(activity, paddingSearch) : 0f;
@@ -971,8 +984,8 @@ public class UnifiedLauncherHook extends BaseHook {
                     float tY = (paddingDock != 0) ? -toPx(activity, paddingDock) : 0f;
                     enforceViewProperties(dockIconsView, hideDock ? View.GONE : View.VISIBLE, tY, hideDock);
                 }
+                lastAppliedDockHash = currentHash;
             }
-            lastAppliedDockHash = currentHash;
         } catch (Throwable e) { /* ignore */ }
     }
 
@@ -992,8 +1005,14 @@ public class UnifiedLauncherHook extends BaseHook {
                 View parent = (View) pageIndicator.getParent();
                 if (parent.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
                     ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) parent.getLayoutParams();
-                    params.bottomMargin += diffPx; 
-                    parent.setLayoutParams(params);
+                    Object baseMarginObj = parent.getTag(TAG_DOTS_BASE_MARGIN);
+                    int baseMargin = (baseMarginObj instanceof Integer) ? (Integer) baseMarginObj : params.bottomMargin;
+                    if (!(baseMarginObj instanceof Integer)) parent.setTag(TAG_DOTS_BASE_MARGIN, baseMargin);
+                    int targetBottomMargin = baseMargin + diffPx;
+                    if (params.bottomMargin != targetBottomMargin) {
+                        params.bottomMargin = targetBottomMargin;
+                        parent.setLayoutParams(params);
+                    }
                     if (parent.getTranslationX() != diffPxX) parent.setTranslationX(diffPxX);
                 }
             }
@@ -1023,6 +1042,15 @@ public class UnifiedLauncherHook extends BaseHook {
 
         if (view.getWidth() > 0) {
             updatePivot(view);
+        } else if (!Boolean.TRUE.equals(view.getTag(TAG_PIVOT_UPDATE_POSTED))) {
+            view.setTag(TAG_PIVOT_UPDATE_POSTED, true);
+            view.post(new Runnable() {
+                @Override
+                public void run() {
+                    view.setTag(TAG_PIVOT_UPDATE_POSTED, null);
+                    updatePivot(view);
+                }
+            });
         }
 
         if (!layoutListeners.containsKey(view)) {
@@ -1035,7 +1063,6 @@ public class UnifiedLauncherHook extends BaseHook {
             view.addOnLayoutChangeListener(listener);
             layoutListeners.put(view, listener);
         }
-        view.post(new Runnable() { @Override public void run() { updatePivot(view); } });
     }
 
     private void applyWorkspaceTextMode(TextView view, Context context) {
@@ -1124,6 +1151,7 @@ public class UnifiedLauncherHook extends BaseHook {
     }
 
     private void forceUpdateDots(Activity activity) {
+        if (!isDotsOffsetEnabled(activity)) return;
         try {
             int resId = activity.getResources().getIdentifier("page_indicator", "id", activity.getPackageName());
             if (resId != 0) {
@@ -1159,8 +1187,20 @@ public class UnifiedLauncherHook extends BaseHook {
 
         ViewGroup.LayoutParams params = view.getLayoutParams();
         if (params != null) {
-            if (forceHeightZero && params.height != 0) { params.height = 0; view.setLayoutParams(params); }
-            else if (visibility == View.VISIBLE && params.height == 0) { params.height = ViewGroup.LayoutParams.WRAP_CONTENT; view.setLayoutParams(params); }
+            Object originalHeightObj = view.getTag(TAG_VIEW_ORIGINAL_HEIGHT);
+            int originalHeight = (originalHeightObj instanceof Integer) ? (Integer) originalHeightObj : params.height;
+            if (!(originalHeightObj instanceof Integer)) view.setTag(TAG_VIEW_ORIGINAL_HEIGHT, originalHeight);
+
+            int targetHeight = params.height;
+            if (forceHeightZero) {
+                targetHeight = 0;
+            } else if (visibility == View.VISIBLE && params.height == 0) {
+                targetHeight = originalHeight != 0 ? originalHeight : ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
+            if (params.height != targetHeight) {
+                params.height = targetHeight;
+                view.setLayoutParams(params);
+            }
         }
     }
 
@@ -1319,7 +1359,8 @@ public class UnifiedLauncherHook extends BaseHook {
     
     @Override
     public void onActivityDestroyed(Activity activity) {
-
+        lastAppliedPaddingHash = 0;
+        lastAppliedDockHash = 0;
     }
     
     private boolean isDescendantOf(View child, View parent) {

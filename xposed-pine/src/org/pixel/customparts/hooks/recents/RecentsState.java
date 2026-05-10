@@ -12,6 +12,7 @@ public class RecentsState {
     public static final int TAG_PREDRAW_LISTENER = 0x7F0B0002;
     public static final int TAG_PENDING_END_TARGET = 0x7F0B0003;
     public static final int TAG_ICON_ORIG_DELEGATE = 0x7F0B0004;
+    public static final int TAG_EFFECTS_APPLIED = 0x7F0B0005;
 
     // Теги для хранения системных значений (до модификации)
     public static final int TAG_SYS_TRANS_X = 0x7F0B0010;

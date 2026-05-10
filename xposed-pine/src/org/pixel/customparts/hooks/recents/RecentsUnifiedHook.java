@@ -49,6 +49,7 @@ public class RecentsUnifiedHook extends BaseHook {
         static boolean blurOverflow = false;
         static int tintColor = Color.BLACK;
         static float maxTintIntensity = 0f;
+        static boolean hasRenderEffects = false;
         static float iconOffsetX = 0f;
         static float iconOffsetY = 0f;
         static boolean hasIconOffset = false;
@@ -93,14 +94,14 @@ public class RecentsUnifiedHook extends BaseHook {
     private static final int CLEAR_MODE_BOTTOM = 0;
     private static final int CLEAR_MODE_REPLACE_SCREENSHOT = 1;
     private static final int CLEAR_MODE_REPLACE_SELECT = 2;
+    private static final long ACTIONS_ROW_ENFORCE_INTERVAL_MS = 200L;
 
     // --- TAGS ---
     private static final int TAG_CACHE_ICONS = "cache_icons_list".hashCode();
-    private static final int TAG_CACHE_LAST_RADIUS = "cache_last_radius".hashCode();
-    private static final int TAG_CACHE_LAST_TINT = "cache_last_tint".hashCode();
 
     // --- REFLECTION (Only needed for render effect now) ---
     private Method setRenderEffectMethod;
+    private long lastActionsRowEnforceUptime = 0L;
     
     private static WeakReference<ViewGroup> recentsViewRef = null;
 
@@ -139,6 +140,7 @@ public class RecentsUnifiedHook extends BaseHook {
                 } else {
                     Settings.maxTintIntensity = 0f;
                 }
+                Settings.hasRenderEffects = Settings.maxBlur > 0 || Settings.maxTintIntensity > 0f;
             }
 
             float ox = getIntSetting(context, KEY_ICON_OFFSET_X, 0);
@@ -224,9 +226,15 @@ public class RecentsUnifiedHook extends BaseHook {
                     public void onViewDetachedFromWindow(View v) {
                         Object l = v.getTag(RecentsState.TAG_PREDRAW_LISTENER);
                         if (l instanceof ViewTreeObserver.OnPreDrawListener) {
-                            v.getViewTreeObserver().removeOnPreDrawListener((ViewTreeObserver.OnPreDrawListener) l);
+                            ViewTreeObserver observer = v.getViewTreeObserver();
+                            if (observer.isAlive()) {
+                                observer.removeOnPreDrawListener((ViewTreeObserver.OnPreDrawListener) l);
+                            }
                         }
                         v.setTag(RecentsState.TAG_HOOK_INSTALLED, null);
+                        v.setTag(RecentsState.TAG_PREDRAW_LISTENER, null);
+                        v.setTag(RecentsState.TAG_EFFECTS_APPLIED, null);
+                        v.removeOnAttachStateChangeListener(this);
                         resetState();
                     }
                 });
@@ -314,6 +322,7 @@ public class RecentsUnifiedHook extends BaseHook {
         XposedBridge.hookAllMethods(View.class, "setTranslationX", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
+                if (!Settings.enabled) return;
                 if (Boolean.TRUE.equals(RecentsState.applyingEffects.get())) return;
                 if (taskViewClass.isInstance(param.thisObject)) {
                     ((View) param.thisObject).setTag(RecentsState.TAG_SYS_TRANS_X, param.args[0]);
@@ -324,6 +333,7 @@ public class RecentsUnifiedHook extends BaseHook {
         XposedHelpers.findAndHookMethod(taskViewClass, "setStableAlpha", float.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
+                if (!Settings.enabled) return;
                 if (Boolean.TRUE.equals(RecentsState.applyingEffects.get())) return;
                 ((View) param.thisObject).setTag(RecentsState.TAG_SYS_STABLE_ALPHA, param.args[0]);
             }
@@ -332,6 +342,7 @@ public class RecentsUnifiedHook extends BaseHook {
         XposedHelpers.findAndHookMethod(taskViewClass, "setNonGridScale", float.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
+                if (!Settings.enabled) return;
                 if (Boolean.TRUE.equals(RecentsState.applyingEffects.get())) return;
                 ((View) param.thisObject).setTag(RecentsState.TAG_SYS_NON_GRID_SCALE, param.args[0]);
             }
@@ -344,21 +355,28 @@ public class RecentsUnifiedHook extends BaseHook {
 
     private boolean handlePreDraw(ViewGroup recentsView) {
         if (Settings.clearAllEnabled && Settings.clearAllHideActionsRow) {
-            enforceActionsRowHiddenFromRecents(recentsView);
+            long now = SystemClock.uptimeMillis();
+            if (lastActionsRowEnforceUptime == 0L
+                    || now - lastActionsRowEnforceUptime >= ACTIONS_ROW_ENFORCE_INTERVAL_MS) {
+                lastActionsRowEnforceUptime = now;
+                enforceActionsRowHiddenFromRecents(recentsView);
+            }
         }
 
         if (!Settings.enabled) return true;
 
         if (!RecentsState.isInRecentsMode && !RecentsState.isAnimatingExit && !RecentsState.isGestureInProgress) {
-            resetEffectsOnChildren(recentsView);
+            resetEffectsOnChildrenIfNeeded(recentsView);
             return true;
         }
 
         float intensity = RecentsState.carouselIntensity;
         if (intensity <= 0f) {
-            if (!RecentsState.isGestureInProgress) resetEffectsOnChildren(recentsView);
+            if (!RecentsState.isGestureInProgress) resetEffectsOnChildrenIfNeeded(recentsView);
             return true;
         }
+
+        recentsView.setTag(RecentsState.TAG_EFFECTS_APPLIED, true);
 
         int spacingVal = (int) (Settings.spacingOffset * intensity);
         float scaleVal = 1.0f + ((Settings.scaleMin - 1.0f) * intensity);
@@ -425,7 +443,7 @@ public class RecentsUnifiedHook extends BaseHook {
                 }
 
                 // --- 4. RENDER EFFECTS ---
-                if (Build.VERSION.SDK_INT >= 31) {
+                if (Build.VERSION.SDK_INT >= 31 && Settings.hasRenderEffects) {
                     applyRenderEffects(child, factor, blurVal, Settings.blurOverflow, Settings.tintColor, tintVal);
                 }
 
@@ -458,15 +476,15 @@ public class RecentsUnifiedHook extends BaseHook {
             if (tintAlpha < 5) tintAlpha = 0;
         }
 
-        Object lastRad = child.getTag(TAG_CACHE_LAST_RADIUS);
-        Object lastTint = child.getTag(TAG_CACHE_LAST_TINT);
+        Object lastRad = child.getTag(RecentsState.TAG_CACHE_LAST_RADIUS);
+        Object lastTint = child.getTag(RecentsState.TAG_CACHE_LAST_TINT_ALPHA);
         float cachedR = (lastRad instanceof Float) ? (Float) lastRad : -1f;
         int cachedA = (lastTint instanceof Integer) ? (Integer) lastTint : -1;
 
         if (Math.abs(blurRadius - cachedR) < 0.1f && tintAlpha == cachedA) return;
 
-        child.setTag(TAG_CACHE_LAST_RADIUS, blurRadius);
-        child.setTag(TAG_CACHE_LAST_TINT, tintAlpha);
+        child.setTag(RecentsState.TAG_CACHE_LAST_RADIUS, blurRadius);
+        child.setTag(RecentsState.TAG_CACHE_LAST_TINT_ALPHA, tintAlpha);
 
         RenderEffect effect = null;
         if (blurRadius > 0) {
@@ -757,9 +775,9 @@ public class RecentsUnifiedHook extends BaseHook {
                 
                 child.setTag(RecentsState.TAG_OFFSET_TRANS, null);
                 
-                if (Build.VERSION.SDK_INT >= 31) {
-                    child.setTag(TAG_CACHE_LAST_RADIUS, null);
-                    child.setTag(TAG_CACHE_LAST_TINT, null);
+                if (Build.VERSION.SDK_INT >= 31 && Settings.hasRenderEffects) {
+                    child.setTag(RecentsState.TAG_CACHE_LAST_RADIUS, null);
+                    child.setTag(RecentsState.TAG_CACHE_LAST_TINT_ALPHA, null);
                     callSetRenderEffect(child, null);
                     View thumb = getCachedThumbnailView(child);
                     if (thumb != null) callSetRenderEffect(thumb, null);
@@ -770,7 +788,14 @@ public class RecentsUnifiedHook extends BaseHook {
                 }
             }
         } finally {
+            recentsView.setTag(RecentsState.TAG_EFFECTS_APPLIED, null);
             RecentsState.applyingEffects.set(false);
+        }
+    }
+
+    private void resetEffectsOnChildrenIfNeeded(ViewGroup recentsView) {
+        if (Boolean.TRUE.equals(recentsView.getTag(RecentsState.TAG_EFFECTS_APPLIED))) {
+            resetEffectsOnChildren(recentsView);
         }
     }
     
