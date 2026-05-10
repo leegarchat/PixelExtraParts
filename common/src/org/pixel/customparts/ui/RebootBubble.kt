@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
@@ -36,8 +37,19 @@ val REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING = 96.dp
 
 private const val MORPH_DURATION = 300
 
+data class RebootBubbleMenuAction(
+    val icon: ImageVector,
+    val label: String,
+    val containerColor: Color,
+    val contentColor: Color,
+    val onClick: () -> Unit
+)
+
 @Composable
-fun RebootBubble(modifier: Modifier = Modifier) {
+fun RebootBubble(
+    modifier: Modifier = Modifier,
+    extraActions: List<RebootBubbleMenuAction> = emptyList()
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
@@ -133,12 +145,25 @@ fun RebootBubble(modifier: Modifier = Modifier) {
                             .padding(8.dp)
                             .width(IntrinsicSize.Max)
                     ) {
+                        extraActions.forEachIndexed { index, action ->
+                            StaggeredMenuItem(
+                                icon = action.icon,
+                                label = action.label,
+                                containerColor = action.containerColor,
+                                contentColor = action.contentColor,
+                                delayMs = 40 + (index * 50),
+                                onClick = {
+                                    expanded = false
+                                    action.onClick()
+                                }
+                            )
+                        }
                         StaggeredMenuItem(
                             icon = Icons.Rounded.Home,
                             label = dynamicStringResource(R.string.reboot_launcher),
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            delayMs = 40,
+                            delayMs = 40 + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 scope.launch(Dispatchers.IO) { performRebootLauncher(context) }
@@ -149,7 +174,7 @@ fun RebootBubble(modifier: Modifier = Modifier) {
                             label = dynamicStringResource(R.string.reboot_systemui),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            delayMs = 90,
+                            delayMs = 90 + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 confirmAction = RebootAction.SYSTEMUI
@@ -160,7 +185,7 @@ fun RebootBubble(modifier: Modifier = Modifier) {
                             label = dynamicStringResource(R.string.reboot_system),
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                            delayMs = 140,
+                            delayMs = 140 + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 confirmAction = RebootAction.SYSTEM

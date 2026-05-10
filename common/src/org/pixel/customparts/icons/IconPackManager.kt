@@ -53,7 +53,8 @@ data class IconPackInfo(
     val supportedPackageCount: Int,
     val appliedPackageCount: Int,
     val status: IconPackApplyStatus,
-    val requiresUpdate: Boolean
+    val requiresUpdate: Boolean,
+    val installed: Boolean = true
 )
 
 enum class IconPackApplyStatus {
@@ -286,7 +287,16 @@ object IconPackManager {
         return startBackgroundOperation(appContext.getString(R.string.app_icons_progress_applying_selected)) { taskId ->
             val packageManager = appContext.packageManager
             val installedIndex = loadInstalledApplicationIndex(packageManager)
-            val entries = parseIconPackEntries(appContext, iconPackPackage, installedIndex)
+            val packInstalled = runCatching { packageManager.getPackageInfo(iconPackPackage, 0) }.getOrNull() != null
+            if (!packInstalled) {
+                return@startBackgroundOperation reconcileStoredPackSelection(
+                    appContext,
+                    iconPackPackage,
+                    selectedPackages,
+                    taskId
+                )
+            }
+            val entries = loadIconPackSelectionEntries(appContext, iconPackPackage, installedIndex, readIconMap())
             applyIconSelection(
                 context = appContext,
                 iconPackPackage = iconPackPackage,
@@ -354,6 +364,13 @@ object IconPackManager {
         }
     }
 
+    fun startClearAllIcons(context: Context): Boolean {
+        val appContext = context.applicationContext ?: context
+        return startBackgroundOperation(appContext.getString(R.string.app_icons_progress_clearing_all)) { taskId ->
+            clearAllIconData(appContext, taskId)
+        }
+    }
+
     suspend fun loadDashboardState(context: Context): IconDashboardState = withContext(Dispatchers.IO) {
         val appContext = context.applicationContext ?: context
         val packageManager = appContext.packageManager
@@ -369,6 +386,13 @@ object IconPackManager {
         withContext(Dispatchers.IO) {
             val packageManager = context.packageManager
             parseIconPackEntries(context, iconPackPackage, loadInstalledApplicationIndex(packageManager))
+        }
+
+    suspend fun loadIconPackSelectionEntries(context: Context, iconPackPackage: String): List<IconPackEntry> =
+        withContext(Dispatchers.IO) {
+            val packageManager = context.packageManager
+            val installedIndex = loadInstalledApplicationIndex(packageManager)
+            loadIconPackSelectionEntries(context, iconPackPackage, installedIndex, readIconMap())
         }
 
     suspend fun loadPreviewItems(context: Context, iconPackPackage: String): List<IconPackPreviewItem> =
@@ -563,9 +587,33 @@ object IconPackManager {
         installedIndex: Map<String, InstalledAppRecord>,
         iconMap: IconMapSnapshot
     ): List<IconPackInfo> {
-        return discoverIconPackPackages(packageManager).mapNotNull { packageName ->
+        val discoveredPackages = discoverIconPackPackages(packageManager)
+        val appliedPackPackages = iconMap.sources.values
+            .map { it.iconPackPackage }
+            .filterNot { it == CUSTOM_ICON_SOURCE_ID }
+            .toSet()
+        return (discoveredPackages + appliedPackPackages).distinct().mapNotNull { packageName ->
             val packageInfo = runCatching { packageManager.getPackageInfo(packageName, 0) }.getOrNull()
-                ?: return@mapNotNull null
+            if (packageInfo == null) {
+                val storedPack = iconMap.packs[packageName]
+                val appliedSources = iconMap.sources.values.filter { it.iconPackPackage == packageName }
+                val fallbackSource = appliedSources.firstOrNull()
+                if (storedPack == null && fallbackSource == null) return@mapNotNull null
+                return@mapNotNull IconPackInfo(
+                    packageName = packageName,
+                    label = storedPack?.label?.takeIf { it.isNotBlank() }
+                        ?: fallbackSource?.iconPackLabel?.takeIf { it.isNotBlank() }
+                        ?: packageName,
+                    icon = null,
+                    versionCode = storedPack?.versionCode ?: fallbackSource?.iconPackVersionCode ?: 0L,
+                    supportedIconCount = appliedSources.map { it.drawableName }.distinct().size,
+                    supportedPackageCount = appliedSources.size,
+                    appliedPackageCount = appliedSources.size,
+                    status = IconPackApplyStatus.APPLIED_PARTIAL,
+                    requiresUpdate = false,
+                    installed = false
+                )
+            }
             val appInfo = packageInfo.applicationInfo ?: return@mapNotNull null
             val label = appInfo.loadLabel(packageManager)?.toString()?.takeIf { it.isNotBlank() }
                 ?: packageName
@@ -591,9 +639,41 @@ object IconPackManager {
                 supportedPackageCount = supportedPackages.size,
                 appliedPackageCount = appliedPackages,
                 status = status,
-                requiresUpdate = lastAppliedVersion != null && lastAppliedVersion != versionCode
+                requiresUpdate = lastAppliedVersion != null && lastAppliedVersion != versionCode,
+                installed = true
             )
         }.sortedBy { it.label.lowercase(Locale.getDefault()) }
+    }
+
+    private fun loadIconPackSelectionEntries(
+        context: Context,
+        iconPackPackage: String,
+        installedIndex: Map<String, InstalledAppRecord>,
+        iconMap: IconMapSnapshot
+    ): List<IconPackEntry> {
+        val parsedEntries = parseIconPackEntries(context, iconPackPackage, installedIndex)
+        val parsedPackages = parsedEntries.map { it.appPackageName }.toSet()
+        val storedEntries = iconMap.sources
+            .filterValues { it.iconPackPackage == iconPackPackage }
+            .filterKeys { it !in parsedPackages }
+            .map { (packageName, source) ->
+                val installedApp = installedIndex[packageName]
+                IconPackEntry(
+                    iconPackPackage = iconPackPackage,
+                    appPackageName = packageName,
+                    componentName = null,
+                    drawableName = source.drawableName,
+                    label = installedApp?.label ?: packageName,
+                    installed = installedApp != null,
+                    isSystem = installedApp?.isSystem == true,
+                    dynamicIcon = source.dynamicIcon
+                )
+            }
+        return (parsedEntries + storedEntries).sortedWith(
+            compareBy<IconPackEntry> { it.label.lowercase(Locale.getDefault()) }
+                .thenBy { it.appPackageName }
+                .thenBy { it.drawableName }
+        )
     }
 
     private fun buildInstalledApps(
@@ -1039,6 +1119,56 @@ object IconPackManager {
                 ))
                 sendReloadBroadcast(context)
             }
+
+            IconApplyResult(
+                requested = packageNames.size,
+                applied = 0,
+                failed = 0,
+                removed = removed,
+                skipped = 0
+            )
+        }
+    }
+
+    private fun reconcileStoredPackSelection(
+        context: Context,
+        iconPackPackage: String,
+        selectedPackages: Set<String>,
+        progressTaskId: String?
+    ): IconApplyResult {
+        val currentPackages = readIconMap().sources
+            .filterValues { it.iconPackPackage == iconPackPackage }
+            .keys
+            .toSet()
+        val removals = currentPackages - selectedPackages
+        val result = removePackageBindings(context, removals, progressTaskId)
+        return result.copy(requested = currentPackages.size, skipped = currentPackages.size - removals.size)
+    }
+
+    private fun clearAllIconData(context: Context, progressTaskId: String?): IconApplyResult {
+        return synchronized(ioLock) {
+            val current = readIconMap()
+            val packageNames = (current.icons.keys + current.sources.keys + current.shapeOverrides.keys).toSet()
+            var processed = 0
+            var removed = 0
+            updateProgress(progressTaskId, packageNames.size, processed, 0, 0, removed, 0)
+
+            packageNames.forEach { _ ->
+                removed++
+                processed++
+                updateProgress(progressTaskId, packageNames.size, processed, 0, 0, removed, 0)
+            }
+
+            densities.forEach { density ->
+                File(iconRoot, density.folder).listFiles()?.forEach { file ->
+                    if (file.isFile) file.delete()
+                }
+            }
+            if (iconMapFile.exists()) {
+                iconMapFile.delete()
+            }
+            writeIconMap(IconMapSnapshot.EMPTY)
+            sendReloadBroadcast(context)
 
             IconApplyResult(
                 requested = packageNames.size,

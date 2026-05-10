@@ -29,7 +29,7 @@
     <string name="app_icons_placeholder_title">Заглушка интерфейса</string>
     <string name="app_icons_placeholder_summary">Управление иконками приложений будет добавлено на следующем этапе.</string>
     <string name="app_icons_refresh">Обновить наборы иконок</string>
-    <string name="app_icons_packs_section">Установленные пакеты иконок</string>
+    <string name="app_icons_packs_section">Пакеты иконок</string>
     <string name="app_icons_all_apps_section">Список всех программ</string>
     <string name="app_icons_pack_count_format">Пакетов иконок: %1$d</string>
     <string name="app_icons_app_count_format">Приложений: %1$d</string>
@@ -47,6 +47,8 @@
     <string name="app_icons_status_not_applied">Не применён</string>
     <string name="app_icons_status_full">Применён полностью</string>
     <string name="app_icons_status_partial">Применён частично</string>
+    <string name="app_icons_pack_missing_status">Пакет удалён</string>
+    <string name="app_icons_pack_missing_message">Этот пакет иконок больше не установлен. Можно только управлять уже применёнными иконками из него или удалить их.</string>
     <string name="app_icons_show_system_title">Отображать системные приложения</string>
     <string name="app_icons_show_system_summary">Показывать системные пакеты в списке программ</string>
     <string name="app_icons_show_hidden_title">Отображать скрытые приложения</string>
@@ -119,6 +121,7 @@
     <string name="app_icons_progress_applying_app">Применение иконки приложения</string>
     <string name="app_icons_progress_restoring_icon">Возврат иконки по умолчанию</string>
     <string name="app_icons_progress_removing_pack">Удаление привязок пакета иконок</string>
+    <string name="app_icons_progress_clearing_all">Очистка привязок иконок</string>
     <string name="app_icons_progress_completed">Операция с иконками завершена</string>
     <string name="app_icons_progress_percent_format">%1$d%%</string>
     <string name="app_icons_progress_counts_format">%1$d/%2$d • Применено: %3$d • Удалено: %4$d • Пропущено: %5$d • Ошибок: %6$d</string>
@@ -130,6 +133,9 @@
     <string name="app_icons_apply_finished_title">Иконки обновлены</string>
     <string name="app_icons_apply_finished_message_format">Применено: %1$d • Удалено: %2$d • Пропущено: %3$d • Ошибок: %4$d. Перезагрузите систему, чтобы обновить все кеши иконок.</string>
     <string name="app_icons_reboot_system">Перезагрузить систему</string>
+    <string name="app_icons_clear_all">Очистить все иконки</string>
+    <string name="app_icons_clear_all_confirm_title">Очистить все переопределения иконок?</string>
+    <string name="app_icons_clear_all_confirm_message">Будут удалены все привязки иконок приложений, экспортированные файлы, данные применённых пакетов и индивидуальные настройки иконок.</string>
 
     <string name="saturation_title">Насыщенность</string>
     <string name="saturation_summary">Управление насыщенностью цветов дисплея</string>

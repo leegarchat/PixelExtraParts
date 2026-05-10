@@ -52,6 +52,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
@@ -124,6 +125,7 @@ import org.pixel.customparts.icons.InstalledIconApp
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.performRebootSystem
@@ -363,6 +365,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
     var previewPack by remember { mutableStateOf<IconPackInfo?>(null) }
     var expandedAppPackage by rememberSaveable { mutableStateOf<String?>(null) }
     var applyModePack by remember { mutableStateOf<IconPackInfo?>(null) }
+    var confirmClearAllIcons by remember { mutableStateOf(false) }
     var activeProgress by remember { mutableStateOf(IconPackManager.getActiveProgress()) }
     var completionResult by remember { mutableStateOf<IconApplyResult?>(null) }
     var handledProgressTaskId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -438,7 +441,19 @@ fun AppIconsScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentWindowInsets = WindowInsets.navigationBars,
-        floatingActionButton = { RebootBubble() },
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Delete,
+                        label = dynamicStringResource(R.string.app_icons_clear_all),
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        onClick = { confirmClearAllIcons = true }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -806,6 +821,36 @@ fun AppIconsScreen(onBack: () -> Unit) {
         PackPreviewDialog(
             pack = previewPack!!,
             onDismiss = { previewPack = null }
+        )
+    }
+
+    if (confirmClearAllIcons) {
+        AlertDialog(
+            onDismissRequest = { confirmClearAllIcons = false },
+            icon = {
+                Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error)
+            },
+            title = { Text(dynamicStringResource(R.string.app_icons_clear_all_confirm_title)) },
+            text = { Text(dynamicStringResource(R.string.app_icons_clear_all_confirm_message)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        confirmClearAllIcons = false
+                        startIconOperation { IconPackManager.startClearAllIcons(context) }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(dynamicStringResource(R.string.app_icons_clear_all), maxLines = 1)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClearAllIcons = false }) {
+                    Text(dynamicStringResource(R.string.btn_cancel))
+                }
+            }
         )
     }
 
@@ -1420,9 +1465,13 @@ private fun IconPackCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = iconPackStatusText(pack.status),
+                        text = if (pack.installed) {
+                            iconPackStatusText(pack.status)
+                        } else {
+                            dynamicStringResource(R.string.app_icons_pack_missing_status)
+                        },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (pack.installed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp)
@@ -1477,14 +1526,28 @@ private fun IconPackCard(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = onApplyAll,
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_apply_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (!pack.installed) {
+                        Text(
+                            text = dynamicStringResource(R.string.app_icons_pack_missing_message),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.28f))
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                    }
+                    if (pack.installed) {
+                        Button(
+                            onClick = onApplyAll,
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(dynamicStringResource(R.string.app_icons_apply_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                     OutlinedButton(
                         onClick = onApplyPartial,
@@ -1495,14 +1558,16 @@ private fun IconPackCard(
                         Spacer(Modifier.width(8.dp))
                         Text(dynamicStringResource(R.string.app_icons_apply_partial), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    OutlinedButton(
-                        onClick = onViewPack,
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_view_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (pack.installed) {
+                        OutlinedButton(
+                            onClick = onViewPack,
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(dynamicStringResource(R.string.app_icons_view_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                     OutlinedButton(
                         onClick = onCancelAll,
@@ -1686,7 +1751,7 @@ private fun InstalledAppCard(
 
                     OutlinedButton(
                         onClick = { chooserOpen = true },
-                        enabled = !busy && iconPacks.isNotEmpty(),
+                        enabled = !busy && iconPacks.any { it.installed },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Rounded.Search, null, modifier = Modifier.size(18.dp))
@@ -1737,7 +1802,7 @@ private fun InstalledAppCard(
         AppIconChooserDialog(
             app = app,
             iconMap = iconMap,
-            iconPacks = iconPacks,
+            iconPacks = iconPacks.filter { it.installed },
             onDismiss = { chooserOpen = false },
             onApply = { item ->
                 chooserOpen = false
@@ -2034,7 +2099,7 @@ private fun PartialApplyDialog(
     }
 
     LaunchedEffect(pack.packageName) {
-        entries = IconPackManager.loadIconPackEntries(context, pack.packageName)
+        entries = IconPackManager.loadIconPackSelectionEntries(context, pack.packageName)
         loading = false
     }
 
