@@ -118,6 +118,10 @@ fun LockscreenSettingsScreen(onBack: () -> Unit) {
     // DT2W State
     var dt2wEnabled by remember { mutableStateOf(DoubleTapManager.isDt2wEnabled(context)) }
     var dt2wTimeout by remember { mutableIntStateOf(DoubleTapManager.getDt2wTimeout(context)) }
+
+    var aodFullColorNotificationIcons by remember {
+        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.AOD_FULL_COLOR_NOTIFICATION_ICONS, false))
+    }
     
     // Battery Info State
     var batteryInfoEnabled by remember { mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.BATTERY_INFO_ENABLE, false)) }
@@ -207,6 +211,37 @@ fun LockscreenSettingsScreen(onBack: () -> Unit) {
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                SettingsGroupCard(title = dynamicStringResource(R.string.sysui_notifications_title)) {
+                    GenericSwitchRow(
+                        title = dynamicStringResource(R.string.sysui_aod_full_color_icons_title),
+                        checked = aodFullColorNotificationIcons,
+                        onCheckedChange = { checked ->
+                            if (checked && AppConfig.IS_XPOSED && !ModuleStatus.isModuleActive() && !SettingsKeys.isPineOverride) {
+                                showXposedInactiveDialog = true
+                                aodFullColorNotificationIcons = false
+                            } else {
+                                aodFullColorNotificationIcons = checked
+                                scope.launch {
+                                    SettingsCompat.putInt(
+                                        context,
+                                        SettingsKeys.AOD_FULL_COLOR_NOTIFICATION_ICONS,
+                                        if (checked) 1 else 0
+                                    )
+                                }
+                                needsRestart = true
+                            }
+                        },
+                        infoText = dynamicStringResource(R.string.sysui_aod_full_color_icons_summary),
+                        onInfoClick = { t, s, v ->
+                            infoDialogTitle = t
+                            infoDialogText = s
+                            infoDialogVideo = v
+                        }
+                    )
+                }
+            }
+
             // DT2W Section (Duplicated)
             item {
                 SettingsGroupCard(title = dynamicStringResource(R.string.dt_sec_wake)) {

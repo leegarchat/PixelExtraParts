@@ -132,6 +132,7 @@ public class HookEntry {
         hooks.add(new ShadeUnifiedSurfaceHook());
         hooks.add(new ShadeCompactMediaHook());
         hooks.add(new NotificationIconShapeHook());
+        hooks.add(new AodNotificationIconColorHook());
         hooks.add(new SystemUIRestartHook());
 
         applyHooks(hooks, context, classLoader, "systemui");

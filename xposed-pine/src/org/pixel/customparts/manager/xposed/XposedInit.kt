@@ -15,6 +15,7 @@ import org.pixel.customparts.hooks.recents.*
 
 import org.pixel.customparts.hooks.systemui.DozeTapDozeHook
 import org.pixel.customparts.hooks.systemui.DozeTapShadeHook
+import org.pixel.customparts.hooks.systemui.AodNotificationIconColorHook
 import org.pixel.customparts.hooks.systemui.KeyguardBatteryPowerHook
 import org.pixel.customparts.hooks.systemui.NotificationIconShapeHook
 import org.pixel.customparts.hooks.systemui.ShadeCompactMediaHook
@@ -69,7 +70,8 @@ class XposedInit : IXposedHookLoadPackage {
                 KeyguardBatteryPowerHook(),
                 ShadeUnifiedSurfaceHook(),
                 ShadeCompactMediaHook(),
-                NotificationIconShapeHook()
+                NotificationIconShapeHook(),
+                AodNotificationIconColorHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)

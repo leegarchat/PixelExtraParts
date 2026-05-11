@@ -1,6 +1,7 @@
 package org.pixel.customparts.activities
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -50,6 +51,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
@@ -523,6 +525,9 @@ fun AppIconsScreen(onBack: () -> Unit) {
                                     foregroundTintMode = shapeTintFlags.foregroundTintMode,
                                     foregroundTintColor = shapeTintFlags.foregroundTintColor,
                                     advancedExpanded = advancedSettingsExpanded,
+                                    onIconShapeClick = {
+                                        context.startActivity(Intent(context, IconShapeActivity::class.java))
+                                    },
                                     onCheckedChange = { enabled ->
                                         moduleEnabled = enabled
                                         launcherOnlyEnabled = false
@@ -905,6 +910,7 @@ private fun AppIconsModuleSwitch(
     foregroundTintMode: Int,
     foregroundTintColor: Int,
     advancedExpanded: Boolean,
+    onIconShapeClick: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onLauncherOnlyChange: (Boolean) -> Unit,
     onSystemStretchShapeChange: (Boolean) -> Unit,
@@ -947,6 +953,11 @@ private fun AppIconsModuleSwitch(
                 checked = checked && launcherOnlyChecked,
                 enabled = checked,
                 onCheckedChange = onLauncherOnlyChange
+            )
+            AppIconsNavigationRow(
+                title = dynamicStringResource(R.string.icon_shape_title),
+                summary = dynamicStringResource(R.string.icon_shape_summary),
+                onClick = onIconShapeClick
             )
             ExpandableSectionHeaderContent(
                 title = dynamicStringResource(R.string.app_icons_advanced_settings_title),
@@ -1090,6 +1101,47 @@ private fun AppIconsSwitchRow(
             enabled = enabled,
             modifier = Modifier.padding(start = 12.dp)
         )
+    }
+}
+
+@Composable
+private fun AppIconsNavigationRow(
+    title: String,
+    summary: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Rounded.Apps,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null)
     }
 }
 

@@ -58,21 +58,38 @@ public class LauncherIconOverrideHook extends BaseHook {
             "pixelparts_app_icons_launcher_remove_shape";
     private static final String KEY_APP_ICONS_LAUNCHER_SHAPE_SCALE =
             "pixelparts_app_icons_launcher_shape_scale";
-        private static final String KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_MODE =
+    private static final String KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_MODE =
             "pixelparts_app_icons_shape_background_tint_mode";
-        private static final String KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_COLOR =
+    private static final String KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_COLOR =
             "pixelparts_app_icons_shape_background_tint_color";
-        private static final String KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_MODE =
+    private static final String KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_MODE =
             "pixelparts_app_icons_shape_foreground_tint_mode";
-        private static final String KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_COLOR =
+    private static final String KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_COLOR =
             "pixelparts_app_icons_shape_foreground_tint_color";
+    private static final String KEY_ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS =
+            "pixelparts_icon_shape_workspace_match_all_apps";
+    private static final String KEY_ICON_SHAPE_IGNORE_CUSTOM_SETTINGS =
+            "pixelparts_icon_shape_ignore_custom_settings";
+    private static final String KEY_ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE =
+            "pixelparts_icon_shape_all_apps_follow_workspace";
+    private static final String KEY_ICON_SHAPE_ALL_APPS_THEMED_ICONS =
+            "pixelparts_icon_shape_all_apps_themed_icons";
+        private static final String KEY_ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS =
+            "pixelparts_icon_shape_all_apps_suggestions_themed_icons";
+        private static final String KEY_ICON_SHAPE_SEARCH_THEMED_ICONS =
+            "pixelparts_icon_shape_search_themed_icons";
     private static final String ICON_RELOAD_ACTION = "com.pixelparts.intent.action.RELOAD_ICONS";
     private static final int ICON_SHAPE_DEFAULT = 0;
     private static final int ICON_SHAPE_STRETCH = 1;
     private static final int ICON_SHAPE_REMOVE = 2;
-        private static final int ICON_TINT_OFF = 0;
-        private static final int ICON_TINT_CUSTOM = 1;
-        private static final int ICON_TINT_AUTO = 2;
+    private static final int DISPLAY_ALL_APPS = 1;
+    private static final int DISPLAY_SEARCH_RESULT_TALL = 6;
+    private static final int DISPLAY_SEARCH_RESULT_SMALL = 7;
+    private static final int DISPLAY_PREDICTION_ROW = 8;
+    private static final int DISPLAY_SEARCH_RESULT_APP_ROW = 9;
+    private static final int ICON_TINT_OFF = 0;
+    private static final int ICON_TINT_CUSTOM = 1;
+    private static final int ICON_TINT_AUTO = 2;
     private static final String DYNAMIC_ICON_CALENDAR = "calendar";
     private static final String DYNAMIC_ICON_CLOCK = "clock";
     private static final float DEFAULT_SHAPE_SCALE_PERCENT = 72f;
@@ -118,6 +135,7 @@ public class LauncherIconOverrideHook extends BaseHook {
         hookBaseIconFactory(classLoader);
         hookIconState(classLoader);
         hookFloatingIconView(classLoader);
+        hookBubbleTextViewThemeMode(classLoader);
     }
 
     private void initDynamicClockClasses(ClassLoader classLoader) {
@@ -144,17 +162,24 @@ public class LauncherIconOverrideHook extends BaseHook {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            if (!(param.args[0] instanceof PixelPartsBitmapDrawable)) {
+                            if (!(param.args[0] instanceof Drawable)) {
                                 return;
                             }
 
                             Context context = getObjectContext(param.thisObject);
-                            PixelPartsBitmapDrawable pixelPartsDrawable = (PixelPartsBitmapDrawable) param.args[0];
-                            ShapeConfig shapeConfig = getLauncherIconShapeConfig(context, pixelPartsDrawable.packageName);
+                            Drawable originalDrawable = (Drawable) param.args[0];
+                            boolean isPixelPartsIcon = originalDrawable instanceof PixelPartsBitmapDrawable;
+                            if (!isPixelPartsIcon && !isWorkspaceMatchAllAppsEnabled(context)) {
+                                return;
+                            }
+                            String packageName = isPixelPartsIcon
+                                    ? ((PixelPartsBitmapDrawable) originalDrawable).packageName
+                                    : getIconOptionsPackageName(param.args[1]);
+                            ShapeConfig shapeConfig = getLauncherIconShapeConfig(context, packageName);
                             if (shapeConfig.mode == ICON_SHAPE_REMOVE) {
                                 applyNoWrapIconOptions(param.args[1]);
                             } else if (shapeConfig.mode == ICON_SHAPE_STRETCH) {
-                                Drawable foreground = (Drawable) param.args[0];
+                                Drawable foreground = originalDrawable;
                                 Drawable background = resolveBackgroundDrawable(
                                         foreground,
                                         foreground,
@@ -275,6 +300,31 @@ public class LauncherIconOverrideHook extends BaseHook {
         }
     }
 
+    private void hookBubbleTextViewThemeMode(ClassLoader classLoader) {
+        try {
+            Class<?> bubbleTextViewClass = XposedHelpers.findClass(
+                    "com.android.launcher3.BubbleTextView", classLoader);
+            XposedHelpers.findAndHookMethod(
+                    bubbleTextViewClass,
+                    "shouldUseTheme",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (!(param.thisObject instanceof View)) {
+                                return;
+                            }
+                            Context context = ((View) param.thisObject).getContext();
+                            if (shouldForceThemedIcon(context, param.thisObject)) {
+                                param.setResult(true);
+                            }
+                        }
+                    });
+            log("Hooked BubbleTextView.shouldUseTheme All Apps controls");
+        } catch (Throwable t) {
+            logError("Unable to hook BubbleTextView.shouldUseTheme", t);
+        }
+    }
+
     private void hookIconState(ClassLoader classLoader) {
         try {
             Class<?> providerClass = XposedHelpers.findClass("com.android.launcher3.icons.IconProvider", classLoader);
@@ -300,7 +350,8 @@ public class LauncherIconOverrideHook extends BaseHook {
                                     + shapeConfig.backgroundTintColor + ":"
                                     + shapeConfig.foregroundTintMode + ":"
                                     + shapeConfig.foregroundTintColor + ":" + packageName
-                                    + ":" + dynamicStateForPackage(packageName));
+                                    + ":" + dynamicStateForPackage(packageName)
+                                    + ":" + launcherShapeFlagsState(context));
                         }
                     });
             log("Hooked IconProvider.getStateForApp freshness");
@@ -417,11 +468,24 @@ public class LauncherIconOverrideHook extends BaseHook {
 
     private static ShapeConfig getLauncherIconShapeConfig(Context context, String packageName) {
         TintConfig tintConfig = getGlobalTintConfig(context);
-        ShapeOverride override = getShapeOverride(packageName);
+        boolean ignoreCustomShape = isIgnoreCustomSettingsShapeEnabled(context);
+        ShapeOverride override = ignoreCustomShape ? null : getShapeOverride(packageName);
         if (override != null) {
             return new ShapeConfig(override.mode, scalePercentToFloat(override.scalePercent), tintConfig);
         }
-        return getGlobalLauncherIconShapeConfig(context, tintConfig);
+        ShapeConfig globalConfig = ignoreCustomShape
+                ? new ShapeConfig(ICON_SHAPE_DEFAULT, 1f, tintConfig)
+                : getGlobalLauncherIconShapeConfig(context, tintConfig);
+        if (globalConfig.mode != ICON_SHAPE_DEFAULT) {
+            return globalConfig;
+        }
+        if (isWorkspaceMatchAllAppsEnabled(context)) {
+            return new ShapeConfig(
+                    ICON_SHAPE_STRETCH,
+                    scalePercentToFloat(readLauncherShapeScalePercent(context)),
+                    tintConfig);
+        }
+        return globalConfig;
     }
 
     private static ShapeConfig getGlobalLauncherIconShapeConfig(Context context, TintConfig tintConfig) {
@@ -429,10 +493,7 @@ public class LauncherIconOverrideHook extends BaseHook {
             return new ShapeConfig(ICON_SHAPE_DEFAULT, 1f, tintConfig);
         }
         try {
-            float scalePercent = Settings.Global.getFloat(
-                    context.getContentResolver(),
-                    KEY_APP_ICONS_LAUNCHER_SHAPE_SCALE,
-                    DEFAULT_SHAPE_SCALE_PERCENT);
+            float scalePercent = readLauncherShapeScalePercent(context);
             if (Settings.Global.getInt(
                     context.getContentResolver(), KEY_APP_ICONS_LAUNCHER_REMOVE_SHAPE, 0) != 0) {
                 return new ShapeConfig(ICON_SHAPE_REMOVE, scalePercentToFloat(scalePercent), tintConfig);
@@ -444,6 +505,99 @@ public class LauncherIconOverrideHook extends BaseHook {
         } catch (Throwable ignored) {
         }
         return new ShapeConfig(ICON_SHAPE_DEFAULT, 1f, tintConfig);
+    }
+
+    private static float readLauncherShapeScalePercent(Context context) {
+        if (context == null) {
+            return DEFAULT_SHAPE_SCALE_PERCENT;
+        }
+        try {
+            return Settings.Global.getFloat(
+                    context.getContentResolver(),
+                    KEY_APP_ICONS_LAUNCHER_SHAPE_SCALE,
+                    DEFAULT_SHAPE_SCALE_PERCENT);
+        } catch (Throwable ignored) {
+            return DEFAULT_SHAPE_SCALE_PERCENT;
+        }
+    }
+
+    private static boolean isWorkspaceMatchAllAppsEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS, false);
+    }
+
+    private static boolean isIgnoreCustomSettingsShapeEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_IGNORE_CUSTOM_SETTINGS, false);
+    }
+
+    private static boolean isAllAppsFollowWorkspaceEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE, false);
+    }
+
+    private static boolean isAllAppsThemedIconsEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_ALL_APPS_THEMED_ICONS, false);
+    }
+
+    private static boolean isAllAppsSuggestionsThemedIconsEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS, false);
+    }
+
+    private static boolean isSearchThemedIconsEnabled(Context context) {
+        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_SEARCH_THEMED_ICONS, false);
+    }
+
+    private static boolean isGlobalSettingEnabled(Context context, String key, boolean defaultValue) {
+        if (context == null) {
+            return defaultValue;
+        }
+        try {
+            return Settings.Global.getInt(context.getContentResolver(), key, defaultValue ? 1 : 0) != 0;
+        } catch (Throwable ignored) {
+            return defaultValue;
+        }
+    }
+
+    private static String launcherShapeFlagsState(Context context) {
+        return (isWorkspaceMatchAllAppsEnabled(context) ? "1" : "0")
+                + (isIgnoreCustomSettingsShapeEnabled(context) ? "1" : "0")
+                + (isAllAppsFollowWorkspaceEnabled(context) ? "1" : "0")
+                + (isAllAppsThemedIconsEnabled(context) ? "1" : "0")
+                + (isAllAppsSuggestionsThemedIconsEnabled(context) ? "1" : "0")
+                + (isSearchThemedIconsEnabled(context) ? "1" : "0");
+    }
+
+    private static boolean shouldForceThemedIcon(Context context, Object view) {
+        int display = getBubbleDisplay(view);
+        if (display == DISPLAY_ALL_APPS) {
+            return isAllAppsFollowWorkspaceEnabled(context) || isAllAppsThemedIconsEnabled(context);
+        }
+        if (display == DISPLAY_PREDICTION_ROW) {
+            return isAllAppsSuggestionsThemedIconsEnabled(context);
+        }
+        if (display == DISPLAY_SEARCH_RESULT_TALL
+                || display == DISPLAY_SEARCH_RESULT_SMALL
+                || display == DISPLAY_SEARCH_RESULT_APP_ROW
+                || view.getClass().getName().endsWith("SearchResultIcon")) {
+            return isSearchThemedIconsEnabled(context);
+        }
+        return false;
+    }
+
+    private static int getBubbleDisplay(Object view) {
+        try {
+            return XposedHelpers.getIntField(view, "mDisplay");
+        } catch (Throwable ignored) {
+            return -1;
+        }
+    }
+
+    private static String getIconOptionsPackageName(Object options) {
+        Object sourceHint = getObjectFieldQuietly(options, "sourceHint");
+        Object componentKey = getObjectFieldQuietly(sourceHint, "key");
+        Object componentName = getObjectFieldQuietly(componentKey, "componentName");
+        if (componentName instanceof ComponentName) {
+            return ((ComponentName) componentName).getPackageName();
+        }
+        return null;
     }
 
     private static TintConfig getGlobalTintConfig(Context context) {

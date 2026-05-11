@@ -198,6 +198,11 @@
                 android:resource="@string/app_icons_summary" />
         </activity>
         <activity
+            android:name=".activities.IconShapeActivity"
+            android:label="@string/icon_shape_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name=".activities.SaturationActivity"
             android:label="@string/saturation_title"
             android:exported="true"

@@ -39,6 +39,15 @@ object SettingsKeys {
     const val APP_ICONS_SHAPE_BACKGROUND_TINT_COLOR = "pixelparts_app_icons_shape_background_tint_color"
     const val APP_ICONS_SHAPE_FOREGROUND_TINT_MODE = "pixelparts_app_icons_shape_foreground_tint_mode"
     const val APP_ICONS_SHAPE_FOREGROUND_TINT_COLOR = "pixelparts_app_icons_shape_foreground_tint_color"
+    const val ICON_SHAPE_CUSTOM_PATH = "pixelparts_icon_shape_custom_path"
+    const val ICON_SHAPE_CUSTOM_NAME = "pixelparts_icon_shape_custom_name"
+    const val ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS = "pixelparts_icon_shape_workspace_match_all_apps"
+    const val ICON_SHAPE_IGNORE_CUSTOM_SETTINGS = "pixelparts_icon_shape_ignore_custom_settings"
+    const val ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE = "pixelparts_icon_shape_all_apps_follow_workspace"
+    const val ICON_SHAPE_ALL_APPS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_themed_icons"
+    const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
+    const val ICON_SHAPE_SEARCH_THEMED_ICONS = "pixelparts_icon_shape_search_themed_icons"
+    const val ICON_SHAPE_SYSTEM_THEMED_ICONS = "pixelparts_icon_shape_system_themed_icons"
 
 
     val isPineOverride: Boolean
@@ -245,6 +254,9 @@ object SettingsKeys {
         get() = "qs_player_hide_lockscreen" + suffix
     val QS_PLAYER_ALPHA: String
         get() = "qs_player_alpha" + suffix
+
+    val AOD_FULL_COLOR_NOTIFICATION_ICONS: String
+        get() = "aod_full_color_notification_icons" + suffix
 
     /** Shade background/window blur intensity in percent (100 = stock). */
     val SHADE_BLUR_INTENSITY: String
