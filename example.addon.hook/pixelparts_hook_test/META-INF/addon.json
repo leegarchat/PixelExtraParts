@@ -1,0 +1,203 @@
+{
+    "id": "pixelparts_hook_test",
+    "entryClass": "org.pixel.customparts.addon.test.GestureBarAddonHook",
+    "name": "PixelParts Hook Test",
+    "author": "LeeGarBook",
+    "description": "Test addon for Gesture Bar and notification icon overrides.",
+    "version": "1.0-test",
+    "targetPackages": [
+        "com.android.systemui",
+        "com.google.android.apps.nexuslauncher",
+        "com.google.android.apps.pixel.launcher",
+        "com.android.launcher3"
+    ],
+    "enabled": true,
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 70,
+    "settings": [
+        {
+            "key": "pixelparts_hook_test_gesture_bar_enabled",
+            "title": "Gesture Bar Enabled",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_width_percent",
+            "title": "Gesture Bar Width",
+            "type": "int",
+            "provider": "global",
+            "default": 28,
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "%"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_height_dp",
+            "title": "Gesture Bar Height",
+            "type": "int",
+            "provider": "global",
+            "default": 4,
+            "min": 0,
+            "max": 64,
+            "step": 1,
+            "unit": "dp"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_offset_x_dp",
+            "title": "Gesture Bar X Offset",
+            "type": "int",
+            "provider": "global",
+            "default": 0,
+            "min": -200,
+            "max": 200,
+            "step": 1,
+            "unit": "dp"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_offset_y_dp",
+            "title": "Gesture Bar Y Offset",
+            "type": "int",
+            "provider": "global",
+            "default": 0,
+            "min": -80,
+            "max": 80,
+            "step": 1,
+            "unit": "dp"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_alpha_percent",
+            "title": "Gesture Bar Alpha",
+            "type": "int",
+            "provider": "global",
+            "default": 100,
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "%"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_fade_in_ms",
+            "title": "Gesture Bar Fade In",
+            "type": "int",
+            "provider": "global",
+            "default": 220,
+            "min": 20,
+            "max": 1500,
+            "step": 10,
+            "unit": "ms"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_fade_out_ms",
+            "title": "Gesture Bar Fade Out",
+            "type": "int",
+            "provider": "global",
+            "default": 220,
+            "min": 20,
+            "max": 1500,
+            "step": 10,
+            "unit": "ms"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_hide_on_launcher",
+            "title": "Hide On Launcher",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_launcher_hide_timeout_ms",
+            "title": "Launcher Hide Timeout",
+            "type": "int",
+            "provider": "global",
+            "default": 3000,
+            "min": 0,
+            "max": 5000,
+            "step": 100,
+            "unit": "ms"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_hide_in_apps",
+            "title": "Hide In Apps",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_app_hide_timeout_ms",
+            "title": "App Hide Timeout",
+            "type": "int",
+            "provider": "global",
+            "default": 3000,
+            "min": 0,
+            "max": 5000,
+            "step": 100,
+            "unit": "ms"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_hide_on_lockscreen",
+            "title": "Hide On Lockscreen/AOD",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_remove_reserved_area",
+            "title": "Remove Reserved Area",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_reserved_area_dp",
+            "title": "Reserved Area",
+            "type": "int",
+            "provider": "global",
+            "default": 24,
+            "min": 0,
+            "max": 160,
+            "step": 1,
+            "unit": "dp"
+        },
+        {
+            "key": "pixelparts_hook_test_gesture_bar_gesture_area_dp",
+            "title": "Gesture Area",
+            "type": "int",
+            "provider": "global",
+            "default": 24,
+            "min": 0,
+            "max": 160,
+            "step": 1,
+            "unit": "dp"
+        },
+        {
+            "key": "pixelparts_hook_test_status_bar_use_app_icons",
+            "title": "Use App Icons In Status Bar",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_status_bar_monochrome_notification_icons",
+            "title": "Grayscale Status Bar App Icons",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "pixelparts_hook_test_aod_use_app_icons",
+            "title": "Use App Icons On AOD",
+            "type": "toggle",
+            "provider": "global",
+            "default": true
+        },
+        {
+            "key": "pixelparts_hook_test_aod_monochrome_notification_icons",
+            "title": "Grayscale AOD App Icons",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        }
+    ]
+}
