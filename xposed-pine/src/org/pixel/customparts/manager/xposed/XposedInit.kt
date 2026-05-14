@@ -53,6 +53,7 @@ class XposedInit : IXposedHookLoadPackage {
                 LauncherIconOverrideHook(),
                 GridSizeAppMenuHook(),
                 UnifiedLauncherHook(),
+                GestureBarHook(),
                 // OxygenRecentsIconStripHook(),
                 RecentsUnifiedHook()
             ).sortedByDescending { it.priority }
@@ -71,7 +72,8 @@ class XposedInit : IXposedHookLoadPackage {
                 ShadeUnifiedSurfaceHook(),
                 ShadeCompactMediaHook(),
                 NotificationIconShapeHook(),
-                AodNotificationIconColorHook()
+                AodNotificationIconColorHook(),
+                GestureBarHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)

@@ -117,6 +117,7 @@ public class HookEntry {
         hooks.add(new LauncherIconOverrideHook());
         hooks.add(new GridSizeAppMenuHook());
         hooks.add(new UnifiedLauncherHook());
+        hooks.add(new GestureBarHook());
         hooks.add(new RecentsUnifiedHook());
         // hooks.add(new OxygenRecentsIconStripHook());
 
@@ -133,6 +134,7 @@ public class HookEntry {
         hooks.add(new ShadeCompactMediaHook());
         hooks.add(new NotificationIconShapeHook());
         hooks.add(new AodNotificationIconColorHook());
+        hooks.add(new GestureBarHook());
         hooks.add(new SystemUIRestartHook());
 
         applyHooks(hooks, context, classLoader, "systemui");
