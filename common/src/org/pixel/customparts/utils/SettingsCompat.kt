@@ -75,8 +75,30 @@ object SettingsCompat {
         "doze_double_tap_hook",
         "launcher_dt2s_enabled",
         "overscroll_enabled",
+        "status_bar_use_app_icons",
+        "status_bar_monochrome_notification_icons",
+        "aod_use_app_icons",
+        "aod_monochrome_notification_icons",
         "pixelparts_battery_info_refresh_interval_ms",
-        "pixelparts_battery_info_average_mode"
+        "pixelparts_battery_info_average_mode",
+        "gesture_bar_enabled",
+        "gesture_bar_width_percent",
+        "gesture_bar_height_dp",
+        "gesture_bar_offset_x_dp",
+        "gesture_bar_offset_y_dp",
+        "gesture_bar_reserved_area_dp",
+        "gesture_bar_gesture_area_dp",
+        "gesture_bar_hide_on_launcher",
+        "gesture_bar_hide_in_apps",
+        "gesture_bar_launcher_hide_timeout_ms",
+        "gesture_bar_app_hide_timeout_ms",
+        "gesture_bar_hide_on_lockscreen",
+        "gesture_bar_remove_reserved_area",
+        "gesture_bar_alpha_percent",
+        "gesture_bar_tint_enabled",
+        "gesture_bar_tint_color",
+        "gesture_bar_fade_in_ms",
+        "gesture_bar_fade_out_ms"
     )
     private fun isSuffixedKey(key: String): Boolean {
         return SUFFIXED_KEY_BASES.contains(stripRuntimeSuffix(key))

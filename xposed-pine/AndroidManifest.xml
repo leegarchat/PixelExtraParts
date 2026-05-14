@@ -98,6 +98,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name="org.pixel.customparts.activities.GestureBarSettingsActivity"
+            android:label="@string/gesture_bar_settings_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name="org.pixel.customparts.activities.LockscreenSettingsActivity"
             android:label="Lockscreen Settings"
             android:exported="false"

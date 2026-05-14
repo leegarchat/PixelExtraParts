@@ -258,6 +258,52 @@ object SettingsKeys {
     val AOD_FULL_COLOR_NOTIFICATION_ICONS: String
         get() = "aod_full_color_notification_icons" + suffix
 
+    val STATUS_BAR_USE_APP_ICONS: String
+        get() = "status_bar_use_app_icons" + suffix
+    val STATUS_BAR_MONOCHROME_NOTIFICATION_ICONS: String
+        get() = "status_bar_monochrome_notification_icons" + suffix
+    val AOD_USE_APP_ICONS: String
+        get() = "aod_use_app_icons" + suffix
+    val AOD_MONOCHROME_NOTIFICATION_ICONS: String
+        get() = "aod_monochrome_notification_icons" + suffix
+
+    val GESTURE_BAR_ENABLED: String
+        get() = "gesture_bar_enabled" + suffix
+    val GESTURE_BAR_WIDTH_PERCENT: String
+        get() = "gesture_bar_width_percent" + suffix
+    val GESTURE_BAR_HEIGHT_DP: String
+        get() = "gesture_bar_height_dp" + suffix
+    val GESTURE_BAR_OFFSET_X_DP: String
+        get() = "gesture_bar_offset_x_dp" + suffix
+    val GESTURE_BAR_OFFSET_Y_DP: String
+        get() = "gesture_bar_offset_y_dp" + suffix
+    val GESTURE_BAR_RESERVED_AREA_DP: String
+        get() = "gesture_bar_reserved_area_dp" + suffix
+    val GESTURE_BAR_GESTURE_AREA_DP: String
+        get() = "gesture_bar_gesture_area_dp" + suffix
+    val GESTURE_BAR_HIDE_ON_LAUNCHER: String
+        get() = "gesture_bar_hide_on_launcher" + suffix
+    val GESTURE_BAR_HIDE_IN_APPS: String
+        get() = "gesture_bar_hide_in_apps" + suffix
+    val GESTURE_BAR_LAUNCHER_HIDE_TIMEOUT_MS: String
+        get() = "gesture_bar_launcher_hide_timeout_ms" + suffix
+    val GESTURE_BAR_APP_HIDE_TIMEOUT_MS: String
+        get() = "gesture_bar_app_hide_timeout_ms" + suffix
+    val GESTURE_BAR_HIDE_ON_LOCKSCREEN: String
+        get() = "gesture_bar_hide_on_lockscreen" + suffix
+    val GESTURE_BAR_REMOVE_RESERVED_AREA: String
+        get() = "gesture_bar_remove_reserved_area" + suffix
+    val GESTURE_BAR_ALPHA_PERCENT: String
+        get() = "gesture_bar_alpha_percent" + suffix
+    val GESTURE_BAR_TINT_ENABLED: String
+        get() = "gesture_bar_tint_enabled" + suffix
+    val GESTURE_BAR_TINT_COLOR: String
+        get() = "gesture_bar_tint_color" + suffix
+    val GESTURE_BAR_FADE_IN_MS: String
+        get() = "gesture_bar_fade_in_ms" + suffix
+    val GESTURE_BAR_FADE_OUT_MS: String
+        get() = "gesture_bar_fade_out_ms" + suffix
+
     /** Shade background/window blur intensity in percent (100 = stock). */
     val SHADE_BLUR_INTENSITY: String
         get() = "shade_blur_intensity" + suffix
