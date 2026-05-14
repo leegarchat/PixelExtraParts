@@ -199,6 +199,69 @@ def process_hot_threshold_values(values, offset):
     return ", ".join(new_items)
 
 
+def find_matching_json_brace(text, start_index):
+    depth = 0
+    in_string = False
+    escaping = False
+
+    for index in range(start_index, len(text)):
+        char = text[index]
+        if in_string:
+            if escaping:
+                escaping = False
+            elif char == "\\":
+                escaping = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+            continue
+
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+
+    return None
+
+
+def find_enclosing_object_bounds(text, index):
+    in_string = False
+    escaping = False
+    stack = []
+
+    for position, char in enumerate(text):
+        if in_string:
+            if escaping:
+                escaping = False
+            elif char == "\\":
+                escaping = True
+            elif char == '"':
+                in_string = False
+        else:
+            if char == '"':
+                in_string = True
+            elif char == "{":
+                stack.append(position)
+            elif char == "}" and stack:
+                stack.pop()
+
+        if position >= index:
+            if not stack:
+                return None
+            object_start = stack[-1]
+            object_end = find_matching_json_brace(text, object_start)
+            if object_end is None:
+                return None
+            return object_start, object_end
+
+    return None
+
+
 def patch_file_content(content, targets_soc, offset_soc, targets_battery, offset_battery):
     replacements = []
     name_pattern = re.compile(r'"Name"\s*:\s*"([^"]+)"')
@@ -217,12 +280,13 @@ def patch_file_content(content, targets_soc, offset_soc, targets_battery, offset
         if current_offset == 0:
             continue
 
-        threshold_match = threshold_pattern.search(content, pos=start_pos)
-        if not threshold_match:
+        object_bounds = find_enclosing_object_bounds(content, name_match.start())
+        if object_bounds is None:
             continue
 
-        chunk_between = content[start_pos:threshold_match.start()]
-        if chunk_between.count("}") > chunk_between.count("{"):
+        _, object_end = object_bounds
+        threshold_match = threshold_pattern.search(content, pos=start_pos, endpos=object_end + 1)
+        if not threshold_match:
             continue
 
         replacements.append((

@@ -238,10 +238,13 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     val appChoices = remember(savedConfigs) { ThermalProfileController.listConfigChoices(includeFollowGlobal = true) }
     val choicesById = remember(globalChoices, appChoices) { (globalChoices + appChoices).associateBy { it.id } }
 
-    val visibleApps = remember(managedApps, showSystemApps, appSearchQuery) {
+    val visibleApps = remember(managedApps, showSystemApps, appSearchQuery, profileMap) {
         val query = appSearchQuery.trim().lowercase(Locale.getDefault())
+        val assignedPackages = profileMap.packageConfigs
+            .filterValues { it.isNotBlank() }
+            .keys
         val filteredApps = if (showSystemApps) managedApps else managedApps.filterNot { it.isSystem }
-        if (query.isBlank()) {
+        val matchedApps = if (query.isBlank()) {
             filteredApps
         } else {
             filteredApps.filter { app ->
@@ -249,6 +252,11 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                     app.packageName.lowercase(Locale.US).contains(query)
             }
         }
+        matchedApps.sortedWith(
+            compareByDescending<ThermalManagedApp> { it.packageName in assignedPackages }
+                .thenBy { it.label.lowercase(Locale.getDefault()) }
+                .thenBy { it.packageName }
+        )
     }
 
     pickerTarget?.let { target ->
@@ -2268,7 +2276,7 @@ private fun parseThermalJsonValue(text: String): Any {
 }
 
 private fun cleanThermalJson(text: String): String {
-    return removeTrailingJsonCommas(removeJsonComments(text))
+    return removeTrailingJsonCommas(insertMissingJsonArrayCommas(removeJsonComments(text)))
 }
 
 private fun removeJsonComments(text: String): String {
@@ -2370,6 +2378,74 @@ private fun removeTrailingJsonCommas(text: String): String {
     }
 
     return output.toString()
+}
+
+private fun insertMissingJsonArrayCommas(text: String): String {
+    val output = StringBuilder(text.length)
+    val containerStack = mutableListOf<Char>()
+    var index = 0
+    var inString = false
+    var escaping = false
+
+    while (index < text.length) {
+        val char = text[index]
+        if (inString) {
+            output.append(char)
+            if (escaping) {
+                escaping = false
+            } else if (char == '\\') {
+                escaping = true
+            } else if (char == '"') {
+                inString = false
+            }
+            index++
+            continue
+        }
+
+        if (char == '"') {
+            inString = true
+            output.append(char)
+            index++
+            continue
+        }
+
+        when (char) {
+            '[', '{' -> containerStack.add(char)
+            ']' -> if (containerStack.lastOrNull() == '[') containerStack.removeAt(containerStack.lastIndex)
+            '}' -> if (containerStack.lastOrNull() == '{') containerStack.removeAt(containerStack.lastIndex)
+        }
+
+        if (char.isWhitespace() && containerStack.lastOrNull() == '[' && shouldInsertArrayComma(text, index)) {
+            output.append(',')
+        }
+
+        output.append(char)
+        index++
+    }
+
+    return output.toString()
+}
+
+private fun shouldInsertArrayComma(text: String, whitespaceIndex: Int): Boolean {
+    var previousIndex = whitespaceIndex - 1
+    while (previousIndex >= 0 && text[previousIndex].isWhitespace()) previousIndex--
+    if (previousIndex < 0 || !isJsonValueEnd(text[previousIndex])) return false
+
+    var nextIndex = whitespaceIndex + 1
+    while (nextIndex < text.length && text[nextIndex].isWhitespace()) nextIndex++
+    if (nextIndex >= text.length || !isJsonValueStart(text[nextIndex])) return false
+
+    return true
+}
+
+private fun isJsonValueStart(char: Char): Boolean {
+    return char == '"' || char == '{' || char == '[' || char == '-' || char.isDigit() ||
+        char == 't' || char == 'f' || char == 'n'
+}
+
+private fun isJsonValueEnd(char: Char): Boolean {
+    return char == '"' || char == '}' || char == ']' || char.isDigit() ||
+        char == 'e' || char == 'E' || char == 'l'
 }
 
 private fun mergeArrayByName(target: JSONObject, source: JSONObject, key: String) {
