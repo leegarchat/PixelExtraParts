@@ -343,6 +343,11 @@
             android:exported="false" />
 
         <service
+            android:name=".services.ThermalProfileService"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <service
             android:name=".services.AutoHbmTileService"
             android:label="@string/auto_hbm_title"
             android:icon="@drawable/ic_auto_hbm_tile"

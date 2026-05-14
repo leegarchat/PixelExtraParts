@@ -26,11 +26,15 @@ endif
 PIXEL_EXTRA_PARTS_THERMAL_RESULT := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/generate_thermal_configs.py --quiet --vendor-path $(VENDOR_PATH) --device-codename $(DEVICE_CODENAME) --init-rc $(PIXEL_EXTRA_PARTS_PATH)/init.pixelextraparts.rc $(if $(strip $(THERMAL_CUSTOM_JSON_PATH)),--thermal-json $(THERMAL_CUSTOM_JSON_PATH),) 2>&1)
 
 ifneq ($(findstring PixelExtraPartsThermalError:,$(PIXEL_EXTRA_PARTS_THERMAL_RESULT)),)
-$(error $(PIXEL_EXTRA_PARTS_THERMAL_RESULT))
+$(warning $(PIXEL_EXTRA_PARTS_THERMAL_RESULT))
+else
+$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCopyRules.mk)
 endif
 
-$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCopyRules.mk)
 
 # PixelExtraParts sepolicy
+BOARD_VENDOR_SEPOLICY_DIRS += \
+    $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/vendor
+
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private

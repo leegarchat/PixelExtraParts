@@ -1,9 +1,13 @@
 on post-fs-data
     mkdir /data/pixelparts 0777 system system
+    mkdir /data/pixelparts/ThermalConfigs 0777 system system
     mkdir /data/pixelparts/addons 0777 system system
     mkdir /data/pixelparts/addons-dex 0777 system system
     mkdir /data/pixelparts/system_addons_data 0777 system system
+    mkdir /data/vendor/pixelparts 0771 system system
+    mkdir /data/vendor/pixelparts/ThermalConfigs 0771 system system
     restorecon_recursive /data/pixelparts
+    restorecon_recursive /data/vendor/pixelparts
 
 # PixelExtraParts Auto HBM panel brightness access
 on boot
@@ -14,7 +18,15 @@ on boot
 on init
     setprop persist.sys.pixelparts.thermal_available true
 
-on property:persist.sys.pixelparts.thermal_config=*
-    setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config}
-    restart vendor.thermal-hal
+on property:sys.pixelparts.thermal_config_request=*
+    setprop persist.sys.pixelparts.thermal_config ${sys.pixelparts.thermal_config_request}
+    setprop vendor.thermal.config ${sys.pixelparts.thermal_config_request}
+
+on property:sys.pixelparts.thermal_config_file_request=*
+    copy /data/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request} /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
+    chown system system /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
+    chmod 0644 /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
+    restorecon /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
+    setprop persist.sys.pixelparts.thermal_config ${sys.pixelparts.thermal_config_file_request}
+    setprop vendor.thermal.config /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
 # End PixelExtraParts thermal config switch

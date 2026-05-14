@@ -425,7 +425,7 @@ object ThermalManager {
 
     private const val PROP_BATTERY = "persist.sys.pixelparts.battery"
     private const val PROP_SOC = "persist.sys.pixelparts.soc"
-    private const val PROP_CONFIG_TARGET = "persist.sys.pixelparts.thermal_config"
+    private const val PROP_CONFIG_TARGET = "sys.pixelparts.thermal_config_request"
 
     private const val MODE_STOCK = 0
     private const val MODE_SOFT = 1

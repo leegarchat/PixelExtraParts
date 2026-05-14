@@ -36,6 +36,10 @@ BASE_CONFIG_NAME = "thermal_info_config"
 BASE_CONFIG_FILENAME = f"{BASE_CONFIG_NAME}.json"
 THERMAL_AVAILABLE_PROP = "persist.sys.pixelparts.thermal_available"
 THERMAL_CONFIG_PROP = "persist.sys.pixelparts.thermal_config"
+THERMAL_CONFIG_REQUEST_PROP = "sys.pixelparts.thermal_config_request"
+THERMAL_CONFIG_FILE_REQUEST_PROP = "sys.pixelparts.thermal_config_file_request"
+THERMAL_CONFIG_DATA_DIR = "/data/pixelparts/ThermalConfigs"
+THERMAL_CONFIG_VENDOR_DIR = "/data/vendor/pixelparts/ThermalConfigs"
 
 PARTITION_COPY_OUT = {
     "vendor": "$(TARGET_COPY_OUT_VENDOR)",
@@ -273,11 +277,35 @@ def strip_old_thermal_block(content):
             continue
 
         normalized = stripped.lstrip("# ").strip()
-        if normalized == "on property:persist.sys.pixelparts.thermal_config=*":
+        if normalized in (
+            "on property:persist.sys.pixelparts.thermal_config=*",
+            "on property:persist.sys.pixelparts.thermal_config_request=*",
+            "on property:sys.pixelparts.thermal_config_request=*",
+            "on property:persist.sys.pixelparts.thermal_config_file_request=*",
+            "on property:sys.pixelparts.thermal_config_file_request=*",
+            "on property:sys.pixelparts.thermal_config_file_request_a=*",
+            "on property:sys.pixelparts.thermal_config_file_request_b=*",
+        ):
             index += 1
             while index < len(lines):
                 next_normalized = lines[index].strip().lstrip("# ").strip()
-                if next_normalized.startswith("setprop vendor.thermal.config") or next_normalized.startswith("restart vendor.thermal-hal") or not next_normalized:
+                if (
+                    next_normalized.startswith("setprop vendor.thermal.config")
+                    or next_normalized.startswith(f"setprop {THERMAL_CONFIG_PROP}")
+                    or next_normalized.startswith("copy ${persist.sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("copy ${sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("copy /data/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("copy ${sys.pixelparts.thermal_config_file_request_a}")
+                    or next_normalized.startswith("copy ${sys.pixelparts.thermal_config_file_request_b}")
+                    or next_normalized.startswith("chown system system /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("chmod 0644 /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("restorecon /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}")
+                    or next_normalized.startswith("chown system system /data/vendor/pixelparts/ThermalConfigs/active")
+                    or next_normalized.startswith("chmod 0644 /data/vendor/pixelparts/ThermalConfigs/active")
+                    or next_normalized.startswith("restorecon /data/vendor/pixelparts/ThermalConfigs/active")
+                    or next_normalized.startswith("restart vendor.thermal-hal")
+                    or not next_normalized
+                ):
                     index += 1
                     continue
                 break
@@ -303,16 +331,28 @@ def update_init_rc(init_rc_path, enabled):
     availability = "true" if enabled else "false"
     if enabled:
         switch_lines = [
-            "on property:persist.sys.pixelparts.thermal_config=*",
-            "    setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config}",
-            "    restart vendor.thermal-hal",
+            f"on property:{THERMAL_CONFIG_REQUEST_PROP}=*",
+            f"    setprop {THERMAL_CONFIG_PROP} ${{{THERMAL_CONFIG_REQUEST_PROP}}}",
+            f"    setprop vendor.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}}",
+            "",
+            f"on property:{THERMAL_CONFIG_FILE_REQUEST_PROP}=*",
+            f"    copy {THERMAL_CONFIG_DATA_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}} {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"    chown system system {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"    chmod 0644 {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"    restorecon {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"    setprop {THERMAL_CONFIG_PROP} ${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"    setprop vendor.thermal.config {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
         ]
     else:
         switch_lines = [
             "# Thermal configs were not generated for this target.",
-            "# on property:persist.sys.pixelparts.thermal_config=*",
-            "#     setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config}",
-            "#     restart vendor.thermal-hal",
+            f"# on property:{THERMAL_CONFIG_REQUEST_PROP}=*",
+            f"#     setprop {THERMAL_CONFIG_PROP} ${{{THERMAL_CONFIG_REQUEST_PROP}}}",
+            f"#     setprop vendor.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}}",
+            f"# on property:{THERMAL_CONFIG_FILE_REQUEST_PROP}=*",
+            f"#     copy {THERMAL_CONFIG_DATA_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}} {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"#     setprop {THERMAL_CONFIG_PROP} ${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
+            f"#     setprop vendor.thermal.config {THERMAL_CONFIG_VENDOR_DIR}/${{{THERMAL_CONFIG_FILE_REQUEST_PROP}}}",
         ]
 
     block = [
