@@ -21,6 +21,14 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+prebuilt_etc {
+    name: "ambient_extend_hook_addon",
+    src: "example.addon.hook/ambient_extend_hook/out/ambient_extend_hook.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
 java_import {
     name: "apksig-jar",
     jars: ["common/lib/apksig.jar"],

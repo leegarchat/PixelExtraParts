@@ -1,0 +1,90 @@
+{
+    "id": "ambient_extend_hook",
+    "entryClass": "org.pixel.customparts.addon.ambient.AmbientExtendHook",
+    "name": "Ambient Extend",
+    "author": "LeeGarBook",
+    "description": "AOD timeout, ambient Smart Pixels, and extra Doze dimming for SystemUI.",
+    "version": "1.0",
+    "targetPackages": [
+        "com.android.systemui"
+    ],
+    "enabled": true,
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 70,
+    "settings": [
+        {
+            "key": "ambient_extend_hook_timeout_enabled",
+            "title": "Temporary AOD Blackout",
+            "description": "Fades AOD to a full black overlay after the selected delay.",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "ambient_extend_hook_timeout_seconds",
+            "title": "AOD Timeout",
+            "type": "int",
+            "provider": "global",
+            "default": 60,
+            "min": 1,
+            "max": 600,
+            "step": 1,
+            "unit": "s"
+        },
+        {
+            "key": "ambient_extend_hook_timeout_fade_ms",
+            "title": "AOD Blackout Fade",
+            "type": "int",
+            "provider": "global",
+            "default": 1200,
+            "min": 0,
+            "max": 10000,
+            "step": 50,
+            "unit": "ms"
+        },
+        {
+            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+            "title": "Smart Pixels On Ambient/Doze",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "ambient_extend_hook_smart_pixels_aod_percent",
+            "title": "Ambient/Doze Disabled Pixels",
+            "type": "int",
+            "provider": "global",
+            "default": 25,
+            "min": 10,
+            "max": 100,
+            "step": 1,
+            "unit": "%"
+        },
+        {
+            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+            "title": "Shift Smart Pixels",
+            "description": "Periodically moves the pixel mask position while Smart Pixels are active.",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "ambient_extend_hook_dim_enabled",
+            "title": "Extra Doze Dimming",
+            "type": "toggle",
+            "provider": "global",
+            "default": false
+        },
+        {
+            "key": "ambient_extend_hook_dim_percent",
+            "title": "Extra Dimming",
+            "type": "int",
+            "provider": "global",
+            "default": 30,
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit": "%"
+        }
+    ]
+}

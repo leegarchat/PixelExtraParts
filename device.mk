@@ -6,6 +6,7 @@ PIXEL_EXTRA_PARTS_PATH := packages/apps/PixelExtraParts
 
 # PixelExtraParts app and runtime pieces
 PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
+    system_ext/etc/pixelparts/addons/ambient_extend_hook.jar \
     system/framework/PineInject.jar \
     system/lib64/libpine.so \
     system/lib64/libaapt2.so \
@@ -15,6 +16,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
 PRODUCT_PACKAGES += \
     PixelCustomPartsSystem \
     init.pixelextraparts.rc \
+    ambient_extend_hook_addon \
     PineInject \
     libpine
 
