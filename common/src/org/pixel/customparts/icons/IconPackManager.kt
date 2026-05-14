@@ -235,6 +235,7 @@ object IconPackManager {
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     @Volatile private var activeProgress: IconApplyProgress? = null
+    @Volatile private var dashboardCache: IconDashboardState? = null
 
     private val themeActions = listOf(
         "org.adw.launcher.THEMES",
@@ -251,6 +252,12 @@ object IconPackManager {
     )
 
     fun getActiveProgress(): IconApplyProgress? = activeProgress
+
+    fun getCachedDashboardState(): IconDashboardState? = dashboardCache
+
+    fun clearDashboardCache() {
+        dashboardCache = null
+    }
 
     fun clearCompletedProgress() {
         if (activeProgress?.completed == true) {
@@ -371,7 +378,10 @@ object IconPackManager {
         }
     }
 
-    suspend fun loadDashboardState(context: Context): IconDashboardState = withContext(Dispatchers.IO) {
+    suspend fun loadDashboardState(context: Context, forceRefresh: Boolean = false): IconDashboardState = withContext(Dispatchers.IO) {
+        if (!forceRefresh) {
+            dashboardCache?.let { return@withContext it }
+        }
         val appContext = context.applicationContext ?: context
         val packageManager = appContext.packageManager
         val iconMap = readIconMap()
@@ -379,7 +389,7 @@ object IconPackManager {
         val iconPacks = loadIconPacks(appContext, packageManager, installedIndex, iconMap)
         val packLabels = iconPacks.associate { it.packageName to it.label }
         val installedApps = buildInstalledApps(installedIndex, iconMap, packLabels)
-        IconDashboardState(iconPacks, installedApps, iconMap)
+        IconDashboardState(iconPacks, installedApps, iconMap).also { dashboardCache = it }
     }
 
     suspend fun loadIconPackEntries(context: Context, iconPackPackage: String): List<IconPackEntry> =
@@ -1241,6 +1251,7 @@ object IconPackManager {
     private fun completeProgress(taskId: String, result: IconApplyResult) {
         val current = activeProgress ?: return
         if (current.taskId != taskId) return
+        clearDashboardCache()
         val total = current.total.coerceAtLeast(result.requested + result.removed)
         activeProgress = current.copy(
             total = total,
@@ -1590,6 +1601,7 @@ object IconPackManager {
     }
 
     private fun writeIconMap(snapshot: IconMapSnapshot) {
+        clearDashboardCache()
         ensureStorageDirs()
         val root = JSONObject()
         root.put("version", 2)

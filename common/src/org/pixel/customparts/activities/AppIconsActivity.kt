@@ -354,8 +354,8 @@ fun AppIconsScreen(onBack: () -> Unit) {
     val listState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
-    var dashboard by remember { mutableStateOf<IconDashboardState?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
+    var dashboard by remember { mutableStateOf(IconPackManager.getCachedDashboardState()) }
+    var isLoading by remember { mutableStateOf(dashboard == null) }
     var loadFailed by remember { mutableStateOf(false) }
     var packsExpanded by rememberSaveable { mutableStateOf(true) }
     var advancedSettingsExpanded by rememberSaveable { mutableStateOf(true) }
@@ -389,10 +389,10 @@ fun AppIconsScreen(onBack: () -> Unit) {
     var launcherShapeScalePercent by remember { mutableStateOf(initialLauncherShapeFlags.scalePercent) }
     var shapeTintFlags by remember { mutableStateOf(initialShapeTintFlags) }
 
-    suspend fun loadDashboard(showSpinner: Boolean = true) {
+    suspend fun loadDashboard(showSpinner: Boolean = true, forceRefresh: Boolean = false) {
         if (showSpinner) isLoading = true
         loadFailed = false
-        runCatching { IconPackManager.loadDashboardState(context) }
+        runCatching { IconPackManager.loadDashboardState(context, forceRefresh) }
             .onSuccess { dashboard = it }
             .onFailure { loadFailed = true }
         isLoading = false
@@ -407,7 +407,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        loadDashboard()
+        loadDashboard(showSpinner = dashboard == null)
     }
 
     LaunchedEffect(Unit) {
@@ -417,7 +417,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
             if (progress?.completed == true && handledProgressTaskId != progress.taskId) {
                 handledProgressTaskId = progress.taskId
                 completionResult = progress.result
-                loadDashboard(showSpinner = false)
+                loadDashboard(showSpinner = false, forceRefresh = true)
             }
             delay(500)
         }
@@ -473,7 +473,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
                 },
                 actions = {
                     IconButton(
-                        onClick = { scope.launch { loadDashboard() } },
+                        onClick = { scope.launch { loadDashboard(forceRefresh = true) } },
                         enabled = !isLoading && activeProgress?.completed != false
                     ) {
                         Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.app_icons_refresh))
@@ -774,7 +774,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
                                             },
                                             onSaveShapeOverrides = { overrides ->
                                                 IconPackManager.savePackageShapeOverrides(context, app.packageName, overrides)
-                                                scope.launch { loadDashboard(showSpinner = false) }
+                                                scope.launch { loadDashboard(showSpinner = false, forceRefresh = true) }
                                             }
                                         )
                                     }
