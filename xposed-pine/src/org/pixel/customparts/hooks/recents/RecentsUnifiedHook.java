@@ -95,6 +95,7 @@ public class RecentsUnifiedHook extends BaseHook {
     private static final int CLEAR_MODE_REPLACE_SCREENSHOT = 1;
     private static final int CLEAR_MODE_REPLACE_SELECT = 2;
     private static final long ACTIONS_ROW_ENFORCE_INTERVAL_MS = 200L;
+    private static final int MAX_RENDER_EFFECT_TASKS_PER_SIDE = 3;
 
     // --- TAGS ---
     private static final int TAG_CACHE_ICONS = "cache_icons_list".hashCode();
@@ -387,14 +388,15 @@ public class RecentsUnifiedHook extends BaseHook {
         float offY = Settings.iconOffsetY * intensity;
 
         int screenCenter = recentsView.getScrollX() + recentsView.getWidth() / 2;
-        int childCount = recentsView.getChildCount();
+        List<View> taskChildren = collectTaskChildren(recentsView);
+        int focusedTaskIndex = findFocusedTaskIndex(recentsView, taskChildren, screenCenter);
 
         RecentsState.applyingEffects.set(true);
         try {
-            for (int i = 0; i < childCount; i++) {
-                View child = recentsView.getChildAt(i);
-                if (child == null) continue;
-                if (child.getClass().getSimpleName().contains("ClearAll")) continue;
+            for (int i = 0; i < taskChildren.size(); i++) {
+                View child = taskChildren.get(i);
+                boolean renderEffectsAllowed = focusedTaskIndex < 0
+                        || Math.abs(i - focusedTaskIndex) <= MAX_RENDER_EFFECT_TASKS_PER_SIDE;
 
                 // --- 1. SPACING ---
                 Object sysTransObj = child.getTag(RecentsState.TAG_SYS_TRANS_X);
@@ -444,7 +446,11 @@ public class RecentsUnifiedHook extends BaseHook {
 
                 // --- 4. RENDER EFFECTS ---
                 if (Build.VERSION.SDK_INT >= 31 && Settings.hasRenderEffects) {
-                    applyRenderEffects(child, factor, blurVal, Settings.blurOverflow, Settings.tintColor, tintVal);
+                    if (renderEffectsAllowed) {
+                        applyRenderEffects(child, factor, blurVal, Settings.blurOverflow, Settings.tintColor, tintVal);
+                    } else {
+                        clearRenderEffects(child);
+                    }
                 }
 
                 // --- 5. ICONS ---
@@ -460,6 +466,35 @@ public class RecentsUnifiedHook extends BaseHook {
             RecentsState.applyingEffects.set(false);
         }
         return true;
+    }
+
+    private List<View> collectTaskChildren(ViewGroup recentsView) {
+        List<View> children = new ArrayList<>();
+        int childCount = recentsView.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = recentsView.getChildAt(i);
+            if (child == null) continue;
+            if (child.getClass().getSimpleName().contains("ClearAll")) continue;
+            children.add(child);
+        }
+        return children;
+    }
+
+    private int findFocusedTaskIndex(ViewGroup recentsView, List<View> taskChildren, int screenCenter) {
+        int focusedIndex = -1;
+        float closestDistance = Float.MAX_VALUE;
+        for (int i = 0; i < taskChildren.size(); i++) {
+            View child = taskChildren.get(i);
+            Object sysTransObj = child.getTag(RecentsState.TAG_SYS_TRANS_X);
+            float translation = (sysTransObj instanceof Float) ? (Float) sysTransObj : child.getTranslationX();
+            float childCenter = (child.getLeft() + child.getRight()) / 2f + translation;
+            float distance = Math.abs(screenCenter - childCenter);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                focusedIndex = i;
+            }
+        }
+        return focusedIndex;
     }
 
     private void applyRenderEffects(View child, float factor, float maxBlurRadius, boolean overflow, int tintColor, float maxTintIntensity) {
@@ -519,6 +554,20 @@ public class RecentsUnifiedHook extends BaseHook {
                 }
             }
         } catch (Exception e) {}
+    }
+
+    private void clearRenderEffects(View child) {
+        Object lastRad = child.getTag(RecentsState.TAG_CACHE_LAST_RADIUS);
+        Object lastTint = child.getTag(RecentsState.TAG_CACHE_LAST_TINT_ALPHA);
+        float cachedR = (lastRad instanceof Float) ? (Float) lastRad : 0f;
+        int cachedA = (lastTint instanceof Integer) ? (Integer) lastTint : 0;
+        if (Math.abs(cachedR) < 0.1f && cachedA == 0) return;
+
+        child.setTag(RecentsState.TAG_CACHE_LAST_RADIUS, 0f);
+        child.setTag(RecentsState.TAG_CACHE_LAST_TINT_ALPHA, 0);
+        callSetRenderEffect(child, null);
+        View thumb = getCachedThumbnailView(child);
+        if (thumb != null) callSetRenderEffect(thumb, null);
     }
 
     // =========================================================================
