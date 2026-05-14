@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import difflib
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Sequence
@@ -300,111 +299,6 @@ class ActivityThreadInjectPatch(BasePatch):
         return self.result("patched", "inserted ActivityThread snippets", self.target)
 
 
-class SettingsResPatch(BasePatch):
-    id = "settings-res"
-    title = "Settings homepage PixelExtraParts resources"
-    source_path = "packages/apps/PixelExtraParts/changebe/packages/apps/Settings/res"
-    target_root = "packages/apps/Settings/res"
-    xml_relative = Path("xml/top_level_settings_expressive.xml")
-    pixel_key = 'android:key="top_level_pixel_parts"'
-    bypass_by_default = True
-    manual_hint = (
-        "Settings/res is ROM-specific. Disable bypass for settings-res or manually copy the "
-        "drawables and insert the Pixel Extra Parts HomepagePreference in Settings home XML."
-    )
-
-    def run(self, context: PatchContext) -> PatchResult:
-        source_root = context.resolve(self.source_path)
-        target_root = context.resolve(self.target_root)
-        target_xml = target_root / self.xml_relative
-        source_xml = source_root / self.xml_relative
-
-        if not source_root.exists() or not source_xml.exists() or not target_xml.exists():
-            return self.result(
-                "failed",
-                "Settings source or target resources are missing",
-                self.target_root,
-                manual_hint=self.manual_hint,
-            )
-
-        pending_files = self._pending_resource_copies(source_root, target_root)
-        target_xml_text = target_xml.read_text(encoding="utf-8")
-        xml_applied = self.pixel_key in target_xml_text
-
-        if not pending_files and xml_applied:
-            return self.result("applied", "Settings resources are already present", self.target_root)
-
-        if context.should_bypass(self):
-            skipped = len(pending_files) + (0 if xml_applied else 1)
-            return self.result(
-                "bypassed",
-                f"skipped {skipped} ROM-specific resource change(s)",
-                self.target_root,
-                manual_hint=self.manual_hint,
-            )
-
-        if not context.apply:
-            planned = len(pending_files) + (0 if xml_applied else 1)
-            return self.result("would_patch", f"would apply {planned} Settings resource change(s)", self.target_root)
-
-        for relative_path in pending_files:
-            source_file = source_root / relative_path
-            target_file = target_root / relative_path
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source_file, target_file)
-
-        if not xml_applied:
-            updated_xml = self._insert_homepage_preference(
-                target_xml_text,
-                source_xml.read_text(encoding="utf-8"),
-            )
-            target_xml.write_text(updated_xml, encoding="utf-8")
-
-        applied = len(pending_files) + (0 if xml_applied else 1)
-        return self.result("patched", f"applied {applied} Settings resource change(s)", self.target_root)
-
-    def _pending_resource_copies(self, source_root: Path, target_root: Path) -> list[Path]:
-        pending = []
-        for source_file in sorted(source_root.rglob("*")):
-            if not source_file.is_file():
-                continue
-            relative_path = source_file.relative_to(source_root)
-            if _is_original_snapshot(relative_path):
-                continue
-            if relative_path == self.xml_relative:
-                continue
-            target_file = target_root / relative_path
-            if not target_file.exists() or source_file.read_bytes() != target_file.read_bytes():
-                pending.append(relative_path)
-        return pending
-
-    def _insert_homepage_preference(self, target_xml: str, source_xml: str) -> str:
-        if self.pixel_key in target_xml:
-            return target_xml
-
-        pixel_block = _extract_pixel_homepage_block(source_xml)
-        target_xml = _ensure_settings_namespace(target_xml)
-
-        category_bounds = _find_category_bounds(target_xml, "top_level_evolution_category")
-        if category_bounds:
-            _, close_start, _ = category_bounds
-            return target_xml[:close_start] + pixel_block + "\n" + target_xml[close_start:]
-
-        category_block = (
-            "    <com.android.settingslib.widget.UntitledPreferenceCategory\n"
-            "        android:order=\"-139\"\n"
-            "        android:key=\"top_level_pixel_extra_parts_category\">\n"
-            f"{pixel_block}\n"
-            "    </com.android.settingslib.widget.UntitledPreferenceCategory>\n"
-        )
-        insert_at = _find_after_top_level_account_category(target_xml)
-        if insert_at is None:
-            insert_at = _find_after_preference_screen_open(target_xml)
-        if insert_at is None:
-            raise RuntimeError("Could not find a safe insertion point in Settings homepage XML")
-        return target_xml[:insert_at] + "\n" + category_block + target_xml[insert_at:]
-
-
 def _read_lines(path: Path) -> list[str]:
     return path.read_text(encoding="utf-8").splitlines(keepends=True)
 
@@ -461,79 +355,9 @@ def _extract_marked_block(text: str, start_marker: str, end_marker: str) -> str:
     return text[start:line_end + 1]
 
 
-def _extract_pixel_homepage_block(source_xml: str) -> str:
-    start = source_xml.find("        <com.android.settings.widget.HomepagePreference")
-    while start >= 0:
-        close = source_xml.find("        </com.android.settings.widget.HomepagePreference>", start)
-        if close < 0:
-            break
-        close += len("        </com.android.settings.widget.HomepagePreference>")
-        block = source_xml[start:close]
-        if 'android:key="top_level_pixel_parts"' in block:
-            return block
-        start = source_xml.find("        <com.android.settings.widget.HomepagePreference", close)
-    raise RuntimeError("Pixel Extra Parts HomepagePreference block was not found in source XML")
-
-
-def _ensure_settings_namespace(xml_text: str) -> str:
-    if "xmlns:settings=" in xml_text:
-        return xml_text
-    root_start = xml_text.find("<PreferenceScreen")
-    root_end = xml_text.find(">", root_start)
-    if root_start < 0 or root_end < 0:
-        return xml_text
-    return xml_text[:root_end] + '\n    xmlns:settings="http://schemas.android.com/apk/res-auto"' + xml_text[root_end:]
-
-
-def _find_category_bounds(xml_text: str, category_key: str) -> tuple[int, int, int] | None:
-    key_index = xml_text.find(f'android:key="{category_key}"')
-    if key_index < 0:
-        return None
-    open_start = xml_text.rfind("    <com.android.settingslib.widget.UntitledPreferenceCategory", 0, key_index)
-    if open_start < 0:
-        return None
-    open_end = xml_text.find(">", key_index)
-    if open_end < 0:
-        return None
-    if xml_text[max(open_start, open_end - 1) : open_end + 1] == "/>":
-        return None
-    close_tag = "    </com.android.settingslib.widget.UntitledPreferenceCategory>"
-    close_start = xml_text.find(close_tag, open_end)
-    if close_start < 0:
-        return None
-    return open_start, close_start, close_start + len(close_tag)
-
-
-def _find_after_top_level_account_category(xml_text: str) -> int | None:
-    key_index = xml_text.find('android:key="top_level_account_category"')
-    if key_index < 0:
-        return None
-    element_start = xml_text.rfind("<", 0, key_index)
-    element_end = xml_text.find("/>", key_index)
-    if element_start < 0 or element_end < 0:
-        return None
-    line_end = xml_text.find("\n", element_end)
-    return len(xml_text) if line_end < 0 else line_end + 1
-
-
-def _find_after_preference_screen_open(xml_text: str) -> int | None:
-    root_start = xml_text.find("<PreferenceScreen")
-    if root_start < 0:
-        return None
-    root_end = xml_text.find(">", root_start)
-    if root_end < 0:
-        return None
-    line_end = xml_text.find("\n", root_end)
-    return root_end + 1 if line_end < 0 else line_end + 1
-
-
 def _is_relative_to(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
         return True
     except ValueError:
         return False
-
-
-def _is_original_snapshot(path: Path) -> bool:
-    return path.stem.endswith("Original")

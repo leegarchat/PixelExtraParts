@@ -253,6 +253,7 @@
 
     <!-- Reboot Bubble -->
     <string name="reboot_launcher">Restart Launcher</string>
+    <string name="bubble_show_desktop_icon">Tampilkan di layar utama</string>
     <string name="reboot_systemui">Restart SystemUI</string>
     <string name="reboot_system">Restart Sistem</string>
     <string name="reboot_confirm_system_title">Restart perangkat?</string>
@@ -395,6 +396,8 @@
 
     <!-- GLOBAL COMMON -->
     <string name="app_name">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_title">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_summary">Peningkatan tambahan untuk Pixel Anda</string>
     <string name="btn_apply">Terapkan</string>
     <string name="btn_default">Default</string>
     <string name="btn_close">Tutup</string>

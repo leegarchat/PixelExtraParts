@@ -27,8 +27,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
+import org.pixel.customparts.utils.LauncherIconController
 import org.pixel.customparts.utils.restartSystemUI
 import org.pixel.customparts.utils.runRootCommand
 import org.pixel.customparts.utils.dynamicStringResource
@@ -54,6 +56,13 @@ fun RebootBubble(
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
     var confirmAction by remember { mutableStateOf<RebootAction?>(null) }
+    var launcherIconAvailable by remember { mutableStateOf(false) }
+    var launcherIconEnabled by remember { mutableStateOf(false) }
+
+    LaunchedEffect(context.packageName) {
+        launcherIconAvailable = LauncherIconController.isAvailable(context)
+        launcherIconEnabled = launcherIconAvailable && LauncherIconController.isEnabled(context)
+    }
 
     // Shape morph: circle (28dp on 56dp = circle) → rounded card (22dp)
     val cornerRadius by animateDpAsState(
@@ -145,13 +154,34 @@ fun RebootBubble(
                             .padding(8.dp)
                             .width(IntrinsicSize.Max)
                     ) {
+                        val actionDelayBase = if (launcherIconAvailable) 90 else 40
+                        if (launcherIconAvailable) {
+                            StaggeredSwitchMenuItem(
+                                icon = Icons.Rounded.Apps,
+                                label = dynamicStringResource(R.string.bubble_show_desktop_icon),
+                                checked = launcherIconEnabled,
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                delayMs = 40,
+                                onCheckedChange = { checked ->
+                                    launcherIconEnabled = checked
+                                    scope.launch {
+                                        val applied = withContext(Dispatchers.IO) {
+                                            LauncherIconController.setEnabled(context, checked)
+                                        }
+                                        if (!applied) launcherIconAvailable = false
+                                        launcherIconEnabled = launcherIconAvailable && LauncherIconController.isEnabled(context)
+                                    }
+                                }
+                            )
+                        }
                         extraActions.forEachIndexed { index, action ->
                             StaggeredMenuItem(
                                 icon = action.icon,
                                 label = action.label,
                                 containerColor = action.containerColor,
                                 contentColor = action.contentColor,
-                                delayMs = 40 + (index * 50),
+                                delayMs = actionDelayBase + (index * 50),
                                 onClick = {
                                     expanded = false
                                     action.onClick()
@@ -163,7 +193,7 @@ fun RebootBubble(
                             label = dynamicStringResource(R.string.reboot_launcher),
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            delayMs = 40 + (extraActions.size * 50),
+                            delayMs = actionDelayBase + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 scope.launch(Dispatchers.IO) { performRebootLauncher(context) }
@@ -174,7 +204,7 @@ fun RebootBubble(
                             label = dynamicStringResource(R.string.reboot_systemui),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            delayMs = 90 + (extraActions.size * 50),
+                            delayMs = actionDelayBase + 50 + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 confirmAction = RebootAction.SYSTEMUI
@@ -185,7 +215,7 @@ fun RebootBubble(
                             label = dynamicStringResource(R.string.reboot_system),
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                            delayMs = 140 + (extraActions.size * 50),
+                            delayMs = actionDelayBase + 100 + (extraActions.size * 50),
                             onClick = {
                                 expanded = false
                                 confirmAction = RebootAction.SYSTEM
@@ -291,6 +321,59 @@ fun RebootBubble(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun StaggeredSwitchMenuItem(
+    icon: ImageVector,
+    label: String,
+    checked: Boolean,
+    containerColor: Color,
+    contentColor: Color,
+    delayMs: Int,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val offsetY = remember { Animatable(28f) }
+    val alpha = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        delay(delayMs.toLong())
+        launch { offsetY.animateTo(0f, spring(dampingRatio = 0.65f, stiffness = 320f)) }
+        launch { alpha.animateTo(1f, tween(260)) }
+    }
+
+    Surface(
+        onClick = { onCheckedChange(!checked) },
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+            .graphicsLayer {
+                this.alpha = alpha.value
+                translationY = offsetY.value
+            }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = contentColor, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = contentColor,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(12.dp))
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
+        }
     }
 }
 

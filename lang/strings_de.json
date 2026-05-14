@@ -273,6 +273,8 @@
   "common_input_label": "Wert eingeben",
   "common_video_placeholder": "Video-Demonstration",
   "app_name": "Pixel Extra Parts",
+  "settings_homepage_pixel_parts_title": "Pixel Extra Parts",
+  "settings_homepage_pixel_parts_summary": "Zusätzliche Verbesserungen für dein Pixel",
   "btn_apply": "Anwenden",
   "btn_default": "Standard",
   "btn_close": "Schließen",

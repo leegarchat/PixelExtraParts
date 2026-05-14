@@ -1,0 +1,41 @@
+{
+    "id": "settings_homepage_item",
+    "entryClass": "org.pixel.customparts.addon.settings.SettingsHomepageItemHook",
+    "name": "Settings Homepage Item",
+    "author": "LeeGarChat",
+    "description": "Injects Pixel Extra Parts into a separate top-level Settings homepage area without modifying the Settings package.",
+    "version": "1.0-test",
+    "targetPackages": [
+        "com.android.settings"
+    ],
+    "enabled": true,
+    "settings": [
+        {
+            "key": "settings_homepage_item_enabled",
+            "title": "Show Pixel Extra Parts in Settings",
+            "description": "Enables the injected top-level Settings homepage item.",
+            "type": "switch",
+            "provider": "global",
+            "default": true
+        },
+        {
+            "key": "settings_homepage_item_category_order",
+            "title": "Settings Menu Position",
+            "description": "Lower values are shown closer to the top of Settings.",
+            "type": "int",
+            "provider": "global",
+            "default": -139,
+            "min": -300,
+            "max": 300,
+            "step": 1
+        },
+        {
+            "key": "settings_homepage_item_colored_icon",
+            "title": "Use Colored Icon",
+            "description": "Uses the Pixel Extra Parts launcher icon. Disabled uses the blue Settings homepage icon.",
+            "type": "switch",
+            "provider": "global",
+            "default": false
+        }
+    ]
+}

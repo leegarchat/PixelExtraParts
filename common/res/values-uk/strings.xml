@@ -253,6 +253,7 @@
 
     <!-- Reboot Bubble -->
     <string name="reboot_launcher">Перезапустити лаунчер</string>
+    <string name="bubble_show_desktop_icon">Показувати на робочому столі</string>
     <string name="reboot_systemui">Перезапустити SystemUI</string>
     <string name="reboot_system">Перезавантажити систему</string>
     <string name="reboot_confirm_system_title">Перезавантажити пристрій?</string>
@@ -395,6 +396,8 @@
 
     <!-- GLOBAL COMMON -->
     <string name="app_name">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_title">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_summary">Додаткові покращення для вашого Pixel</string>
     <string name="btn_apply">Застосувати</string>
     <string name="btn_default">За замовчуванням</string>
     <string name="btn_close">Закрити</string>

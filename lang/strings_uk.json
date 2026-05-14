@@ -273,6 +273,8 @@
   "common_input_label": "Введіть значення",
   "common_video_placeholder": "Відеодемонстрація",
   "app_name": "Pixel Extra Parts",
+  "settings_homepage_pixel_parts_title": "Pixel Extra Parts",
+  "settings_homepage_pixel_parts_summary": "Додаткові покращення для вашого Pixel",
   "btn_apply": "Застосувати",
   "btn_default": "За замовчуванням",
   "btn_close": "Закрити",

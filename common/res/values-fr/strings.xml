@@ -253,6 +253,7 @@
 
     <!-- Reboot Bubble -->
     <string name="reboot_launcher">Redémarrer le lanceur</string>
+    <string name="bubble_show_desktop_icon">Afficher sur l’écran d’accueil</string>
     <string name="reboot_systemui">Redémarrer SystemUI</string>
     <string name="reboot_system">Redémarrer le système</string>
     <string name="reboot_confirm_system_title">Redémarrer l\'appareil ?</string>
@@ -395,6 +396,8 @@
 
     <!-- GLOBAL COMMON -->
     <string name="app_name">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_title">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_summary">Améliorations supplémentaires pour votre Pixel</string>
     <string name="btn_apply">Appliquer</string>
     <string name="btn_default">Par défaut</string>
     <string name="btn_close">Fermer</string>
