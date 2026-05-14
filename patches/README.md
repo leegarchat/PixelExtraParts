@@ -1,6 +1,7 @@
 # PixelExtraParts Patches
 
 `apply_patches.py` reads patch groups from `subpatches/` and ports the matching `changebe/` snapshots into the source tree.
+Thermal HAL patches use `changebe/hardware/google/pixel/thermal/` snapshots and patch the stock `hardware/google/pixel/thermal/` files in place.
 
 Common commands:
 
