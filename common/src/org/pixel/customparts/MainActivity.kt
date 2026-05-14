@@ -288,12 +288,12 @@ fun MainDashboard() {
                             HorizontalDivider()
 
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.thermal_title_activity),
-                                subtitle = dynamicStringResource(R.string.thermal_desc_activity),
-                                icon = Icons.Rounded.Thermostat,
-                                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
-                                iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                onClick = { context.startActivity(Intent(context, ThermalActivity::class.java)) }
+                                title = dynamicStringResource(R.string.thermal_manager_title),
+                                subtitle = dynamicStringResource(R.string.thermal_manager_desc_activity),
+                                icon = Icons.Rounded.Tune,
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                onClick = { context.startActivity(Intent(context, ThermalConfigManagerActivity::class.java)) }
                             )
                         }
 

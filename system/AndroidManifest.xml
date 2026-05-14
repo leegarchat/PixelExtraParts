@@ -304,6 +304,16 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name=".activities.ThermalConfigManagerActivity"
+            android:label="@string/thermal_manager_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
+            android:name=".activities.ThermalConfigEditorActivity"
+            android:label="@string/thermal_manager_editor_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name=".activities.AddonManagerActivity"
             android:label="@string/addon_title"
             android:exported="false"
