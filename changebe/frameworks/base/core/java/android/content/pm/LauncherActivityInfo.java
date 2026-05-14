@@ -131,18 +131,15 @@ public class LauncherActivityInfo {
      */
     public Drawable getIcon(int density) {
         ComponentName cn = null;
-        String packageName = null;
         try {
             cn = getComponentName();
-            packageName = cn != null ? cn.getPackageName() : getActivityInfo().packageName;
             if (cn != null) {
                 final int targetDensity = density != 0
                         ? density : mContext.getResources().getDisplayMetrics().densityDpi;
                 final Drawable pixelPartsIcon = ApplicationPackageManager
                         .loadPixelPartsIconOverride(mContext, cn.getPackageName(), targetDensity);
                 if (pixelPartsIcon != null) {
-                    return ApplicationPackageManager.maybeApplyPixelPartsSystemMonochrome(
-                            mContext, packageName, pixelPartsIcon);
+                    return pixelPartsIcon;
                 }
             }
 
@@ -152,8 +149,7 @@ public class LauncherActivityInfo {
                 Drawable themedIcon = resources.getIconPackOverride(
                         cn.getPackageName(), cn.getClassName(), density);
                 if (themedIcon != null) {
-                    return ApplicationPackageManager.maybeApplyPixelPartsSystemMonochrome(
-                            mContext, packageName, themedIcon);
+                    return themedIcon;
                 }
             }
         } catch (Exception e) {
@@ -176,8 +172,7 @@ public class LauncherActivityInfo {
         if (icon == null) {
             icon = getActivityInfo().loadIcon(mPm);
         }
-        return ApplicationPackageManager.maybeApplyPixelPartsSystemMonochrome(
-                mContext, packageName, icon);
+        return icon;
     }
 
     /**

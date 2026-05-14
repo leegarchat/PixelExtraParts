@@ -109,6 +109,15 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
 import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import kotlin.math.abs
+
+private const val DEFAULT_CUSTOM_SHAPE_SIDES = 6
+private const val DEFAULT_CUSTOM_SHAPE_ROUNDNESS = 4.5f
+private const val DEFAULT_CUSTOM_SHAPE_INSET = 0f
+private const val DEFAULT_CUSTOM_SHAPE_WAVE = 0.12f
+private const val DEFAULT_CUSTOM_SHAPE_ROTATION = 0f
+private const val DEFAULT_CUSTOM_SHAPE_SCALE = 1f
+private const val DEFAULT_CUSTOM_SHAPE_OFFSET = 0f
 
 class IconShapeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,15 +159,15 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     }
     var customName by rememberSaveable { mutableStateOf(savedCustomName) }
     var mode by rememberSaveable { mutableIntStateOf(IconShapeOverlayManager.MODE_SUPERELLIPSE) }
-    var sides by rememberSaveable { mutableIntStateOf(6) }
-    var roundness by rememberSaveable { mutableStateOf(4.5f) }
-    var inset by rememberSaveable { mutableStateOf(0f) }
-    var wave by rememberSaveable { mutableStateOf(0.12f) }
-    var rotation by rememberSaveable { mutableStateOf(0f) }
-    var scaleX by rememberSaveable { mutableStateOf(1f) }
-    var scaleY by rememberSaveable { mutableStateOf(1f) }
-    var offsetX by rememberSaveable { mutableStateOf(0f) }
-    var offsetY by rememberSaveable { mutableStateOf(0f) }
+    var sides by rememberSaveable { mutableIntStateOf(DEFAULT_CUSTOM_SHAPE_SIDES) }
+    var roundness by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) }
+    var inset by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_INSET) }
+    var wave by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_WAVE) }
+    var rotation by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_ROTATION) }
+    var scaleX by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
+    var scaleY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
+    var offsetX by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
+    var offsetY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
     var importedPath by rememberSaveable { mutableStateOf(savedCustomPath) }
     var resultLog by remember { mutableStateOf<List<String>>(emptyList()) }
     var workspaceMatchAllApps by remember {
@@ -175,12 +184,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     }
     var allAppsSuggestionsThemedIcons by remember {
         mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS, false))
-    }
-    var searchThemedIcons by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_SEARCH_THEMED_ICONS, false))
-    }
-    var systemThemedIcons by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_SYSTEM_THEMED_ICONS, false))
     }
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
     var infoDialogText by remember { mutableStateOf<String?>(null) }
@@ -451,30 +454,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                             enabled = !isBusy,
                             onInfoClick = showInfoDialog
                         )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_search_themed_icons_title),
-                            checked = searchThemedIcons,
-                            onCheckedChange = { checked ->
-                                searchThemedIcons = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_SEARCH_THEMED_ICONS, checked)
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_search_themed_icons_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_search_themed_icons_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_system_themed_icons_title),
-                            checked = systemThemedIcons,
-                            onCheckedChange = { checked ->
-                                systemThemedIcons = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_SYSTEM_THEMED_ICONS, checked)
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_system_themed_icons_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_system_themed_icons_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
                     }
                 }
 
@@ -598,6 +577,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_roundness),
                 value = roundness,
                 valueRange = 1.5f..8f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_ROUNDNESS,
+                onReset = { onRoundnessChange(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) },
                 onValueChange = onRoundnessChange
             )
         } else {
@@ -606,6 +587,8 @@ private fun CustomShapeBuilder(
                 value = sides.toFloat(),
                 valueRange = 3f..12f,
                 steps = 8,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_SIDES.toFloat(),
+                onReset = { onSidesChange(DEFAULT_CUSTOM_SHAPE_SIDES) },
                 onValueChange = { onSidesChange(it.toInt().coerceIn(3, 12)) }
             )
         }
@@ -613,6 +596,8 @@ private fun CustomShapeBuilder(
             title = dynamicStringResource(R.string.icon_shape_inset),
             value = inset,
             valueRange = 0f..24f,
+            defaultValue = DEFAULT_CUSTOM_SHAPE_INSET,
+            onReset = { onInsetChange(DEFAULT_CUSTOM_SHAPE_INSET) },
             onValueChange = onInsetChange
         )
         if (mode == IconShapeOverlayManager.MODE_FLOWER) {
@@ -620,6 +605,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_wave),
                 value = wave,
                 valueRange = 0f..0.35f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_WAVE,
+                onReset = { onWaveChange(DEFAULT_CUSTOM_SHAPE_WAVE) },
                 onValueChange = onWaveChange
             )
         }
@@ -627,6 +614,8 @@ private fun CustomShapeBuilder(
             title = dynamicStringResource(R.string.icon_shape_rotation),
             value = rotation,
             valueRange = -180f..180f,
+            defaultValue = DEFAULT_CUSTOM_SHAPE_ROTATION,
+            onReset = { onRotationChange(DEFAULT_CUSTOM_SHAPE_ROTATION) },
             onValueChange = onRotationChange
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -634,6 +623,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_scale_x),
                 value = scaleX,
                 valueRange = 0.5f..1.5f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
+                onReset = { onScaleXChange(DEFAULT_CUSTOM_SHAPE_SCALE) },
                 onValueChange = onScaleXChange,
                 modifier = Modifier.weight(1f)
             )
@@ -641,6 +632,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_scale_y),
                 value = scaleY,
                 valueRange = 0.5f..1.5f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
+                onReset = { onScaleYChange(DEFAULT_CUSTOM_SHAPE_SCALE) },
                 onValueChange = onScaleYChange,
                 modifier = Modifier.weight(1f)
             )
@@ -650,6 +643,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_offset_x),
                 value = offsetX,
                 valueRange = -25f..25f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
+                onReset = { onOffsetXChange(DEFAULT_CUSTOM_SHAPE_OFFSET) },
                 onValueChange = onOffsetXChange,
                 modifier = Modifier.weight(1f)
             )
@@ -657,6 +652,8 @@ private fun CustomShapeBuilder(
                 title = dynamicStringResource(R.string.icon_shape_offset_y),
                 value = offsetY,
                 valueRange = -25f..25f,
+                defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
+                onReset = { onOffsetYChange(DEFAULT_CUSTOM_SHAPE_OFFSET) },
                 onValueChange = onOffsetYChange,
                 modifier = Modifier.weight(1f)
             )
@@ -709,7 +706,9 @@ private fun ShapeSlider(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     steps: Int = 0,
+    defaultValue: Float? = null,
     modifier: Modifier = Modifier,
+    onReset: (() -> Unit)? = null,
     onValueChange: (Float) -> Unit
 ) {
     Column(modifier = modifier) {
@@ -725,6 +724,20 @@ private fun ShapeSlider(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (onReset != null && defaultValue != null) {
+                val canReset = abs(value - defaultValue) > 0.001f
+                IconButton(
+                    onClick = onReset,
+                    enabled = canReset,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.Refresh,
+                        dynamicStringResource(R.string.anim_cd_reset),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
         Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps)
     }

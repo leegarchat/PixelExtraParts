@@ -161,12 +161,6 @@
     <string name="icon_shape_all_apps_suggestions_themed_icons_title">Themed in suggestions</string>
     <string name="icon_shape_all_apps_suggestions_themed_icons_summary">Enables monochrome prediction row icons</string>
     <string name="icon_shape_all_apps_suggestions_themed_icons_info">Forces Pixel Launcher to use themed icons in the prediction row above All Apps. This is separate from the regular app list so suggestions can be tuned independently.</string>
-    <string name="icon_shape_search_themed_icons_title">Themed in search</string>
-    <string name="icon_shape_search_themed_icons_summary">Enables monochrome app search results</string>
-    <string name="icon_shape_search_themed_icons_info">Forces Pixel Launcher search result icons to use the same themed icon path as Home icons, including tall, small, and app-row search results.</string>
-    <string name="icon_shape_system_themed_icons_title">Themed system-wide</string>
-    <string name="icon_shape_system_themed_icons_summary">Uses monochrome app icons in framework surfaces</string>
-    <string name="icon_shape_system_themed_icons_info">Uses the monochrome layer or a single-color mask for app icons loaded through the Android framework, so Settings and other system surfaces can follow the themed icon style.</string>
     <string name="icon_shape_mode_superellipse">Squircle</string>
     <string name="icon_shape_mode_polygon">Polygon</string>
     <string name="icon_shape_mode_flower">Flower</string>

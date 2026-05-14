@@ -162,12 +162,6 @@
     <string name="icon_shape_all_apps_suggestions_themed_icons_title">Монохром в предложениях</string>
     <string name="icon_shape_all_apps_suggestions_themed_icons_summary">Тематические иконки в строке предложений</string>
     <string name="icon_shape_all_apps_suggestions_themed_icons_info">Заставляет Pixel Launcher использовать тематические иконки в строке предложений над All Apps. Это отдельная зона, поэтому её можно включать независимо от обычного списка приложений.</string>
-    <string name="icon_shape_search_themed_icons_title">Монохром в поиске</string>
-    <string name="icon_shape_search_themed_icons_summary">Тематические иконки в выдаче приложений</string>
-    <string name="icon_shape_search_themed_icons_info">Заставляет результаты поиска Pixel Launcher использовать тот же путь тематических иконок, что и рабочий стол: крупные, малые и строковые результаты приложений.</string>
-    <string name="icon_shape_system_themed_icons_title">Монохром для всей системы</string>
-    <string name="icon_shape_system_themed_icons_summary">Тематические иконки в системных поверхностях</string>
-    <string name="icon_shape_system_themed_icons_info">Использует monochrome-слой приложения или одноцветную маску для иконок, которые загружаются через Android framework, чтобы Настройки и другие системные места следовали тематическому стилю.</string>
     <string name="icon_shape_mode_superellipse">Сквиркл</string>
     <string name="icon_shape_mode_polygon">Многоугольник</string>
     <string name="icon_shape_mode_flower">Цветок</string>

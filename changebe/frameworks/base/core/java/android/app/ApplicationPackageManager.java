@@ -93,12 +93,8 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.Rect;
-import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.os.Build;
@@ -199,8 +195,6 @@ public class ApplicationPackageManager extends PackageManager {
             "com.pixelparts.intent.action.RELOAD_ICONS";
     private static final String PIXEL_PARTS_ICON_ENABLED_SETTING =
             "pixelparts_app_icons_enabled";
-        private static final String PIXEL_PARTS_SYSTEM_THEMED_ICONS_SETTING =
-            "pixelparts_icon_shape_system_themed_icons";
     private static final File PIXEL_PARTS_ICON_ROOT =
             new File("/data/pixelparts/IconsManager");
     private static final File PIXEL_PARTS_ICON_MAP =
@@ -3871,36 +3865,6 @@ public class ApplicationPackageManager extends PackageManager {
                 && findPixelPartsIconFile(iconFileName, densityDpi) != null;
     }
 
-    /** @hide */
-    public static Drawable maybeApplyPixelPartsSystemMonochrome(@NonNull Context context,
-            @Nullable String packageName, @Nullable Drawable icon) {
-        if (icon == null || !arePixelPartsSystemThemedIconsEnabled(context)) {
-            return icon;
-        }
-
-        final int tint = getPixelPartsSystemMonochromeColor(context);
-        final Drawable source = icon.getConstantState() != null
-                ? icon.getConstantState().newDrawable(context.getResources()) : icon;
-        final Drawable mutableIcon = source.mutate();
-
-        if (mutableIcon instanceof AdaptiveIconDrawable) {
-            final Drawable monochrome = ((AdaptiveIconDrawable) mutableIcon).getMonochrome();
-            if (monochrome != null) {
-                final Drawable mono = monochrome.getConstantState() != null
-                        ? monochrome.getConstantState().newDrawable(context.getResources())
-                        : monochrome;
-                mono.mutate();
-                mono.setTint(tint);
-                mono.setTintMode(PorterDuff.Mode.SRC_IN);
-                return new AdaptiveIconDrawable(new ColorDrawable(Color.TRANSPARENT), mono);
-            }
-        }
-
-        mutableIcon.setTint(tint);
-        mutableIcon.setTintMode(PorterDuff.Mode.SRC_IN);
-        return mutableIcon;
-    }
-
     private static String resolvePixelPartsIconPackageName(@NonNull PackageItemInfo itemInfo,
             @Nullable ApplicationInfo appInfo) {
         if (!TextUtils.isEmpty(itemInfo.packageName)) {
@@ -3921,17 +3885,6 @@ public class ApplicationPackageManager extends PackageManager {
     private static boolean arePixelPartsIconsEnabled(@NonNull Context context) {
         return Settings.Global.getInt(
                 context.getContentResolver(), PIXEL_PARTS_ICON_ENABLED_SETTING, 1) != 0;
-    }
-
-    private static boolean arePixelPartsSystemThemedIconsEnabled(@NonNull Context context) {
-        return Settings.Global.getInt(
-                context.getContentResolver(), PIXEL_PARTS_SYSTEM_THEMED_ICONS_SETTING, 0) != 0;
-    }
-
-    private static int getPixelPartsSystemMonochromeColor(@NonNull Context context) {
-        final int nightMode = context.getResources().getConfiguration().uiMode
-                & Configuration.UI_MODE_NIGHT_MASK;
-        return nightMode == Configuration.UI_MODE_NIGHT_YES ? Color.WHITE : Color.BLACK;
     }
 
     private static void loadPixelPartsIconMapLocked() {
@@ -4084,10 +4037,9 @@ public class ApplicationPackageManager extends PackageManager {
             return UserIcons.getDefaultUserIcon(
                     mContext.getResources(), targetUserId, /* light= */ false);
         }
-        final String packageName = resolvePixelPartsIconPackageName(itemInfo, appInfo);
         final Drawable pixelPartsIcon = loadPixelPartsIconOverride(itemInfo, appInfo);
         if (pixelPartsIcon != null) {
-            return maybeApplyPixelPartsSystemMonochrome(mContext, packageName, pixelPartsIcon);
+            return pixelPartsIcon;
         }
         Drawable dr = null;
         if (itemInfo.packageName != null) {
@@ -4103,7 +4055,7 @@ public class ApplicationPackageManager extends PackageManager {
         if (dr == null) {
             dr = itemInfo.loadDefaultIcon(this);
         }
-        return maybeApplyPixelPartsSystemMonochrome(mContext, packageName, dr);
+        return dr;
     }
 
     private Drawable getBadgedDrawable(Drawable drawable, Drawable badgeDrawable,

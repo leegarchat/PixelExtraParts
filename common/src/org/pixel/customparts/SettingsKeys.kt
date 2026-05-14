@@ -46,8 +46,6 @@ object SettingsKeys {
     const val ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE = "pixelparts_icon_shape_all_apps_follow_workspace"
     const val ICON_SHAPE_ALL_APPS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_themed_icons"
     const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
-    const val ICON_SHAPE_SEARCH_THEMED_ICONS = "pixelparts_icon_shape_search_themed_icons"
-    const val ICON_SHAPE_SYSTEM_THEMED_ICONS = "pixelparts_icon_shape_system_themed_icons"
 
 
     val isPineOverride: Boolean

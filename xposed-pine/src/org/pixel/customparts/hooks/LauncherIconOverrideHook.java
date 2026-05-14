@@ -76,17 +76,12 @@ public class LauncherIconOverrideHook extends BaseHook {
             "pixelparts_icon_shape_all_apps_themed_icons";
         private static final String KEY_ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS =
             "pixelparts_icon_shape_all_apps_suggestions_themed_icons";
-        private static final String KEY_ICON_SHAPE_SEARCH_THEMED_ICONS =
-            "pixelparts_icon_shape_search_themed_icons";
     private static final String ICON_RELOAD_ACTION = "com.pixelparts.intent.action.RELOAD_ICONS";
     private static final int ICON_SHAPE_DEFAULT = 0;
     private static final int ICON_SHAPE_STRETCH = 1;
     private static final int ICON_SHAPE_REMOVE = 2;
     private static final int DISPLAY_ALL_APPS = 1;
-    private static final int DISPLAY_SEARCH_RESULT_TALL = 6;
-    private static final int DISPLAY_SEARCH_RESULT_SMALL = 7;
     private static final int DISPLAY_PREDICTION_ROW = 8;
-    private static final int DISPLAY_SEARCH_RESULT_APP_ROW = 9;
     private static final int ICON_TINT_OFF = 0;
     private static final int ICON_TINT_CUSTOM = 1;
     private static final int ICON_TINT_AUTO = 2;
@@ -541,10 +536,6 @@ public class LauncherIconOverrideHook extends BaseHook {
         return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS, false);
     }
 
-    private static boolean isSearchThemedIconsEnabled(Context context) {
-        return isGlobalSettingEnabled(context, KEY_ICON_SHAPE_SEARCH_THEMED_ICONS, false);
-    }
-
     private static boolean isGlobalSettingEnabled(Context context, String key, boolean defaultValue) {
         if (context == null) {
             return defaultValue;
@@ -561,8 +552,7 @@ public class LauncherIconOverrideHook extends BaseHook {
                 + (isIgnoreCustomSettingsShapeEnabled(context) ? "1" : "0")
                 + (isAllAppsFollowWorkspaceEnabled(context) ? "1" : "0")
                 + (isAllAppsThemedIconsEnabled(context) ? "1" : "0")
-                + (isAllAppsSuggestionsThemedIconsEnabled(context) ? "1" : "0")
-                + (isSearchThemedIconsEnabled(context) ? "1" : "0");
+                + (isAllAppsSuggestionsThemedIconsEnabled(context) ? "1" : "0");
     }
 
     private static boolean shouldForceThemedIcon(Context context, Object view) {
@@ -572,12 +562,6 @@ public class LauncherIconOverrideHook extends BaseHook {
         }
         if (display == DISPLAY_PREDICTION_ROW) {
             return isAllAppsSuggestionsThemedIconsEnabled(context);
-        }
-        if (display == DISPLAY_SEARCH_RESULT_TALL
-                || display == DISPLAY_SEARCH_RESULT_SMALL
-                || display == DISPLAY_SEARCH_RESULT_APP_ROW
-                || view.getClass().getName().endsWith("SearchResultIcon")) {
-            return isSearchThemedIconsEnabled(context);
         }
         return false;
     }
