@@ -1,0 +1,12 @@
+{
+  "id": "recents_nexus_carousel_addon",
+  "entryClass": "org.pixel.customparts.addon.recents.RecentsNexusCarouselHook",
+  "name": "Recents Nexus Carousel + Buttons",
+  "author": "PixelExtraParts",
+  "description": "Addon version of carousel effects and custom Clear All buttons for Nexus Launcher recents (with addon_ prefixed settings)",
+  "version": "1.0",
+  "targetPackages": [
+    "com.google.android.apps.nexuslauncher"
+  ],
+  "enabled": true
+}
