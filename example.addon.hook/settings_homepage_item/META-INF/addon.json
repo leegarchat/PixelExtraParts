@@ -4,19 +4,30 @@
     "name": "Settings Homepage Item",
     "author": "LeeGarChat",
     "description": "Injects Pixel Extra Parts into a separate top-level Settings homepage area without modifying the Settings package.",
-    "version": "1.0-test",
+    "version": "1.1",
     "targetPackages": [
         "com.android.settings"
     ],
     "enabled": true,
+    "accent": "#7EE3B4",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 55,
+    "backgroundGradientSteps": [0, 60, 100],
     "settings": [
         {
+            "key": "settings_homepage_intro",
+            "type": "info",
+            "title": "Settings entry",
+            "description": "Create a native-looking Pixel Extra Parts item on the main Settings page."
+        },
+        {
             "key": "settings_homepage_item_enabled",
-            "title": "Show Pixel Extra Parts in Settings",
+            "title": "Show Pixel Extra Parts",
             "description": "Enables the injected top-level Settings homepage item.",
             "type": "switch",
             "provider": "global",
-            "default": true
+            "default": true,
+            "accent": "#7EE3B4"
         },
         {
             "key": "settings_homepage_item_category_order",
@@ -30,12 +41,113 @@
             "step": 1
         },
         {
+            "key": "settings_homepage_style_line",
+            "type": "divider",
+            "height": 10,
+            "thickness": 1,
+            "color": "#667EE3B4"
+        },
+        {
             "key": "settings_homepage_item_colored_icon",
             "title": "Use Colored Icon",
-            "description": "Uses the Pixel Extra Parts launcher icon. Disabled uses the blue Settings homepage icon.",
+            "description": "Uses the Pixel Extra Parts launcher icon. Disabled uses a Settings-style icon with a homepage background.",
             "type": "switch",
             "provider": "global",
             "default": false
+        },
+        {
+            "key": "settings_homepage_item_background_color_mode",
+            "title": "Icon Background Color",
+            "description": "Auto uses the Settings homepage color. Custom reads the hex field below.",
+            "type": "select",
+            "provider": "global",
+            "default": "auto",
+            "options": [
+                {
+                    "value": "auto",
+                    "label": "Auto"
+                },
+                {
+                    "value": "custom",
+                    "label": "Custom hex"
+                },
+                {
+                    "value": "#67DDF7",
+                    "label": "Blue"
+                },
+                {
+                    "value": "#7EE3B4",
+                    "label": "Green"
+                },
+                {
+                    "value": "#D7B8FF",
+                    "label": "Purple"
+                },
+                {
+                    "value": "#FFB4CA",
+                    "label": "Rose"
+                },
+                {
+                    "value": "#FFD18B",
+                    "label": "Amber"
+                }
+            ]
+        },
+        {
+            "key": "settings_homepage_item_background_custom_hex",
+            "title": "Custom Background",
+            "description": "Used when Icon Background Color is set to Custom hex.",
+            "type": "color",
+            "provider": "global",
+            "default": "#67DDF7",
+            "format": "hex"
+        },
+        {
+            "key": "settings_homepage_item_icon_color_mode",
+            "title": "Icon Glyph Color",
+            "description": "Auto uses the Settings homepage foreground color. Custom reads the hex field below.",
+            "type": "select",
+            "provider": "global",
+            "default": "auto",
+            "options": [
+                {
+                    "value": "auto",
+                    "label": "Auto"
+                },
+                {
+                    "value": "custom",
+                    "label": "Custom hex"
+                },
+                {
+                    "value": "#0B3D4F",
+                    "label": "Blue"
+                },
+                {
+                    "value": "#0B4B37",
+                    "label": "Green"
+                },
+                {
+                    "value": "#47216A",
+                    "label": "Purple"
+                },
+                {
+                    "value": "#6B1238",
+                    "label": "Rose"
+                },
+                {
+                    "value": "#5C3900",
+                    "label": "Amber"
+                }
+            ]
+        },
+        {
+            "key": "settings_homepage_item_icon_custom_hex",
+            "title": "Custom Glyph",
+            "description": "Used when Icon Glyph Color is set to Custom hex.",
+            "type": "color",
+            "provider": "global",
+            "default": "#0B3D4F",
+            "format": "hex"
         }
     ]
 }

@@ -1,6 +1,7 @@
 <resources>
     <!-- General / Navigation -->
     <string name="os_title_activity">Scroll Physics</string>
+    <string name="overscroll_add_tile">Add Overscroll tile</string>
     <string name="os_title_playground">Playground</string>
     <string name="os_btn_back">Back</string>
     <string name="btn_back">Back</string>
@@ -240,6 +241,20 @@
 
     <string name="sysui_gesture_bar_title">Gesture Bar</string>
     <string name="sysui_gesture_bar_subtitle">Home handle size, color, and gesture area</string>
+    <string name="sysui_log_service_title">Background Logging</string>
+    <string name="sysui_log_service_enable_title">Log in background</string>
+    <string name="sysui_log_service_enable_summary">Keeps a Pixel Extra Parts service running and stores logs under /sdcard/PixelExtraPartsLogs/Date</string>
+    <string name="sysui_log_service_start">Start</string>
+    <string name="sysui_log_service_stop">Stop</string>
+    <string name="sysui_log_service_status_running">Process is running</string>
+    <string name="sysui_log_service_status_stopped">Process is stopped</string>
+    <string name="sysui_log_service_add_tile">Add Logging tile</string>
+    <string name="sysui_logcat_title">Log logcat</string>
+    <string name="sysui_logcat_summary">Writes main, system, and events logcat buffers for module debugging</string>
+    <string name="sysui_dmesg_title">Log dmesg</string>
+    <string name="sysui_dmesg_summary">Writes kernel messages when dmesg access is available on this build</string>
+    <string name="sysui_crash_log_title">Catch app crashes</string>
+    <string name="sysui_crash_log_summary">Writes the crash logcat buffer separately for launcher and SystemUI crash tests</string>
     <string name="notification_icon_overrides_title">Notification Icons</string>
     <string name="status_bar_app_icons_title">Status bar app icons</string>
     <string name="status_bar_app_icons_summary">Use source application icons in the unlocked status bar</string>
@@ -250,6 +265,7 @@
     <string name="aod_monochrome_icons_title">Monochrome AOD icons</string>
     <string name="aod_monochrome_icons_summary">Desaturate AOD app icons</string>
     <string name="gesture_bar_settings_title">Gesture Bar Settings</string>
+    <string name="gesture_bar_add_tile">Add Gesture Bar tile</string>
     <string name="gesture_bar_behavior_title">Behavior</string>
     <string name="gesture_bar_enable_title">Customize gesture bar</string>
     <string name="gesture_bar_enable_summary">Applies the SystemUI and Pixel Launcher handle hook</string>
@@ -282,6 +298,7 @@
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Text Magnifier</string>
+    <string name="magnifier_add_tile">Add Text Magnifier tile</string>
     <string name="magnifier_enable_title">Custom zoom</string>
     <string name="magnifier_enable_summary">Override the default text magnifier zoom level</string>
     <string name="magnifier_zoom_title">Zoom level</string>
@@ -327,6 +344,7 @@
     <string name="sysui_shade_override_enable">Relative alpha multiplier</string>
 
     <string name="sysui_charging_info_title">Charging Info</string>
+    <string name="charging_info_add_tile">Add Charging Info tile</string>
     <string name="sysui_charging_info_enable">Enable Custom Charging Info</string>
     <string name="sysui_show_wattage">Show Wattage</string>
     <string name="sysui_show_voltage">Show Voltage</string>
@@ -635,6 +653,7 @@
 
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Double Tap to Wake (DT2W)</string>
+    <string name="dt2w_add_tile">Add DT2W tile</string>
     
     <string name="dt2w_desc_xposed">Xposed hook for SystemUI.\n\nIntercepts sensor events in DozeTriggers class and emulates wake-up, as hardware support on Pixel is often disabled or limited.</string>
     <string name="dt2w_desc_native">Native System Integration.\n\nUses built-in firmware code to process touch events in Doze mode, ensuring wake-up without third-party hooks.</string>
@@ -647,6 +666,7 @@
 
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Double Tap to Sleep (DT2S)</string>
+    <string name="dt2s_add_tile">Add DT2S tile</string>
     
     <string name="dt2s_desc_xposed">Xposed hook for Pixel Launcher.\n\nIntercepts \'onTouchEvent\' in launcher Workspace class, allowing screen lock by tapping on empty space.</string>
     <string name="dt2s_desc_native">Native Injection.\n\nUses modified framework to register \'ActivityLifecycleCallbacks\' in Launcher3 process. Upon activity start, automatically finds root Workspace view and attaches custom \'OnTouchListener\'. Works without Xposed and doesn\'t require root for the launcher itself.</string>
@@ -684,6 +704,7 @@
 
     <!-- MAIN ACTIVITY -->
     <string name="main_title">Pixel Extra Parts</string>
+    <string name="main_add_tile">Add app tile</string>
     <string name="main_desc">Custom modules and tweaks</string>
     
     <string name="main_header_gesture">Gestures &amp; Input</string>
@@ -710,6 +731,14 @@
     <string name="thermal_desc_activity">Throttling Management (Tensor)</string>
     <string name="thermal_manager_title">Thermals Manager</string>
     <string name="thermal_manager_desc_activity">Edit and apply JSON thermal configs</string>
+    <string name="thermal_manager_add_tile">Add Thermal Manager tile</string>
+    <string name="thermal_manager_tile_queue">Tile profile queue</string>
+    <string name="thermal_manager_tile_queue_add">Add profile</string>
+    <string name="thermal_manager_tile_queue_empty">Queue is empty</string>
+    <string name="thermal_manager_tile_queue_count">%1$d/%2$d selected</string>
+    <string name="thermal_manager_tile_queue_move_up">Move up</string>
+    <string name="thermal_manager_tile_queue_move_down">Move down</string>
+    <string name="thermal_manager_tile_queue_remove">Remove from queue</string>
     <string name="thermal_manager_editor_title">Config editor</string>
     <string name="thermal_manager_open_editor">Open config editor</string>
     <string name="thermal_manager_saved_configs">Saved configs</string>
@@ -1135,6 +1164,7 @@
 
     <!-- Activity Transition Settings -->
     <string name="anim_transition_title">Activity Transitions</string>
+    <string name="activity_transition_add_tile">Add Activity Transitions tile</string>
     <string name="anim_transition_subtitle">Custom animation themes and built-in transitions</string>
     <string name="anim_predictive_back_title">Disable Predictive Back</string>
     <string name="anim_predictive_back_desc">Removes the system swipe-back animation</string>
@@ -1204,6 +1234,8 @@
     <string name="addon_btn_cancel">Cancel</string>
     <string name="addon_btn_remove">Remove</string>
     <string name="addon_settings_title">Module Settings</string>
+    <string name="addon_settings_empty">No settings available for this page</string>
+    <string name="addon_no_inline_settings_hint">This module has no inline card settings. All settings are located in built-in activity pages:</string>
     <string name="addon_range_format">Range: %1$s — %2$s</string>
     <string name="addon_file_not_set">Not set</string>
     <string name="addon_file_saved">File saved</string>
@@ -1214,11 +1246,26 @@
     <string name="addon_confirm_count">Confirm (%d)</string>
     <string name="addon_search_apps">Search apps\u2026</string>
     <string name="addon_show_system">Show system</string>
+    <string name="addon_show_system_desc">Include system packages in the list</string>
     <string name="addon_hide_system">Hide system</string>
+    <string name="addon_launchable_only">Launchable only</string>
+    <string name="addon_launchable_only_desc">Show apps with launcher entries</string>
     <string name="addon_no_apps_match">No apps match \"%s\"</string>
     <string name="addon_no_apps_available">No apps available</string>
     <string name="addon_default_target_badge">Default target</string>
     <string name="addon_author_unknown">Unknown</string>
+    <string name="addon_color_pick">Pick</string>
+    <string name="addon_settings_import">Import</string>
+    <string name="addon_settings_export">Export</string>
+    <string name="addon_update_check">Check updates</string>
+    <string name="addon_update_checking">Checking...</string>
+    <string name="addon_update_install">Update</string>
+    <string name="addon_update_installing">Updating...</string>
+    <string name="addon_update_available">Update available: %1$s</string>
+    <string name="addon_update_none">No update available</string>
+    <string name="addon_update_installed">Update installed</string>
+    <string name="addon_update_failed">Update failed</string>
+    <string name="addon_delete_data_update_confirm">Remove data update for \"%s\"?\n\nThe system addon will remain installed.</string>
 
     <!-- Addon Manager: Active Apps -->
     <string name="addon_active_apps_title">Active Apps</string>

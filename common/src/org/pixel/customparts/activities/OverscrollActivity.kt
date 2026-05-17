@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,10 +48,13 @@ import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.OverscrollTileService
 import org.pixel.customparts.ui.ModuleStatus
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.RemoteStringsManager
 
@@ -58,7 +62,7 @@ class OverscrollActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
@@ -80,7 +84,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
         snapAnimationSpec = null,
         flingAnimationSpec = null
     )
-    
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
@@ -93,20 +97,20 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     var showAddAppDialog by remember { mutableStateOf(false) }
     var refreshKey by remember { mutableIntStateOf(0) }
 
-    val expandedStates = remember { 
+    val expandedStates = remember {
         mutableStateMapOf(
-            "physics" to true, 
+            "physics" to true,
             "vis_vert" to false,
             "vis_zoom" to false,
             "vis_horz" to false,
             "advanced" to false,
             "norm" to false,
             "apps" to false
-        ) 
+        )
     }
 
 
-    val onSettingChanged: () -> Unit = { 
+    val onSettingChanged: () -> Unit = {
         scope.launch(Dispatchers.IO) {
             OverscrollManager.clearActiveProfile(context)
         }
@@ -118,7 +122,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            scope.launch { 
+            scope.launch {
                 if (OverscrollManager.importSettings(context, uri)) {
                     isMasterEnabled = OverscrollManager.isMasterEnabled(context)
                     refreshKey++
@@ -129,7 +133,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
             }
         }
     }
-    
+
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
@@ -149,12 +153,31 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = { RebootBubble() },
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.overscroll_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                OverscrollTileService::class.java,
+                                R.string.os_title_activity,
+                                R.drawable.ic_overscroll_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
-                title = { 
+                title = {
                     Text(dynamicStringResource(R.string.os_title_activity),
-                    fontWeight = FontWeight.Bold) 
+                    fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
@@ -204,17 +227,17 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     onCheckedChange = { checked ->
                         if (checked && AppConfig.IS_XPOSED && !ModuleStatus.isModuleActive()) {
                             showXposedInactiveDialog = true
-                            isMasterEnabled = false 
+                            isMasterEnabled = false
                         } else {
                             isMasterEnabled = checked
                             scope.launch { OverscrollManager.setMasterEnabled(context, checked) }
                             onSettingChanged()
                         }
                     },
-                    onInfoClick = { 
+                    onInfoClick = {
                         infoDialogTitle = titleStr
                         infoDialogText = descStr
-                        infoDialogVideo = "overscroll_master" 
+                        infoDialogVideo = "overscroll_master"
                     }
                 )
             }
@@ -231,15 +254,15 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp)
                 ) {
-                    items(5, key = { "card_$it" }) { index -> 
-                        Box(Modifier.width(160.dp)) { StaticTestCard("Card ${index + 1}") } 
+                    items(5, key = { "card_$it" }) { index ->
+                        Box(Modifier.width(160.dp)) { StaticTestCard("Card ${index + 1}") }
                     }
                 }
             }
 
 
             item(key = "profiles_section", contentType = "complex_section") {
-                Box(modifier = Modifier.alpha(if (isMasterEnabled) 1f else 0.5f)) { 
+                Box(modifier = Modifier.alpha(if (isMasterEnabled) 1f else 0.5f)) {
                     ProfilesSection(
                         context = context,
                         scope = scope,
@@ -357,7 +380,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
             item(key = "settings_visual_scales", contentType = "settings_group") {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     ScaleGroup(
-                        context = context, 
+                        context = context,
                         title = dynamicStringResource(R.string.os_group_visual_vert),
                         prefix = "overscroll_scale",
                         desc = dynamicStringResource(R.string.os_desc_visual_vert),
@@ -373,11 +396,11 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     )
 
                     ScaleGroup(
-                        context = context, 
+                        context = context,
                         title = dynamicStringResource(R.string.os_group_visual_zoom),
                         prefix = "overscroll_zoom",
                         desc = dynamicStringResource(R.string.os_desc_visual_zoom),
-                        onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v }, 
+                        onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
                         refreshKey = refreshKey,
                         isMasterEnabled = isMasterEnabled,
                         expanded = expandedStates["vis_zoom"] ?: false,
@@ -389,12 +412,12 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     )
 
                     ScaleGroup(
-                        context = context, 
-                        title = dynamicStringResource(R.string.os_group_visual_horz), 
-                        prefix = "overscroll_h_scale", 
+                        context = context,
+                        title = dynamicStringResource(R.string.os_group_visual_horz),
+                        prefix = "overscroll_h_scale",
                         desc = dynamicStringResource(R.string.os_desc_visual_horz),
-                        onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v }, 
-                        refreshKey = refreshKey, 
+                        onInfo = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v },
+                        refreshKey = refreshKey,
                         isMasterEnabled = isMasterEnabled,
                         expanded = expandedStates["vis_horz"] ?: false,
                         onExpandChange = { expandedStates["vis_horz"] = it },
@@ -503,7 +526,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
                     val invertKey = OverscrollManager.KEY_INVERT_ANCHOR
                     var invert by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, invertKey, 1) == 1) }
-                    
+
                     val invertTitle = dynamicStringResource(R.string.os_lbl_invert_anchor)
                     val invertDesc = dynamicStringResource(R.string.os_desc_invert_anchor)
 
@@ -522,7 +545,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        IconButton(onClick = { 
+                        IconButton(onClick = {
                             infoDialogTitle = invertTitle
                             infoDialogText = invertDesc
                             infoDialogVideo = "overscroll_invert_anchor"
@@ -531,10 +554,10 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         }
                         Switch(
                             checked = invert,
-                            onCheckedChange = { 
+                            onCheckedChange = {
                                 invert = it
-                                scope.launch(Dispatchers.IO) { 
-                                    Settings.Global.putInt(context.contentResolver, invertKey, if (it) 1 else 0) 
+                                scope.launch(Dispatchers.IO) {
+                                    Settings.Global.putInt(context.contentResolver, invertKey, if (it) 1 else 0)
                                     launch(Dispatchers.Main) { onSettingChanged() }
                                 }
                             }
@@ -706,7 +729,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
             item(key = "app_configs_header", contentType = "settings_group") {
                 val expanded = expandedStates["apps"] ?: false
-                
+
                 val infoTitle = dynamicStringResource(R.string.os_group_apps)
                 val infoText = dynamicStringResource(R.string.os_group_apps)
 
@@ -779,13 +802,13 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     }
                 }
             }
-            
+
             item(key = "reset_button", contentType = "button") {
                 Button(
                     onClick = {
                         scope.launch {
                             OverscrollManager.resetAll(context)
-                            isMasterEnabled = true 
+                            isMasterEnabled = true
                             refreshKey++
                             appConfigs = OverscrollManager.getAppConfigs(context)
                             val message = RemoteStringsManager.getString(context, R.string.os_msg_reset_done)
@@ -873,7 +896,7 @@ private fun ExpandableSettingsGroupCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onExpandChange(!expanded) } 
+                    .clickable { onExpandChange(!expanded) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -887,7 +910,7 @@ private fun ExpandableSettingsGroupCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Icon(
                     imageVector = Icons.Rounded.ExpandMore,
                     contentDescription = null,
@@ -913,9 +936,9 @@ private fun ExpandableSettingsGroupCard(
 
 @Composable
 private fun MasterSwitchCard(
-    title: String, 
-    isChecked: Boolean, 
-    onCheckedChange: (Boolean) -> Unit, 
+    title: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
     onInfoClick: () -> Unit
 ) {
     Card(
@@ -935,7 +958,7 @@ private fun MasterSwitchCard(
                 Icon(Icons.Outlined.Info, "Info", tint = MaterialTheme.colorScheme.onSecondaryContainer)
             }
             Switch(checked = isChecked, onCheckedChange = onCheckedChange)
-            
+
         }
     }
 }
@@ -998,16 +1021,16 @@ private fun OverscrollFloatSlider(
         range = range,
         unit = "",
         enabled = enabled,
-        onValueChange = { 
+        onValueChange = {
             value = it
-            scope.launch(Dispatchers.IO) { 
-                Settings.Global.putFloat(context.contentResolver, key, it) 
+            scope.launch(Dispatchers.IO) {
+                Settings.Global.putFloat(context.contentResolver, key, it)
                 launch(Dispatchers.Main) { onChange() }
             }
         },
         onDefault = {
             value = defVal
-            scope.launch(Dispatchers.IO) { 
+            scope.launch(Dispatchers.IO) {
                 Settings.Global.putFloat(context.contentResolver, key, defVal)
                 launch(Dispatchers.Main) { onChange() }
             }
@@ -1043,9 +1066,9 @@ private fun ScaleGroup(
         val scope = rememberCoroutineScope()
         // IMPORTANT: Calculate suffix here to ensure UI matches current environment (Pine/Xposed)
         val suffix = if (AppConfig.IS_XPOSED) "_xposed" else "_pine"
-        
+
         val modeKey = "${prefix}_mode$suffix"
-        var mode by remember(refreshKey) { 
+        var mode by remember(refreshKey) {
             mutableIntStateOf(Settings.Global.getInt(context.contentResolver, modeKey, 0))
         }
         val modes = listOf(
@@ -1053,7 +1076,7 @@ private fun ScaleGroup(
             dynamicStringResource(R.string.os_mode_shrink),
             dynamicStringResource(R.string.os_mode_grow)
             )
-        
+
         val areSlidersActive = isMasterEnabled && (mode != 0)
 
         RadioSelectionGroup(
@@ -1061,10 +1084,10 @@ private fun ScaleGroup(
             options = modes,
             selectedIndex = mode,
             enabled = isMasterEnabled,
-            onSelect = { 
-                mode = it 
-                scope.launch(Dispatchers.IO) { 
-                    Settings.Global.putInt(context.contentResolver, modeKey, it) 
+            onSelect = {
+                mode = it
+                scope.launch(Dispatchers.IO) {
+                    Settings.Global.putInt(context.contentResolver, modeKey, it)
                     launch(Dispatchers.Main) { onChange() }
                 }
             },
@@ -1073,39 +1096,39 @@ private fun ScaleGroup(
             onInfoClick = onInfo
         )
 
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int), "${prefix}_intensity$suffix", 0f..10f, defIntensity, 
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int), "${prefix}_intensity$suffix", 0f..10f, defIntensity,
             infoText = dynamicStringResource(R.string.os_desc_scale_intensity), video = "${prefix}_intensity", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-        
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int_horiz), "${prefix}_intensity_horiz$suffix", 0f..10f, defIntensityHoriz, 
+
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_int_horiz), "${prefix}_intensity_horiz$suffix", 0f..10f, defIntensityHoriz,
             infoText = dynamicStringResource(R.string.os_desc_scale_int_horiz), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
 
-        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_limit), "${prefix}_limit_min$suffix", 0.1f..10f, defLimitMin, 
+        OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_scale_limit), "${prefix}_limit_min$suffix", 0.1f..10f, defLimitMin,
             infoText = dynamicStringResource(R.string.os_desc_scale_limit), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-        
+
         val anchorTitle = dynamicStringResource(R.string.os_desc_anchor)
-        
+
         when (prefix) {
             "overscroll_scale" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_scale_anchor_y$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_scale_anchor_y$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_scale_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_scale_anchor_x_horiz$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_scale_anchor_x_horiz$suffix", 0f..1f, 0.5f,
                     infoText = dynamicStringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_scale_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_h_scale" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_h_scale_anchor_x$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_h_scale_anchor_x$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_h_scale_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_h_scale_anchor_y_horiz$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_h_scale_anchor_y_horiz$suffix", 0f..1f, 0.5f,
                     infoText = dynamicStringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_h_scale_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_zoom" -> {
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_zoom_anchor_x$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x), "overscroll_zoom_anchor_x$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_zoom_anchor_y$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y), "overscroll_zoom_anchor_y$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_zoom_anchor_x_horiz$suffix", 0f..1f, 0.5f, 
+
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_zoom_anchor_x_horiz$suffix", 0f..1f, 0.5f,
                     infoText = dynamicStringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_zoom_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
-                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_zoom_anchor_y_horiz$suffix", 0f..1f, 0.5f, 
+                OverscrollFloatSlider(context, dynamicStringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_zoom_anchor_y_horiz$suffix", 0f..1f, 0.5f,
                     infoText = dynamicStringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_zoom_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
         }

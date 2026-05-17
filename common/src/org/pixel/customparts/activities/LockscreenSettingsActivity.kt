@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -34,10 +35,12 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.ChargingInfoTileService
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.ModuleStatus
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.SliderSetting
@@ -51,6 +54,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.layout.fillMaxWidth
 import org.pixel.customparts.utils.restartSystemUI
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 
 import org.pixel.customparts.ui.TopBarBlurOverlay
@@ -153,7 +157,26 @@ fun LockscreenSettingsScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = { RebootBubble() },
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.charging_info_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                ChargingInfoTileService::class.java,
+                                R.string.sysui_charging_info_title,
+                                R.drawable.ic_charging_info_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {

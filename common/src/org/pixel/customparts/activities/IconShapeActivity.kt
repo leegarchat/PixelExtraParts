@@ -223,6 +223,9 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             isBusy = true
             val success = withContext(Dispatchers.IO) { IconShapeOverlayManager.applyOption(context, option) }
             showApplyResult(success)
+            if (success) {
+                IconPackManager.requestIconReload(context)
+            }
             refreshOptions()
             isBusy = false
         }
@@ -240,6 +243,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             if (result.success) {
                 SettingsCompat.putString(context, SettingsKeys.ICON_SHAPE_CUSTOM_NAME, customName)
                 SettingsCompat.putString(context, SettingsKeys.ICON_SHAPE_CUSTOM_PATH, pathData)
+                IconPackManager.requestIconReload(context)
             }
             showApplyResult(result.success)
             refreshOptions()
@@ -257,6 +261,9 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 context.getString(if (success) R.string.icon_shape_delete_success else R.string.icon_shape_delete_failed),
                 Toast.LENGTH_SHORT
             ).show()
+            if (success) {
+                IconPackManager.requestIconReload(context)
+            }
             refreshOptions()
             isBusy = false
         }

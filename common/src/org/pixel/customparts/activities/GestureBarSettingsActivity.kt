@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,10 +49,12 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.GestureBarTileService
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.StrongDivider
@@ -60,6 +63,7 @@ import org.pixel.customparts.ui.WeakDivider
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 
 private const val DEFAULT_WIDTH_PERCENT = 28
@@ -98,10 +102,30 @@ fun GestureBarSettingsScreen(onBack: () -> Unit) {
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = { RebootBubble() },
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.gesture_bar_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                GestureBarTileService::class.java,
+                                R.string.sysui_gesture_bar_title,
+                                R.drawable.ic_gesture_bar_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {

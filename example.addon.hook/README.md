@@ -15,14 +15,15 @@
 3. [Формат addon.json](#-формат-addonjson-манифест)
 4. [Как написать хук](#-как-написать-хук)
 5. [Настройки аддона (Settings UI)](#-настройки-аддона-auto-generated-ui)
-6. [Компиляция и сборка](#-компиляция-и-сборка)
-7. [Архитектура менеджера Pine](#-архитектура-менеджера-pine)
-8. [Жизненный цикл аддона](#-жизненный-цикл-аддона-от-jar-до-хука)
-9. [Settings.Global — флаги и конфигурация](#-settingsglobal--флаги-и-конфигурация)
-10. [Управление целевыми пакетами (Scope)](#-управление-целевыми-пакетами-scope)
-11. [Установка и удаление через UI](#-установка-и-удаление-через-ui)
-12. [Устранение неполадок](#-устранение-неполадок)
-13. [Справочник API](#-справочник-api)
+6. [Генератор Activity UI (main\[\])](#-генератор-activity-ui-main)
+7. [Компиляция и сборка](#-компиляция-и-сборка)
+8. [Архитектура менеджера Pine](#-архитектура-менеджера-pine)
+9. [Жизненный цикл аддона](#-жизненный-цикл-аддона-от-jar-до-хука)
+10. [Settings.Global — флаги и конфигурация](#-settingsglobal--флаги-и-конфигурация)
+11. [Управление целевыми пакетами (Scope)](#-управление-целевыми-пакетами-scope)
+12. [Установка и удаление через UI](#-установка-и-удаление-через-ui)
+13. [Устранение неполадок](#-устранение-неполадок)
+14. [Справочник API](#-справочник-api)
 
 ---
 
@@ -196,6 +197,48 @@ example.addon.hook/              ← Вы здесь
 | `cardColor`      | `string`   |         Нет         | Пользовательский цвет фона карточки в формате HEX (например `"#FF5722"`, `"#1A237E"`). Если не указан, используется системный цвет `surface`. Влияет также на цвет градиентного оверлея. |
 | `backgroundScope` | `string`  |         Нет         | Область действия фона: `"full"` (фон растягивается на всю карточку включая раскрывающиеся настройки, **по умолчанию**), `"header"` (фон только в шапке карточки, настройки отображаются на чистом фоне). |
 | `settings`       | `array`    |         Нет         | Массив определений настроек для авто-генерации UI (см. раздел ниже).                                                              |
+
+### Мультиязычные манифесты
+
+`META-INF/addon.json` всегда остаётся базовым английским манифестом и источником технических полей:
+`id`, `entryClass`, `targetPackages`, `enabled`, `updateUrl`, storage-ключи и т.д. Для локализации рядом можно
+положить языковые файлы по формату `META-INF/addon_<language>.json`, например:
+
+```text
+META-INF/addon.json
+META-INF/addon_ru.json
+META-INF/addon_fr.json
+META-INF/addon_uk.json
+```
+
+Менеджер берёт язык системы (`ru`, `fr`, `uk`...) и, если соответствующий файл существует, накладывает из него
+только отображаемые поля: `name`, `author`, `description`, а внутри `settings` — `title`, `description` и `options[].label`.
+Сопоставление настроек и options идёт по `key` и `value`. Если языкового файла нет, используется `addon.json`.
+
+Пример `addon_ru.json`:
+
+```json
+{
+    "name": "Ambient Extend",
+    "description": "Таймаут AOD, Smart Pixels и дополнительное затемнение Doze для SystemUI.",
+    "settings": [
+        {
+            "key": "ambient_timeout_group",
+            "title": "Временное затемнение AOD",
+            "description": "Гасит AOD чёрным слоем после выбранной задержки.",
+            "settings": [
+                {
+                    "key": "ambient_extend_hook_timeout_enabled",
+                    "title": "Включить затемнение",
+                    "description": "Плавно накрывает AOD чёрным слоем."
+                }
+            ]
+        }
+    ]
+}
+```
+
+Внешние descriptor-файлы тоже поддерживаются: рядом с JAR можно положить `addon_ru.json` или `<addon_id>_ru.json`.
 
 > **Визуальные эффекты карточки** — 4 независимых и комбинируемых параметра:
 >
@@ -482,6 +525,426 @@ boolean enabled = Settings.Global.getInt(
     }
 ]
 ```
+
+---
+
+## Расширенные возможности Settings UI
+
+Менеджер аддонов поддерживает не только простые значения в `Settings.*`, но и файловые значения,
+массивы, вложенные группы, выбор приложений, цветовые параметры, визуальные элементы и OTA-обновления.
+
+### Хранилище значений
+
+По умолчанию параметры пишутся в `Settings.Global`. Поле `provider` может быть `global`, `system` или `secure`.
+Если нужен файловый режим, добавьте `storage`:
+
+| `storage` | Куда пишется значение |
+| --- | --- |
+| `settings` | В `Settings.*`, выбранный через `provider` |
+| `file` / `addon_file` | В data-папку аддона |
+| `internal` | Во внутреннее хранилище приложения менеджера |
+| `external` | Во внешнюю app-specific папку менеджера |
+
+Для системных аддонов файловая data-папка всегда находится в `/data/pixelparts/system_addons_data/<addon_id>/`,
+потому что `/system_ext` доступен только для чтения. Для пользовательских аддонов используется
+`/data/pixelparts/addons/<addon_id>_data/`.
+
+Ключ может содержать путь, например `scope/apps/allowed`. Менеджер создаст подпапки автоматически.
+Массивы хранятся отдельным JSON-файлом с именем последнего сегмента ключа и суффиксом `_array.json`,
+например `scope/apps/allowed_array.json`.
+
+### Новые типы настроек
+
+| `type` | UI | Хранение |
+| --- | --- | --- |
+| `apps` / `app_list` / `packages` | Полноэкранный выбор приложений с поиском, системным фильтром, фильтром launcher-visible и чекбоксами | JSON array в файловом storage |
+| `group` / `subgroup` | Подгруппа настроек | Только контейнер |
+| `color` | Color picker | HEX или comma-формат |
+| `text` / `info` | Текстовый блок между параметрами | Не хранится |
+| `image` | Картинка из JAR | Не хранится |
+| `spacer` | Отступ | Не хранится |
+| `divider` / `line` | Сплошная линия | Не хранится |
+| `dashed` / `dashed_line` | Пунктирная линия | Не хранится |
+
+### Выбор приложений
+
+```json
+{
+    "key": "targets/extra_packages",
+    "title": "Extra packages",
+    "description": "Packages used by this addon",
+    "type": "apps",
+    "storage": "file"
+}
+```
+
+В UI доступны поиск, показ/скрытие системных приложений и режим "только запускаемые".
+Значение будет сохранено как JSON-массив в data-папке аддона.
+
+### Подгруппы и вложенность
+
+```json
+{
+    "key": "advanced_group",
+    "type": "group",
+    "title": "Advanced",
+    "description": "Rarely used parameters",
+    "mode": "expandable",
+    "settings": [
+        { "key": "advanced_enabled", "type": "switch", "title": "Enable advanced" }
+    ]
+}
+```
+
+`mode` поддерживает `expandable`, `fullscreen` и `card`/`floating`. Для модальных групп можно задать
+`closeButtonPosition: "start"` или `"end"`. Внутри `settings` можно вкладывать другие группы.
+
+### Простая логика взаимоисключения
+
+Если включение одного boolean-параметра должно выключать другой, используйте `exclusiveWith` или общий
+`exclusiveGroup`:
+
+```json
+[
+    { "key": "mode_fast", "type": "switch", "title": "Fast", "exclusiveGroup": "mode" },
+    { "key": "mode_safe", "type": "switch", "title": "Safe", "exclusiveGroup": "mode" },
+    { "key": "force_custom", "type": "switch", "title": "Custom", "exclusiveWith": ["mode_fast"] }
+]
+```
+
+Когда параметр становится `true`/`1`, менеджер запишет `0` в остальные параметры группы или списка.
+
+### Color picker
+
+```json
+{
+    "key": "ui/accent",
+    "title": "Accent",
+    "type": "color",
+    "storage": "file",
+    "default": "#33AAFF",
+    "format": "rgba",
+    "alpha": true
+}
+```
+
+`format` поддерживает `hex` (`#RRGGBB`), `hex_argb` (`#AARRGGBB`), `rgb` (`r,g,b`) и `rgba` (`r,g,b,a`).
+Если `alpha: true`, диалог покажет ползунок прозрачности.
+
+### Визуальные элементы
+
+```json
+{ "key": "intro", "type": "info", "title": "Display", "description": "Visual settings below" },
+{ "key": "gap1", "type": "spacer", "height": 16 },
+{ "key": "line1", "type": "dashed_line", "thickness": 2, "color": "#66FFFFFF" },
+{ "key": "preview", "type": "image", "src": "META-INF/preview.webp", "height": 140 }
+```
+
+### Акцент карточки
+
+На уровне аддона можно задать `accent` или `accentColor`. Если поле отсутствует, используется тема приложения.
+У отдельной настройки также может быть свой `accent`/`accentColor`; он имеет приоритет над акцентом карточки.
+
+```json
+{
+    "accent": "#00BCD4",
+    "settings": [
+        { "key": "enable", "type": "switch", "title": "Enable", "accent": "#FF4081" }
+    ]
+}
+```
+
+### Импорт и экспорт настроек
+
+В раскрытой карточке аддона менеджер показывает стандартные кнопки `Import` и `Export`. Экспорт создаёт JSON
+с `id`, `version` и объектом `values`. Импорт принимает такой JSON или сам объект `values` напрямую.
+
+### OTA-обновления аддона
+
+Добавьте в манифест `updateUrl` или `otaUrl` со ссылкой на raw JSON:
+
+```json
+{
+    "updateUrl": "https://example.com/my_addon_update.json"
+}
+```
+
+Формат update JSON:
+
+```json
+{
+    "version": "1.2.0",
+    "downloadUrl": "https://example.com/my_addon.jar",
+    "changelog": "Fixed hooks and added settings",
+    "info": "Optional extra text"
+}
+```
+
+Если версия выше установленной, кнопка `Check updates` превратится в `Update`. Для системного аддона обновление
+ставится в `/data/pixelparts/addons/<id>.jar` и отображается в системном блоке как обновлённая версия.
+Кнопка удаления у такого системного аддона удаляет только data-обновление; системная копия остаётся.
+Pine runtime уже индексирует `/system_ext` перед `/data`, поэтому data-версия с тем же `id` перекрывает системную.
+
+### Почему внутри менеджера есть DexClassLoader
+
+Аддон распространяется как JAR, но внутри него лежит DEX-байткод. `DexClassLoader` не является рудиментом:
+он нужен, чтобы Android ART загрузил классы аддона из JAR. Отдельный `.dex` файл пользователю не нужен.
+
+---
+
+## Генератор Activity UI (main[])
+
+Аддоны могут внедрять кнопки навигации прямо в главное меню приложения и генерировать полноэкранные
+Activity-страницы с вложенными подстраницами — без написания Kotlin/Compose кода.
+
+### Как это работает
+
+1. Объявите массив `main` в `addon.json`. Каждый элемент становится кнопкой навигации в главном меню.
+2. Менеджер строит дерево из сегментов пути `id` каждого элемента.
+3. Нажатие на кнопку открывает `AddonPageActivity`, которая рендерит `settings[]` элемента и его дочерние кнопки.
+4. Кнопка «Назад» возвращает на предыдущий уровень; заголовок топ-бара анимируется между уровнями.
+
+### Поля элемента main[]
+
+| Поле | Тип | Обязательно | Описание |
+| --- | --- | :---: | --- |
+| `id` | `string` | **Да** | Уникальный путь внутри аддона. Используйте `/` для вложенности: `"main/my-page/sub"`. Префикс `main` удаляется автоматически. |
+| `title` | `string` | **Да** | Заголовок кнопки в меню и топ-баре страницы. |
+| `subtitle` | `string` | Нет | Краткое описание под кнопкой. |
+| `icon` | `string` | Нет | Путь к изображению внутри JAR (например `META-INF/icon.png`). По умолчанию — иконка Extension. |
+| `group` | `string` | Нет | В какую группу главного меню поместить кнопку: `gesture`, `system`, `network`, `launcher`. По умолчанию: `system`. |
+| `priority` | `int` | Нет | Порядок отображения внутри группы. Больше = выше. По умолчанию: `0`. |
+| `settings` | `array` | Нет | Тот же формат `settings[]`, что и в карточке. Рендерится на странице, открываемой этой кнопкой. |
+
+### Разрешение путей
+
+- `"my-settings"` → кнопка верхнего уровня
+- `"main/my-settings/advanced"` → вложена в `"my-settings"`
+- Если родительский сегмент не найден, элемент выносится на ближайший найденный уровень или на верхний.
+
+### Пример
+
+```json
+{
+    "id": "my_addon",
+    "entryClass": "com.example.MyHook",
+    "name": "My Addon",
+    "version": "1.0",
+    "targetPackages": ["com.android.launcher3"],
+    "main": [
+        {
+            "id": "launcher-tweaks",
+            "title": "Настройки лаунчера",
+            "subtitle": "Рабочий стол и меню приложений",
+            "group": "launcher",
+            "priority": 50,
+            "settings": [
+                {
+                    "key": "my_addon_enabled",
+                    "title": "Включить",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "id": "main/launcher-tweaks/advanced",
+            "title": "Дополнительно",
+            "subtitle": "Редко изменяемые параметры",
+            "settings": [
+                {
+                    "key": "my_addon_debug",
+                    "title": "Отладочный лог",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false
+                }
+            ]
+        }
+    ]
+}
+```
+
+Результат:
+- Кнопка «Настройки лаунчера» в группе **Pixel Launcher Settings** главного меню.
+- Нажатие открывает страницу с переключателем `my_addon_enabled` и кнопкой «Дополнительно».
+- Нажатие «Дополнительно» открывает вложенную страницу с `my_addon_debug`.
+
+### Поведение карточки аддона при наличии main[] без settings[]
+
+Если аддон не имеет встроенных `settings[]` (или массив пуст), но объявляет элементы `main[]`,
+раскрытая карточка показывает информационное сообщение вместо элементов управления, а затем
+по одной кнопке **Открыть** для каждого элемента верхнего уровня `main[]`.
+Это позволяет пользователям переходить к страницам активити прямо из карточки аддона.
+
+### Доступные значения `group`
+
+| Значение | Где появляется кнопка |
+| --- | --- |
+| `gesture` | Группа «Жесты» в главном меню |
+| `system` | Группа «Система» в главном меню |
+| `network` | Группа «Сеть» в главном меню |
+| `launcher` | Группа «Pixel Launcher Settings» в главном меню |
+
+---
+
+## Advanced Settings UI Features
+
+The addon manager supports Settings-backed values, file-backed values, JSON arrays, nested groups, app pickers,
+color values, visual elements, and OTA updates.
+
+### Value storage
+
+By default, settings are written to `Settings.Global`. `provider` can be `global`, `system`, or `secure`.
+For file storage, add `storage`:
+
+| `storage` | Destination |
+| --- | --- |
+| `settings` | The `Settings.*` provider selected by `provider` |
+| `file` / `addon_file` | The addon's writable data directory |
+| `internal` | The manager app internal storage |
+| `external` | The manager app-specific external storage |
+
+System addons always write file values to `/data/pixelparts/system_addons_data/<addon_id>/`, because `/system_ext`
+is read-only. User addons write next to the addon JAR under `/data/pixelparts/addons/<addon_id>_data/`.
+
+### Localized manifests
+
+`META-INF/addon.json` is always the base English manifest and the source for technical fields such as `id`,
+`entryClass`, `targetPackages`, `enabled`, `updateUrl`, and storage keys. Localized files can be placed next to it
+using `META-INF/addon_<language>.json`, for example `addon_ru.json`, `addon_fr.json`, or `addon_uk.json`.
+
+The manager checks the system language and overlays only display fields from the matching localized manifest:
+top-level `name`, `author`, `description`, and per-setting `title`, `description`, plus `options[].label` matched by
+`value`. Settings are matched by `key`. If no localized manifest exists, the manager falls back to `addon.json`.
+
+Keys may contain path segments such as `scope/apps/allowed`; directories are created automatically. Arrays are
+stored as JSON files named with the final key segment plus `_array.json`, for example `scope/apps/allowed_array.json`.
+
+### New setting types
+
+| `type` | UI | Storage |
+| --- | --- | --- |
+| `apps` / `app_list` / `packages` | Full-screen app picker with search, system filter, launcher-visible filter, and checkboxes | JSON array in file storage |
+| `group` / `subgroup` | Nested setting group | Container only |
+| `color` | Color picker | HEX or comma-separated format |
+| `text` / `info` | Text block between settings | Not stored |
+| `image` | Image from the JAR | Not stored |
+| `spacer` | Vertical spacing | Not stored |
+| `divider` / `line` | Solid line | Not stored |
+| `dashed` / `dashed_line` | Dashed line | Not stored |
+
+The JSON examples in the Russian section above are valid for English projects too. Field names are identical.
+
+### Groups, logic, color, visuals, and OTA
+
+- Groups use `mode: "expandable"`, `"fullscreen"`, or `"card"`; nested `settings` arrays are supported.
+- Boolean parameters can use `exclusiveGroup` or `exclusiveWith` to force other boolean keys to `0` when enabled.
+- Color values support `format: "hex"`, `"hex_argb"`, `"rgb"`, and `"rgba"`; `alpha: true` enables the alpha slider.
+- Card-level `accent` / `accentColor` changes the card accent, and per-setting accent overrides it.
+- Expanded addon cards include built-in Import/Export buttons for settings JSON.
+- `updateUrl` / `otaUrl` enables OTA checks. The raw JSON must contain `version` and `downloadUrl`; `changelog` and `info` are optional.
+- System addon updates are installed as `/data` overrides and are preferred over the read-only system copy at runtime.
+
+`DexClassLoader` is still required even though addons are packaged as JAR files, because Android loads the DEX
+bytecode inside the JAR through that loader.
+
+---
+
+## Main Menu Activity Generator (`main[]`)
+
+Addons can inject navigation buttons directly into the app's main menu and generate full-screen Activity pages
+with nested sub-pages — without writing any Kotlin/Compose code.
+
+### How it works
+
+1. Declare a `main` array in `addon.json`. Each entry becomes a navigation button in the main menu.
+2. The manager builds a tree from the path segments of each entry's `id`.
+3. Tapping a button opens `AddonPageActivity`, which renders the entry's `settings[]` and its child entries.
+4. Back navigation pops the stack; the top-bar title animates between levels.
+
+### `main[]` entry fields
+
+| Field | Type | Required | Description |
+| --- | --- | :---: | --- |
+| `id` | `string` | **Yes** | Unique path within this addon. Use `/` to nest: `"main/my-page/sub"`. The `main` prefix is stripped automatically. |
+| `title` | `string` | **Yes** | Button label shown in the menu and as the top-bar title. |
+| `subtitle` | `string` | No | Short description shown under the button. |
+| `icon` | `string` | No | Path to an image inside the JAR (e.g. `META-INF/icon.png`). Falls back to the Extension icon. |
+| `group` | `string` | No | Which main-menu group to place the button in: `gesture`, `system`, `network`, `launcher`. Default: `system`. |
+| `priority` | `int` | No | Display order within the group. Higher = shown first. Default: `0`. |
+| `settings` | `array` | No | Same `settings[]` format as the card. Rendered on the page opened by this button. |
+
+### Path resolution
+
+- `"my-settings"` → top-level button
+- `"main/my-settings/advanced"` → nested under `"my-settings"`
+- If the parent segment is not found, the entry is promoted to the nearest found ancestor, or to the top level.
+
+### Example
+
+```json
+{
+    "id": "my_addon",
+    "entryClass": "com.example.MyHook",
+    "name": "My Addon",
+    "version": "1.0",
+    "targetPackages": ["com.android.launcher3"],
+    "main": [
+        {
+            "id": "launcher-tweaks",
+            "title": "Launcher Tweaks",
+            "subtitle": "Home screen and app drawer settings",
+            "group": "launcher",
+            "priority": 50,
+            "settings": [
+                {
+                    "key": "my_addon_enabled",
+                    "title": "Enable",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false
+                }
+            ]
+        },
+        {
+            "id": "main/launcher-tweaks/advanced",
+            "title": "Advanced",
+            "subtitle": "Rarely changed parameters",
+            "settings": [
+                {
+                    "key": "my_addon_debug",
+                    "title": "Debug Logging",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false
+                }
+            ]
+        }
+    ]
+}
+```
+
+This produces:
+- A "Launcher Tweaks" button in the **Launcher Settings** group of the main menu.
+- Tapping it opens a page with the `my_addon_enabled` toggle and an "Advanced" sub-button.
+- Tapping "Advanced" opens a nested page with `my_addon_debug`.
+
+### Addon card behaviour when `main[]` is present but `settings[]` is empty
+
+If an addon has no inline `settings[]` (or an empty array) but declares `main[]` entries, the expanded card
+shows an info message instead of settings controls, followed by one **Open** button per top-level `main[]` entry.
+This lets users navigate directly to the activity pages from the addon card.
+
+### Available `group` values
+
+| Value | Where the button appears |
+| --- | --- |
+| `gesture` | Gestures group in the main menu |
+| `system` | System group in the main menu |
+| `network` | Network group in the main menu |
+| `launcher` | Pixel Launcher Settings group in the main menu |
 
 ---
 

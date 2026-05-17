@@ -28,6 +28,12 @@
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <uses-permission android:name="android.permission.INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.READ_LOGS" />
+    <uses-permission android:name="android.permission.DUMP" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_MEDIA_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
 
     <application
         android:label="@string/app_name"
@@ -337,6 +343,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name=".activities.AddonPageActivity"
+            android:label="@string/addon_title"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name=".activities.TestActivity"
             android:label="@string/test_things_title"
             android:exported="false"
@@ -376,6 +387,24 @@
             android:exported="false" />
 
         <service
+            android:name=".services.PixelPartsLogService"
+            android:exported="false" />
+
+        <service
+            android:name=".services.PixelPartsLogTileService"
+            android:label="@string/sysui_log_service_title"
+            android:icon="@drawable/ic_log_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
             android:name=".services.AutoHbmTileService"
             android:label="@string/auto_hbm_title"
             android:icon="@drawable/ic_auto_hbm_tile"
@@ -387,6 +416,126 @@
             <meta-data
                 android:name="android.service.quicksettings.TOGGLEABLE_TILE"
                 android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.Dt2wTileService"
+            android:label="@string/dt2w_title"
+            android:icon="@drawable/ic_dt2w_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.Dt2sTileService"
+            android:label="@string/dt2s_title"
+            android:icon="@drawable/ic_dt2s_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.OverscrollTileService"
+            android:label="@string/os_title_activity"
+            android:icon="@drawable/ic_overscroll_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.MainActivityTileService"
+            android:label="@string/main_title"
+            android:icon="@drawable/ic_homepage_pixel_extra_parts"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".services.GestureBarTileService"
+            android:label="@string/sysui_gesture_bar_title"
+            android:icon="@drawable/ic_gesture_bar_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.ChargingInfoTileService"
+            android:label="@string/sysui_charging_info_title"
+            android:icon="@drawable/ic_charging_info_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.MagnifierTileService"
+            android:label="@string/magnifier_section_title"
+            android:icon="@drawable/ic_magnifier_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.ActivityTransitionTileService"
+            android:label="@string/anim_transition_title"
+            android:icon="@drawable/ic_activity_transition_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
+        <service
+            android:name=".services.ThermalManagerTileService"
+            android:label="@string/thermal_manager_title"
+            android:icon="@drawable/ic_thermal_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
         </service>
 
         <receiver 
@@ -404,6 +553,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>

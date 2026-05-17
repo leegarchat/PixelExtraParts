@@ -126,17 +126,23 @@ object SettingsCompat {
 
     @JvmStatic
     fun putInt(context: Context, key: String, value: Int) {
-        Settings.Global.putInt(context.contentResolver, key(key), value)
+        val resolvedKey = key(key)
+        Settings.Global.putInt(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
     }
 
     @JvmStatic
     fun putFloat(context: Context, key: String, value: Float) {
-        Settings.Global.putFloat(context.contentResolver, key(key), value)
+        val resolvedKey = key(key)
+        Settings.Global.putFloat(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
     }
 
     @JvmStatic
     fun putString(context: Context, key: String, value: String?) {
-        Settings.Global.putString(context.contentResolver, key(key), value)
+        val resolvedKey = key(key)
+        Settings.Global.putString(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
     }
 
     @JvmStatic

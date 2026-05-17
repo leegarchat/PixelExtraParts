@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,8 @@ import org.pixel.customparts.utils.dynamicStringResource
 val REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING = 96.dp
 
 private const val MORPH_DURATION = 300
+private val REBOOT_BUBBLE_MENU_MIN_WIDTH = 240.dp
+private val REBOOT_BUBBLE_MENU_MAX_WIDTH = 312.dp
 
 data class RebootBubbleMenuAction(
     val icon: ImageVector,
@@ -152,7 +155,10 @@ fun RebootBubble(
                     Column(
                         modifier = Modifier
                             .padding(8.dp)
-                            .width(IntrinsicSize.Max)
+                            .widthIn(
+                                min = REBOOT_BUBBLE_MENU_MIN_WIDTH,
+                                max = REBOOT_BUBBLE_MENU_MAX_WIDTH
+                            )
                     ) {
                         val actionDelayBase = if (launcherIconAvailable) 90 else 40
                         if (launcherIconAvailable) {
@@ -246,7 +252,10 @@ fun RebootBubble(
                                 text = dynamicStringResource(R.string.btn_close),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -366,6 +375,8 @@ private fun StaggeredSwitchMenuItem(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = contentColor,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(12.dp))
@@ -418,7 +429,10 @@ private fun StaggeredMenuItem(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = contentColor
+                color = contentColor,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
         }
     }

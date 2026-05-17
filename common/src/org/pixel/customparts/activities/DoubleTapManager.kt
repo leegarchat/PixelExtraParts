@@ -5,6 +5,7 @@ import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.SettingsKeys
+import org.pixel.customparts.utils.PixelPartsTileRefresher
 
 object DoubleTapManager {
     val KEY_DT2W_ENABLE: String
@@ -23,6 +24,7 @@ object DoubleTapManager {
 
     suspend fun setDt2wEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
         Settings.Global.putInt(context.contentResolver, KEY_DT2W_ENABLE, if (enabled) 1 else 0)
+        PixelPartsTileRefresher.requestForSetting(context, KEY_DT2W_ENABLE)
     }
 
     fun getDt2wTimeout(context: Context): Int {
@@ -39,6 +41,7 @@ object DoubleTapManager {
 
     suspend fun setDt2sEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
         Settings.Global.putInt(context.contentResolver, KEY_DT2S_ENABLE, if (enabled) 1 else 0)
+        PixelPartsTileRefresher.requestForSetting(context, KEY_DT2S_ENABLE)
     }
 
     fun getDt2sTimeout(context: Context): Int {

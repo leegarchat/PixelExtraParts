@@ -37,6 +37,14 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+prebuilt_etc {
+    name: "gcam_photo_torch_addon",
+    src: "example.addon.hook/gcam_photo_torch/out/gcam_photo_torch.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
 java_import {
     name: "apksig-jar",
     jars: ["common/lib/apksig.jar"],

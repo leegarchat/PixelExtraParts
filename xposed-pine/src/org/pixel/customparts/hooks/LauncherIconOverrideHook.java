@@ -128,6 +128,7 @@ public class LauncherIconOverrideHook extends BaseHook {
         hookProviderClass(classLoader, "com.android.launcher3.icons.LauncherIconProviderImpl");
         hookIconProviderGetIcon(classLoader);
         hookBaseIconFactory(classLoader);
+        hookThemeIconStateUniqueId(classLoader);
         hookIconState(classLoader);
         hookFloatingIconView(classLoader);
         hookBubbleTextViewThemeMode(classLoader);
@@ -194,6 +195,27 @@ public class LauncherIconOverrideHook extends BaseHook {
             log("Hooked BaseIconFactory.createBadgedIconBitmap shape controls");
         } catch (Throwable t) {
             logError("Unable to hook BaseIconFactory.createBadgedIconBitmap", t);
+        }
+    }
+
+    private void hookThemeIconStateUniqueId(ClassLoader classLoader) {
+        try {
+            Class<?> iconStateClass = XposedHelpers.findClass(
+                    "com.android.launcher3.graphics.ThemeManager$IconState", classLoader);
+            XposedHelpers.findAndHookMethod(
+                    iconStateClass,
+                    "toUniqueId",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            param.setResult(appendThemeIconShapeIdentity(
+                                    String.valueOf(param.getResult()),
+                                    param.thisObject));
+                        }
+                    });
+            log("Hooked ThemeManager.IconState.toUniqueId shape identity");
+        } catch (Throwable t) {
+            logError("Unable to hook ThemeManager.IconState.toUniqueId", t);
         }
     }
 
@@ -346,7 +368,8 @@ public class LauncherIconOverrideHook extends BaseHook {
                                     + shapeConfig.foregroundTintMode + ":"
                                     + shapeConfig.foregroundTintColor + ":" + packageName
                                     + ":" + dynamicStateForPackage(packageName)
-                                    + ":" + launcherShapeFlagsState(context));
+                                    + ":" + launcherShapeFlagsState(context)
+                                    + ":" + launcherIconMaskState(context));
                         }
                     });
             log("Hooked IconProvider.getStateForApp freshness");
@@ -553,6 +576,53 @@ public class LauncherIconOverrideHook extends BaseHook {
                 + (isAllAppsFollowWorkspaceEnabled(context) ? "1" : "0")
                 + (isAllAppsThemedIconsEnabled(context) ? "1" : "0")
                 + (isAllAppsSuggestionsThemedIconsEnabled(context) ? "1" : "0");
+    }
+
+    private static String launcherIconMaskState(Context context) {
+        if (context == null) {
+            return "mask=null";
+        }
+        String customization = "";
+        String mask = "";
+        try {
+            customization = Settings.Secure.getString(
+                    context.getContentResolver(),
+                    Settings.Secure.THEME_CUSTOMIZATION_OVERLAY_PACKAGES);
+        } catch (Throwable ignored) {
+        }
+        try {
+            Resources resources = context.getResources();
+            int maskId = Resources.getSystem().getIdentifier("config_icon_mask", "string", "android");
+            if (maskId != 0) {
+                mask = resources.getString(maskId);
+            }
+        } catch (Throwable ignored) {
+        }
+        return "mask=" + stableTextState(mask) + ":theme=" + stableTextState(customization);
+    }
+
+    private static String appendThemeIconShapeIdentity(String baseState, Object iconState) {
+        if (iconState == null) {
+            return baseState;
+        }
+        try {
+            String iconMask = String.valueOf(XposedHelpers.getObjectField(iconState, "iconMask"));
+            int folderRadius = Math.round(XposedHelpers.getFloatField(iconState, "folderRadius") * 10000f);
+            int shapeRadius = Math.round(XposedHelpers.getFloatField(iconState, "shapeRadius") * 10000f);
+            return baseState
+                    + ",mask=" + stableTextState(iconMask)
+                    + ",folderRadius=" + folderRadius
+                    + ",shapeRadius=" + shapeRadius;
+        } catch (Throwable ignored) {
+            return baseState;
+        }
+    }
+
+    private static String stableTextState(String value) {
+        if (value == null || value.isEmpty()) {
+            return "0:0";
+        }
+        return value.length() + ":" + value.hashCode();
     }
 
     private static boolean shouldForceThemedIcon(Context context, Object view) {

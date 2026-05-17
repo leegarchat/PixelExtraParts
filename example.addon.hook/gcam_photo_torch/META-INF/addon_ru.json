@@ -1,0 +1,23 @@
+{
+    "name": "GCam Photo Torch",
+    "description": "Добавляет режим постоянного фонарика в меню вспышки фото Google Camera.",
+    "settings": [
+        {
+            "key": "gcam_photo_torch_intro",
+            "title": "Меню вспышки фото",
+            "description": "Добавляет постоянный фонарик в режим фото, когда Google Camera строит меню вспышки."
+        },
+        {
+            "key": "gcam_photo_torch_main_group",
+            "title": "Пункт фонарика",
+            "description": "Управление внедрённым пунктом меню.",
+            "settings": [
+                {
+                    "key": "gcam_photo_torch_enabled",
+                    "title": "Включить фонарик в фото",
+                    "description": "Добавляет пункт постоянного фонарика в меню вспышки задней камеры."
+                }
+            ]
+        }
+    ]
+}

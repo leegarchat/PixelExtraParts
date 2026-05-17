@@ -2,89 +2,136 @@
     "id": "ambient_extend_hook",
     "entryClass": "org.pixel.customparts.addon.ambient.AmbientExtendHook",
     "name": "Ambient Extend",
-    "author": "LeeGarBook",
+    "author": "LeeGarChat",
     "description": "AOD timeout, ambient Smart Pixels, and extra Doze dimming for SystemUI.",
-    "version": "1.0",
+    "version": "1.1",
     "targetPackages": [
         "com.android.systemui"
     ],
     "enabled": true,
+    "accent": "#64D8FF",
     "backgroundMode": "gradient",
     "backgroundAlpha": 70,
+    "backgroundGradientSteps": [0, 45, 100],
+    "backgroundScope": "full",
     "settings": [
         {
-            "key": "ambient_extend_hook_timeout_enabled",
-            "title": "Temporary AOD Blackout",
-            "description": "Fades AOD to a full black overlay after the selected delay.",
-            "type": "toggle",
-            "provider": "global",
-            "default": false
+            "key": "ambient_intro",
+            "type": "info",
+            "title": "Ambient controls",
+            "description": "Tune AOD blackout, Smart Pixels and extra dimming from one grouped panel."
         },
         {
-            "key": "ambient_extend_hook_timeout_seconds",
-            "title": "AOD Timeout",
-            "type": "int",
-            "provider": "global",
-            "default": 60,
-            "min": 1,
-            "max": 600,
-            "step": 1,
-            "unit": "s"
+            "key": "ambient_timeout_group",
+            "title": "Temporary AOD blackout",
+            "description": "Fade AOD to a black overlay after a delay.",
+            "type": "group",
+            "mode": "expandable",
+            "settings": [
+                {
+                    "key": "ambient_extend_hook_timeout_enabled",
+                    "title": "Enable blackout",
+                    "description": "Fades AOD to a full black overlay after the selected delay.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "accent": "#64D8FF"
+                },
+                {
+                    "key": "ambient_extend_hook_timeout_seconds",
+                    "title": "AOD timeout",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 60,
+                    "min": 1,
+                    "max": 600,
+                    "step": 1,
+                    "unit": "s"
+                },
+                {
+                    "key": "ambient_extend_hook_timeout_fade_ms",
+                    "title": "Blackout fade",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 1200,
+                    "min": 0,
+                    "max": 10000,
+                    "step": 50,
+                    "unit": "ms"
+                }
+            ]
         },
         {
-            "key": "ambient_extend_hook_timeout_fade_ms",
-            "title": "AOD Blackout Fade",
-            "type": "int",
-            "provider": "global",
-            "default": 1200,
-            "min": 0,
-            "max": 10000,
-            "step": 50,
-            "unit": "ms"
+            "key": "ambient_separator_1",
+            "type": "dashed_line",
+            "height": 12,
+            "thickness": 1,
+            "color": "#6680D8FF"
         },
         {
-            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-            "title": "Smart Pixels On Ambient/Doze",
-            "type": "toggle",
-            "provider": "global",
-            "default": false
+            "key": "ambient_smart_pixels_group",
+            "title": "Smart Pixels on ambient",
+            "description": "Reduce lit pixels while the device is dozing.",
+            "type": "group",
+            "mode": "expandable",
+            "settings": [
+                {
+                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                    "title": "Enable Smart Pixels",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "accent": "#7EE3B4"
+                },
+                {
+                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                    "title": "Disabled pixels",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 25,
+                    "min": 10,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%"
+                },
+                {
+                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                    "title": "Shift mask",
+                    "description": "Periodically moves the pixel mask position while Smart Pixels are active.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false
+                }
+            ]
         },
         {
-            "key": "ambient_extend_hook_smart_pixels_aod_percent",
-            "title": "Ambient/Doze Disabled Pixels",
-            "type": "int",
-            "provider": "global",
-            "default": 25,
-            "min": 10,
-            "max": 100,
-            "step": 1,
-            "unit": "%"
-        },
-        {
-            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-            "title": "Shift Smart Pixels",
-            "description": "Periodically moves the pixel mask position while Smart Pixels are active.",
-            "type": "toggle",
-            "provider": "global",
-            "default": false
-        },
-        {
-            "key": "ambient_extend_hook_dim_enabled",
-            "title": "Extra Doze Dimming",
-            "type": "toggle",
-            "provider": "global",
-            "default": false
-        },
-        {
-            "key": "ambient_extend_hook_dim_percent",
-            "title": "Extra Dimming",
-            "type": "int",
-            "provider": "global",
-            "default": 30,
-            "min": 0,
-            "max": 100,
-            "step": 1,
-            "unit": "%"
+            "key": "ambient_dimming_group",
+            "title": "Extra doze dimming",
+            "description": "Add one more dimming layer over ambient content.",
+            "type": "group",
+            "mode": "card",
+            "closeButtonPosition": "end",
+            "settings": [
+                {
+                    "key": "ambient_extend_hook_dim_enabled",
+                    "title": "Enable extra dimming",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "accent": "#FFD18B"
+                },
+                {
+                    "key": "ambient_extend_hook_dim_percent",
+                    "title": "Dimming strength",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 30,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%"
+                }
+            ]
         }
     ]
 }

@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
+import org.json.JSONArray
 import org.json.JSONObject
+import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.services.ThermalProfileService
 import java.io.File
 import java.util.Locale
@@ -15,6 +18,7 @@ object ThermalProfileController {
     const val PROFILE_METADATA_FILE_NAME = "profiles.json"
     const val STOCK_CONFIG_ID = "__stock__"
     const val FOLLOW_GLOBAL_ID = ""
+    const val MAX_TILE_QUEUE_SIZE = 5
     const val PROFILE_SOURCE_SYSTEM = "system"
     const val PROFILE_SOURCE_USER = "user"
     private const val VENDOR_CONFIG_DIR = "/vendor/etc"
@@ -186,6 +190,79 @@ object ThermalProfileController {
         syncService(context)
     }
 
+    fun readTileProfileQueue(context: Context): List<String> {
+        val raw = Settings.Global.getString(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE).orEmpty()
+        val availableIds = availableTileProfileQueueIds()
+        return decodeTileProfileQueue(raw)
+            .map(::normalizeTileProfileQueueId)
+            .filter { it in availableIds }
+            .distinct()
+            .take(MAX_TILE_QUEUE_SIZE)
+    }
+
+    fun writeTileProfileQueue(context: Context, queue: List<String>): List<String> {
+        val availableIds = availableTileProfileQueueIds()
+        val sanitized = queue
+            .map(::normalizeTileProfileQueueId)
+            .filter { it in availableIds }
+            .distinct()
+            .take(MAX_TILE_QUEUE_SIZE)
+        val encoded = JSONArray().apply { sanitized.forEach(::put) }.toString()
+        Settings.Global.putString(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE, encoded)
+        PixelPartsTileRefresher.requestForSetting(context, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE)
+
+        val currentIndex = Settings.Global.getInt(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX, -1)
+        if (currentIndex >= sanitized.size) {
+            Settings.Global.putInt(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX, -1)
+            PixelPartsTileRefresher.requestForSetting(context, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX)
+        }
+        return sanitized
+    }
+
+    fun addTileProfileToQueue(context: Context, configId: String): List<String> {
+        val queue = readTileProfileQueue(context)
+        val normalized = normalizeTileProfileQueueId(configId)
+        return if (normalized in queue || queue.size >= MAX_TILE_QUEUE_SIZE) {
+            queue
+        } else {
+            writeTileProfileQueue(context, queue + normalized)
+        }
+    }
+
+    fun removeTileProfileFromQueue(context: Context, index: Int): List<String> {
+        val queue = readTileProfileQueue(context)
+        if (index !in queue.indices) return queue
+        return writeTileProfileQueue(context, queue.filterIndexed { itemIndex, _ -> itemIndex != index })
+    }
+
+    fun moveTileProfileQueueItem(context: Context, fromIndex: Int, toIndex: Int): List<String> {
+        val queue = readTileProfileQueue(context)
+        if (fromIndex !in queue.indices || toIndex !in queue.indices || fromIndex == toIndex) return queue
+        val updated = queue.toMutableList()
+        val item = updated.removeAt(fromIndex)
+        updated.add(toIndex, item)
+        return writeTileProfileQueue(context, updated)
+    }
+
+    fun cycleTileProfileQueue(context: Context): String? {
+        val queue = readTileProfileQueue(context)
+        if (queue.isEmpty()) return null
+
+        val currentGlobal = normalizeTileProfileQueueId(readProfileMap().globalConfig)
+        val currentIndex = queue.indexOf(currentGlobal)
+        val lastIndex = Settings.Global.getInt(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX, -1)
+        val nextIndex = if (currentIndex >= 0) {
+            (currentIndex + 1) % queue.size
+        } else {
+            (lastIndex + 1).floorMod(queue.size)
+        }
+        val nextConfig = queue[nextIndex]
+        Settings.Global.putInt(context.contentResolver, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX, nextIndex)
+        PixelPartsTileRefresher.requestForSetting(context, SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX)
+        updateGlobalConfig(context, nextConfig)
+        return nextConfig
+    }
+
     fun updatePackageConfig(context: Context, packageName: String, configId: String) {
         val normalized = normalizeConfigId(configId)
         val profileMap = readProfileMap()
@@ -276,6 +353,29 @@ object ThermalProfileController {
             else -> trimmed
         }
     }
+
+    private fun availableTileProfileQueueIds(): Set<String> {
+        return listConfigChoices(includeFollowGlobal = false)
+            .map { normalizeTileProfileQueueId(it.id) }
+            .toSet()
+    }
+
+    private fun normalizeTileProfileQueueId(configId: String): String {
+        val normalized = normalizeConfigId(configId)
+        return if (normalized.isBlank()) STOCK_CONFIG_ID else normalized.substringAfterLast('/')
+    }
+
+    private fun decodeTileProfileQueue(raw: String): List<String> {
+        if (raw.isBlank()) return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            List(array.length()) { index -> array.optString(index) }
+        }.getOrElse {
+            raw.split(',')
+        }
+    }
+
+    private fun Int.floorMod(other: Int): Int = ((this % other) + other) % other
 
     private fun normalizeGlobalConfigId(configId: String): String {
         val normalized = normalizeConfigId(configId)

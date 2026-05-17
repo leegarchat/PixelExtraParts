@@ -68,9 +68,10 @@ public class HookEntry {
          *    → Should not happen (ActivityThread wouldn't inject), but skip gracefully
          */
 
+        initGlobalHooks(context, classLoader);
+
         if (inWhitelist) {
             // Built-in hooks first
-            // initGlobalHooks(context, classLoader);
 
             if (LAUNCHER_PACKAGES.contains(packageName)) {
                 environment.log(TAG, "MATCHED LAUNCHER PACKAGE: " + packageName);
@@ -107,6 +108,7 @@ public class HookEntry {
 
         hooks.add(new MagnifierHook());
         hooks.add(new ActivityTransitionHook());
+        hooks.add(new PredictiveBackDisableHook());
 
         applyHooks(hooks, context, classLoader, "global");
     }

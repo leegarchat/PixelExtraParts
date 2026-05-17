@@ -23,5 +23,11 @@
         <permission name="android.permission.KILL_BACKGROUND_PROCESSES" />
         <permission name="android.permission.INSTALL_PACKAGES" />
         <permission name="android.permission.DELETE_PACKAGES" />
+        <permission name="android.permission.READ_LOGS" />
+        <permission name="android.permission.DUMP" />
+        <permission name="android.permission.READ_EXTERNAL_STORAGE" />
+        <permission name="android.permission.WRITE_EXTERNAL_STORAGE" />
+        <permission name="android.permission.WRITE_MEDIA_STORAGE" />
+        <permission name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     </privapp-permissions>
 </permissions>

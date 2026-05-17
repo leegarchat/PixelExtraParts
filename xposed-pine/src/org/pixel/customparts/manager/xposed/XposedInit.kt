@@ -1,5 +1,6 @@
 package org.pixel.customparts.manager.xposed
 
+import android.content.Context
 import android.util.Log
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodReplacement
@@ -108,14 +109,28 @@ class XposedInit : IXposedHookLoadPackage {
     }
 
     private fun applyHooks(hooks: List<BaseHook>, classLoader: ClassLoader) {
+        val context = currentApplicationContext()
         hooks.forEach { hook ->
             try {
                 hook.setup(environment)
+                if (context != null && !hook.isEnabled(context)) {
+                    environment.log(TAG, "Hook ${hook.hookId} skipped: disabled")
+                    return@forEach
+                }
                 hook.init(classLoader)
                 environment.log(TAG, "Hook ${hook.hookId} initialized")
             } catch (t: Throwable) {
                 environment.logError(TAG, "Failed to load ${hook.hookId}", t)
             }
+        }
+    }
+
+    private fun currentApplicationContext(): Context? {
+        return try {
+            val activityThreadClass = XposedHelpers.findClass("android.app.ActivityThread", null)
+            XposedHelpers.callStaticMethod(activityThreadClass, "currentApplication") as? Context
+        } catch (t: Throwable) {
+            null
         }
     }
 

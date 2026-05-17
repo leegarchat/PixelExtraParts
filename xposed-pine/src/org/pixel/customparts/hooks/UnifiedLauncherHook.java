@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -21,18 +20,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import org.json.JSONObject;
-
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.WeakHashMap;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -64,7 +58,6 @@ public class UnifiedLauncherHook extends BaseHook {
     private static final String KEY_TOP_WIDGET_ENABLE = "launcher_disable_top_widget";
     private static final int DEFAULT_PADDING_DOTS = 0;
     private static final int SETTINGS_DEFAULT_PADDING = -45;
-    private static final int LAUNCHER_ORIGINAL_BOTTOM_DP = 200;
     private static final int DISPLAY_WORKSPACE = 0;
     private static final int DISPLAY_FOLDER = 2;
     private static final int CONTAINER_HOTSEAT = -101;
@@ -78,10 +71,6 @@ public class UnifiedLauncherHook extends BaseHook {
     private int lastAppliedDockHash = 0;
     private static Field doubleTapTimeoutField = null;
     private final WeakHashMap<View, View.OnLayoutChangeListener> layoutListeners = new WeakHashMap<>();
-    private static final String PREFS_NAME = "top_row_keeper";
-    private static final String PREF_GRID_ROWS = "last_grid_rows";
-    private static final String PREF_GRID_COLS = "last_grid_cols";
-    private static final String PREF_SAVED_ITEMS = "saved_items_json";
 
     static {
         try {
@@ -102,7 +91,14 @@ public class UnifiedLauncherHook extends BaseHook {
 
     @Override
     public boolean isEnabled(Context context) {
-        return true;
+        if (context == null) return true;
+        return isSettingEnabled(context, KEY_HOME_ENABLE)
+                || getIntSetting(context, KEY_DOCK_ENABLE, 0) == 1
+                || getIntSetting(context, KEY_HOTSEAT_ICONS, 0) > 0
+                || getIntSetting(context, KEY_HOTSEAT_ICON_SIZE, 100) != 100
+                || isSettingEnabled(context, KEY_DISABLE_FEED)
+                || isSettingEnabled(context, KEY_DT2S_ENABLED)
+                || getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1;
     }
 
     @Override
@@ -573,11 +569,24 @@ public class UnifiedLauncherHook extends BaseHook {
         XposedHelpers.findAndHookMethod(workspaceClass, "setInsets", Rect.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
-                View workspace = (View) param.thisObject;
-                Context context = workspace.getContext();
+                try {
+                    final View workspace = (View) param.thisObject;
+                    final Context context = workspace.getContext();
 
-                if (isDotsOffsetEnabled(context)) {
-                    applyDotsOffset(workspace, context);
+                    if (context instanceof Activity) {
+                        workspace.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                applyHomepagePadding((Activity) context);
+                            }
+                        });
+                    }
+
+                    if (isDotsOffsetEnabled(context)) {
+                        applyDotsOffset(workspace, context);
+                    }
+                } catch (Throwable t) {
+                    logError("Failed to handle Workspace.setInsets", t);
                 }
             }
         });
@@ -591,7 +600,10 @@ public class UnifiedLauncherHook extends BaseHook {
                     try {
                         int childCount = workspace.getChildCount();
                         XposedHelpers.callMethod(workspace, "insertNewWorkspaceScreen", 0, childCount);
-                    } catch (Exception e) { /* ignore */ }
+                    } catch (Throwable e) {
+                        logError("Failed to create first workspace screen without top widget", e);
+                        return XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
+                    }
                     return null;
                 } else {
                     return XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
@@ -769,7 +781,6 @@ public class UnifiedLauncherHook extends BaseHook {
             });
 
             hookLoaderCursor(classLoader);
-            hookModelWriter(classLoader);
             XposedHelpers.findAndHookMethod(occupancyClass, "isRegionVacant", int.class, int.class, int.class, int.class, new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) {
@@ -811,7 +822,7 @@ public class UnifiedLauncherHook extends BaseHook {
                             param.setResult(true);
                         }
                     } catch (Throwable t) {
-                        param.setResult(true);
+                        logError("Failed to relax top row occupancy", t);
                     }
                 }
             });
@@ -889,25 +900,6 @@ public class UnifiedLauncherHook extends BaseHook {
         }
     }
 
-    private void hookModelWriter(ClassLoader classLoader) {
-        try {
-             Class<?> modelWriterClass = XposedHelpers.findClass("com.android.launcher3.model.ModelWriter", classLoader);
-             Class<?> itemInfoClass = XposedHelpers.findClass("com.android.launcher3.model.data.ItemInfo", classLoader);
-             
-             XposedHelpers.findAndHookMethod(modelWriterClass, "addItemToDatabase", itemInfoClass, int.class, int.class, int.class, int.class, new XC_MethodHook() {
-                 @Override protected void afterHookedMethod(MethodHookParam param) { 
-                     saveWorkspaceItem((Context) XposedHelpers.getObjectField(param.thisObject, "mContext"), param.args[0]); 
-                 }
-             });
-             
-             XposedHelpers.findAndHookMethod(modelWriterClass, "modifyItemInDatabase", itemInfoClass, int.class, int.class, int.class, int.class, int.class, int.class, new XC_MethodHook() {
-                 @Override protected void afterHookedMethod(MethodHookParam param) {
-                     saveWorkspaceItem((Context) XposedHelpers.getObjectField(param.thisObject, "mContext"), param.args[0]);
-                 }
-             });
-        } catch (Throwable e) {}
-    }
-
     // =========================================================================
     // HELPER LOGIC IMPLEMENTATIONS
     // =========================================================================
@@ -922,13 +914,6 @@ public class UnifiedLauncherHook extends BaseHook {
             View workspace = (View) XposedHelpers.getObjectField(activity, "mWorkspace");
             ViewGroup hotseat = (ViewGroup) XposedHelpers.getObjectField(activity, "mHotseat");
 
-            int currentHash = (((31 * System.identityHashCode(activity)
-                + System.identityHashCode(deviceProfile)) * 31
-                + System.identityHashCode(workspace)) * 31
-                + System.identityHashCode(hotseat)) * 31
-                + paddingSetting;
-            if (lastAppliedPaddingHash == currentHash) return;
-
             Rect paddingObj = null;
             try { paddingObj = (Rect) XposedHelpers.getObjectField(deviceProfile, "workspacePadding"); } catch(Throwable t) {}
             if (paddingObj == null) {
@@ -939,9 +924,23 @@ public class UnifiedLauncherHook extends BaseHook {
             if (paddingObj != null) {
                 int desiredBottomPx;
                 if (paddingSetting == SETTINGS_DEFAULT_PADDING) {
-                    desiredBottomPx = (lastAppliedPaddingHash == 0) ? paddingObj.bottom : toPx(activity, LAUNCHER_ORIGINAL_BOTTOM_DP);
+                    desiredBottomPx = paddingObj.bottom;
                 } else {
                     desiredBottomPx = toPx(activity, paddingSetting + 20);
+                }
+
+                int currentHash = (((((31 * System.identityHashCode(activity)
+                    + System.identityHashCode(deviceProfile)) * 31
+                    + System.identityHashCode(workspace)) * 31
+                    + System.identityHashCode(hotseat)) * 31
+                    + System.identityHashCode(paddingObj)) * 31
+                    + paddingSetting) * 31
+                    + desiredBottomPx;
+                if (lastAppliedPaddingHash == currentHash
+                    && paddingObj.bottom == desiredBottomPx
+                    && workspace != null
+                    && workspace.getPaddingBottom() == desiredBottomPx) {
+                    return;
                 }
 
                 if (paddingObj.bottom != desiredBottomPx) {
@@ -949,9 +948,23 @@ public class UnifiedLauncherHook extends BaseHook {
                     triggerNativeUpdate(workspace, deviceProfile);
                     if (hotseat != null) triggerNativeUpdate(hotseat, deviceProfile);
                 }
+                applyWorkspacePadding(workspace, paddingObj);
                 lastAppliedPaddingHash = currentHash;
             }
         } catch (Throwable e) { /* ignore */ }
+    }
+
+    private void applyWorkspacePadding(View workspace, Rect padding) {
+        if (workspace == null || padding == null) return;
+        if (workspace.getPaddingLeft() == padding.left
+                && workspace.getPaddingTop() == padding.top
+                && workspace.getPaddingRight() == padding.right
+                && workspace.getPaddingBottom() == padding.bottom) {
+            return;
+        }
+        workspace.setPadding(padding.left, padding.top, padding.right, padding.bottom);
+        workspace.requestLayout();
+        workspace.invalidate();
     }
 
     private void applyDockSettings(Activity activity) {
@@ -1137,12 +1150,6 @@ public class UnifiedLauncherHook extends BaseHook {
         }
     }
 
-
-    private void saveWorkspaceItem(Context context, Object item) {
-        try {
-             if (getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) != 1) return;
-        } catch(Throwable e) {}
-    }
 
     private boolean isDotsOffsetEnabled(Context context) {
         if (getIntSetting(context, KEY_DOCK_ENABLE, 0) != 1) return false;

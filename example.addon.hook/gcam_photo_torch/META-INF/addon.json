@@ -1,0 +1,49 @@
+{
+    "id": "gcam_photo_torch",
+    "entryClass": "org.pixel.customparts.addon.gcam.GcamPhotoTorchHook",
+    "name": "GCam Photo Torch",
+    "author": "LeeGarChat",
+    "description": "Adds an always-on torch option to Google Camera photo flash controls.",
+    "version": "1.1",
+    "targetPackages": [
+        "com.google.android.GoogleCamera"
+    ],
+    "enabled": true,
+    "accent": "#FFD18B",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 60,
+    "backgroundGradientSteps": [0, 55, 100],
+    "settings": [
+        {
+            "key": "gcam_photo_torch_intro",
+            "type": "info",
+            "title": "Photo flash menu",
+            "description": "Adds a persistent torch choice to rear photo mode when Google Camera builds the flash menu."
+        },
+        {
+            "key": "gcam_photo_torch_line",
+            "type": "dashed_line",
+            "height": 12,
+            "thickness": 1,
+            "color": "#66FFD18B"
+        },
+        {
+            "key": "gcam_photo_torch_main_group",
+            "type": "group",
+            "title": "Torch option",
+            "description": "Control the injected menu entry.",
+            "mode": "expandable",
+            "settings": [
+                {
+                    "key": "gcam_photo_torch_enabled",
+                    "title": "Enable photo torch",
+                    "description": "Adds an always-on torch entry to the rear photo flash menu.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "accent": "#FFD18B"
+                }
+            ]
+        }
+    ]
+}

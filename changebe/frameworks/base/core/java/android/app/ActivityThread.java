@@ -335,7 +335,9 @@ public final class ActivityThread extends ClientTransactionHandler
     // --- [PixelParts] CONSTANTS ---
     private static final java.util.Set<String> PIXEL_PARTS_DEFAULT_WHITELIST = new java.util.HashSet<>(java.util.Arrays.asList(
             "com.android.systemui",
-            "com.google.android.apps.nexuslauncher"
+            "com.google.android.apps.nexuslauncher",
+            "com.google.android.apps.pixel.launcher",
+            "com.android.launcher3"
     ));
     private static final String PIXEL_PARTS_INJECT_PREFIX = "pixel_extra_parts_inject_package_";
     // ------------------------------
@@ -8165,7 +8167,7 @@ public final class ActivityThread extends ClientTransactionHandler
                     "Exception thrown in onCreate() of " + data.instrumentationName, e);
             }
             // --- [PixelParts] INJECTION START ---
-            if (data.appInfo.packageName != null) {
+            if (data.appInfo.packageName != null && !Process.isIsolated()) {
                 boolean shouldInject = false;
                 String pkgName = data.appInfo.packageName;
 

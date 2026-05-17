@@ -37,14 +37,20 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.activities.*
+import org.pixel.customparts.services.MainActivityTileService
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
+import org.pixel.customparts.ui.addons.AddonMainEntry
+import org.pixel.customparts.ui.addons.AddonMainEntryRow
+import org.pixel.customparts.ui.addons.scanAddonMainEntries
 import org.pixel.customparts.utils.RootUtils
 import org.pixel.customparts.utils.RemoteStringsManager
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 
 class MainActivity : ComponentActivity() {
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
-            
+
             LaunchedEffect(Unit) {
                 try {
                     RemoteStringsManager.initialize(context)
@@ -88,7 +94,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme(colorScheme = colorScheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     when (rootState) {
-                        0 -> LoadingScreen() 
+                        0 -> LoadingScreen()
                         1 -> MainDashboard()
                         2 -> NoRootDialog { finishAffinity() }
                     }
@@ -130,6 +136,26 @@ fun MainDashboard() {
     val lazyListState = rememberLazyListState()
     val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
+    // Load addon main-menu entries grouped by their "group" field
+    var addonGestureEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
+    var addonSystemEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
+    var addonNetworkEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
+    var addonLauncherEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val model = scanAddonMainEntries(context)
+                addonGestureEntries  = model.entries.filter { it.group == "gesture" }
+                addonSystemEntries   = model.entries.filter { it.group == "system" || it.group.isEmpty() }
+                addonNetworkEntries  = model.entries.filter { it.group == "network" }
+                addonLauncherEntries = model.entries.filter { it.group == "launcher" }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     val showTestThings = remember {
         try {
             Settings.Global.getInt(context.contentResolver, "pixelparts_test_things", 0) == 1
@@ -140,7 +166,26 @@ fun MainDashboard() {
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentWindowInsets = WindowInsets.navigationBars, // Only respect nav bars for Scaffold layout, let content handle status bar
-        floatingActionButton = { RebootBubble() },
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.main_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                MainActivityTileService::class.java,
+                                R.string.main_title,
+                                R.drawable.ic_homepage_pixel_extra_parts
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             LargeTopAppBar(
                 scrollBehavior = scrollBehavior,
@@ -194,9 +239,9 @@ fun MainDashboard() {
                     .recordLayer(blurState)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
-                    start = 16.dp, 
-                    top = innerPadding.calculateTopPadding() + 16.dp, 
-                    end = 16.dp, 
+                    start = 16.dp,
+                    top = innerPadding.calculateTopPadding() + 16.dp,
+                    end = 16.dp,
                     bottom = innerPadding.calculateBottomPadding() + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -235,6 +280,17 @@ fun MainDashboard() {
                             iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             onClick = { context.startActivity(Intent(context, OverscrollActivity::class.java)) }
                         )
+
+                        // Addon entries for "gesture" group
+                        addonGestureEntries.forEach { entry ->
+                            HorizontalDivider()
+                            AddonMainEntryRow(
+                                entry = entry,
+                                onClick = {
+                                    AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -309,6 +365,17 @@ fun MainDashboard() {
                                 onClick = { context.startActivity(Intent(context, AddonManagerActivity::class.java)) }
                             )
                         }
+
+                        // Addon entries for "system" group
+                        addonSystemEntries.forEach { entry ->
+                            HorizontalDivider()
+                            AddonMainEntryRow(
+                                entry = entry,
+                                onClick = {
+                                    AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -322,6 +389,64 @@ fun MainDashboard() {
                             iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             onClick = { context.startActivity(Intent(context, ImsActivity::class.java)) }
                         )
+
+                        // Addon entries for "network" group
+                        addonNetworkEntries.forEach { entry ->
+                            HorizontalDivider()
+                            AddonMainEntryRow(
+                                entry = entry,
+                                onClick = {
+                                    AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Pixel Launcher Settings group — always shown, addon entries appended dynamically
+                item {
+                    SettingsGroupCard(title = dynamicStringResource(R.string.launcher_settings_title)) {
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.launcher_recents_menu_title),
+                            subtitle = dynamicStringResource(R.string.launcher_recents_menu_subtitle),
+                            icon = Icons.Rounded.ViewCarousel,
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            onClick = { context.startActivity(Intent(context, RecentsMenuActivity::class.java)) }
+                        )
+
+                        HorizontalDivider()
+
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.launcher_grid_title),
+                            subtitle = dynamicStringResource(R.string.launcher_grid_subtitle),
+                            icon = Icons.Rounded.GridView,
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = { context.startActivity(Intent(context, GridSettingsActivity::class.java)) }
+                        )
+
+                        HorizontalDivider()
+
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.launcher_search_feed_title),
+                            subtitle = dynamicStringResource(R.string.launcher_search_feed_subtitle),
+                            icon = Icons.Rounded.Search,
+                            iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            onClick = { context.startActivity(Intent(context, SearchAndFeedActivity::class.java)) }
+                        )
+
+                        // Addon entries for "launcher" group
+                        addonLauncherEntries.forEach { entry ->
+                            HorizontalDivider()
+                            AddonMainEntryRow(
+                                entry = entry,
+                                onClick = {
+                                    AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+                                }
+                            )
+                        }
                     }
                 }
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -45,17 +46,21 @@ import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.Dt2sTileService
+import org.pixel.customparts.services.Dt2wTileService
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.ModuleStatus
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.ui.launcher.Dt2sUiSection
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 
 class DoubleTapActivity : ComponentActivity() {
@@ -111,7 +116,40 @@ fun DoubleTapScreen(onBack: () -> Unit) {
 
 	Scaffold(
 		containerColor = MaterialTheme.colorScheme.surfaceContainer,
-		floatingActionButton = { RebootBubble() },
+		floatingActionButton = {
+			RebootBubble(
+				extraActions = listOf(
+					RebootBubbleMenuAction(
+						icon = Icons.Rounded.Add,
+						label = dynamicStringResource(R.string.dt2w_add_tile),
+						containerColor = MaterialTheme.colorScheme.primaryContainer,
+						contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+						onClick = {
+							TileUtils.requestAddTileService(
+								context,
+								Dt2wTileService::class.java,
+								R.string.dt2w_title,
+								R.drawable.ic_dt2w_tile
+							)
+						}
+					),
+					RebootBubbleMenuAction(
+						icon = Icons.Rounded.Add,
+						label = dynamicStringResource(R.string.dt2s_add_tile),
+						containerColor = MaterialTheme.colorScheme.secondaryContainer,
+						contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+						onClick = {
+							TileUtils.requestAddTileService(
+								context,
+								Dt2sTileService::class.java,
+								R.string.dt2s_title,
+								R.drawable.ic_dt2s_tile
+							)
+						}
+					)
+				)
+			)
+		},
 		topBar = {
 			TopAppBar(
 				title = {

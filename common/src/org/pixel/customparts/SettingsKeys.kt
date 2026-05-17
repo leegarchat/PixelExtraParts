@@ -24,6 +24,14 @@ object SettingsKeys {
     const val AUTO_HBM_AUTO_BRIGHTNESS_WAS_ENABLED = "pixelparts_auto_hbm_auto_brightness_was_enabled"
     const val AUTO_HBM_LAST_TEMPERATURE = "pixelparts_auto_hbm_last_temperature"
 
+    const val THERMAL_TILE_PROFILE_QUEUE = "pixelparts_thermal_tile_profile_queue"
+    const val THERMAL_TILE_PROFILE_QUEUE_INDEX = "pixelparts_thermal_tile_profile_queue_index"
+
+    const val LOG_SERVICE_ENABLED = "pixelparts_log_service_enabled"
+    const val LOG_SERVICE_LOGCAT_ENABLED = "pixelparts_log_service_logcat_enabled"
+    const val LOG_SERVICE_DMESG_ENABLED = "pixelparts_log_service_dmesg_enabled"
+    const val LOG_SERVICE_CRASHES_ENABLED = "pixelparts_log_service_crashes_enabled"
+
     const val APP_ICONS_ENABLED = "pixelparts_app_icons_enabled"
     const val APP_ICONS_LAUNCHER_ENABLED = "pixelparts_app_icons_launcher_enabled"
     const val APP_ICONS_SYSTEM_STRETCH_SHAPE = "pixelparts_app_icons_system_stretch_shape"
@@ -376,6 +384,14 @@ object SettingsKeys {
     /** Close transition mode ID (0=disabled, -1=custom, 10-93=built-in). */
     val ACTIVITY_CLOSE_TRANSITION: String
         get() = "activity_close_transition" + suffix
+
+    /** Last non-disabled open transition mode used by the QS tile. */
+    val ACTIVITY_OPEN_TRANSITION_LAST: String
+        get() = "activity_open_transition_last" + suffix
+
+    /** Last non-disabled close transition mode used by the QS tile. */
+    val ACTIVITY_CLOSE_TRANSITION_LAST: String
+        get() = "activity_close_transition_last" + suffix
 
     /** Package name of the custom animation theme APK. */
     val ACTIVITY_TRANSITION_CUSTOM_PACKAGE: String

@@ -113,7 +113,10 @@ import org.json.JSONTokener
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.ThermalManagerTileService
+import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
@@ -122,6 +125,7 @@ import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
@@ -208,6 +212,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
 
     var savedConfigs by remember { mutableStateOf(emptyList<SavedThermalConfig>()) }
     var profileMap by remember { mutableStateOf(ThermalProfileMap()) }
+    var tileProfileQueue by remember { mutableStateOf(ThermalProfileController.readTileProfileQueue(context)) }
     var managedApps by remember { mutableStateOf(emptyList<ThermalManagedApp>()) }
     var appsLoading by remember { mutableStateOf(true) }
     var showSystemApps by rememberSaveable { mutableStateOf(true) }
@@ -219,6 +224,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
             withContext(Dispatchers.IO) { ThermalProfileController.seedVendorConfigs() }
             savedConfigs = withContext(Dispatchers.IO) { store.listSavedConfigs() }
             profileMap = withContext(Dispatchers.IO) { ThermalProfileController.readProfileMap() }
+            tileProfileQueue = withContext(Dispatchers.IO) { ThermalProfileController.readTileProfileQueue(context) }
         }
     }
 
@@ -230,6 +236,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
         withContext(Dispatchers.IO) { ThermalProfileController.seedVendorConfigs() }
         savedConfigs = withContext(Dispatchers.IO) { store.listSavedConfigs() }
         profileMap = withContext(Dispatchers.IO) { ThermalProfileController.readProfileMap() }
+        tileProfileQueue = withContext(Dispatchers.IO) { ThermalProfileController.readTileProfileQueue(context) }
         managedApps = withContext(Dispatchers.IO) { loadThermalManagedApps(context) }
         appsLoading = false
     }
@@ -263,10 +270,12 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
         ConfigPickerDialog(
             title = when (target) {
                 ProfilePickerTarget.Global -> dynamicStringResource(R.string.thermal_manager_global_profile)
+                ProfilePickerTarget.TileQueue -> dynamicStringResource(R.string.thermal_manager_tile_queue_add)
                 is ProfilePickerTarget.Package -> target.app.label
             },
             selectedConfig = when (target) {
                 ProfilePickerTarget.Global -> profileMap.globalConfig.ifBlank { ThermalProfileController.STOCK_CONFIG_ID }
+                ProfilePickerTarget.TileQueue -> profileMap.globalConfig.ifBlank { ThermalProfileController.STOCK_CONFIG_ID }
                 is ProfilePickerTarget.Package -> profileMap.packageConfigs[target.app.packageName].orEmpty()
             },
             includeFollowGlobal = target is ProfilePickerTarget.Package,
@@ -276,6 +285,9 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                 when (target) {
                     ProfilePickerTarget.Global -> {
                         ThermalProfileController.updateGlobalConfig(context, choice.id)
+                    }
+                    ProfilePickerTarget.TileQueue -> {
+                        tileProfileQueue = ThermalProfileController.addTileProfileToQueue(context, choice.id)
                     }
                     is ProfilePickerTarget.Package -> {
                         ThermalProfileController.updatePackageConfig(context, target.app.packageName, choice.id)
@@ -290,6 +302,26 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentWindowInsets = WindowInsets.navigationBars,
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.thermal_manager_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                ThermalManagerTileService::class.java,
+                                R.string.thermal_manager_title,
+                                R.drawable.ic_thermal_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -338,6 +370,23 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                                 Intent(context, ThermalConfigEditorActivity::class.java)
                                     .putExtra(EXTRA_OPEN_CREATE_PROFILE, true)
                             )
+                        }
+                    )
+                }
+
+                item {
+                    ThermalTileQueueCard(
+                        queue = tileProfileQueue,
+                        choicesById = choicesById,
+                        onAdd = { pickerTarget = ProfilePickerTarget.TileQueue },
+                        onMoveUp = { index ->
+                            tileProfileQueue = ThermalProfileController.moveTileProfileQueueItem(context, index, index - 1)
+                        },
+                        onMoveDown = { index ->
+                            tileProfileQueue = ThermalProfileController.moveTileProfileQueueItem(context, index, index + 1)
+                        },
+                        onRemove = { index ->
+                            tileProfileQueue = ThermalProfileController.removeTileProfileFromQueue(context, index)
                         }
                     )
                 }
@@ -1142,6 +1191,150 @@ private fun GlobalProfileCard(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 8.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun ThermalTileQueueCard(
+    queue: List<String>,
+    choicesById: Map<String, ThermalConfigChoice>,
+    onAdd: () -> Unit,
+    onMoveUp: (Int) -> Unit,
+    onMoveDown: (Int) -> Unit,
+    onRemove: (Int) -> Unit
+) {
+    SettingsGroupCard(title = dynamicStringResource(R.string.thermal_manager_tile_queue)) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = dynamicStringResource(
+                        R.string.thermal_manager_tile_queue_count,
+                        queue.size,
+                        ThermalProfileController.MAX_TILE_QUEUE_SIZE
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                Button(
+                    onClick = onAdd,
+                    enabled = queue.size < ThermalProfileController.MAX_TILE_QUEUE_SIZE,
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = dynamicStringResource(R.string.thermal_manager_tile_queue_add),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            if (queue.isEmpty()) {
+                Text(
+                    text = dynamicStringResource(R.string.thermal_manager_tile_queue_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                )
+            } else {
+                queue.forEachIndexed { index, configId ->
+                    ThermalTileQueueRow(
+                        index = index,
+                        choice = choiceForConfig(configId, choicesById, includeFollowGlobal = false),
+                        isFirst = index == 0,
+                        isLast = index == queue.lastIndex,
+                        onMoveUp = { onMoveUp(index) },
+                        onMoveDown = { onMoveDown(index) },
+                        onRemove = { onRemove(index) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThermalTileQueueRow(
+    index: Int,
+    choice: ThermalConfigChoice,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onRemove: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, top = 10.dp, end = 6.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = (index + 1).toString(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.width(28.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = profileChoiceTitle(choice),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                ProfileChoiceDetails(choice = choice, showPath = false)
+            }
+            IconButton(
+                onClick = onMoveUp,
+                enabled = !isFirst,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.ExpandLess,
+                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_move_up),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(
+                onClick = onMoveDown,
+                enabled = !isLast,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.ExpandMore,
+                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_move_down),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_remove),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
         }
     }
 }
@@ -2519,6 +2712,7 @@ private data class ThermalParamTreeNode(
 
 private sealed interface ProfilePickerTarget {
     object Global : ProfilePickerTarget
+    object TileQueue : ProfilePickerTarget
     data class Package(val app: ThermalManagedApp) : ProfilePickerTarget
 }
 

@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.service.quicksettings.TileService
 import android.widget.Toast
 import org.pixel.customparts.R
 
@@ -21,12 +22,18 @@ object TileUtils {
             return
         }
 
+        val componentName = ComponentName(context, tileServiceClass)
         statusBarManager.requestAddTileService(
-            ComponentName(context, tileServiceClass),
+            componentName,
             context.getString(labelResId),
             Icon.createWithResource(context, iconResId),
             context.mainExecutor
         ) { result ->
+            if (result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED ||
+                result == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) {
+                requestTileRefresh(context, componentName)
+            }
+
             val message = when (result) {
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED -> R.string.tile_added
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED -> R.string.tile_already_added
@@ -34,6 +41,16 @@ object TileUtils {
                 else -> R.string.tile_request_unavailable
             }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun requestTileRefresh(context: Context, tileServiceClass: Class<*>) {
+        requestTileRefresh(context, ComponentName(context, tileServiceClass))
+    }
+
+    private fun requestTileRefresh(context: Context, componentName: ComponentName) {
+        runCatching {
+            TileService.requestListeningState(context, componentName)
         }
     }
 }
