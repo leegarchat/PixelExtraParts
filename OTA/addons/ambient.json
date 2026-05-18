@@ -1,0 +1,6 @@
+{
+    "version": "1.2.0",
+    "downloadUrl": "https://example.com/my_addon.jar",
+    "changelog": "Fixed hooks and added settings",
+    "info": "Optional extra text"
+}
