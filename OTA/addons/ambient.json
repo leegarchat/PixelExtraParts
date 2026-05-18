@@ -1,5 +1,5 @@
 {
-    "version": "1.4.0",
+    "version": "1.5.0",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/testing/example.addon.hook/ambient_extend_hook/out/ambient_extend_hook.jar",
     "changelog": "Fixed hooks and added settings",
     "info": "Optional extra text"
