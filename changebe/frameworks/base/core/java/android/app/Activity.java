@@ -10285,6 +10285,8 @@ public class Activity extends ContextThemeWrapper
         private static final String ACTION_REVIEW = "android.provider.action.REVIEW";
         private static final String ACTION_REVIEW_SECURE =
             "android.provider.action.REVIEW_SECURE";
+        private static final String EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION =
+            "org.pixel.customparts.extra.USE_SYSTEM_ACTIVITY_ANIMATION";
 
         // Mode constants
         static final int MODE_DISABLED     = 0;
@@ -10446,8 +10448,13 @@ public class Activity extends ContextThemeWrapper
 
         private static boolean shouldSkipOpenTransition(Intent intent) {
             if (intent == null) return false;
+            if (intent.getBooleanExtra(EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION, false)) return true;
             final String action = intent.getAction();
             return ACTION_REVIEW.equals(action) || ACTION_REVIEW_SECURE.equals(action);
+        }
+
+        private static boolean shouldSkipCloseTransition(Activity activity) {
+            return activity != null && shouldSkipOpenTransition(activity.getIntent());
         }
 
         // ── Resource resolution ─────────────────────────────────────
@@ -10649,6 +10656,7 @@ public class Activity extends ContextThemeWrapper
          */
         static void applyCloseTransition(Activity activity) {
             try {
+                if (shouldSkipCloseTransition(activity)) return;
                 int closeMode = getCloseMode(activity);
                 if (closeMode == MODE_DISABLED) return;
 

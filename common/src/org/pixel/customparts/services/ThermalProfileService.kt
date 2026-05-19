@@ -47,17 +47,18 @@ class ThermalProfileService : Service() {
         val configId = packageName
             ?.let { profileMap.packageConfigs[it] }
             ?.takeIf { it.isNotBlank() }
-            ?: profileMap.globalConfig
+            ?: profileMap.globalConfig.takeIf { it.isNotBlank() }
             ?: ThermalProfileController.STOCK_CONFIG_ID
-        val propertyValue = ThermalProfileController.resolvePropertyValue(configId)
+        val configToken = ThermalProfileController.configStateToken(configId)
+        val configAvailable = ThermalProfileController.isConfigAvailable(configId)
 
-        if (packageName == lastPackageName && propertyValue == lastAppliedConfig) {
+        if (packageName == lastPackageName && configToken == lastAppliedConfig && configAvailable) {
             return
         }
 
         if (ThermalProfileController.applyConfig(this, configId)) {
             lastPackageName = packageName
-            lastAppliedConfig = propertyValue
+            lastAppliedConfig = configToken
 
             if (profileMap.packageConfigs.isEmpty() && ThermalProfileController.isConfigAvailable(profileMap.globalConfig)) {
                 stopSelf()

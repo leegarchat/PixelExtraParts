@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -57,7 +58,9 @@ fun ExpandableWarningCard(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
     contentColor: Color = MaterialTheme.colorScheme.onErrorContainer,
-    dividerAlpha: Float = 0.2f
+    dividerAlpha: Float = 0.2f,
+    titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -88,7 +91,7 @@ fun ExpandableWarningCard(
                 Icon(Icons.Rounded.Warning, null, tint = contentColor)
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = titleStyle,
                     color = contentColor,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -106,7 +109,7 @@ fun ExpandableWarningCard(
                 Column {
                     Spacer(Modifier.height(12.dp))
                     HorizontalDivider(color = contentColor.copy(alpha = dividerAlpha), modifier = Modifier.padding(bottom = 12.dp))
-                    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = contentColor)
+                    Text(text = text, style = textStyle, color = contentColor)
                 }
             }
         }
@@ -429,6 +432,7 @@ fun RadioSelectionGroup(
 fun SettingsGroupCard(
     title: String,
     enabled: Boolean = true,
+    titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
@@ -439,7 +443,7 @@ fun SettingsGroupCard(
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = titleStyle,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).alpha(if (enabled) 1f else 0.5f)

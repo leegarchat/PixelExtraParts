@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import org.json.JSONArray
 import org.json.JSONObject
@@ -27,6 +28,7 @@ object ThermalProfileController {
     private const val STOCK_CONFIG_VALUE = "thermal_info_config.json"
     private const val PROP_CONFIG_REQUEST = "sys.pixelparts.thermal_config_request"
     private const val PROP_CONFIG_FILE_REQUEST = "sys.pixelparts.thermal_config_file_request"
+    private const val PROP_CONFIG_FILE_REQUEST_SERIAL = "sys.pixelparts.thermal_config_file_request_serial"
     private const val PROP_VENDOR_THERMAL_CONFIG = "vendor.thermal.config"
     private const val MIRROR_CLEANUP_DELAY_MS = 5000L
 
@@ -81,15 +83,13 @@ object ThermalProfileController {
         if (sources.isEmpty()) return emptySet()
 
         val metadata = readProfileMetadataMap().toMutableMap()
-        removeSeededSystemPresets(targetDir, metadata)
+        removeSeededSystemPresets(targetDir, metadata, sources.keys)
         val copiedNames = mutableSetOf<String>()
 
         sources.forEach { (targetName, source) ->
             val target = File(targetDir, targetName)
             runCatching {
-                source.copyTo(target, overwrite = true)
-                target.setReadable(true, false)
-                target.setWritable(true, true)
+                copyConfigAtomically(source, target)
                 metadata[targetName] = ThermalProfileMetadata(
                     id = targetName,
                     displayName = vendorPresetDisplayName(source.name),
@@ -178,16 +178,17 @@ object ThermalProfileController {
             .put("packages", packages)
 
         val file = mapFile()
-        file.writeText(root.toString(4))
+        writeTextAtomically(file, root.toString(4))
         file.setReadable(true, false)
         file.setWritable(true, true)
     }
 
-    fun updateGlobalConfig(context: Context, configId: String) {
+    fun updateGlobalConfig(context: Context, configId: String): Boolean {
         val profileMap = readProfileMap().copy(globalConfig = normalizeGlobalConfigId(configId))
         writeProfileMap(profileMap)
-        applyConfig(context, profileMap.globalConfig)
+        val applied = applyConfig(context, profileMap.globalConfig)
         syncService(context)
+        return applied
     }
 
     fun readTileProfileQueue(context: Context): List<String> {
@@ -298,16 +299,36 @@ object ThermalProfileController {
     fun isConfigAvailable(configId: String): Boolean {
         val normalized = normalizeConfigId(configId)
         if (normalized.isBlank() || normalized == STOCK_CONFIG_ID) return true
-        return File(ensureConfigDir(), normalized).exists()
+        return configFileFor(normalized).isFile
+    }
+
+    fun configStateToken(configId: String): String {
+        val normalized = normalizeConfigId(configId)
+        if (normalized.isBlank() || normalized == STOCK_CONFIG_ID) return STOCK_CONFIG_VALUE
+
+        val file = configFileFor(normalized)
+        return if (file.isFile) {
+            "${file.absolutePath}:${file.length()}:${file.lastModified()}"
+        } else {
+            "missing:${if (normalized.startsWith('/')) normalized else file.absolutePath}"
+        }
     }
 
     fun applyConfig(context: Context, configId: String): Boolean {
+        val normalized = normalizeConfigId(configId)
+        if (normalized.isNotBlank() && normalized != STOCK_CONFIG_ID && !isConfigAvailable(normalized)) {
+            return false
+        }
+
         val propertyValue = resolvePropertyValue(configId)
         val activeMirrorName: String?
         val applied = if (propertyValue.startsWith('/')) {
-            val fileName = File(propertyValue).name.takeIf { it.isNotBlank() } ?: return false
+            val sourceFile = File(propertyValue)
+            if (!sourceFile.isFile || sourceFile.length() <= 0L) return false
+            val fileName = sourceFile.name.takeIf { it.isNotBlank() } ?: return false
             activeMirrorName = fileName
-            setSystemProperty(PROP_CONFIG_FILE_REQUEST, fileName)
+            setSystemProperty(PROP_CONFIG_FILE_REQUEST, fileName) &&
+                setSystemProperty(PROP_CONFIG_FILE_REQUEST_SERIAL, SystemClock.elapsedRealtimeNanos().toString())
         } else {
             activeMirrorName = null
             setSystemProperty(PROP_CONFIG_REQUEST, propertyValue)
@@ -443,12 +464,16 @@ object ThermalProfileController {
             .put("profiles", profiles)
 
         val file = metadataFile()
-        file.writeText(root.toString(4))
+        writeTextAtomically(file, root.toString(4))
         file.setReadable(true, false)
         file.setWritable(true, true)
     }
 
-    private fun removeSeededSystemPresets(targetDir: File, metadata: MutableMap<String, ThermalProfileMetadata>) {
+    private fun removeSeededSystemPresets(
+        targetDir: File,
+        metadata: MutableMap<String, ThermalProfileMetadata>,
+        currentPresetNames: Set<String>
+    ) {
         val systemNames = metadata.values
             .filter { it.source == PROFILE_SOURCE_SYSTEM }
             .map { it.id }
@@ -457,9 +482,69 @@ object ThermalProfileController {
         targetDir.listFiles { file -> file.isFile && isGeneratedPresetName(file.name) }
             ?.forEach { systemNames += it.name }
 
-        systemNames.forEach { name ->
-            File(targetDir, name).delete()
-            metadata.remove(name)
+        systemNames
+            .filterNot { it in currentPresetNames }
+            .forEach { name ->
+                File(targetDir, name).delete()
+                metadata.remove(name)
+            }
+    }
+
+    private fun writeTextAtomically(file: File, text: String) {
+        val temp = File(file.parentFile, ".${file.name}.${SystemClock.elapsedRealtimeNanos()}.tmp")
+        temp.writeText(text)
+        temp.setReadable(true, false)
+        temp.setWritable(true, true)
+        if (!temp.renameTo(file)) {
+            temp.delete()
+            error("Unable to replace ${file.absolutePath}")
+        }
+    }
+
+    private fun copyConfigAtomically(source: File, target: File) {
+        if (target.isFile && filesHaveSameBytes(source, target)) {
+            target.setReadable(true, false)
+            target.setWritable(true, true)
+            return
+        }
+
+        val temp = File(target.parentFile, ".${target.name}.${SystemClock.elapsedRealtimeNanos()}.tmp")
+        source.copyTo(temp, overwrite = true)
+        temp.setReadable(true, false)
+        temp.setWritable(true, true)
+        if (!temp.renameTo(target)) {
+            temp.delete()
+            error("Unable to replace ${target.absolutePath}")
+        }
+        target.setReadable(true, false)
+        target.setWritable(true, true)
+    }
+
+    private fun filesHaveSameBytes(first: File, second: File): Boolean {
+        if (!first.isFile || !second.isFile || first.length() != second.length()) return false
+
+        first.inputStream().use { firstInput ->
+            second.inputStream().use { secondInput ->
+                val firstBuffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                val secondBuffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val firstRead = firstInput.read(firstBuffer)
+                    val secondRead = secondInput.read(secondBuffer)
+                    if (firstRead != secondRead) return false
+                    if (firstRead < 0) return true
+                    for (index in 0 until firstRead) {
+                        if (firstBuffer[index] != secondBuffer[index]) return false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun configFileFor(normalizedConfigId: String): File {
+        return if (normalizedConfigId.startsWith('/')) {
+            File(normalizedConfigId)
+        } else {
+            File(ensureConfigDir(), normalizedConfigId)
         }
     }
 

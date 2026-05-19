@@ -9,20 +9,14 @@ import android.provider.Settings
 import android.service.quicksettings.TileService
 import android.util.Log
 import org.pixel.customparts.MainActivity
-import org.pixel.customparts.services.ActivityTransitionTileService
 import org.pixel.customparts.services.AutoHbmTileService
-import org.pixel.customparts.services.ChargingInfoTileService
-import org.pixel.customparts.services.Dt2sTileService
-import org.pixel.customparts.services.Dt2wTileService
-import org.pixel.customparts.services.GestureBarTileService
 import org.pixel.customparts.services.MainActivityTileService
-import org.pixel.customparts.services.MagnifierTileService
-import org.pixel.customparts.services.OverscrollTileService
 import org.pixel.customparts.services.PixelPartsLogTileService
 import org.pixel.customparts.services.SaturationTileService
-import org.pixel.customparts.services.ThermalManagerTileService
 
 class TileHandlerActivity : Activity() {
+    private val dynamicAddonTileRange = 1..40
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -39,18 +33,32 @@ class TileHandlerActivity : Activity() {
 
     private fun resolvePreferencesIntent(source: Intent): Intent {
         val tile = source.getParcelableExtra(Intent.EXTRA_COMPONENT_NAME) as? ComponentName
-        val target = when (tile?.className) {
+
+        // Handle dynamic addon tiles (DynamicAddonTile01..40)
+        val className = tile?.className ?: ""
+        if (className.startsWith("org.pixel.customparts.services.DynamicAddonTile")) {
+            val slotStr = className.removePrefix("org.pixel.customparts.services.DynamicAddonTile")
+            val slot = slotStr.toIntOrNull() ?: 0
+            if (slot in dynamicAddonTileRange) {
+                val prefix = "pixel_addon_tile_${slot}_"
+                val addonId = Settings.Global.getString(contentResolver, "${prefix}addon_id") ?: ""
+                val pageId = Settings.Global.getString(contentResolver, "${prefix}page_id") ?: ""
+                if (addonId.isNotBlank()) {
+                    return Intent(this, AddonPageActivity::class.java).apply {
+                        putExtra(AddonPageActivity.EXTRA_ADDON_ID, addonId)
+                        if (pageId.isNotBlank()) putExtra(AddonPageActivity.EXTRA_PAGE_ID, pageId)
+                        putExtra(AddonPageActivity.EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION, true)
+                        putExtra(AddonPageActivity.EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, true)
+                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                }
+            }
+        }
+
+        val target = when (className) {
             SaturationTileService::class.java.name -> Intent(this, SaturationActivity::class.java)
             AutoHbmTileService::class.java.name -> Intent(this, AutoHbmActivity::class.java)
-            Dt2wTileService::class.java.name,
-            Dt2sTileService::class.java.name -> Intent(this, DoubleTapActivity::class.java)
-            OverscrollTileService::class.java.name -> Intent(this, OverscrollActivity::class.java)
             MainActivityTileService::class.java.name -> Intent(this, MainActivity::class.java)
-            GestureBarTileService::class.java.name -> Intent(this, GestureBarSettingsActivity::class.java)
-            ChargingInfoTileService::class.java.name -> Intent(this, LockscreenSettingsActivity::class.java)
-            MagnifierTileService::class.java.name -> Intent(this, MagnifierSettingsActivity::class.java)
-            ActivityTransitionTileService::class.java.name -> Intent(this, ActivityTransitionActivity::class.java)
-            ThermalManagerTileService::class.java.name -> Intent(this, ThermalConfigManagerActivity::class.java)
             PixelPartsLogTileService::class.java.name -> Intent(this, SystemUISettingsActivity::class.java)
             else -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.fromParts("package", tile?.packageName ?: packageName, null)

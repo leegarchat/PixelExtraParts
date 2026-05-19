@@ -1,0 +1,1633 @@
+{
+    "id": "systemui_hooks",
+    "name": "SystemUI Hooks",
+    "author": "PixelExtraParts",
+    "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
+    "version": "1.0.0",
+    "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
+    "enabled": true,
+    "targetPackages": [
+        "com.android.systemui"
+    ],
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 64,
+    "backgroundGradientSteps": [
+        0,
+        42,
+        82,
+        100
+    ],
+    "backgroundBlur": true,
+    "backgroundBlurRadius": 14,
+    "backgroundScope": "header",
+    "settings": [],
+    "main": [
+        {
+            "id": "main/systemui/lockscreen",
+            "title": "Lock screen",
+            "subtitle": "Double tap, charging line and quick tiles",
+            "icon": "Security",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#A9C7FF",
+            "iconBackground": "#243047",
+            "targetActivity": "SystemUISettingsActivity",
+            "priority": 500,
+            "settings": [
+                {
+                    "key": "demo_divider_solid",
+                    "type": "divider",
+                    "thickness": 6
+                },
+                {
+                    "key": "systemui_lockscreen_dt2w_group",
+                    "type": "group",
+                    "title": "Double tap to wake",
+                    "description": "Wake-from-doze settings.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "demo_divider_dashed",
+                            "type": "dashed_line",
+                            "thickness": 1
+                        },
+                        {
+                            "key": "doze_double_tap_hook_pine",
+                            "title": "Enable double tap",
+                            "description": "SystemUI will handle the second tap on the lock screen.",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "doze_double_tap_timeout_pine",
+                            "title": "Second tap timeout",
+                            "description": "Wait window for the second tap.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 400,
+                            "min": 300,
+                            "max": 1000,
+                            "step": 50,
+                            "unit": "ms",
+                            "enabledIfAll": [
+                                "doze_double_tap_hook_pine"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "demo_divider_solid",
+                    "type": "divider",
+                    "thickness": 6
+                },
+                {
+                    "key": "systemui_lockscreen_battery_group",
+                    "type": "group",
+                    "title": "Charging info",
+                    "description": "Power status line on the lock screen.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "demo_divider_dashed",
+                            "type": "dashed_line",
+                            "thickness": 1
+                        },
+                        {
+                            "key": "pixelparts_battery_info_enable_pine",
+                            "title": "Show charging data",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "pixelparts_battery_info_refresh_interval_ms_pine",
+                            "title": "Refresh interval",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 1000,
+                            "min": 100,
+                            "max": 5000,
+                            "step": 100,
+                            "unit": "ms",
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_average_mode_pine",
+                            "title": "Average readings",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_standard_string_pine",
+                            "title": "Standard charging string",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_custom_symbol_pine",
+                            "title": "Custom charging symbol",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_custom_symbol_pine",
+                            "title": "Charging symbol",
+                            "type": "string",
+                            "provider": "global",
+                            "default": "⚡",
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine",
+                                "pixelparts_battery_info_show_custom_symbol_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_wattage_pine",
+                            "title": "Power",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_voltage_pine",
+                            "title": "Voltage",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_current_pine",
+                            "title": "Current",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_temp_pine",
+                            "title": "Temperature",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_battery_info_show_percent_pine",
+                            "title": "Percent",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "enabledIfAll": [
+                                "pixelparts_battery_info_enable_pine"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "demo_divider_solid",
+                    "type": "divider",
+                    "thickness": 6
+                },
+                {
+                    "key": "systemui_lockscreen_tiles_group",
+                    "type": "group",
+                    "title": "Quick Settings tiles",
+                    "description": "Dynamic QS tiles for lock screen features.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "demo_divider_dashed",
+                            "type": "dashed_line",
+                            "thickness": 1
+                        },
+                        {
+                            "key": "systemui_dt2w_tile",
+                            "title": "Double-tap tile",
+                            "description": "Off",
+                            "type": "tile",
+                            "unit": "Включено",
+                            "tileConfigurable": true,
+                            "targets": [
+                                {
+                                    "key": "doze_double_tap_hook_pine",
+                                    "label": "Double tap",
+                                    "mode": "toggle",
+                                    "pageId": "lockscreen"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_charging_info_tile",
+                            "title": "Charging info tile",
+                            "description": "Off",
+                            "type": "tile",
+                            "unit": "Включено",
+                            "tileConfigurable": true,
+                            "targets": [
+                                {
+                                    "key": "pixelparts_battery_info_enable_pine",
+                                    "label": "Charging info",
+                                    "mode": "toggle",
+                                    "pageId": "lockscreen"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "main/systemui/shade",
+            "title": "Shade and QS",
+            "subtitle": "Media player, shade surface and scrim",
+            "icon": "Tune",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#8BDDED",
+            "iconBackground": "#263A40",
+            "targetActivity": "SystemUISettingsActivity",
+            "priority": 490,
+            "settings": [
+                {
+                    "key": "systemui_media_group",
+                    "type": "group",
+                    "title": "QS media player",
+                    "description": "Media player visibility, opacity and compact layout.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "qs_player_alpha_pine",
+                            "title": "Background opacity",
+                            "type": "float",
+                            "provider": "global",
+                            "default": 1.0,
+                            "min": 0.0,
+                            "max": 1.0,
+                            "step": 0.05
+                        },
+                        {
+                            "key": "qs_compact_player_pine",
+                            "title": "Compact mode",
+                            "type": "select",
+                            "provider": "global",
+                            "default": "0",
+                            "options": [
+                                {
+                                    "value": "0",
+                                    "label": "Off"
+                                },
+                                {
+                                    "value": "1",
+                                    "label": "Compact"
+                                },
+                                {
+                                    "value": "2",
+                                    "label": "In header"
+                                },
+                                {
+                                    "value": "3",
+                                    "label": "Mini"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "qs_player_hide_expand_pine",
+                            "title": "Hide in QS",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "qs_player_hide_notify_pine",
+                            "title": "Hide in notifications",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "qs_player_hide_lockscreen_pine",
+                            "title": "Hide on lock screen",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        }
+                    ]
+                },
+                {
+                    "key": "systemui_shade_surface_group",
+                    "type": "group",
+                    "title": "Shade surface",
+                    "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "shade_blur_intensity_pine",
+                            "title": "Blur intensity",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 100,
+                            "min": 0,
+                            "max": 400,
+                            "step": 10,
+                            "unit": "%"
+                        },
+                        {
+                            "key": "shade_zoom_intensity_pine",
+                            "title": "Zoom intensity",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 100,
+                            "min": -200,
+                            "max": 400,
+                            "step": 10,
+                            "unit": "%"
+                        },
+                        {
+                            "key": "shade_disable_scale_threshold_pine",
+                            "title": "Scale-disable threshold",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 40,
+                            "min": 0,
+                            "max": 400,
+                            "step": 10,
+                            "unit": "%"
+                        }
+                    ]
+                },
+                {
+                    "key": "systemui_shade_scrim_group",
+                    "type": "group",
+                    "title": "Scrim",
+                    "description": "Opacity and tint for notification/main scrim.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "shade_notif_scrim_alpha_pine",
+                            "title": "Notification scrim alpha",
+                            "description": "-1 restores the system value.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": -1,
+                            "min": -1,
+                            "max": 100,
+                            "step": 1,
+                            "unit": "%"
+                        },
+                        {
+                            "key": "shade_main_scrim_alpha_pine",
+                            "title": "Main scrim alpha",
+                            "description": "-1 restores the system value.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": -1,
+                            "min": -1,
+                            "max": 100,
+                            "step": 1,
+                            "unit": "%"
+                        },
+                        {
+                            "key": "shade_notif_scrim_tint_enabled_pine",
+                            "title": "Tint notification scrim",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "shade_notif_scrim_tint_pine",
+                            "title": "Notification scrim color",
+                            "type": "color",
+                            "provider": "global",
+                            "default": "0",
+                            "format": "int",
+                            "alpha": true,
+                            "enabledIfAll": [
+                                "shade_notif_scrim_tint_enabled_pine"
+                            ]
+                        },
+                        {
+                            "key": "shade_main_scrim_tint_enabled_pine",
+                            "title": "Tint main scrim",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "shade_main_scrim_tint_pine",
+                            "title": "Main scrim color",
+                            "type": "color",
+                            "provider": "global",
+                            "default": "0",
+                            "format": "int",
+                            "alpha": true,
+                            "enabledIfAll": [
+                                "shade_main_scrim_tint_enabled_pine"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "main/systemui/notification-icons",
+            "title": "Notification icons",
+            "subtitle": "Status bar and AOD color mode",
+            "icon": "Notifications",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#FFB4CA",
+            "iconBackground": "#442C3A",
+            "targetActivity": "SystemUISettingsActivity",
+            "priority": 480,
+            "settings": [
+                {
+                    "key": "systemui_status_bar_icons_group",
+                    "type": "group",
+                    "title": "Status bar",
+                    "description": "App icons and monochrome mode in the status bar.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "status_bar_use_app_icons_pine",
+                            "title": "Use app icons",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "status_bar_monochrome_notification_icons_pine",
+                            "title": "Monochrome icons",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "enabledIfAll": [
+                                "status_bar_use_app_icons_pine"
+                            ],
+                            "forceValueWhenDisabled": "0"
+                        }
+                    ]
+                },
+                {
+                    "key": "systemui_aod_icons_group",
+                    "type": "group",
+                    "title": "AOD",
+                    "description": "Colored app icons on always-on display.",
+                    "mode": "inline",
+                    "settings": [
+                        {
+                            "key": "aod_use_app_icons_pine",
+                            "title": "Use app icons",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "aod_monochrome_notification_icons_pine",
+                            "title": "Monochrome icons",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "enabledIfAll": [
+                                "aod_use_app_icons_pine"
+                            ],
+                            "forceValueWhenDisabled": "0"
+                        },
+                        {
+                            "key": "aod_full_color_notification_icons_pine",
+                            "title": "Legacy full color mode",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "Хуки SystemUI",
+            "author": "PixelExtraParts",
+            "description": "Pine-хуки SystemUI и сгенерированные настройки для PixelExtraParts.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/systemui/lockscreen",
+                    "title": "Экран блокировки",
+                    "subtitle": "Двойной тап, зарядная строка и быстрые плитки",
+                    "settings": [
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_dt2w_group",
+                            "title": "Двойной тап для пробуждения",
+                            "description": "Настройки пробуждения экрана из doze.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "doze_double_tap_hook_pine",
+                                    "title": "Включить двойной тап",
+                                    "description": "SystemUI будет обрабатывать второе касание по экрану блокировки."
+                                },
+                                {
+                                    "key": "doze_double_tap_timeout_pine",
+                                    "title": "Таймаут второго тапа",
+                                    "description": "Окно ожидания второго касания."
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_battery_group",
+                            "title": "Информация о зарядке",
+                            "description": "Строка состояния питания на экране блокировки.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_enable_pine",
+                                    "title": "Показывать данные зарядки"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_refresh_interval_ms_pine",
+                                    "title": "Интервал обновления"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_average_mode_pine",
+                                    "title": "Усреднять показания"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_standard_string_pine",
+                                    "title": "Стандартная строка зарядки"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_custom_symbol_pine",
+                                    "title": "Свой символ зарядки"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_custom_symbol_pine",
+                                    "title": "Символ зарядки"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_wattage_pine",
+                                    "title": "Мощность"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_voltage_pine",
+                                    "title": "Напряжение"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_current_pine",
+                                    "title": "Ток"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_temp_pine",
+                                    "title": "Температура"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_percent_pine",
+                                    "title": "Процент"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_tiles_group",
+                            "title": "Быстрые плитки",
+                            "description": "Динамические QS tiles для функций экрана блокировки.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "systemui_dt2w_tile",
+                                    "title": "Плитка двойного тапа",
+                                    "description": "Выключено",
+                                    "targets": [
+                                        {
+                                            "key": "doze_double_tap_hook_pine",
+                                            "label": "Двойной тап"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "systemui_charging_info_tile",
+                                    "title": "Плитка зарядной информации",
+                                    "description": "Выключено",
+                                    "targets": [
+                                        {
+                                            "key": "pixelparts_battery_info_enable_pine",
+                                            "label": "Информация о зарядке"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/shade",
+                    "title": "Шторка и QS",
+                    "subtitle": "Медиаплеер, поверхность шторки и scrim",
+                    "settings": [
+                        {
+                            "key": "systemui_media_group",
+                            "title": "Медиаплеер QS",
+                            "description": "Видимость, прозрачность и компактное расположение медиаплеера.",
+                            "settings": [
+                                {
+                                    "key": "qs_player_alpha_pine",
+                                    "title": "Прозрачность фона"
+                                },
+                                {
+                                    "key": "qs_compact_player_pine",
+                                    "title": "Компактный режим",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Выключено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Компактный"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "В заголовке"
+                                        },
+                                        {
+                                            "value": "3",
+                                            "label": "Мини"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "qs_player_hide_expand_pine",
+                                    "title": "Скрывать в QS"
+                                },
+                                {
+                                    "key": "qs_player_hide_notify_pine",
+                                    "title": "Скрывать в уведомлениях"
+                                },
+                                {
+                                    "key": "qs_player_hide_lockscreen_pine",
+                                    "title": "Скрывать на экране блокировки"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_surface_group",
+                            "title": "Поверхность шторки",
+                            "description": "Blur, zoom и порог отключения scale при раскрытии шторки.",
+                            "settings": [
+                                {
+                                    "key": "shade_blur_intensity_pine",
+                                    "title": "Интенсивность blur"
+                                },
+                                {
+                                    "key": "shade_zoom_intensity_pine",
+                                    "title": "Интенсивность zoom"
+                                },
+                                {
+                                    "key": "shade_disable_scale_threshold_pine",
+                                    "title": "Порог отключения scale"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_scrim_group",
+                            "title": "Scrim",
+                            "description": "Прозрачность и tint для notification/main scrim.",
+                            "settings": [
+                                {
+                                    "key": "shade_notif_scrim_alpha_pine",
+                                    "title": "Notification scrim alpha",
+                                    "description": "-1 возвращает системное значение."
+                                },
+                                {
+                                    "key": "shade_main_scrim_alpha_pine",
+                                    "title": "Main scrim alpha",
+                                    "description": "-1 возвращает системное значение."
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_enabled_pine",
+                                    "title": "Tint notification scrim"
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_pine",
+                                    "title": "Цвет notification scrim"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_enabled_pine",
+                                    "title": "Tint main scrim"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_pine",
+                                    "title": "Цвет main scrim"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/notification-icons",
+                    "title": "Иконки уведомлений",
+                    "subtitle": "Status bar и AOD color mode",
+                    "settings": [
+                        {
+                            "key": "systemui_status_bar_icons_group",
+                            "title": "Status bar",
+                            "description": "Иконки приложений и монохромный режим в статус-баре.",
+                            "settings": [
+                                {
+                                    "key": "status_bar_use_app_icons_pine",
+                                    "title": "Использовать иконки приложений"
+                                },
+                                {
+                                    "key": "status_bar_monochrome_notification_icons_pine",
+                                    "title": "Монохромные иконки"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_aod_icons_group",
+                            "title": "AOD",
+                            "description": "Цветные иконки приложений на always-on display.",
+                            "settings": [
+                                {
+                                    "key": "aod_use_app_icons_pine",
+                                    "title": "Использовать иконки приложений"
+                                },
+                                {
+                                    "key": "aod_monochrome_notification_icons_pine",
+                                    "title": "Монохромные иконки"
+                                },
+                                {
+                                    "key": "aod_full_color_notification_icons_pine",
+                                    "title": "Legacy full color mode"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "SystemUI-Hooks",
+            "author": "PixelExtraParts",
+            "description": "Pine-SystemUI-Hooks und generierte Einstellungen für PixelExtraParts.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/systemui/lockscreen",
+                    "title": "Sperrbildschirm",
+                    "subtitle": "Double tap, charging line and quick tiles",
+                    "settings": [
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_dt2w_group",
+                            "title": "Double tap to wake",
+                            "description": "Wake-from-doze settings.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "doze_double_tap_hook_pine",
+                                    "title": "Enable double tap",
+                                    "description": "SystemUI will handle the second tap on the lock screen."
+                                },
+                                {
+                                    "key": "doze_double_tap_timeout_pine",
+                                    "title": "Second tap timeout",
+                                    "description": "Wait window for the second tap."
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_battery_group",
+                            "title": "Charging info",
+                            "description": "Power status line on the lock screen.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_enable_pine",
+                                    "title": "Show charging data"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_refresh_interval_ms_pine",
+                                    "title": "Refresh interval"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_average_mode_pine",
+                                    "title": "Average readings"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_standard_string_pine",
+                                    "title": "Standard charging string"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_custom_symbol_pine",
+                                    "title": "Custom charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_custom_symbol_pine",
+                                    "title": "Charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_wattage_pine",
+                                    "title": "Leistung"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_voltage_pine",
+                                    "title": "Spannung"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_current_pine",
+                                    "title": "Strom"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_temp_pine",
+                                    "title": "Temperatur"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_percent_pine",
+                                    "title": "Prozent"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_tiles_group",
+                            "title": "Schnelleinstellungen-Kacheln",
+                            "description": "Dynamic QS tiles for lock screen features.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "systemui_dt2w_tile",
+                                    "title": "Double-tap tile",
+                                    "description": "Aus",
+                                    "targets": [
+                                        {
+                                            "key": "doze_double_tap_hook_pine",
+                                            "label": "Double tap"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "systemui_charging_info_tile",
+                                    "title": "Charging info tile",
+                                    "description": "Aus",
+                                    "targets": [
+                                        {
+                                            "key": "pixelparts_battery_info_enable_pine",
+                                            "label": "Charging info"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/shade",
+                    "title": "Benachrichtigungsfeld und QS",
+                    "subtitle": "Media player, shade surface and scrim",
+                    "settings": [
+                        {
+                            "key": "systemui_media_group",
+                            "title": "QS media player",
+                            "description": "Media player visibility, opacity and compact layout.",
+                            "settings": [
+                                {
+                                    "key": "qs_player_alpha_pine",
+                                    "title": "Background opacity"
+                                },
+                                {
+                                    "key": "qs_compact_player_pine",
+                                    "title": "Compact mode",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Aus"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Kompakt"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "In header"
+                                        },
+                                        {
+                                            "value": "3",
+                                            "label": "Mini"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "qs_player_hide_expand_pine",
+                                    "title": "Hide in QS"
+                                },
+                                {
+                                    "key": "qs_player_hide_notify_pine",
+                                    "title": "Hide in notifications"
+                                },
+                                {
+                                    "key": "qs_player_hide_lockscreen_pine",
+                                    "title": "Hide on lock screen"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_surface_group",
+                            "title": "Shade surface",
+                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "settings": [
+                                {
+                                    "key": "shade_blur_intensity_pine",
+                                    "title": "Blur intensity"
+                                },
+                                {
+                                    "key": "shade_zoom_intensity_pine",
+                                    "title": "Zoom intensity"
+                                },
+                                {
+                                    "key": "shade_disable_scale_threshold_pine",
+                                    "title": "Scale-disable threshold"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_scrim_group",
+                            "title": "Scrim",
+                            "description": "Opacity and tint for notification/main scrim.",
+                            "settings": [
+                                {
+                                    "key": "shade_notif_scrim_alpha_pine",
+                                    "title": "Notification scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_main_scrim_alpha_pine",
+                                    "title": "Main scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_enabled_pine",
+                                    "title": "Tint notification scrim"
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_pine",
+                                    "title": "Notification scrim color"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_enabled_pine",
+                                    "title": "Tint main scrim"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_pine",
+                                    "title": "Main scrim color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/notification-icons",
+                    "title": "Benachrichtigungssymbole",
+                    "subtitle": "Status bar and AOD color mode",
+                    "settings": [
+                        {
+                            "key": "systemui_status_bar_icons_group",
+                            "title": "Status bar",
+                            "description": "App icons and monochrome mode in the status bar.",
+                            "settings": [
+                                {
+                                    "key": "status_bar_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "status_bar_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_aod_icons_group",
+                            "title": "AOD",
+                            "description": "Colored app icons on always-on display.",
+                            "settings": [
+                                {
+                                    "key": "aod_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "aod_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                },
+                                {
+                                    "key": "aod_full_color_notification_icons_pine",
+                                    "title": "Legacy full color mode"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "Hooks SystemUI",
+            "author": "PixelExtraParts",
+            "description": "Hooks Pine SystemUI et paramètres générés pour PixelExtraParts.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/systemui/lockscreen",
+                    "title": "Écran de verrouillage",
+                    "subtitle": "Double tap, charging line and quick tiles",
+                    "settings": [
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_dt2w_group",
+                            "title": "Double tap to wake",
+                            "description": "Wake-from-doze settings.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "doze_double_tap_hook_pine",
+                                    "title": "Enable double tap",
+                                    "description": "SystemUI will handle the second tap on the lock screen."
+                                },
+                                {
+                                    "key": "doze_double_tap_timeout_pine",
+                                    "title": "Second tap timeout",
+                                    "description": "Wait window for the second tap."
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_battery_group",
+                            "title": "Charging info",
+                            "description": "Power status line on the lock screen.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_enable_pine",
+                                    "title": "Show charging data"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_refresh_interval_ms_pine",
+                                    "title": "Refresh interval"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_average_mode_pine",
+                                    "title": "Average readings"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_standard_string_pine",
+                                    "title": "Standard charging string"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_custom_symbol_pine",
+                                    "title": "Custom charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_custom_symbol_pine",
+                                    "title": "Charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_wattage_pine",
+                                    "title": "Puissance"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_voltage_pine",
+                                    "title": "Tension"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_current_pine",
+                                    "title": "Courant"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_temp_pine",
+                                    "title": "Température"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_percent_pine",
+                                    "title": "Pourcentage"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_tiles_group",
+                            "title": "Tuiles QS",
+                            "description": "Dynamic QS tiles for lock screen features.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "systemui_dt2w_tile",
+                                    "title": "Double-tap tile",
+                                    "description": "Désactivé",
+                                    "targets": [
+                                        {
+                                            "key": "doze_double_tap_hook_pine",
+                                            "label": "Double tap"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "systemui_charging_info_tile",
+                                    "title": "Charging info tile",
+                                    "description": "Désactivé",
+                                    "targets": [
+                                        {
+                                            "key": "pixelparts_battery_info_enable_pine",
+                                            "label": "Charging info"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/shade",
+                    "title": "Volet et QS",
+                    "subtitle": "Media player, shade surface and scrim",
+                    "settings": [
+                        {
+                            "key": "systemui_media_group",
+                            "title": "QS media player",
+                            "description": "Media player visibility, opacity and compact layout.",
+                            "settings": [
+                                {
+                                    "key": "qs_player_alpha_pine",
+                                    "title": "Background opacity"
+                                },
+                                {
+                                    "key": "qs_compact_player_pine",
+                                    "title": "Compact mode",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Désactivé"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Compact"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "In header"
+                                        },
+                                        {
+                                            "value": "3",
+                                            "label": "Mini"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "qs_player_hide_expand_pine",
+                                    "title": "Hide in QS"
+                                },
+                                {
+                                    "key": "qs_player_hide_notify_pine",
+                                    "title": "Hide in notifications"
+                                },
+                                {
+                                    "key": "qs_player_hide_lockscreen_pine",
+                                    "title": "Hide on lock screen"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_surface_group",
+                            "title": "Shade surface",
+                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "settings": [
+                                {
+                                    "key": "shade_blur_intensity_pine",
+                                    "title": "Blur intensity"
+                                },
+                                {
+                                    "key": "shade_zoom_intensity_pine",
+                                    "title": "Zoom intensity"
+                                },
+                                {
+                                    "key": "shade_disable_scale_threshold_pine",
+                                    "title": "Scale-disable threshold"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_scrim_group",
+                            "title": "Scrim",
+                            "description": "Opacity and tint for notification/main scrim.",
+                            "settings": [
+                                {
+                                    "key": "shade_notif_scrim_alpha_pine",
+                                    "title": "Notification scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_main_scrim_alpha_pine",
+                                    "title": "Main scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_enabled_pine",
+                                    "title": "Tint notification scrim"
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_pine",
+                                    "title": "Notification scrim color"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_enabled_pine",
+                                    "title": "Tint main scrim"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_pine",
+                                    "title": "Main scrim color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/notification-icons",
+                    "title": "Icônes de notification",
+                    "subtitle": "Status bar and AOD color mode",
+                    "settings": [
+                        {
+                            "key": "systemui_status_bar_icons_group",
+                            "title": "Status bar",
+                            "description": "App icons and monochrome mode in the status bar.",
+                            "settings": [
+                                {
+                                    "key": "status_bar_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "status_bar_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_aod_icons_group",
+                            "title": "AOD",
+                            "description": "Colored app icons on always-on display.",
+                            "settings": [
+                                {
+                                    "key": "aod_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "aod_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                },
+                                {
+                                    "key": "aod_full_color_notification_icons_pine",
+                                    "title": "Legacy full color mode"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "Хуки SystemUI",
+            "author": "PixelExtraParts",
+            "description": "Pine-хуки SystemUI та згенеровані налаштування для PixelExtraParts.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/systemui/lockscreen",
+                    "title": "Екран блокування",
+                    "subtitle": "Double tap, charging line and quick tiles",
+                    "settings": [
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_dt2w_group",
+                            "title": "Double tap to wake",
+                            "description": "Wake-from-doze settings.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "doze_double_tap_hook_pine",
+                                    "title": "Enable double tap",
+                                    "description": "SystemUI will handle the second tap on the lock screen."
+                                },
+                                {
+                                    "key": "doze_double_tap_timeout_pine",
+                                    "title": "Second tap timeout",
+                                    "description": "Wait window for the second tap."
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_battery_group",
+                            "title": "Charging info",
+                            "description": "Power status line on the lock screen.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_enable_pine",
+                                    "title": "Show charging data"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_refresh_interval_ms_pine",
+                                    "title": "Refresh interval"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_average_mode_pine",
+                                    "title": "Average readings"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_standard_string_pine",
+                                    "title": "Standard charging string"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_custom_symbol_pine",
+                                    "title": "Custom charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_custom_symbol_pine",
+                                    "title": "Charging symbol"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_wattage_pine",
+                                    "title": "Потужність"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_voltage_pine",
+                                    "title": "Напруга"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_current_pine",
+                                    "title": "Струм"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_temp_pine",
+                                    "title": "Температура"
+                                },
+                                {
+                                    "key": "pixelparts_battery_info_show_percent_pine",
+                                    "title": "Відсоток"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "systemui_lockscreen_tiles_group",
+                            "title": "Плитки швидких налаштувань",
+                            "description": "Dynamic QS tiles for lock screen features.",
+                            "settings": [
+                                {
+                                    "key": "demo_divider_dashed"
+                                },
+                                {
+                                    "key": "systemui_dt2w_tile",
+                                    "title": "Double-tap tile",
+                                    "description": "Вимкнено",
+                                    "targets": [
+                                        {
+                                            "key": "doze_double_tap_hook_pine",
+                                            "label": "Double tap"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "systemui_charging_info_tile",
+                                    "title": "Charging info tile",
+                                    "description": "Вимкнено",
+                                    "targets": [
+                                        {
+                                            "key": "pixelparts_battery_info_enable_pine",
+                                            "label": "Charging info"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/shade",
+                    "title": "Шторка і QS",
+                    "subtitle": "Media player, shade surface and scrim",
+                    "settings": [
+                        {
+                            "key": "systemui_media_group",
+                            "title": "QS media player",
+                            "description": "Media player visibility, opacity and compact layout.",
+                            "settings": [
+                                {
+                                    "key": "qs_player_alpha_pine",
+                                    "title": "Background opacity"
+                                },
+                                {
+                                    "key": "qs_compact_player_pine",
+                                    "title": "Compact mode",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Вимкнено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Компактний"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "In header"
+                                        },
+                                        {
+                                            "value": "3",
+                                            "label": "Міні"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "qs_player_hide_expand_pine",
+                                    "title": "Hide in QS"
+                                },
+                                {
+                                    "key": "qs_player_hide_notify_pine",
+                                    "title": "Hide in notifications"
+                                },
+                                {
+                                    "key": "qs_player_hide_lockscreen_pine",
+                                    "title": "Hide on lock screen"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_surface_group",
+                            "title": "Shade surface",
+                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "settings": [
+                                {
+                                    "key": "shade_blur_intensity_pine",
+                                    "title": "Blur intensity"
+                                },
+                                {
+                                    "key": "shade_zoom_intensity_pine",
+                                    "title": "Zoom intensity"
+                                },
+                                {
+                                    "key": "shade_disable_scale_threshold_pine",
+                                    "title": "Scale-disable threshold"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_shade_scrim_group",
+                            "title": "Scrim",
+                            "description": "Opacity and tint for notification/main scrim.",
+                            "settings": [
+                                {
+                                    "key": "shade_notif_scrim_alpha_pine",
+                                    "title": "Notification scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_main_scrim_alpha_pine",
+                                    "title": "Main scrim alpha",
+                                    "description": "-1 restores the system value."
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_enabled_pine",
+                                    "title": "Tint notification scrim"
+                                },
+                                {
+                                    "key": "shade_notif_scrim_tint_pine",
+                                    "title": "Notification scrim color"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_enabled_pine",
+                                    "title": "Tint main scrim"
+                                },
+                                {
+                                    "key": "shade_main_scrim_tint_pine",
+                                    "title": "Main scrim color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/systemui/notification-icons",
+                    "title": "Іконки сповіщень",
+                    "subtitle": "Status bar and AOD color mode",
+                    "settings": [
+                        {
+                            "key": "systemui_status_bar_icons_group",
+                            "title": "Status bar",
+                            "description": "App icons and monochrome mode in the status bar.",
+                            "settings": [
+                                {
+                                    "key": "status_bar_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "status_bar_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "systemui_aod_icons_group",
+                            "title": "AOD",
+                            "description": "Colored app icons on always-on display.",
+                            "settings": [
+                                {
+                                    "key": "aod_use_app_icons_pine",
+                                    "title": "Use app icons"
+                                },
+                                {
+                                    "key": "aod_monochrome_notification_icons_pine",
+                                    "title": "Monochrome icons"
+                                },
+                                {
+                                    "key": "aod_full_color_notification_icons_pine",
+                                    "title": "Legacy full color mode"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

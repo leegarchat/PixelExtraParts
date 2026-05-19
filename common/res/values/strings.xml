@@ -265,7 +265,6 @@
     <string name="aod_monochrome_icons_title">Monochrome AOD icons</string>
     <string name="aod_monochrome_icons_summary">Desaturate AOD app icons</string>
     <string name="gesture_bar_settings_title">Gesture Bar Settings</string>
-    <string name="gesture_bar_add_tile">Add Gesture Bar tile</string>
     <string name="gesture_bar_behavior_title">Behavior</string>
     <string name="gesture_bar_enable_title">Customize gesture bar</string>
     <string name="gesture_bar_enable_summary">Applies the SystemUI and Pixel Launcher handle hook</string>
@@ -578,7 +577,7 @@
     <string name="ims_desc_ut">Supplementary service management via IMS.\n\nAllows configuring call forwarding, call waiting, and caller ID via phone settings menu using IP channel instead of obsolete USSD codes. Fixes "Network or SIM card error" when trying to access call settings in LTE-only networks.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Launcher Settings</string>
+    <string name="launcher_settings_title">Misc</string>
     <string name="launcher_search_section">Search &amp; Navigation</string>
 
     <!-- Launcher Navigation Items -->
@@ -666,7 +665,6 @@
 
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Double Tap to Sleep (DT2S)</string>
-    <string name="dt2s_add_tile">Add DT2S tile</string>
     
     <string name="dt2s_desc_xposed">Xposed hook for Pixel Launcher.\n\nIntercepts \'onTouchEvent\' in launcher Workspace class, allowing screen lock by tapping on empty space.</string>
     <string name="dt2s_desc_native">Native Injection.\n\nUses modified framework to register \'ActivityLifecycleCallbacks\' in Launcher3 process. Upon activity start, automatically finds root Workspace view and attaches custom \'OnTouchListener\'. Works without Xposed and doesn\'t require root for the launcher itself.</string>
@@ -706,10 +704,14 @@
     <string name="main_title">Pixel Extra Parts</string>
     <string name="main_add_tile">Add app tile</string>
     <string name="main_desc">Custom modules and tweaks</string>
+    <string name="main_search_hint">Search settings</string>
+    <string name="main_search_results_title">Search results</string>
+    <string name="main_search_no_results">No results for "%1$s"</string>
     
     <string name="main_header_gesture">Gestures &amp; Input</string>
     <string name="main_header_system">System</string>
     <string name="main_header_network">Network &amp; Connectivity</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Test Things</string>
@@ -719,12 +721,12 @@
     <string name="main_root_desc">Application requires Superuser rights (Root) and active Xposed Framework.\n\nPlease install Magisk/KernelSU and grant permissions.</string>
 
     <string name="dt_desc_activity">Manage wake and sleep gestures</string>
-    <string name="launcher_title_activity">Launcher</string>
+    <string name="launcher_title_activity">Misc</string>
     <string name="os_desc_activity">Scroll elasticity and inertia settings</string>
     
     <string name="dt_title_activity">Double Tap</string>
     
-    <string name="launcher_desc_activity">Pixel Launcher Settings</string>
+    <string name="launcher_desc_activity">Misc settings</string>
     
     <string name="thermal_title_activity">Thermal Profiles</string>
     
@@ -1257,6 +1259,10 @@
     <string name="addon_color_pick">Pick</string>
     <string name="addon_settings_import">Import</string>
     <string name="addon_settings_export">Export</string>
+    <string name="addon_export_settings_title">Settings only</string>
+    <string name="addon_export_settings_desc">Export current key values as JSON</string>
+    <string name="addon_export_module_title">Module JAR</string>
+    <string name="addon_export_module_desc">Export the addon module file</string>
     <string name="addon_update_check">Check updates</string>
     <string name="addon_update_checking">Checking...</string>
     <string name="addon_update_install">Update</string>

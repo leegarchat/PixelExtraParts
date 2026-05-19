@@ -266,7 +266,6 @@
     <string name="aod_monochrome_icons_title">ЧБ-иконки на AOD</string>
     <string name="aod_monochrome_icons_summary">Обесцвечивать иконки приложений на AOD</string>
     <string name="gesture_bar_settings_title">Настройка полоски жестов</string>
-    <string name="gesture_bar_add_tile">Добавить плитку полоски жестов</string>
     <string name="gesture_bar_behavior_title">Поведение</string>
     <string name="gesture_bar_enable_title">Настраивать полоску жестов</string>
     <string name="gesture_bar_enable_summary">Включает общий хук для SystemUI и Pixel Launcher</string>
@@ -579,7 +578,7 @@
     <string name="ims_desc_ut">Управление дополнительными услугами через IMS.\n\nПозволяет настраивать переадресацию, ожидание вызова и АОН через меню настроек телефона, используя IP-канал вместо устаревших USSD-кодов. Исправляет ошибки типа "Ошибка сети или SIM-карты" при попытке войти в настройки вызовов в сетях LTE-only.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Настройки Лаунчера</string>
+    <string name="launcher_settings_title">Разное</string>
     <string name="launcher_search_section">Поиск и навигация</string>
 
     <!-- Launcher Navigation Items -->
@@ -667,7 +666,6 @@
 
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Сон на рабочем столе</string>
-    <string name="dt2s_add_tile">Добавить плитку DT2S</string>
     
     <string name="dt2s_desc_xposed">Xposed-хук для Pixel Launcher.\n\nПерехватывает метод \'onTouchEvent\' в классе Workspace лаунчера, позволяя блокировать экран касанием по пустому месту.</string>
     <string name="dt2s_desc_native">Нативная инъекция кода.\n\nИспользует модифицированный фреймворк для регистрации \'ActivityLifecycleCallbacks\' в процессе Launcher3. При запуске активити автоматически находится корневое View рабочего стола (Workspace) и к нему привязывается кастомный \'OnTouchListener\'. Это работает без Xposed и не требует прав суперпользователя для самого лаунчера.</string>
@@ -707,10 +705,14 @@
     <string name="main_title">Pixel Extra Parts</string>
     <string name="main_add_tile">Добавить плитку приложения</string>
     <string name="main_desc">Кастомные модули и твики</string>
+    <string name="main_search_hint">Поиск настроек</string>
+    <string name="main_search_results_title">Результаты поиска</string>
+    <string name="main_search_no_results">Ничего не найдено для "%1$s"</string>
     
     <string name="main_header_gesture">Жесты и ввод</string>
     <string name="main_header_system">Система</string>
     <string name="main_header_network">Сеть и связь</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Тестовые штуки</string>
@@ -720,12 +722,12 @@
     <string name="main_root_desc">Для работы приложения необходимы права суперпользователя (Root) и активный Xposed Framework.\n\nПожалуйста, установите Magisk/KernelSU и предоставьте права.</string>
 
     <string name="dt_desc_activity">Управление жестами пробуждения и сна</string>
-    <string name="launcher_title_activity">Лаунчер</string>
+    <string name="launcher_title_activity">Разное</string>
     <string name="os_desc_activity">Настройка упругости и инерции скролла</string>
     
     <string name="dt_title_activity">Двойной тап</string>
     
-    <string name="launcher_desc_activity">Настройки Pixel Launcher</string>
+    <string name="launcher_desc_activity">Разные настройки</string>
     
     <string name="thermal_title_activity">Термальные профили</string>
     

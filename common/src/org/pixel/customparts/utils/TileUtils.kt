@@ -16,6 +16,20 @@ object TileUtils {
         labelResId: Int,
         iconResId: Int
     ) {
+        requestAddTileService(
+            context = context,
+            tileServiceClass = tileServiceClass,
+            label = context.getString(labelResId),
+            iconResId = iconResId
+        )
+    }
+
+    fun requestAddTileService(
+        context: Context,
+        tileServiceClass: Class<*>,
+        label: String,
+        iconResId: Int
+    ) {
         val statusBarManager = context.getSystemService(Context.STATUS_BAR_SERVICE) as? StatusBarManager
         if (statusBarManager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             Toast.makeText(context, R.string.tile_request_unavailable, Toast.LENGTH_SHORT).show()
@@ -25,7 +39,7 @@ object TileUtils {
         val componentName = ComponentName(context, tileServiceClass)
         statusBarManager.requestAddTileService(
             componentName,
-            context.getString(labelResId),
+            label,
             Icon.createWithResource(context, iconResId),
             context.mainExecutor
         ) { result ->

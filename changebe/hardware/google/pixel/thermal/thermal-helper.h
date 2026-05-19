@@ -205,6 +205,7 @@ class ThermalHelperImpl : public ThermalHelper {
 
   private:
         std::string getCurrentConfigPropertyValue() const;
+        std::string getConfigStamp(std::string_view config_value) const;
         bool initializeThermalConfig(std::string_view config_value, bool thermal_throttling_disabled,
                                                                  bool start_watcher);
         bool reloadThermalConfig(std::string_view config_value);
@@ -269,6 +270,7 @@ class ThermalHelperImpl : public ThermalHelper {
     std::mutex config_reload_mutex_;
     std::mutex thermal_callback_mutex_;
     std::string active_config_value_;
+    std::string active_config_stamp_;
     std::unordered_map<std::string, CdevInfo> cooling_device_info_map_;
     std::unordered_map<std::string, SensorInfo> sensor_info_map_;
     // The target ODPM railes which will be switched by the trigger sensor

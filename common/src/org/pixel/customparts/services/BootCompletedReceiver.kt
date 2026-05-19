@@ -18,12 +18,17 @@ import org.pixel.customparts.utils.ThermalProfileController
 
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("PixelParts", "Boot completed received. Action: ${intent.action}")
+        val action = intent.action
+        Log.d("PixelParts", "Boot/wake event received. Action: $action")
 
         val pendingResult = goAsync()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                if (action == Intent.ACTION_USER_PRESENT || action == Intent.ACTION_SCREEN_ON) {
+                    PixelPartsTileRefresher.requestAll(context)
+                    return@launch
+                }
                 ImsManager.onBoot(context)
                 ThermalManager.onBoot(context)
                 ThermalProfileController.syncService(context)

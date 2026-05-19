@@ -1,1382 +1,346 @@
-# Pine Addon Development Guide
+# Pixel Extra Parts Addon SDK
 
-Инструментарий для создания Xposed-совместимых аддонов (хуков) в виде автономных DEX JAR-файлов.
-Эти аддоны динамически загружаются менеджером **CustomParts / PixelParts** без модификации системного образа.
+This directory is the complete addon development kit for Pixel Extra Parts. An addon is a DEX JAR with a `META-INF/addon.json` descriptor and, optionally, Java hook code. The same package can provide Pine/Xposed-compatible runtime hooks, generated settings UI, generated activity pages, dynamic Quick Settings tiles, target-activity page injection, Settings-homepage injection, update metadata, import/export support, localized text, or any combination of those pieces.
 
-Менеджер использует фреймворк [Pine](https://github.com/nickilicious/nickiliciousPine) — нативную
-реализацию ART-хукинга, обёрнутую Xposed-совместимым API (`XposedHelpers`, `XC_MethodHook` и т.д.).
+The old mixed guide was kept as `README_old.md` for reference. This README is the main entry point; focused deep dives live in smaller files under `docs/`.
 
----
+## Addon Building Blocks
 
-## Содержание
+| Layer | Manifest area | What it does |
+| --- | --- | --- |
+| Identity | root fields | Stable `id`, display metadata, version, author, accent, background and update URL. |
+| Runtime hook | `entryClass`, `targetPackages` | Loads Java code into selected target packages through the Pine/Xposed-compatible runtime. |
+| Addon card | root `settings[]`, update/import/export | Shows the addon in the manager. Cards always expand, even without `entryClass` or settings. |
+| Generated controls | `settings[]` | Writes values to `Settings.Global`, `Settings.System`, `Settings.Secure`, or addon files. |
+| Main pages | `main[]` | Adds generated pages to Pixel Extra Parts navigation or to target activities. |
+| Target injection | `targetActivity`, `targetSlot` | Injects addon pages into built-in screens such as launcher, SystemUI or icon manager pages. |
+| Dynamic QS tiles | `type: "tile"` | Binds one of `DynamicAddonTile01..40` to addon settings. |
+| Localization | `locales` or `addon_<lang>.json` | Overrides display text for the active system language. |
 
-1. [Быстрый старт](#-быстрый-старт)
-2. [Структура проекта](#-структура-проекта)
-3. [Формат addon.json](#-формат-addonjson-манифест)
-4. [Как написать хук](#-как-написать-хук)
-5. [Настройки аддона (Settings UI)](#-настройки-аддона-auto-generated-ui)
-6. [Генератор Activity UI (main\[\])](#-генератор-activity-ui-main)
-7. [Компиляция и сборка](#-компиляция-и-сборка)
-8. [Архитектура менеджера Pine](#-архитектура-менеджера-pine)
-9. [Жизненный цикл аддона](#-жизненный-цикл-аддона-от-jar-до-хука)
-10. [Settings.Global — флаги и конфигурация](#-settingsglobal--флаги-и-конфигурация)
-11. [Управление целевыми пакетами (Scope)](#-управление-целевыми-пакетами-scope)
-12. [Установка и удаление через UI](#-установка-и-удаление-через-ui)
-13. [Устранение неполадок](#-устранение-неполадок)
-14. [Справочник API](#-справочник-api)
+## Directory Layout
 
----
+```text
+example.addon.hook/
++-- README.md
++-- README_old.md
++-- build_addon.sh
++-- build_addon.ps1
++-- build_addon.bat
++-- prebuild/
+|   +-- IAddonHook.java
+|   +-- android.jar
+|   +-- pine/
+|   +-- sdk/
+|   +-- xposed/
++-- ambient_extend_hook/
++-- gcam_photo_torch/
++-- icon_manager_settings/
++-- launcher_hooks/
++-- settings_homepage_item/
++-- systemui_hooks/
++-- docs/
+```
 
-## Быстрый старт
+Each addon project uses this shape:
 
-Нужна только **Java 11+**. Android Studio и полный SDK **не требуются**.
+```text
+my_addon/
++-- META-INF/
+|   +-- addon.json
++-- src/
+|   +-- com/example/addon/MyAddonHook.java
++-- out/
+    +-- my_addon.jar
+```
+
+For a settings-only addon, omit `src/` and omit `entryClass` from `addon.json`. The build script will package a manifest-only JAR.
+
+## Quick Start
+
+1. Create a project directory next to the examples.
 
 ```bash
-# 1. Создайте папку проекта
-mkdir my_addon && cd my_addon
-mkdir -p src/com/example/addon META-INF
-
-# 2. Напишите хук (src/com/example/addon/MyHook.java)
-# 3. Создайте манифест (META-INF/addon.json)
-# 4. Соберите:
-cd ..
-./build_addon.sh my_addon
-
-# 5. Результат: my_addon/out/my_addon.jar
+mkdir -p my_addon/META-INF my_addon/src/com/example/addon
 ```
 
-Скрипт сам скомпилирует Java → class → DEX и упакует всё в JAR.
-
----
-
-## Структура проекта
-
-### Рабочее пространство (workspace)
-
-```text
-example.addon.hook/              ← Вы здесь
-├── build_addon.sh               # Скрипт сборки
-├── prebuild/                    # Предсобранные зависимости
-│   ├── android.jar              #   Android API stubs
-│   ├── IAddonHook.java          #   Интерфейс аддона (компилируется при сборке)
-│   ├── pine/
-│   │   ├── pine-core.jar        #   Pine ART hooking core
-│   │   └── pine-xposed.jar      #   Xposed compatibility layer
-│   ├── xposed/
-│   │   ├── api-82.jar            #   Xposed API (XposedHelpers, XC_MethodHook...)
-│   │   └── api-82-sources.jar    #   Исходники (для IDE)
-│   └── sdk/
-│       └── d8.jar               #   DEX compiler (из Android build-tools)
-│
-├── test_project/                # Пример аддона
-│   ├── src/
-│   │   └── com/example/addon/test/
-│   │       └── SimpleTestHook.java
-│   ├── META-INF/
-│   │   └── addon.json
-│   └── out/                     # Результат сборки
-│       └── test_project.jar
-│
-└── my_addon/                    # ← ВАША ПАПКА АДДОНА
-    ├── src/                     #   Исходники Java
-    ├── META-INF/
-    │   └── addon.json           #   Манифест
-    └── out/                     #   Сюда попадёт итоговый .jar
-```
-
-### Менеджер Pine (родительский каталог `../`)
-
-```text
-../xposed-pine/src/org/pixel/customparts/
-├── core/
-│   ├── IAddonHook.java          # Интерфейс, который реализует ваш аддон
-│   ├── IHookEnvironment.java    # Абстракция чтения настроек + логирования
-│   └── BaseHook.java            # Базовый класс встроенных хуков
-├── hooks/                       # Встроенные хуки (Launcher, SystemUI, глобальные)
-│   ├── EdgeEffectHook.java
-│   ├── MagnifierHook.java
-│   ├── recents/
-│   ├── systemui/
-│   └── ...
-└── manager/
-    ├── pine/
-    │   ├── ModEntry.java        # Точка входа: загрузка libpine.so → HookEntry.init()
-    │   ├── HookEntry.java       # Роутер: встроенные хуки + AddonLoader
-    │   ├── AddonLoader.java     # Сканер/загрузчик addon JAR-файлов
-    │   └── PineEnvironment.java # Реализация IHookEnvironment для Pine
-    └── xposed/
-        ├── XposedInit.kt        # Альтернативный путь через LSPosed/Xposed
-        └── XposedEnvironment.kt
-
-../common/src/org/pixel/customparts/ui/addons/
-└── AddonManagerScreen.kt        # Compose UI менеджера аддонов
-```
-
-> **Ключевая мысль**: `prebuild/` содержит минимальный набор инструментов. Скрипт сборки приоритетно
-> использует их, так что собирать можно без установки Android SDK.
-
----
-
-## Формат addon.json (манифест)
-
-Файл `META-INF/addon.json` — **обязателен**. Менеджер читает его **до** загрузки вашего кода.
-
-### Минимальный пример
+2. Add `META-INF/addon.json`.
 
 ```json
 {
-    "id": "my_cool_hook",
-    "entryClass": "com.example.addon.MyCoolHook",
-    "name": "My Cool Hook",
-    "version": "1.0",
-    "targetPackages": ["com.android.settings"],
-    "enabled": true
+  "id": "my_addon",
+  "entryClass": "com.example.addon.MyAddonHook",
+  "name": "My Addon",
+  "author": "Your Name",
+  "description": "A small addon example.",
+  "version": "1.0.0",
+  "targetPackages": ["com.android.settings"],
+  "enabled": true
 }
 ```
 
-### Полный пример со всеми полями
-
-```json
-{
-    "id": "test_visual_hook",
-    "entryClass": "com.example.addon.test.SimpleTestHook",
-    "name": "Visual Test Hook",
-    "author": "LeeGarChat",
-    "description": "Показывает дополнительную кнопку в настройках",
-    "version": "1.1",
-    "targetPackages": [
-        "com.android.settings"
-    ],
-    "enabled": true,
-    "icon": "META-INF/icon.webp",
-    "background": "META-INF/bg.webp",
-    "backgroundMode": "gradient",
-    "backgroundAlpha": 60,
-    "backgroundGradientSteps": [0, 60, 100],
-    "backgroundBlur": true,
-    "backgroundBlurRadius": 20,
-    "cardColor": "#1A237E",
-    "backgroundScope": "full",
-
-    "settings": [
-        {
-            "key": "test_hook_intensity",
-            "title": "Hook Intensity",
-            "description": "Уровень интенсивности хука (0–100)",
-            "type": "int",
-            "provider": "global",
-            "default": 50,
-            "min": 0,
-            "max": 100,
-            "step": 5,
-            "unit": "%"
-        }
-    ]
-}
-```
-
-### Описание полей
-
-| Поле           | Тип       | Обязательно | Описание                                                                                                                                                                       |
-| ------------------ | ------------ | :--------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | `string`   |     **Да**     | Уникальный идентификатор аддона. Используется как ключ в `Settings.Global`. Не должен содержать пробелов.  |
-| `entryClass`     | `string`   |     **Да**     | Полное имя класса, реализующего `IAddonHook`. Например: `com.example.addon.MyHook`.                                                             |
-| `name`           | `string`   |         Нет         | Отображаемое имя в UI менеджера. По умолчанию =`id`.                                                                                             |
-| `author`         | `string`   |         Нет         | Автор аддона. По умолчанию:`"Unknown"`.                                                                                                                        |
-| `description`    | `string`   |         Нет         | Описание функциональности.                                                                                                                                     |
-| `version`        | `string`   |         Нет         | Версия аддона. По умолчанию:`"1.0"`.                                                                                                                          |
-| `targetPackages` | `string[]` |         Нет         | Список пакетов-целей. Пустой или отсутствующий → применяется ко**всем** инжектируемым процессам. |
-| `enabled`        | `boolean`  |         Нет         | Включён по умолчанию. Пользователь может переопределить через UI или `Settings.Global`.                                     |
-| `icon`           | `string`   |         Нет         | Путь к иконке внутри JAR (например `META-INF/icon.webp`). Поддерживаемые форматы: **PNG, JPEG, WebP, AVIF, BMP, GIF** (любой формат, поддерживаемый `BitmapFactory`). Отображается в карточке и диалоге вместо стандартной иконки. |
-| `background`     | `string`   |         Нет         | Путь к фоновому изображению внутри JAR (например `META-INF/bg.webp`). Поддерживаемые форматы: **PNG, JPEG, WebP, AVIF, BMP, GIF**. Отображается на фоне карточки аддона. |
-| `backgroundMode` | `string`   |         Нет         | Режим отображения фона: `"gradient"` (с градиентным оверлеем, **по умолчанию**), `"cover"` (полное покрытие без градиента). |
-| `backgroundAlpha` | `int`     |         Нет         | Прозрачность фонового изображения: `0` = полностью прозрачный, `100` = полностью непрозрачный. По умолчанию: `50`. Когда аддон выключен, значение автоматически снижается на 60%. |
-| `backgroundGradientSteps` | `int[]` |     Нет         | Массив шагов градиента — каждый элемент задаёт непрозрачность (**0–100**) цвета поверхности на соответствующем шаге градиента. Например: `[0, 60, 100]` — прозрачный сверху, 60% по центру, полностью непрозрачный снизу. Минимум 2 шага. По умолчанию: `[0, 100]`. Используется только при `backgroundMode: "gradient"`. |
-| `backgroundBlur` | `boolean` |         Нет         | Включить блюр-эффект на фоновом изображении. По умолчанию: `false`. |
-| `backgroundBlurRadius` | `int` |         Нет         | Радиус размытия в dp (от `0` до `100`). Больше = сильнее размытие. По умолчанию: `25`. Используется только при `backgroundBlur: true`. |
-| `cardColor`      | `string`   |         Нет         | Пользовательский цвет фона карточки в формате HEX (например `"#FF5722"`, `"#1A237E"`). Если не указан, используется системный цвет `surface`. Влияет также на цвет градиентного оверлея. |
-| `backgroundScope` | `string`  |         Нет         | Область действия фона: `"full"` (фон растягивается на всю карточку включая раскрывающиеся настройки, **по умолчанию**), `"header"` (фон только в шапке карточки, настройки отображаются на чистом фоне). |
-| `settings`       | `array`    |         Нет         | Массив определений настроек для авто-генерации UI (см. раздел ниже).                                                              |
-
-### Мультиязычные манифесты
-
-`META-INF/addon.json` всегда остаётся базовым английским манифестом и источником технических полей:
-`id`, `entryClass`, `targetPackages`, `enabled`, `updateUrl`, storage-ключи и т.д. Для локализации рядом можно
-положить языковые файлы по формату `META-INF/addon_<language>.json`, например:
-
-```text
-META-INF/addon.json
-META-INF/addon_ru.json
-META-INF/addon_fr.json
-META-INF/addon_uk.json
-```
-
-Менеджер берёт язык системы (`ru`, `fr`, `uk`...) и, если соответствующий файл существует, накладывает из него
-только отображаемые поля: `name`, `author`, `description`, а внутри `settings` — `title`, `description` и `options[].label`.
-Сопоставление настроек и options идёт по `key` и `value`. Если языкового файла нет, используется `addon.json`.
-
-Пример `addon_ru.json`:
-
-```json
-{
-    "name": "Ambient Extend",
-    "description": "Таймаут AOD, Smart Pixels и дополнительное затемнение Doze для SystemUI.",
-    "settings": [
-        {
-            "key": "ambient_timeout_group",
-            "title": "Временное затемнение AOD",
-            "description": "Гасит AOD чёрным слоем после выбранной задержки.",
-            "settings": [
-                {
-                    "key": "ambient_extend_hook_timeout_enabled",
-                    "title": "Включить затемнение",
-                    "description": "Плавно накрывает AOD чёрным слоем."
-                }
-            ]
-        }
-    ]
-}
-```
-
-Внешние descriptor-файлы тоже поддерживаются: рядом с JAR можно положить `addon_ru.json` или `<addon_id>_ru.json`.
-
-> **Визуальные эффекты карточки** — 4 независимых и комбинируемых параметра:
->
-> 1. **Прозрачность фона** (`backgroundAlpha`) — контролирует насколько виден фон
-> 2. **Градиент** (`backgroundMode` + `backgroundGradientSteps`) — массив шагов непрозрачности для гибкого управления градиентом
-> 3. **Блюр** (`backgroundBlur` + `backgroundBlurRadius`) — размытие фонового изображения
-> 4. **Цвет карточки** (`cardColor`) — произвольный цвет фона карточки
-> 5. **Область фона** (`backgroundScope`) — фон на всю карточку или только в шапке
->
-> Все эффекты можно комбинировать: например, `backgroundAlpha: 80` + `backgroundBlur: true` + `backgroundGradientSteps: [0, 40, 100]` даёт яркий размытый фон с 3-шаговым градиентом.
-
-### Описание полей блока settings
-
-| Поле        | Тип     | Обязательно | Описание                                                                                   |
-| --------------- | ---------- | :--------------------: | -------------------------------------------------------------------------------------------------- |
-| `key`         | `string` |     **Да**     | Ключ в `Settings.Global` (или `System`/`Secure`).                                    |
-| `title`       | `string` |     **Да**     | Заголовок настройки в UI.                                                       |
-| `description` | `string` |         Нет         | Подзаголовок/описание.                                                         |
-| `type`        | `string` |     **Да**     | Тип:`int`, `float`, `string`, `select`, `file`, `toggle`, `switch`, `checkbox`. |
-| `provider`    | `string` |         Нет         | Хранилище:`global` (по умолчанию), `system`, `secure`.                   |
-| `default`     | `any`    |         Нет         | Значение по умолчанию.                                                          |
-| `min`         | `number` |         Нет         | Минимум (для `int`/`float`).                                                         |
-| `max`         | `number` |         Нет         | Максимум (для `int`/`float`).                                                       |
-| `step`        | `number` |         Нет         | Шаг (для `int`/`float`).                                                                 |
-| `unit`        | `string` |         Нет         | Суффикс единиц измерения (`%`, `x`, `dp`, `ms`...).                  |
-| `options`     | `array`  |         Нет         | Варианты для `select`: `[{"value": "v1", "label": "Label 1"}, ...]`.                |
-| `mimeType`    | `string` |         Нет         | MIME-тип для `file` (по умолчанию: `*/*`).                                    |
-
----
-
-## Как написать хук
-
-### Интерфейс IAddonHook
-
-Ваш главный класс **обязан** реализовать интерфейс `org.pixel.customparts.core.IAddonHook`.
+3. Add `src/com/example/addon/MyAddonHook.java`.
 
 ```java
 package com.example.addon;
 
 import android.content.Context;
-import android.util.Log;
 import org.pixel.customparts.core.IAddonHook;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedHelpers;
 
-public class MyHook implements IAddonHook {
-
-    private static final String TAG = "MyHook";
-
-    // --- Метаданные ---
-
-    @Override
-    public String getId() {
-        return "my_cool_hook";          // Уникальный ID — должен совпадать с addon.json
-    }
-
-    @Override
-    public String getName() {
-        return "My Cool Hook";
-    }
-
-    @Override
-    public String getAuthor() {
-        return "YourName";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Описание того, что делает хук";
-    }
-
-    @Override
-    public String getVersion() {
-        return "1.0";
-    }
-
-    // --- Целевые пакеты ---
-
-    @Override
-    public Set<String> getTargetPackages() {
-        Set<String> targets = new HashSet<>();
-        targets.add("com.android.settings");
-        // targets.add("com.android.systemui");
-        return targets;
-        // Верните null или пустой Set, чтобы хукать ВСЕ процессы
-    }
-
-    // --- Приоритет (необязательно) ---
-
-    @Override
-    public int getPriority() {
-        return 0;   // Больше = выполняется раньше
-    }
-
-    // --- Проверка включён ли хук (необязательно) ---
-
-    @Override
-    public boolean isEnabled(Context context) {
-        return true;  // Можно читать Settings.Global и т.д.
-    }
-
-    // --- Главный метод — здесь происходит хукинг ---
+public final class MyAddonHook implements IAddonHook {
+    @Override public String getId() { return "my_addon"; }
+    @Override public String getName() { return "My Addon"; }
+    @Override public String getAuthor() { return "Your Name"; }
+    @Override public String getDescription() { return "A small addon example."; }
+    @Override public String getVersion() { return "1.0.0"; }
+    @Override public Set<String> getTargetPackages() { return Collections.singleton("com.android.settings"); }
 
     @Override
     public void handleLoadPackage(Context context, ClassLoader classLoader, String packageName) {
-        Log.d(TAG, "Хук загружен в процесс: " + packageName);
-
-        try {
-            XposedHelpers.findAndHookMethod(
-                "com.android.settings.dashboard.DashboardFragment",
-                classLoader,
-                "onResume",
-                new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        Log.d(TAG, "DashboardFragment.onResume() перехвачен!");
-                        // Ваша логика здесь
-                    }
-                }
-            );
-        } catch (Throwable t) {
-            Log.e(TAG, "Ошибка при установке хука", t);
-        }
+        if (!"com.android.settings".equals(packageName)) return;
+        // Install hooks here.
     }
 }
 ```
 
-### Сигнатура handleLoadPackage
+4. Build it.
 
-```java
-void handleLoadPackage(Context context, ClassLoader classLoader, String packageName);
+```bash
+./build_addon.sh my_addon
 ```
 
-| Параметр | Описание                                                                                                           |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `context`      | `Application` Context целевого процесса (не менеджера!).                                      |
-| `classLoader`  | `ClassLoader` целевого приложения — используйте его для поиска классов. |
-| `packageName`  | Имя пакета запущенного процесса.                                                               |
+The output is `my_addon/out/my_addon.jar`.
 
-> **Важно**: ваш код выполняется **внутри целевого процесса** (например, внутри SystemUI),
-> а не внутри менеджера CustomParts.
+## Runtime Load Locations
 
-### Доступный API для хукинга
+Pixel Extra Parts scans addon JARs from two locations:
 
-Pine предоставляет полноценный Xposed-совместимый слой. Вы можете использовать:
-
-```java
-// Хук метода (before/after)
-XposedHelpers.findAndHookMethod(className, classLoader, methodName, paramTypes..., callback);
-
-// Замена метода целиком
-XposedHelpers.findAndHookMethod(className, classLoader, methodName,
-    new XC_MethodReplacement() {
-        @Override
-        protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-            return null; // ваша реализация
-        }
-    }
-);
-
-// Хук конструктора
-XposedHelpers.findAndHookConstructor(className, classLoader, paramTypes..., callback);
-
-// Поиск класса
-Class<?> clazz = XposedHelpers.findClass("com.example.TargetClass", classLoader);
-
-// Чтение/запись полей
-Object value = XposedHelpers.getObjectField(instance, "fieldName");
-XposedHelpers.setObjectField(instance, "fieldName", newValue);
-XposedHelpers.getStaticObjectField(clazz, "staticField");
-
-// Вызов методов
-Object result = XposedHelpers.callMethod(instance, "methodName", args...);
-XposedHelpers.callStaticMethod(clazz, "staticMethod", args...);
-
-// Создание экземпляров
-Object instance = XposedHelpers.newInstance(clazz, constructorArgs...);
+```text
+/system_ext/etc/pixelparts/addons
+/data/pixelparts/addons
 ```
 
-### Чтение настроек внутри хука
+System addons live under `system_ext`. User or test builds can live under `/data/pixelparts/addons`. When both locations contain an addon with the same `id`, the user addon fully overrides the system addon.
 
-Значения настроек, определённых в `addon.json`, хранятся в `Settings.Global`:
+## Manifest Root Fields
 
-```java
-import android.provider.Settings;
-
-// Целые числа
-int intensity = Settings.Global.getInt(
-    context.getContentResolver(), "test_hook_intensity", 50);
-
-// Дробные числа
-float scale = Settings.Global.getFloat(
-    context.getContentResolver(), "test_hook_scale", 1.0f);
-
-// Строки
-String msg = Settings.Global.getString(
-    context.getContentResolver(), "test_hook_message");
-
-// Boolean (switch/toggle/checkbox хранятся как int 0/1)
-boolean enabled = Settings.Global.getInt(
-    context.getContentResolver(), "demo_dark_override", 0) != 0;
-```
-
-> Провайдер определяется полем `provider` в настройке (`global`, `system`, `secure`).
-
----
-
-## Настройки аддона (Auto-generated UI)
-
-Вам **не нужно** писать Android UI-код. Определите настройки в `addon.json`, и менеджер
-автоматически сгенерирует нативный экран настроек (Jetpack Compose / Material 3).
-
-### Поддерживаемые типы
-
-| Тип       | UI-элемент                            | Значение                    |
-| ------------ | -------------------------------------------- | ----------------------------------- |
-| `switch`   | Switch (переключатель)          | `int` 0/1                         |
-| `toggle`   | Switch (переключатель)          | `int` 0/1                         |
-| `checkbox` | Checkbox (флажок)                      | `int` 0/1                         |
-| `int`      | Slider + ручной ввод               | `int`                             |
-| `float`    | Slider + ручной ввод               | `float`                           |
-| `string`   | TextField (текстовое поле)      | `string`                          |
-| `select`   | Dropdown (выпадающий список) | `string`                          |
-| `file`     | File picker (выбор файла)          | `string` (путь к файлу) |
-
-### Примеры определений
-
-```json
-"settings": [
-    {
-        "key": "icon_size",
-        "title": "Icon Size",
-        "description": "Размер иконок",
-        "type": "int",
-        "provider": "global",
-        "default": 40,
-        "min": 10,
-        "max": 100,
-        "step": 2,
-        "unit": "dp"
-    },
-    {
-        "key": "animation_speed",
-        "title": "Animation Speed",
-        "type": "float",
-        "default": 1.0,
-        "min": 0.0,
-        "max": 3.0,
-        "step": 0.1,
-        "unit": "x"
-    },
-    {
-        "key": "enable_logs",
-        "title": "Enable Logging",
-        "type": "switch",
-        "default": false
-    },
-    {
-        "key": "operating_mode",
-        "title": "Operating Mode",
-        "type": "select",
-        "default": "normal",
-        "options": [
-            { "value": "silent",  "label": "Silent — тихий режим" },
-            { "value": "normal",  "label": "Normal — стандартный" },
-            { "value": "verbose", "label": "Verbose — подробный лог" }
-        ]
-    },
-    {
-        "key": "custom_message",
-        "title": "Custom Message",
-        "description": "Текст для отображения",
-        "type": "string",
-        "default": "Hello!"
-    },
-    {
-        "key": "config_file",
-        "title": "Config File",
-        "description": "Конфигурационный файл",
-        "type": "file",
-        "mimeType": "application/json"
-    }
-]
-```
-
----
-
-## Расширенные возможности Settings UI
-
-Менеджер аддонов поддерживает не только простые значения в `Settings.*`, но и файловые значения,
-массивы, вложенные группы, выбор приложений, цветовые параметры, визуальные элементы и OTA-обновления.
-
-### Хранилище значений
-
-По умолчанию параметры пишутся в `Settings.Global`. Поле `provider` может быть `global`, `system` или `secure`.
-Если нужен файловый режим, добавьте `storage`:
-
-| `storage` | Куда пишется значение |
-| --- | --- |
-| `settings` | В `Settings.*`, выбранный через `provider` |
-| `file` / `addon_file` | В data-папку аддона |
-| `internal` | Во внутреннее хранилище приложения менеджера |
-| `external` | Во внешнюю app-specific папку менеджера |
-
-Для системных аддонов файловая data-папка всегда находится в `/data/pixelparts/system_addons_data/<addon_id>/`,
-потому что `/system_ext` доступен только для чтения. Для пользовательских аддонов используется
-`/data/pixelparts/addons/<addon_id>_data/`.
-
-Ключ может содержать путь, например `scope/apps/allowed`. Менеджер создаст подпапки автоматически.
-Массивы хранятся отдельным JSON-файлом с именем последнего сегмента ключа и суффиксом `_array.json`,
-например `scope/apps/allowed_array.json`.
-
-### Новые типы настроек
-
-| `type` | UI | Хранение |
+| Field | Type | Notes |
 | --- | --- | --- |
-| `apps` / `app_list` / `packages` | Полноэкранный выбор приложений с поиском, системным фильтром, фильтром launcher-visible и чекбоксами | JSON array в файловом storage |
-| `group` / `subgroup` | Подгруппа настроек | Только контейнер |
-| `color` | Color picker | HEX или comma-формат |
-| `text` / `info` | Текстовый блок между параметрами | Не хранится |
-| `image` | Картинка из JAR | Не хранится |
-| `spacer` | Отступ | Не хранится |
-| `divider` / `line` | Сплошная линия | Не хранится |
-| `dashed` / `dashed_line` | Пунктирная линия | Не хранится |
+| `id` | string | Required stable identifier. It is used for enable state, data overrides, settings export and dynamic tile ownership. |
+| `entryClass` | string | Fully qualified Java class implementing `IAddonHook`. Omit it for settings-only addons. |
+| `name`, `author`, `description`, `version` | string | Display metadata. The base manifest should be English. |
+| `targetPackages` | array | Runtime package allow-list. Target only the packages the addon actually hooks. |
+| `enabled` | boolean | Default enabled state on first install. |
+| `updateUrl` or `otaUrl` | string | Optional update JSON endpoint shown in the expanded addon card. |
+| `accent` | color | Accent color used by generated cards and controls. |
+| `backgroundMode`, `backgroundAlpha`, `backgroundGradientSteps`, `backgroundScope` | mixed | Optional addon card background styling. |
+| `settings` | array | Inline settings rendered inside the addon card. |
+| `main` | array | Generated navigation entries and generated pages. |
+| `locales` | object | Inline localized descriptor overlays keyed by language, for example `ru`, `de`, `fr`, `uk`. |
 
-### Выбор приложений
+Addon cards always expand. The expanded state shows inline settings when present, generated page links when `main[]` exists without inline settings, and import/export actions for every addon. If `updateUrl` is present, the update button appears in the same expanded area.
+
+## Localization
+
+Keep the base `addon.json` in English. Localized text can be shipped inline:
 
 ```json
 {
-    "key": "targets/extra_packages",
-    "title": "Extra packages",
-    "description": "Packages used by this addon",
-    "type": "apps",
-    "storage": "file"
+    "name": "Ambient Extend",
+    "description": "AOD timeout and extra dimming.",
+    "locales": {
+        "ru": {
+            "description": "Таймаут AOD и дополнительное затемнение.",
+            "main": [
+                {
+                    "id": "ambient-extend",
+                    "title": "Ambient Extend",
+                    "settings": [
+                        { "key": "ambient_timeout_group", "title": "AOD blackout" }
+                    ]
+                }
+            ]
+        }
+    }
 }
 ```
 
-В UI доступны поиск, показ/скрытие системных приложений и режим "только запускаемые".
-Значение будет сохранено как JSON-массив в data-папке аддона.
+External overlays are also supported: `META-INF/addon_ru.json`, `META-INF/addon_de.json`, `META-INF/addon_fr.json`, `META-INF/addon_uk.json`, or external files next to an installed JAR. Localized overlays merge display fields only: root `name`, `author`, `description`, `main[]` title/subtitle/description/group, setting title/description, select option labels, tile target labels and tile activity labels.
 
-### Подгруппы и вложенность
+## Generated Settings UI
+
+Settings are declared in root `settings[]` or inside a `main[]` entry. Common fields:
+
+| Field | Notes |
+| --- | --- |
+| `key` | Stable setting key. Required for non-visual controls. |
+| `type` | Control type. Aliases are accepted for many types. |
+| `title`, `description` | Display text. Use English in base manifest and overlays for localization. |
+| `title_size`, `description_size` | Optional custom text size in `sp`; camel-case and `title_seize` / `description_seize` aliases are also accepted. |
+| `provider` | `global`, `system`, or `secure` for Android Settings storage. |
+| `default`, `min`, `max`, `step`, `unit` | Numeric and default value metadata. |
+| `storage` | `settings`, `addon_file`, `internal`, or `external`. |
+| `enabledIfAll`, `enabledIfAny`, `disabledIfAll`, `disabledIfAny` | Dependency gates for controls. |
+| `exclusiveGroup`, `exclusiveWith` | Mutually exclusive boolean logic. |
+| `icon`, `iconType`, `iconShape`, `iconSize` | Optional Material or file icons for rows and groups. |
+
+Supported control types:
+
+| Type | Purpose |
+| --- | --- |
+| `switch`, `toggle`, `checkbox` | Boolean controls. They can write normal settings or execute explicit shell commands for on/off states. |
+| `int`, `float` | Slider-like numeric controls with min/max/step/unit. |
+| `string`, `text` | Text input. |
+| `select` | Dropdown selection. |
+| `select_button` | Button/radio style selection. |
+| `file` | Storage-backed file picker. |
+| `app_list` | App picker, either modal or activity based. |
+| `color` | Color picker with hex, ARGB, RGB CSV, RGBA CSV or integer output. |
+| `group` | Inline, expandable, fullscreen, floating card or immersive group container. |
+| `visual`, `text`, `warning`, `divider`, `dashed_line`, `spacer`, `image` | Non-setting layout elements. |
+| `tile` | Dynamic QS tile binding UI. |
+| `cmd_button`, `command_button`, `button` | Runs a shell command and can expand to show command output. |
+
+## Command Controls
+
+Command controls are intended for explicit addon maintenance actions, diagnostics and controlled system integration. They run through the app shell/root command pipeline used by Pixel Extra Parts utilities.
 
 ```json
 {
-    "key": "advanced_group",
-    "type": "group",
-    "title": "Advanced",
-    "description": "Rarely used parameters",
-    "mode": "expandable",
-    "settings": [
-        { "key": "advanced_enabled", "type": "switch", "title": "Enable advanced" }
+    "key": "collect_launcher_log",
+    "type": "cmd_button",
+    "title": "Collect launcher log",
+    "description": "Runs logcat for the launcher tag.",
+    "cmd": "logcat -d -s NexusLauncher PixelLauncher",
+    "showOutput": true
+}
+```
+
+Boolean controls can define explicit on/off commands:
+
+```json
+{
+    "key": "demo_native_flag",
+    "type": "switch",
+    "title": "Native flag",
+    "provider": "global",
+    "default": false,
+    "cmdOn": "cmd device_config put launcher demo_flag true",
+    "cmdOff": "cmd device_config put launcher demo_flag false",
+    "showOutput": true
+}
+```
+
+When `showOutput` is true, the row expands after execution and displays stdout/stderr. Use `showOutput: false` for silent actions. Command fields are aliases-aware: `cmd`, `command`, `shell`, `cmdOn`, `commandOn`, `onCommand`, `cmdOff`, `commandOff`, `offCommand`.
+
+## Main Pages
+
+`main[]` creates generated navigation rows and pages. Each entry has an `id`, `title`, optional `subtitle`, optional icon fields, optional `group`, optional `priority`, and optional `settings[]` for the page body.
+
+Nested pages are represented with slash-separated IDs:
+
+```json
+{
+    "main": [
+        { "id": "pixel-launcher", "title": "Pixel Launcher", "settings": [] },
+        { "id": "main/pixel-launcher/home-screen", "title": "Home screen", "settings": [] }
     ]
 }
 ```
 
-`mode` поддерживает `expandable`, `fullscreen` и `card`/`floating`. Для модальных групп можно задать
-`closeButtonPosition: "start"` или `"end"`. Внутри `settings` можно вкладывать другие группы.
+Entries sort by `priority` descending and then by `title`. `targetActivity` and `targetSlot` can inject pages into existing Pixel Extra Parts screens instead of only the addon manager.
 
-### Простая логика взаимоисключения
+## Dynamic QS Tiles
 
-Если включение одного boolean-параметра должно выключать другой, используйте `exclusiveWith` или общий
-`exclusiveGroup`:
-
-```json
-[
-    { "key": "mode_fast", "type": "switch", "title": "Fast", "exclusiveGroup": "mode" },
-    { "key": "mode_safe", "type": "switch", "title": "Safe", "exclusiveGroup": "mode" },
-    { "key": "force_custom", "type": "switch", "title": "Custom", "exclusiveWith": ["mode_fast"] }
-]
-```
-
-Когда параметр становится `true`/`1`, менеджер запишет `0` в остальные параметры группы или списка.
-
-### Color picker
+Dynamic tiles bind addon settings to shared tile services `DynamicAddonTile01` through `DynamicAddonTile40`. A tile can toggle a boolean setting or cycle through a carousel of values.
 
 ```json
 {
-    "key": "ui/accent",
-    "title": "Accent",
-    "type": "color",
-    "storage": "file",
-    "default": "#33AAFF",
-    "format": "rgba",
-    "alpha": true
-}
-```
-
-`format` поддерживает `hex` (`#RRGGBB`), `hex_argb` (`#AARRGGBB`), `rgb` (`r,g,b`) и `rgba` (`r,g,b,a`).
-Если `alpha: true`, диалог покажет ползунок прозрачности.
-
-### Визуальные элементы
-
-```json
-{ "key": "intro", "type": "info", "title": "Display", "description": "Visual settings below" },
-{ "key": "gap1", "type": "spacer", "height": 16 },
-{ "key": "line1", "type": "dashed_line", "thickness": 2, "color": "#66FFFFFF" },
-{ "key": "preview", "type": "image", "src": "META-INF/preview.webp", "height": 140 }
-```
-
-### Акцент карточки
-
-На уровне аддона можно задать `accent` или `accentColor`. Если поле отсутствует, используется тема приложения.
-У отдельной настройки также может быть свой `accent`/`accentColor`; он имеет приоритет над акцентом карточки.
-
-```json
-{
-    "accent": "#00BCD4",
-    "settings": [
-        { "key": "enable", "type": "switch", "title": "Enable", "accent": "#FF4081" }
+    "key": "launcher_custom_tile",
+    "type": "tile",
+    "title": "Custom launcher tile",
+    "tileConfigurable": true,
+    "targets": [
+        { "key": "launcher_dt2s_enabled", "label": "Double tap to sleep", "mode": "toggle" },
+        {
+            "key": "launcher_replace_on_clear",
+            "label": "Clear All mode",
+            "mode": "carousel",
+            "values": ["0", "1", "2"],
+            "labels": ["Bottom", "Screenshot", "Select"]
+        }
+    ],
+    "pages": [
+        { "id": "main/pixel-launcher/home-screen", "label": "Home screen" }
     ]
 }
 ```
 
-### Импорт и экспорт настроек
+Tile click handling runs setting changes on a background thread and uses a guard against concurrent toggles. Long press opens the configured addon page through `TileHandlerActivity`.
 
-В раскрытой карточке аддона менеджер показывает стандартные кнопки `Import` и `Export`. Экспорт создаёт JSON
-с `id`, `version` и объектом `values`. Импорт принимает такой JSON или сам объект `values` напрямую.
+## Import, Export And Updates
 
-### OTA-обновления аддона
+Every expanded addon card exposes settings import/export. Export writes the current setting values for that addon to JSON. Import reads a compatible JSON document and updates the same keys. If `updateUrl` is present, the card also exposes update checking and install flow.
 
-Добавьте в манифест `updateUrl` или `otaUrl` со ссылкой на raw JSON:
-
-```json
-{
-    "updateUrl": "https://example.com/my_addon_update.json"
-}
-```
-
-Формат update JSON:
+Update metadata endpoint shape:
 
 ```json
 {
     "version": "1.2.0",
     "downloadUrl": "https://example.com/my_addon.jar",
-    "changelog": "Fixed hooks and added settings",
-    "info": "Optional extra text"
+    "changelog": "Fixed hooks and added settings.",
+    "extraInfo": "Optional text"
 }
 ```
 
-Если версия выше установленной, кнопка `Check updates` превратится в `Update`. Для системного аддона обновление
-ставится в `/data/pixelparts/addons/<id>.jar` и отображается в системном блоке как обновлённая версия.
-Кнопка удаления у такого системного аддона удаляет только data-обновление; системная копия остаётся.
-Pine runtime уже индексирует `/system_ext` перед `/data`, поэтому data-версия с тем же `id` перекрывает системную.
-
-### Почему внутри менеджера есть DexClassLoader
-
-Аддон распространяется как JAR, но внутри него лежит DEX-байткод. `DexClassLoader` не является рудиментом:
-он нужен, чтобы Android ART загрузил классы аддона из JAR. Отдельный `.dex` файл пользователю не нужен.
-
----
-
-## Генератор Activity UI (main[])
-
-Аддоны могут внедрять кнопки навигации прямо в главное меню приложения и генерировать полноэкранные
-Activity-страницы с вложенными подстраницами — без написания Kotlin/Compose кода.
-
-### Как это работает
-
-1. Объявите массив `main` в `addon.json`. Каждый элемент становится кнопкой навигации в главном меню.
-2. Менеджер строит дерево из сегментов пути `id` каждого элемента.
-3. Нажатие на кнопку открывает `AddonPageActivity`, которая рендерит `settings[]` элемента и его дочерние кнопки.
-4. Кнопка «Назад» возвращает на предыдущий уровень; заголовок топ-бара анимируется между уровнями.
-
-### Поля элемента main[]
-
-| Поле | Тип | Обязательно | Описание |
-| --- | --- | :---: | --- |
-| `id` | `string` | **Да** | Уникальный путь внутри аддона. Используйте `/` для вложенности: `"main/my-page/sub"`. Префикс `main` удаляется автоматически. |
-| `title` | `string` | **Да** | Заголовок кнопки в меню и топ-баре страницы. |
-| `subtitle` | `string` | Нет | Краткое описание под кнопкой. |
-| `icon` | `string` | Нет | Путь к изображению внутри JAR (например `META-INF/icon.png`). По умолчанию — иконка Extension. |
-| `group` | `string` | Нет | В какую группу главного меню поместить кнопку: `gesture`, `system`, `network`, `launcher`. По умолчанию: `system`. |
-| `priority` | `int` | Нет | Порядок отображения внутри группы. Больше = выше. По умолчанию: `0`. |
-| `settings` | `array` | Нет | Тот же формат `settings[]`, что и в карточке. Рендерится на странице, открываемой этой кнопкой. |
-
-### Разрешение путей
-
-- `"my-settings"` → кнопка верхнего уровня
-- `"main/my-settings/advanced"` → вложена в `"my-settings"`
-- Если родительский сегмент не найден, элемент выносится на ближайший найденный уровень или на верхний.
-
-### Пример
-
-```json
-{
-    "id": "my_addon",
-    "entryClass": "com.example.MyHook",
-    "name": "My Addon",
-    "version": "1.0",
-    "targetPackages": ["com.android.launcher3"],
-    "main": [
-        {
-            "id": "launcher-tweaks",
-            "title": "Настройки лаунчера",
-            "subtitle": "Рабочий стол и меню приложений",
-            "group": "launcher",
-            "priority": 50,
-            "settings": [
-                {
-                    "key": "my_addon_enabled",
-                    "title": "Включить",
-                    "type": "toggle",
-                    "provider": "global",
-                    "default": false
-                }
-            ]
-        },
-        {
-            "id": "main/launcher-tweaks/advanced",
-            "title": "Дополнительно",
-            "subtitle": "Редко изменяемые параметры",
-            "settings": [
-                {
-                    "key": "my_addon_debug",
-                    "title": "Отладочный лог",
-                    "type": "toggle",
-                    "provider": "global",
-                    "default": false
-                }
-            ]
-        }
-    ]
-}
-```
-
-Результат:
-- Кнопка «Настройки лаунчера» в группе **Pixel Launcher Settings** главного меню.
-- Нажатие открывает страницу с переключателем `my_addon_enabled` и кнопкой «Дополнительно».
-- Нажатие «Дополнительно» открывает вложенную страницу с `my_addon_debug`.
-
-### Поведение карточки аддона при наличии main[] без settings[]
-
-Если аддон не имеет встроенных `settings[]` (или массив пуст), но объявляет элементы `main[]`,
-раскрытая карточка показывает информационное сообщение вместо элементов управления, а затем
-по одной кнопке **Открыть** для каждого элемента верхнего уровня `main[]`.
-Это позволяет пользователям переходить к страницам активити прямо из карточки аддона.
-
-### Доступные значения `group`
-
-| Значение | Где появляется кнопка |
-| --- | --- |
-| `gesture` | Группа «Жесты» в главном меню |
-| `system` | Группа «Система» в главном меню |
-| `network` | Группа «Сеть» в главном меню |
-| `launcher` | Группа «Pixel Launcher Settings» в главном меню |
-
----
-
-## Advanced Settings UI Features
-
-The addon manager supports Settings-backed values, file-backed values, JSON arrays, nested groups, app pickers,
-color values, visual elements, and OTA updates.
-
-### Value storage
-
-By default, settings are written to `Settings.Global`. `provider` can be `global`, `system`, or `secure`.
-For file storage, add `storage`:
-
-| `storage` | Destination |
-| --- | --- |
-| `settings` | The `Settings.*` provider selected by `provider` |
-| `file` / `addon_file` | The addon's writable data directory |
-| `internal` | The manager app internal storage |
-| `external` | The manager app-specific external storage |
-
-System addons always write file values to `/data/pixelparts/system_addons_data/<addon_id>/`, because `/system_ext`
-is read-only. User addons write next to the addon JAR under `/data/pixelparts/addons/<addon_id>_data/`.
-
-### Localized manifests
-
-`META-INF/addon.json` is always the base English manifest and the source for technical fields such as `id`,
-`entryClass`, `targetPackages`, `enabled`, `updateUrl`, and storage keys. Localized files can be placed next to it
-using `META-INF/addon_<language>.json`, for example `addon_ru.json`, `addon_fr.json`, or `addon_uk.json`.
-
-The manager checks the system language and overlays only display fields from the matching localized manifest:
-top-level `name`, `author`, `description`, and per-setting `title`, `description`, plus `options[].label` matched by
-`value`. Settings are matched by `key`. If no localized manifest exists, the manager falls back to `addon.json`.
-
-Keys may contain path segments such as `scope/apps/allowed`; directories are created automatically. Arrays are
-stored as JSON files named with the final key segment plus `_array.json`, for example `scope/apps/allowed_array.json`.
-
-### New setting types
-
-| `type` | UI | Storage |
-| --- | --- | --- |
-| `apps` / `app_list` / `packages` | Full-screen app picker with search, system filter, launcher-visible filter, and checkboxes | JSON array in file storage |
-| `group` / `subgroup` | Nested setting group | Container only |
-| `color` | Color picker | HEX or comma-separated format |
-| `text` / `info` | Text block between settings | Not stored |
-| `image` | Image from the JAR | Not stored |
-| `spacer` | Vertical spacing | Not stored |
-| `divider` / `line` | Solid line | Not stored |
-| `dashed` / `dashed_line` | Dashed line | Not stored |
-
-The JSON examples in the Russian section above are valid for English projects too. Field names are identical.
-
-### Groups, logic, color, visuals, and OTA
-
-- Groups use `mode: "expandable"`, `"fullscreen"`, or `"card"`; nested `settings` arrays are supported.
-- Boolean parameters can use `exclusiveGroup` or `exclusiveWith` to force other boolean keys to `0` when enabled.
-- Color values support `format: "hex"`, `"hex_argb"`, `"rgb"`, and `"rgba"`; `alpha: true` enables the alpha slider.
-- Card-level `accent` / `accentColor` changes the card accent, and per-setting accent overrides it.
-- Expanded addon cards include built-in Import/Export buttons for settings JSON.
-- `updateUrl` / `otaUrl` enables OTA checks. The raw JSON must contain `version` and `downloadUrl`; `changelog` and `info` are optional.
-- System addon updates are installed as `/data` overrides and are preferred over the read-only system copy at runtime.
-
-`DexClassLoader` is still required even though addons are packaged as JAR files, because Android loads the DEX
-bytecode inside the JAR through that loader.
-
----
-
-## Main Menu Activity Generator (`main[]`)
-
-Addons can inject navigation buttons directly into the app's main menu and generate full-screen Activity pages
-with nested sub-pages — without writing any Kotlin/Compose code.
-
-### How it works
-
-1. Declare a `main` array in `addon.json`. Each entry becomes a navigation button in the main menu.
-2. The manager builds a tree from the path segments of each entry's `id`.
-3. Tapping a button opens `AddonPageActivity`, which renders the entry's `settings[]` and its child entries.
-4. Back navigation pops the stack; the top-bar title animates between levels.
-
-### `main[]` entry fields
-
-| Field | Type | Required | Description |
-| --- | --- | :---: | --- |
-| `id` | `string` | **Yes** | Unique path within this addon. Use `/` to nest: `"main/my-page/sub"`. The `main` prefix is stripped automatically. |
-| `title` | `string` | **Yes** | Button label shown in the menu and as the top-bar title. |
-| `subtitle` | `string` | No | Short description shown under the button. |
-| `icon` | `string` | No | Path to an image inside the JAR (e.g. `META-INF/icon.png`). Falls back to the Extension icon. |
-| `group` | `string` | No | Which main-menu group to place the button in: `gesture`, `system`, `network`, `launcher`. Default: `system`. |
-| `priority` | `int` | No | Display order within the group. Higher = shown first. Default: `0`. |
-| `settings` | `array` | No | Same `settings[]` format as the card. Rendered on the page opened by this button. |
-
-### Path resolution
-
-- `"my-settings"` → top-level button
-- `"main/my-settings/advanced"` → nested under `"my-settings"`
-- If the parent segment is not found, the entry is promoted to the nearest found ancestor, or to the top level.
-
-### Example
-
-```json
-{
-    "id": "my_addon",
-    "entryClass": "com.example.MyHook",
-    "name": "My Addon",
-    "version": "1.0",
-    "targetPackages": ["com.android.launcher3"],
-    "main": [
-        {
-            "id": "launcher-tweaks",
-            "title": "Launcher Tweaks",
-            "subtitle": "Home screen and app drawer settings",
-            "group": "launcher",
-            "priority": 50,
-            "settings": [
-                {
-                    "key": "my_addon_enabled",
-                    "title": "Enable",
-                    "type": "toggle",
-                    "provider": "global",
-                    "default": false
-                }
-            ]
-        },
-        {
-            "id": "main/launcher-tweaks/advanced",
-            "title": "Advanced",
-            "subtitle": "Rarely changed parameters",
-            "settings": [
-                {
-                    "key": "my_addon_debug",
-                    "title": "Debug Logging",
-                    "type": "toggle",
-                    "provider": "global",
-                    "default": false
-                }
-            ]
-        }
-    ]
-}
-```
-
-This produces:
-- A "Launcher Tweaks" button in the **Launcher Settings** group of the main menu.
-- Tapping it opens a page with the `my_addon_enabled` toggle and an "Advanced" sub-button.
-- Tapping "Advanced" opens a nested page with `my_addon_debug`.
-
-### Addon card behaviour when `main[]` is present but `settings[]` is empty
-
-If an addon has no inline `settings[]` (or an empty array) but declares `main[]` entries, the expanded card
-shows an info message instead of settings controls, followed by one **Open** button per top-level `main[]` entry.
-This lets users navigate directly to the activity pages from the addon card.
-
-### Available `group` values
-
-| Value | Where the button appears |
-| --- | --- |
-| `gesture` | Gestures group in the main menu |
-| `system` | System group in the main menu |
-| `network` | Network group in the main menu |
-| `launcher` | Pixel Launcher Settings group in the main menu |
-
----
-
-## Компиляция и сборка
-
-### Требования
-
-- **Java 11+** (`javac`, `jar`)
-- Всё остальное есть в `prebuild/`
-
-Проверьте:
-
-```bash
-java -version    # должна быть 11+
-javac -version
-```
-
-Установка (Ubuntu/WSL):
-
-```bash
-sudo apt install openjdk-17-jdk
-```
-
-### Команда сборки
-
-```bash
-./build_addon.sh <ИМЯ_АДДОНА> [ПУТЬ_К_ПРОЕКТУ]
-```
-
-| Параметр               | Описание                                                      |
-| ------------------------------ | --------------------------------------------------------------------- |
-| `ИМЯ_АДДОНА`        | Имя выходного JAR-файла (без пробелов).   |
-| `ПУТЬ_К_ПРОЕКТУ` | Папка с `src/` и `META-INF/` (необязательно). |
-
-Если `ПУТЬ_К_ПРОЕКТУ` не указан, скрипт ищет папку `<ИМЯ_АДДОНА>` рядом с собой.
-
-### Примеры
-
-```bash
-# Собрать test_project (папка test_project/ рядом со скриптом)
-./build_addon.sh test_project
-
-# Собрать с явным путём
-./build_addon.sh my_hook ./path/to/my_hook
-
-# Переопределить пути к инструментам
-ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build_addon.sh my_hook
-```
-
-### Что делает скрипт (4 шага)
-
-```
-[1/4] Компиляция IAddonHook.java     → build/stubs/  (stub интерфейса)
-[2/4] Компиляция исходников аддона    → build/classes/ (ваш код + stub)
-[3/4] Конвертация в DEX (d8)          → build/dex/classes.dex
-[4/4] Упаковка JAR                    → out/<ИМЯ>.jar (classes.dex + META-INF/addon.json)
-```
-
-**Classpath при компиляции**:
-
-- `android.jar` — Android API stubs
-- `build/stubs/` — скомпилированный `IAddonHook.class`
-- `pine-xposed.jar` — Xposed compatibility (XposedHelpers, XC_MethodHook...)
-- `pine-core.jar` — Pine core
-- `api-82.jar` — Xposed API
-
-### Структура выходного JAR
-
-```
-my_addon.jar
-├── classes.dex           # DEX с вашими классами
-└── META-INF/
-    ├── addon.json        # Манифест аддона
-    ├── icon.png          # (необязательно) Иконка аддона
-    └── bg.png            # (необязательно) Фоновое изображение карточки
-```
-
-### Переменные окружения
-
-| Переменная                    | Описание                                                                                |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `ANDROID_JAR`                         | Путь к `android.jar` (приоритет над `prebuild/`).                          |
-| `D8_JAR`                              | Путь к `d8.jar` (приоритет над `prebuild/sdk/`).                           |
-| `ANDROID_SDK_ROOT` / `ANDROID_HOME` | SDK root — скрипт найдёт `android.jar` и `d8.jar` автоматически. |
-
----
-
-## Архитектура менеджера Pine
-
-### Общая схема
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Android System (ART)                         │
-│                                                                 │
-│  ┌───────────────┐    libpine.so     ┌────────────────────────┐ │
-│  │  Целевой      │  ◄──────────────  │  ModEntry.init()       │ │
-│  │  процесс      │                   │  (внедряется в каждый  │ │
-│  │  (Settings,   │                   │   процесс из whitelist)│ │
-│  │  SystemUI...) │                   └───────────┬────────────┘ │
-│  └───────────────┘                               │              │
-│         ▲                                        ▼              │
-│         │                           ┌────────────────────────┐  │
-│         │   XposedHelpers.*         │  HookEntry.init()      │  │
-│         │   XC_MethodHook           │  ┌──────────────────┐  │  │
-│         │                           │  │ Встроенные хуки  │  │  │
-│         │                           │  │ (Launcher, SysUI)│  │  │
-│         │                           │  └──────────────────┘  │  │
-│         │                           │  ┌──────────────────┐  │  │
-│         └───────────────────────────│──│ AddonLoader      │  │  │
-│                                     │  │ .loadAndRunAddons│  │  │
-│                                     │  └──────────────────┘  │  │
-│                                     └────────────────────────┘  │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  /data/pixelparts/addons/                                   ││
-│  │  ├── my_hook.jar          ← DexClassLoader загружает        ││
-│  │  ├── pixel_studio.jar     ← META-INF/addon.json читается    ││
-│  │  └── ...                                                    ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │  CustomParts App (UI)                                       ││
-│  │  └── AddonManagerScreen.kt  — Compose UI для управления     ││
-│  │      - Сканирует JAR-файлы, читает addon.json               ││
-│  │      - Включает/выключает аддоны (Settings.Global)          ││
-│  │      - Управляет scope (целевые пакеты)                     ││
-│  │      - Рендерит авто-настройки из settings[]                ││
-│  │      - Импортирует/удаляет JAR файлы                        ││
-│  │      - Показывает иконку/фон из JAR (icon, background)      ││
-│  │      - Панель «Активные приложения» — какие аддоны           ││
-│  │        действуют на какие приложения, с переходом к карточке ││
-│  └─────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Ключевые компоненты
-
-#### ModEntry.java — Точка входа
-
-Внедряется в каждый целевой процесс через системный патч ActivityThread.
-Загружает `libpine.so`, получает `Application` context текущего процесса и вызывает `HookEntry.init()`.
-
-```
-ModEntry.init()
-  → System.load("libpine.so")
-  → app = ActivityThread.currentApplication()
-  → HookEntry.init(app, classLoader, packageName)
-```
-
-#### HookEntry.java — Маршрутизатор хуков
-
-Определяет, какие хуки применять к текущему процессу:
-
-1. **Whitelist-пакеты** (Launcher, SystemUI) → встроенные хуки **первыми**, потом аддоны.
-2. **Не в whitelist, но есть аддон** → **только** аддон-хуки (встроенные не применяются).
-3. **Не в whitelist, нет аддонов** → пропуск (процесс не должен был попасть сюда).
-
-```java
-if (inWhitelist) {
-    // Сначала встроенные хуки (Launcher/SystemUI)
-    if (isLauncher)  initLauncherHooks(context, classLoader);
-    if (isSystemUI)  initSystemUIHooks(context, classLoader);
-}
-// Затем (или вместо) — аддон-хуки
-if (hasAddons) {
-    AddonLoader.loadAndRunAddons(context, classLoader, packageName);
-}
-```
-
-#### AddonLoader.java — Загрузчик аддонов
-
-| Метод                         | Назначение                                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `loadAndRunAddons(ctx, cl, pkg)` | Загрузить все JAR (если ещё не загружены), отфильтровать по пакету, выполнить. |
-| `hasAddonsForPackage(ctx, pkg)`  | Есть ли хотя бы один аддон для данного пакета?                                                        |
-| `getAllAddonTargetPackages(ctx)` | Все пакеты, нужные всем включённым аддонам.                                                            |
-| `getAllAddons(ctx)`              | Метаданные всех аддонов (для UI).                                                                                  |
-| `rescan(ctx)`                    | Принудительное пересканирование (после установки нового аддона).                   |
-| `deleteAddon(ctx, id)`           | Удалить JAR + очистить настройки + обновить whitelist.                                                     |
-| `syncWhitelist(ctx)`             | Синхронизировать whitelist инжекции со всеми целевыми пакетами.                             |
-
-**Директории сканирования** (в порядке приоритета):
-
-1. `/system_ext/etc/pixelparts/addons/` — системные аддоны (read-only)
-2. `/data/pixelparts/addons/` — пользовательские аддоны
-
-**Загрузка одного аддона**:
-
-```
-1. Прочитать дескриптор: сперва .jar.json (внешний), затем META-INF/addon.json (из JAR)
-2. Распарсить метаданные: id, entryClass, targetPackages...
-3. Проверить enabled (json + Settings.Global override)
-4. DexClassLoader загружает JAR
-5. Инстанцировать entryClass → проверить instanceof IAddonHook
-6. Сохранить в loadedAddons map
-```
-
-#### PineEnvironment.java — Чтение настроек
-
-Автоматически добавляет суффикс `_pine` ко всем ключам `Settings.Global`.
-Это позволяет встроенным хукам иметь отдельные настройки для Pine- и Xposed-среды.
-
-```java
-// Реальный ключ = baseKey + "_pine"
-// Например: "edge_effect_enabled" → "edge_effect_enabled_pine"
-```
-
-> **Для аддонов** это не применяется — аддоны читают `Settings.Global` напрямую
-> по ключам из `addon.json`.
-
----
-
-## Жизненный цикл аддона (от JAR до хука)
-
-```
-                Пользователь
-                    │
-                    ▼
-         ┌───────────────────────┐
-    ①    │ Сборка: build_addon.sh│
-         │ Java → .class → DEX   │
-         │ + META-INF/addon.json │
-         │ → out/addon.jar       │
-         └──────────┬────────────┘
-                    │
-                    ▼
-         ┌───────────────────────┐
-    ②    │ Установка:            │
-         │ UI: AddonManagerScreen│  ← Импорт через file picker
-         │ или вручную:          │  ← cp addon.jar /data/pixelparts/addons/
-         └──────────┬────────────┘
-                    │
-                    ▼
-         ┌───────────────────────┐
-    ③    │ Конфигурация (UI):    │
-         │ - Вкл/выкл аддон      │
-         │ - Настройка scope     │
-         │ - Изменение settings  │
-         └──────────┬────────────┘
-                    │
-                    ▼ (перезагрузка / перезапуск целевого приложения)
-         ┌───────────────────────┐
-    ④    │ ActivityThread запуск │
-         │ → ModEntry.init()     │
-         │ → HookEntry.init()    │
-         └──────────┬────────────┘
-                    │
-                    ▼
-         ┌───────────────────────┐
-    ⑤    │ AddonLoader           │
-         │ - Сканирует JAR-файлы │
-         │ - Читает addon.json   │
-         │ - DexClassLoader      │
-         │ - new entryClass()    │
-         └──────────┬────────────┘
-                    │
-                    ▼
-         ┌───────────────────────┐
-    ⑥    │ IAddonHook            │
-         │ .handleLoadPackage()  │
-         │ → XposedHelpers.*     │
-         │ → Ваши хуки работают  │
-         └───────────────────────┘
-```
-
----
-
-## ⚙ Settings.Global — флаги и конфигурация
-
-Менеджер и аддоны общаются через `Settings.Global`. Вот все используемые ключи:
-
-### Системные флаги (менеджер)
-
-| Ключ                                   | Тип        | Описание                                                                          |
-| ------------------------------------------ | ------------- | ----------------------------------------------------------------------------------------- |
-| `pixel_addon_{id}_enabled`               | `int` 0/1   | Включён ли аддон (пользовательский override).               |
-| `pixel_addon_{id}_packages`              | `string`    | Пользовательские целевые пакеты (через запятую). |
-| `pixel_addon_{id}_scope_mode`            | `int` 0/1/2 | Режим scope: 0=default, 1=custom, 2=merge.                                           |
-| `pixel_extra_parts_inject_package_{pkg}` | `int` 0/1   | Whitelist инжекции ActivityThread.                                                |
-
-### Пользовательские настройки (аддон)
-
-Каждая настройка из `addon.json → settings[]` хранится по ключу `key` в указанном `provider`:
-
-```
-Например:
-  Settings.Global → "test_hook_intensity" = 75
-  Settings.Global → "demo_dark_override" = 1
-  Settings.Global → "test_hook_message" = "Custom text"
-```
-
----
-
-## 🎯 Управление целевыми пакетами (Scope)
-
-### Режимы scope_mode
-
-| Значение | Название | Поведение                                                                                             |
-| ---------------- | ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| `0`            | Default          | Используются только `targetPackages` из `addon.json`.                                  |
-| `1`            | Custom           | Используются только пакеты, заданные пользователем через UI. |
-| `2`            | Merge            | Объединение дефолтных + пользовательских.                                  |
-
-### Whitelist инжекции
-
-Для каждого целевого пакета аддона менеджер устанавливает флаг:
-
-```
-pixel_extra_parts_inject_package_{package_name} = 1
-```
-
-Это сигнал для системного патча `ActivityThread` о том, что в данный процесс нужно инжектировать Pine.
-
-> Пакеты из встроенного whitelist (Launcher, SystemUI) уже инжектируются всегда.
-> Флаги нужны только для **дополнительных** пакетов, таргетируемых аддонами.
-
----
-
-## 📲 Установка и удаление через UI
-
-### Установка
-
-1. Откройте **CustomParts → Addon Manager**.
-2. Нажмите кнопку импорта (FAB).
-3. Выберите `.jar` файл из файлового менеджера.
-4. Менеджер скопирует JAR в `/data/pixelparts/addons/` (с root-фолбэком при необходимости).
-5. Аддон появится в списке.
-
-**Ручная установка** (через adb/root):
-
-```bash
-adb push my_addon.jar /data/pixelparts/addons/
-# или
-adb shell su -c "cp /sdcard/my_addon.jar /data/pixelparts/addons/"
-adb shell su -c "chmod 644 /data/pixelparts/addons/my_addon.jar"
-```
-
-### Удаление
-
-Через UI или вручную:
-
-```bash
-adb shell su -c "rm /data/pixelparts/addons/my_addon.jar"
-```
-
-При удалении через UI автоматически очищаются:
-
-- JAR файл и внешний дескриптор (`.jar.json`)
-- Флаги whitelist (если пакет больше не нужен другим аддонам)
-- Настройки в `Settings.Global`
-
-### Внешний дескриптор
-
-Менеджер поддерживает **внешний** JSON-дескриптор рядом с JAR:
-
-```
-/data/pixelparts/addons/
-├── my_addon.jar
-└── my_addon.jar.json    ← Приоритет над META-INF/addon.json
-```
-
-Это полезно для быстрого изменения метаданных без перекомпиляции JAR.
-
----
-
-## Устранение неполадок
-
-| Проблема                                                | Решение                                                                                                                                                                                                   |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Unsupported class file major version`                        | Используйте Java 11 `--release 11` (скрипт делает это автоматически). Убедитесь, что `d8.jar` и `android.jar` из `prebuild/` совместимы. |
-| Ошибка компиляции: класс не найден | Проверьте, что `prebuild/pine/` и `prebuild/xposed/` содержат нужные JAR.                                                                                                         |
-| Аддон не отображается в UI                  | Проверьте:`.jar` в `/data/pixelparts/addons/`, `META-INF/addon.json` внутри JAR корректен, `entryClass` указывает на существующий класс.            |
-| Аддон отображается, но не работает | Проверьте: аддон включён, целевой пакет в scope, флаг whitelist установлен. Посмотрите `logcat \| grep AddonLoader`.                                  |
-| `ClassNotFoundException` в runtime                           | `entryClass` в `addon.json` не совпадает с реальным полным именем класса.                                                                                             |
-| `does not implement IAddonHook`                               | Класс не реализует интерфейс `IAddonHook` или был скомпилирован против устаревшей версии интерфейса.                               |
-| Хуки не срабатывают                            | Целевой класс/метод не найден в данной версии приложения. Оберните в `try/catch` и проверьте `logcat`.                                    |
-| `d8.jar` не найден                                    | Положите в `prebuild/sdk/d8.jar` или задайте `D8_JAR=/path/to/d8.jar`.                                                                                                                    |
-| `android.jar` не найден                               | Положите в `prebuild/android.jar` или задайте `ANDROID_JAR=/path/to/android.jar`.                                                                                                         |
-
-### Полезные команды для отладки
-
-```bash
-# Логи загрузки аддонов
-adb logcat -s AddonLoader PineInject HookEntry
-
-# Проверить установленные аддоны
-adb shell ls -la /data/pixelparts/addons/
-
-# Проверить флаги Settings.Global
-adb shell settings get global pixel_addon_my_hook_enabled
-adb shell settings get global pixel_extra_parts_inject_package_com.android.settings
-
-# Вручную включить/выключить аддон
-adb shell settings put global pixel_addon_my_hook_enabled 1
-adb shell settings put global pixel_addon_my_hook_enabled 0
-
-# Вручную установить настройку аддона
-adb shell settings put global test_hook_intensity 75
-```
-
----
-
-## Справочник API
-
-### IAddonHook (интерфейс)
-
-| Метод                          | Возврат  | Обязательный | Описание                                                                      |
-| ----------------------------------- | --------------- | :----------------------: | ------------------------------------------------------------------------------------- |
-| `getId()`                         | `String`      |      **Да**      | Уникальный идентификатор.                                      |
-| `getName()`                       | `String`      |          Нет          | Отображаемое имя (default:`getId()`).                                |
-| `getAuthor()`                     | `String`      |          Нет          | Автор (default:`"Unknown"`).                                                   |
-| `getDescription()`                | `String`      |          Нет          | Описание (default:`""`).                                                    |
-| `getVersion()`                    | `String`      |          Нет          | Версия (default:`"1.0"`).                                                     |
-| `getTargetPackages()`             | `Set<String>` |      **Да**      | Целевые пакеты (`null`/пустой = все).                         |
-| `handleLoadPackage(ctx, cl, pkg)` | `void`        |      **Да**      | Основной метод хукинга.                                           |
-| `getPriority()`                   | `int`         |          Нет          | Приоритет выполнения (default:`0`, больше = раньше). |
-| `isEnabled(ctx)`                  | `boolean`     |          Нет          | Проверка включён ли хук (default:`true`).                       |
-
-### Xposed Compatibility API (ключевые классы)
-
-| Класс                                      | Описание                                                                                |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `de.robv.android.xposed.XposedHelpers`        | Утилиты: хук методов, поиск классов, работа с полями. |
-| `de.robv.android.xposed.XC_MethodHook`        | Callback для `beforeHookedMethod` / `afterHookedMethod`.                                 |
-| `de.robv.android.xposed.XC_MethodReplacement` | Полная замена метода.                                                         |
-| `de.robv.android.xposed.XposedBridge`         | Логирование (`XposedBridge.log()`).                                                |
-
----
-
-## Лицензия
-
-Этот инструментарий является частью проекта **CustomParts / PixelParts** (EvolutionX).
-
-Happy hooking! 🎣
+## Documentation Map
+
+- [Addon Package And Build](docs/addon-package-and-build.md)
+- [Manifest Reference](docs/manifest-reference.md)
+- [Generated Settings UI](docs/generated-settings-ui.md)
+- [Generated Main Pages](docs/generated-main-pages.md)
+- [Dynamic QS Tiles](docs/dynamic-qs-tiles.md)
+- [Java Hook Development](docs/java-hook-development.md)
+- [Troubleshooting](docs/troubleshooting.md)
+
+Example-focused documents:
+
+- [Minimal Runtime Hook](docs/examples/minimal-runtime-hook.md)
+- [Settings-Only Addon](docs/examples/settings-only-addon.md)
+- [Settings Gallery](docs/examples/settings-gallery.md)
+- [Groups And Visual Layout](docs/examples/groups-and-visual-layout.md)
+- [Navigation Pages](docs/examples/navigation-pages.md)
+- [Dynamic Tile Examples](docs/examples/dynamic-tile-examples.md)
+- [Java Hook Recipes](docs/examples/java-hook-recipes.md)
+
+## Current Example Addons
+
+- `ambient_extend_hook`: SystemUI hook for AOD blackout, Smart Pixels and extra ambient dimming.
+- `gcam_photo_torch`: Google Camera hook that adds persistent Torch behavior to the photo flash menu.
+- `settings_homepage_item`: Settings hook that inserts Pixel Extra Parts into the Android Settings homepage.
+- `icon_manager_settings`: settings-only generated UI injected into the Icon Manager screen.
+- `launcher_hooks`: Pixel Launcher addon for home screen, dock/search, app drawer, recents, gesture bar and dynamic launcher tiles.
+- `systemui_hooks`: SystemUI addon for lock screen, charging info, shade/media/scrim and notification icon controls.
+- `demo_settings`: settings-only showcase for every generated UI type and layout pattern.
+
+## Practical Rules
+
+- `id` values must be stable. They are used for enable state, data overrides, and user settings.
+- `entryClass` must match the compiled Java class exactly. Omit it only for settings-only addons.
+- Keep setting keys stable. Hooks read the same keys that generated UI writes.
+- Keep base manifest text in English and put translations in `locales` or `addon_<lang>.json` overlays.
+- Use `targetPackages` defensively. Do not hook every process unless the addon is designed for that.
+- Prefer generated settings over custom UI when the control is a normal setting.
+- Use command controls only for explicit shell actions, keep command strings predictable, and avoid interactive commands.
+- Use dynamic QS tiles for user-configurable tile behavior instead of declaring new tile services.
+- Use background threads for slow hook work and avoid blocking main thread callbacks in target apps.
+- Validate JSON before building.
+
+## Build Requirements
+
+- Java 11 or newer.
+- `javac`, `jar`, `find`, `sort`, `tail`, `sed`, and `head` on Unix-like shells.
+- The bundled `prebuild/android.jar` and `prebuild/sdk/d8.jar`, or SDK equivalents configured through `ANDROID_JAR` and `D8_JAR`.
+
+The build script uses bundled prebuilds first, then searches the local Android SDK. It packages every file under `META-INF/`, so inline `locales` and external `addon_<lang>.json` overlays both survive packaging.

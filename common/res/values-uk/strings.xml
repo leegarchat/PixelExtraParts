@@ -304,7 +304,7 @@
     <string name="ims_desc_ut">Управління додатковими послугами через IMS.\n\nДозволяє налаштовувати переадресацію викликів, очікування виклику та ідентифікацію абонента через меню налаштувань телефону, використовуючи IP-канал замість застарілих USSD-кодів. Виправляє помилки типу "Помилка мережі або SIM-карти" при спробі доступу до налаштувань викликів у режимі LTE-only.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Налаштування лаунчера</string>
+    <string name="launcher_settings_title">Різне</string>
     <string name="launcher_search_section">Пошук &amp; Навігація</string>
 
     <!-- Launcher Navigation Items -->
@@ -429,12 +429,12 @@
     <string name="main_root_desc">Додаток потребує прав суперкористувача (Root) та активного фреймворку Xposed.\n\nБудь ласка, встановіть Magisk/KernelSU та надайте дозвіл.</string>
 
     <string name="dt_desc_activity">Управління жестами прокидання та засинання</string>
-    <string name="launcher_title_activity">Лаунчер</string>
+    <string name="launcher_title_activity">Різне</string>
     <string name="os_desc_activity">Налаштування еластичності та інерції прокрутки</string>
     
     <string name="dt_title_activity">Подвійний дотик</string>
     
-    <string name="launcher_desc_activity">Налаштування Pixel Launcher</string>
+    <string name="launcher_desc_activity">Різні налаштування</string>
     
     <string name="thermal_title_activity">Термальні профілі</string>
     

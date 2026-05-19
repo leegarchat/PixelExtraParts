@@ -22,6 +22,7 @@
 #include <android-base/properties.h>
 #include <android-base/stringprintf.h>
 #include <android-base/strings.h>
+#include <sys/stat.h>
 #include <sys/system_properties.h>
 #include <time.h>
 #include <utils/Trace.h>
@@ -176,6 +177,7 @@ ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb)
             ::android::base::GetBoolProperty(kThermalDisabledProperty.data(), false);
     const std::string requested_config = getCurrentConfigPropertyValue();
     active_config_value_ = requested_config;
+    active_config_stamp_ = getConfigStamp(requested_config);
 
     if (!initializeThermalConfig(requested_config, thermal_throttling_disabled,
                                  !thermal_throttling_disabled)) {
@@ -192,6 +194,7 @@ ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb)
                        << " is not available yet, using " << default_config
                        << " until the requested config can be loaded";
             active_config_value_ = default_config;
+            active_config_stamp_ = getConfigStamp(default_config);
             startConfigWatcher();
             return;
         }
@@ -200,6 +203,7 @@ ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb)
     }
 
     if (!thermal_throttling_disabled) {
+        active_config_stamp_ = getConfigStamp(active_config_value_);
         startConfigWatcher();
     }
 }
@@ -210,6 +214,18 @@ ThermalHelperImpl::~ThermalHelperImpl() {
 
 std::string ThermalHelperImpl::getCurrentConfigPropertyValue() const {
     return ::android::base::GetProperty(kConfigProperty.data(), kConfigDefaultFileName.data());
+}
+
+std::string ThermalHelperImpl::getConfigStamp(std::string_view config_value) const {
+    const std::string config_path = ResolveThermalConfigPath(config_value);
+    struct stat config_stat;
+    if (stat(config_path.c_str(), &config_stat) != 0) {
+        return "";
+    }
+
+    return ::android::base::StringPrintf("%lld:%lld:%lld", static_cast<long long>(config_stat.st_size),
+                                         static_cast<long long>(config_stat.st_mtim.tv_sec),
+                                         static_cast<long long>(config_stat.st_mtim.tv_nsec));
 }
 
 void ThermalHelperImpl::resetRuntimeState() {
@@ -262,9 +278,10 @@ void ThermalHelperImpl::configWatcherLoop() {
         }
 
         const std::string config_value = getCurrentConfigPropertyValue();
+        const std::string config_stamp = getConfigStamp(config_value);
         {
             std::lock_guard<std::mutex> lock(config_reload_mutex_);
-            if (config_value == active_config_value_) {
+            if (config_value == active_config_value_ && config_stamp == active_config_stamp_) {
                 continue;
             }
         }
@@ -275,7 +292,8 @@ void ThermalHelperImpl::configWatcherLoop() {
 
 bool ThermalHelperImpl::reloadThermalConfig(std::string_view config_value) {
     std::lock_guard<std::mutex> reload_lock(config_reload_mutex_);
-    if (config_value == active_config_value_) {
+    const std::string config_stamp = getConfigStamp(config_value);
+    if (config_value == active_config_value_ && config_stamp == active_config_stamp_) {
         return true;
     }
 
@@ -286,13 +304,14 @@ bool ThermalHelperImpl::reloadThermalConfig(std::string_view config_value) {
     LOG(INFO) << "Reload thermal config from " << previous_config << " to " << config_value;
 
     std::lock_guard<std::mutex> callback_lock(thermal_callback_mutex_);
-    clearAllThrottling();
 
     if (!initializeThermalConfig(config_value, thermal_throttling_disabled, false)) {
         LOG(ERROR) << "Failed to reload thermal config " << config_value << ", restoring "
                    << previous_config;
         if (!previous_config.empty() && previous_config != config_value &&
             initializeThermalConfig(previous_config, thermal_throttling_disabled, false)) {
+            active_config_value_ = previous_config;
+            active_config_stamp_ = getConfigStamp(previous_config);
             return false;
         }
 
@@ -302,6 +321,7 @@ bool ThermalHelperImpl::reloadThermalConfig(std::string_view config_value) {
             LOG(ERROR) << "Previous thermal config " << previous_config
                        << " is not available, falling back to " << default_config;
             active_config_value_ = default_config;
+            active_config_stamp_ = getConfigStamp(default_config);
             thermal_watcher_->wake();
             return false;
         }
@@ -311,6 +331,7 @@ bool ThermalHelperImpl::reloadThermalConfig(std::string_view config_value) {
     }
 
     active_config_value_ = std::string(config_value);
+    active_config_stamp_ = getConfigStamp(config_value);
     thermal_watcher_->wake();
     return true;
 }

@@ -69,10 +69,7 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.services.ActivityTransitionTileService
-import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
@@ -80,7 +77,6 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.RemoteStringsManager
-import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -478,26 +474,6 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
     // ── UI ──
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = {
-            RebootBubble(
-                extraActions = listOf(
-                    RebootBubbleMenuAction(
-                        icon = Icons.Rounded.Add,
-                        label = dynamicStringResource(R.string.activity_transition_add_tile),
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {
-                            TileUtils.requestAddTileService(
-                                context,
-                                ActivityTransitionTileService::class.java,
-                                R.string.anim_transition_title,
-                                R.drawable.ic_activity_transition_tile
-                            )
-                        }
-                    )
-                )
-            )
-        },
         topBar = {
             TopAppBar(
                 title = { Text(dynamicStringResource(R.string.anim_transition_title), fontWeight = FontWeight.Bold) },

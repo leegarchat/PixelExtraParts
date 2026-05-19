@@ -45,6 +45,30 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+prebuilt_etc {
+    name: "launcher_hooks_addon",
+    src: "example.addon.hook/launcher_hooks/out/launcher_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "systemui_hooks_addon",
+    src: "example.addon.hook/systemui_hooks/out/systemui_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "icon_manager_settings_addon",
+    src: "example.addon.hook/icon_manager_settings/out/icon_manager_settings.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
 java_import {
     name: "apksig-jar",
     jars: ["common/lib/apksig.jar"],

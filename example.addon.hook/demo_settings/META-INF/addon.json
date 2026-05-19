@@ -1,0 +1,3096 @@
+{
+    "id": "demo_settings_showcase",
+    "name": "Settings Showcase",
+    "author": "PixelParts Demo",
+    "description": "Full demonstration of all supported setting types, icons, shapes, activities and visual elements",
+    "version": "1.0",
+    "enabled": true,
+    "icon": "META-INF/icon_demo.png",
+    "background": "META-INF/bg_demo.png",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 70,
+    "backgroundGradientSteps": [
+        0,
+        30,
+        80,
+        100
+    ],
+    "backgroundBlur": true,
+    "backgroundBlurRadius": 15,
+    "cardColor": "#1A1A2E",
+    "backgroundScope": "header",
+    "accent": "#00BCD4",
+    "settings": [
+        {
+            "key": "demo_master_toggle",
+            "title": "Master Enable",
+            "description": "Global toggle for the demo addon",
+            "type": "switch",
+            "provider": "global",
+            "default": true,
+            "icon": "Rounded.PowerSettingsNew",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconSize": 20
+        },
+        {
+            "key": "demo_warning_top",
+            "type": "warning",
+            "title": "Demo Warning",
+            "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect.",
+            "color": "#FF9800"
+        }
+    ],
+    "main": [
+        {
+            "id": "basic-controls",
+            "title": "Basic Controls",
+            "subtitle": "Toggles, sliders, text fields",
+            "group": "system",
+            "priority": 100,
+            "settings": [
+                {
+                    "key": "demo_info_basic",
+                    "type": "info",
+                    "title": "Basic Input Controls",
+                    "description": "Standard controls for boolean, integer, float and string values."
+                },
+                {
+                    "key": "demo_toggle_1",
+                    "title": "Toggle (switch)",
+                    "description": "Standard on/off switch",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "icon": "Rounded.ToggleOn",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_toggle_2",
+                    "title": "Toggle (checkbox)",
+                    "description": "Checkbox variant",
+                    "type": "checkbox",
+                    "provider": "global",
+                    "default": true,
+                    "icon": "Rounded.CheckBox",
+                    "iconType": "app",
+                    "iconShape": "none",
+                    "iconSize": 22
+                },
+                {
+                    "key": "demo_int_slider",
+                    "title": "Integer Slider",
+                    "description": "Discrete integer value with step",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 50,
+                    "min": 0,
+                    "max": 100,
+                    "step": 5,
+                    "unit": "%",
+                    "icon": "Rounded.LinearScale",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
+                },
+                {
+                    "key": "demo_float_slider",
+                    "title": "Float Slider",
+                    "description": "Continuous float value",
+                    "type": "float",
+                    "provider": "global",
+                    "default": 1.5,
+                    "min": 0.0,
+                    "max": 5.0,
+                    "step": 0.1,
+                    "unit": "x",
+                    "icon": "Rounded.Speed",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 18
+                },
+                {
+                    "key": "demo_string_input",
+                    "title": "Text Input",
+                    "description": "Free-form string value",
+                    "type": "string",
+                    "provider": "global",
+                    "default": "Hello World",
+                    "icon": "Rounded.TextFields",
+                    "iconType": "app",
+                    "iconShape": "none",
+                    "iconSize": 20
+                }
+            ]
+        },
+        {
+            "id": "selectors",
+            "title": "Selection Controls",
+            "subtitle": "Dropdown, button select, color picker",
+            "group": "system",
+            "priority": 90,
+            "settings": [
+                {
+                    "key": "demo_select_dropdown",
+                    "title": "Dropdown Select",
+                    "description": "Classic dropdown menu",
+                    "type": "select",
+                    "provider": "global",
+                    "default": "medium",
+                    "options": [
+                        {
+                            "value": "off",
+                            "label": "Off"
+                        },
+                        {
+                            "value": "low",
+                            "label": "Low"
+                        },
+                        {
+                            "value": "medium",
+                            "label": "Medium"
+                        },
+                        {
+                            "value": "high",
+                            "label": "High"
+                        },
+                        {
+                            "value": "extreme",
+                            "label": "Extreme"
+                        }
+                    ],
+                    "icon": "Rounded.ArrowDropDownCircle",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_select_button",
+                    "title": "Button Select",
+                    "description": "Radio-button style selection with animated highlight",
+                    "type": "select_button",
+                    "provider": "global",
+                    "default": "balanced",
+                    "options": [
+                        {
+                            "value": "performance",
+                            "label": "Performance"
+                        },
+                        {
+                            "value": "balanced",
+                            "label": "Balanced"
+                        },
+                        {
+                            "value": "battery",
+                            "label": "Battery Saver"
+                        },
+                        {
+                            "value": "custom",
+                            "label": "Custom Profile"
+                        }
+                    ],
+                    "icon": "Rounded.RadioButtonChecked",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_color_hex",
+                    "title": "Color Picker (HEX)",
+                    "description": "Standard hex color without alpha",
+                    "type": "color",
+                    "provider": "global",
+                    "default": "#2196F3",
+                    "format": "hex",
+                    "alpha": false,
+                    "icon": "Rounded.Palette",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_color_rgba",
+                    "title": "Color Picker (RGBA + Alpha)",
+                    "description": "RGBA format with alpha slider",
+                    "type": "color",
+                    "provider": "global",
+                    "default": "#80FF5722",
+                    "format": "rgba",
+                    "alpha": true,
+                    "icon": "Rounded.ColorLens",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                }
+            ]
+        },
+        {
+            "id": "visual-elements",
+            "title": "Visual Elements",
+            "subtitle": "Warnings, dividers, spacers, images, text blocks",
+            "group": "system",
+            "priority": 80,
+            "settings": [
+                {
+                    "key": "demo_warning_default",
+                    "type": "warning",
+                    "title": "Default Warning",
+                    "description": "This uses the default error container color from the system theme. Tap to expand and see the full message."
+                },
+                {
+                    "key": "demo_warning_custom",
+                    "type": "warning",
+                    "title": "Custom Color Warning",
+                    "description": "This warning uses a custom orange color to indicate a non-critical but important notice.",
+                    "color": "#FF9800"
+                },
+                {
+                    "key": "demo_warning_blue",
+                    "type": "warning",
+                    "title": "Info Notice",
+                    "description": "Blue-tinted informational notice. Use this for tips and non-dangerous information.",
+                    "color": "#2196F3"
+                },
+                {
+                    "key": "demo_spacer_1",
+                    "type": "spacer",
+                    "size": 16
+                },
+                {
+                    "key": "demo_info_text",
+                    "type": "info",
+                    "title": "Section Header",
+                    "description": "This is a text/info block. Use it to add explanatory text between settings."
+                },
+                {
+                    "key": "demo_divider_solid",
+                    "type": "divider",
+                    "thickness": 1,
+                    "color": "#44FFFFFF"
+                },
+                {
+                    "key": "demo_divider_dashed",
+                    "type": "dashed_line",
+                    "thickness": 2,
+                    "color": "#66FFFFFF"
+                },
+                {
+                    "key": "demo_spacer_2",
+                    "type": "spacer",
+                    "size": 24
+                }
+            ]
+        },
+        {
+            "id": "groups-nested",
+            "title": "Groups & Nesting",
+            "subtitle": "Expandable groups, exclusive toggles",
+            "group": "system",
+            "priority": 70,
+            "settings": [
+                {
+                    "key": "demo_group_expandable",
+                    "type": "group",
+                    "title": "Expandable Group",
+                    "description": "Tap to expand and see nested settings",
+                    "mode": "expand",
+                    "settings": [
+                        {
+                            "key": "demo_nested_toggle_a",
+                            "title": "Nested Toggle A",
+                            "type": "switch",
+                            "default": false,
+                            "icon": "Rounded.LooksOne",
+                            "iconType": "app",
+                            "iconShape": "circle",
+                            "iconSize": 18
+                        },
+                        {
+                            "key": "demo_nested_toggle_b",
+                            "title": "Nested Toggle B",
+                            "type": "switch",
+                            "default": true,
+                            "icon": "Rounded.LooksTwo",
+                            "iconType": "app",
+                            "iconShape": "circle",
+                            "iconSize": 18
+                        },
+                        {
+                            "key": "demo_nested_slider",
+                            "title": "Nested Slider",
+                            "type": "int",
+                            "default": 75,
+                            "min": 0,
+                            "max": 100,
+                            "step": 1,
+                            "unit": "%"
+                        }
+                    ]
+                },
+                {
+                    "key": "demo_exclusive_info",
+                    "type": "info",
+                    "title": "Exclusive Toggles",
+                    "description": "Only one of these can be active at a time (exclusiveGroup)."
+                },
+                {
+                    "key": "demo_mode_fast",
+                    "title": "Fast Mode",
+                    "type": "switch",
+                    "default": false,
+                    "exclusiveGroup": "demo_mode",
+                    "icon": "Rounded.FlashOn",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
+                },
+                {
+                    "key": "demo_mode_safe",
+                    "title": "Safe Mode",
+                    "type": "switch",
+                    "default": true,
+                    "exclusiveGroup": "demo_mode",
+                    "icon": "Rounded.Shield",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
+                },
+                {
+                    "key": "demo_mode_eco",
+                    "title": "Eco Mode",
+                    "type": "switch",
+                    "default": false,
+                    "exclusiveGroup": "demo_mode",
+                    "icon": "Rounded.Eco",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
+                }
+            ]
+        },
+        {
+            "id": "icons-showcase",
+            "title": "Icons Showcase",
+            "subtitle": "All icon shapes and types",
+            "group": "gesture",
+            "priority": 60,
+            "settings": [
+                {
+                    "key": "demo_icon_none",
+                    "title": "No Shape (icon only)",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Star",
+                    "iconType": "app",
+                    "iconShape": "none",
+                    "iconSize": 24
+                },
+                {
+                    "key": "demo_icon_circle",
+                    "title": "Circle Shape",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Favorite",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_rounded",
+                    "title": "Rounded Square Shape",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Diamond",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_small",
+                    "title": "Small Icon (12dp)",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Circle",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 12
+                },
+                {
+                    "key": "demo_icon_large",
+                    "title": "Large Icon (32dp)",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Rocket",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 32
+                },
+                {
+                    "key": "demo_icon_filled",
+                    "title": "Filled Variant",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Filled.Home",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_outlined",
+                    "title": "Outlined Variant",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Outlined.Settings",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_file",
+                    "title": "File Icon (from JAR)",
+                    "description": "Loaded from META-INF/icons/custom_icon.png",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "META-INF/icons/custom_icon.png",
+                    "iconType": "file",
+                    "iconShape": "circle",
+                    "iconSize": 22
+                }
+            ]
+        },
+        {
+            "id": "main/icons-showcase/material-gallery",
+            "title": "Material Icons Gallery",
+            "subtitle": "More icon examples",
+            "settings": [
+                {
+                    "key": "demo_icon_wifi",
+                    "title": "WiFi",
+                    "type": "toggle",
+                    "default": true,
+                    "icon": "Rounded.Wifi",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_bluetooth",
+                    "title": "Bluetooth",
+                    "type": "toggle",
+                    "default": false,
+                    "icon": "Rounded.Bluetooth",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_battery",
+                    "title": "Battery",
+                    "type": "int",
+                    "default": 80,
+                    "min": 0,
+                    "max": 100,
+                    "unit": "%",
+                    "icon": "Rounded.BatteryChargingFull",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_volume",
+                    "title": "Volume",
+                    "type": "int",
+                    "default": 70,
+                    "min": 0,
+                    "max": 100,
+                    "unit": "%",
+                    "icon": "Rounded.VolumeUp",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_brightness",
+                    "title": "Brightness",
+                    "type": "int",
+                    "default": 50,
+                    "min": 0,
+                    "max": 100,
+                    "unit": "%",
+                    "icon": "Rounded.BrightnessHigh",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_location",
+                    "title": "Location",
+                    "type": "toggle",
+                    "default": true,
+                    "icon": "Rounded.LocationOn",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_notifications",
+                    "title": "Notifications",
+                    "type": "toggle",
+                    "default": true,
+                    "icon": "Rounded.Notifications",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_icon_security",
+                    "title": "Security",
+                    "type": "toggle",
+                    "default": false,
+                    "icon": "Rounded.Security",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                }
+            ]
+        },
+        {
+            "id": "advanced-features",
+            "title": "Advanced Features",
+            "subtitle": "File storage, app picker, complex scenarios",
+            "group": "network",
+            "priority": 50,
+            "settings": [
+                {
+                    "key": "demo_warning_advanced",
+                    "type": "warning",
+                    "title": "Advanced Section",
+                    "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios.",
+                    "color": "#9C27B0"
+                },
+                {
+                    "key": "demo_file_picker",
+                    "title": "Config File",
+                    "description": "Select a JSON configuration file",
+                    "type": "file",
+                    "mimeType": "application/json",
+                    "icon": "Rounded.FileOpen",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_app_list",
+                    "title": "Target Apps",
+                    "description": "Select which apps this feature applies to",
+                    "type": "apps",
+                    "storage": "file",
+                    "icon": "Rounded.Apps",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_complex_group",
+                    "type": "group",
+                    "title": "Multi-value Configuration",
+                    "description": "Complex nested settings with mixed types",
+                    "mode": "expand",
+                    "settings": [
+                        {
+                            "key": "demo_complex_enabled",
+                            "title": "Enable Feature",
+                            "type": "switch",
+                            "default": false,
+                            "icon": "Rounded.Power",
+                            "iconType": "app",
+                            "iconShape": "circle",
+                            "iconSize": 16
+                        },
+                        {
+                            "key": "demo_complex_intensity",
+                            "title": "Intensity",
+                            "type": "int",
+                            "default": 50,
+                            "min": 0,
+                            "max": 100,
+                            "step": 10,
+                            "unit": "%"
+                        },
+                        {
+                            "key": "demo_complex_mode",
+                            "title": "Mode",
+                            "type": "select_button",
+                            "default": "auto",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                },
+                                {
+                                    "value": "manual",
+                                    "label": "Manual"
+                                },
+                                {
+                                    "value": "scheduled",
+                                    "label": "Scheduled"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_complex_color",
+                            "title": "Accent Color",
+                            "type": "color",
+                            "default": "#00BCD4",
+                            "format": "hex",
+                            "alpha": false
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "main/advanced-features/storage-demo",
+            "title": "Storage Types Demo",
+            "subtitle": "Different storage backends",
+            "settings": [
+                {
+                    "key": "demo_storage_global",
+                    "title": "Settings.Global",
+                    "description": "Stored in Settings.Global (default)",
+                    "type": "string",
+                    "provider": "global",
+                    "default": "global_value"
+                },
+                {
+                    "key": "demo_storage_system",
+                    "title": "Settings.System",
+                    "description": "Stored in Settings.System",
+                    "type": "string",
+                    "provider": "system",
+                    "default": "system_value"
+                },
+                {
+                    "key": "demo_storage_file",
+                    "title": "File Storage",
+                    "description": "Stored in addon data directory",
+                    "type": "string",
+                    "storage": "file",
+                    "default": "file_value"
+                }
+            ]
+        },
+        {
+            "id": "tiles-demo",
+            "title": "QS Tiles",
+            "subtitle": "Dynamic quick settings tile binding",
+            "group": "system",
+            "priority": 45,
+            "settings": [
+                {
+                    "key": "demo_tile_warning",
+                    "type": "warning",
+                    "title": "Dynamic Tiles",
+                    "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page.",
+                    "color": "#2196F3"
+                },
+                {
+                    "key": "demo_tile_toggle",
+                    "title": "Demo Toggle Tile",
+                    "description": "Off",
+                    "type": "tile",
+                    "default": "toggle",
+                    "unit": "Active",
+                    "icon": "Rounded.ToggleOn",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_tile_carousel",
+                    "title": "Demo Carousel Tile",
+                    "description": "Disabled",
+                    "type": "tile",
+                    "default": "carousel",
+                    "unit": "Running",
+                    "options": [
+                        {
+                            "value": "off",
+                            "label": "Disabled"
+                        },
+                        {
+                            "value": "low",
+                            "label": "Low Power"
+                        },
+                        {
+                            "value": "balanced",
+                            "label": "Balanced"
+                        },
+                        {
+                            "value": "performance",
+                            "label": "Performance"
+                        }
+                    ],
+                    "icon": "Rounded.Speed",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                }
+            ]
+        },
+        {
+            "id": "immersive-groups",
+            "title": "Immersive Groups",
+            "subtitle": "Flat inline groups without container",
+            "group": "system",
+            "priority": 65,
+            "settings": [
+                {
+                    "key": "demo_immersive_group",
+                    "type": "group",
+                    "title": "Display Settings",
+                    "description": "These settings appear inline without a separate container",
+                    "accent": "#4CAF50",
+                    "settings": [
+                        {
+                            "key": "demo_imm_brightness",
+                            "title": "Auto Brightness",
+                            "type": "switch",
+                            "default": true,
+                            "icon": "Rounded.BrightnessAuto",
+                            "iconType": "app",
+                            "iconShape": "circle",
+                            "iconSize": 18
+                        },
+                        {
+                            "key": "demo_imm_night_mode",
+                            "title": "Night Mode",
+                            "type": "switch",
+                            "default": false,
+                            "icon": "Rounded.DarkMode",
+                            "iconType": "app",
+                            "iconShape": "circle",
+                            "iconSize": 18
+                        },
+                        {
+                            "key": "demo_imm_refresh_rate",
+                            "title": "Refresh Rate",
+                            "type": "select_button",
+                            "default": "auto",
+                            "options": [
+                                {
+                                    "value": "60",
+                                    "label": "60 Hz"
+                                },
+                                {
+                                    "value": "90",
+                                    "label": "90 Hz"
+                                },
+                                {
+                                    "value": "120",
+                                    "label": "120 Hz"
+                                },
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "demo_spacer_imm",
+                    "type": "spacer",
+                    "size": 8
+                },
+                {
+                    "key": "demo_colored_group",
+                    "type": "group",
+                    "title": "Custom Background Group",
+                    "description": "This expandable group has a custom background color",
+                    "mode": "expand",
+                    "color": "#1A237E",
+                    "accent": "#7C4DFF",
+                    "settings": [
+                        {
+                            "key": "demo_cg_option_a",
+                            "title": "Option A",
+                            "type": "switch",
+                            "default": false
+                        },
+                        {
+                            "key": "demo_cg_option_b",
+                            "title": "Option B",
+                            "type": "int",
+                            "default": 50,
+                            "min": 0,
+                            "max": 100,
+                            "step": 5,
+                            "unit": "%"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "file-options-demo",
+            "title": "File-based Options",
+            "subtitle": "Select options loaded from external JSON",
+            "group": "network",
+            "priority": 40,
+            "settings": [
+                {
+                    "key": "demo_file_warning",
+                    "type": "warning",
+                    "title": "External Options Source",
+                    "description": "These selectors load their options from a JSON file in the addon data directory. A hook can generate this file at runtime, and the UI will read it dynamically.",
+                    "color": "#009688"
+                },
+                {
+                    "key": "demo_file_select",
+                    "title": "Dynamic Profile",
+                    "description": "Options loaded from profiles.json",
+                    "type": "select",
+                    "default": "default",
+                    "optionsSource": "file",
+                    "optionsPath": "demo_settings_showcase/profiles.json",
+                    "icon": "Rounded.Storage",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_file_select_button",
+                    "title": "Dynamic Mode",
+                    "description": "Button-style selector from modes.json",
+                    "type": "select_button",
+                    "default": "auto",
+                    "optionsSource": "file",
+                    "optionsPath": "demo_settings_showcase/modes.json",
+                    "icon": "Rounded.AutoMode",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                }
+            ]
+        },
+        {
+            "id": "custom-group-demo",
+            "title": "Custom Category",
+            "subtitle": "This uses a custom group name",
+            "group": "Tweaks",
+            "priority": 200,
+            "settings": [
+                {
+                    "key": "demo_custom_group_info",
+                    "type": "info",
+                    "title": "Custom Group",
+                    "description": "This entry uses group='Tweaks' which creates a new section in the activity with that name. Custom groups are sorted by their highest priority entry."
+                },
+                {
+                    "key": "demo_tweak_a",
+                    "title": "Tweak A",
+                    "type": "switch",
+                    "default": false,
+                    "icon": "Rounded.Build",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
+                },
+                {
+                    "key": "demo_tweak_b",
+                    "title": "Tweak B",
+                    "type": "int",
+                    "default": 0,
+                    "min": -100,
+                    "max": 100,
+                    "step": 10,
+                    "unit": "px"
+                }
+            ]
+        },
+        {
+            "id": "app-selector-demo",
+            "title": "App Selectors",
+            "subtitle": "App list with showSelected parameter",
+            "group": "system",
+            "priority": 55,
+            "settings": [
+                {
+                    "key": "demo_apps_visible",
+                    "title": "Apps (chips visible)",
+                    "description": "Selected apps shown as chips below",
+                    "type": "apps",
+                    "showSelected": true,
+                    "icon": "Rounded.Apps",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                },
+                {
+                    "key": "demo_apps_hidden",
+                    "title": "Apps (chips hidden)",
+                    "description": "Selected apps NOT shown below the button",
+                    "type": "apps",
+                    "showSelected": false,
+                    "icon": "Rounded.VisibilityOff",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "Демонстрация настроек",
+            "author": "PixelParts Demo",
+            "description": "Полная демонстрация всех поддерживаемых типов настроек, иконок, форм, activity и визуальных элементов",
+            "settings": [
+                {
+                    "key": "demo_master_toggle",
+                    "title": "Master Enable",
+                    "description": "Global toggle for the demo addon"
+                },
+                {
+                    "key": "demo_warning_top",
+                    "title": "Demo Warning",
+                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                }
+            ],
+            "main": [
+                {
+                    "id": "basic-controls",
+                    "title": "Basic Controls",
+                    "subtitle": "Toggles, sliders, text fields",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_info_basic",
+                            "title": "Basic Input Controls",
+                            "description": "Standard controls for boolean, integer, float and string values."
+                        },
+                        {
+                            "key": "demo_toggle_1",
+                            "title": "Toggle (switch)",
+                            "description": "Standard on/off switch"
+                        },
+                        {
+                            "key": "demo_toggle_2",
+                            "title": "Toggle (checkbox)",
+                            "description": "Checkbox variant"
+                        },
+                        {
+                            "key": "demo_int_slider",
+                            "title": "Integer Slider",
+                            "description": "Discrete integer value with step"
+                        },
+                        {
+                            "key": "demo_float_slider",
+                            "title": "Float Slider",
+                            "description": "Continuous float value"
+                        },
+                        {
+                            "key": "demo_string_input",
+                            "title": "Text Input",
+                            "description": "Free-form string value"
+                        }
+                    ]
+                },
+                {
+                    "id": "selectors",
+                    "title": "Selection Controls",
+                    "subtitle": "Dropdown, button select, color picker",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_select_dropdown",
+                            "title": "Dropdown Select",
+                            "description": "Classic dropdown menu",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Выключено"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low"
+                                },
+                                {
+                                    "value": "medium",
+                                    "label": "Medium"
+                                },
+                                {
+                                    "value": "high",
+                                    "label": "High"
+                                },
+                                {
+                                    "value": "extreme",
+                                    "label": "Extreme"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_select_button",
+                            "title": "Button Select",
+                            "description": "Radio-button style selection with animated highlight",
+                            "options": [
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "battery",
+                                    "label": "Battery Saver"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom Profile"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_color_hex",
+                            "title": "Color Picker (HEX)",
+                            "description": "Standard hex color without alpha"
+                        },
+                        {
+                            "key": "demo_color_rgba",
+                            "title": "Color Picker (RGBA + Alpha)",
+                            "description": "RGBA format with alpha slider"
+                        }
+                    ]
+                },
+                {
+                    "id": "visual-elements",
+                    "title": "Visual Elements",
+                    "subtitle": "Warnings, dividers, spacers, images, text blocks",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_warning_default",
+                            "title": "Default Warning",
+                            "description": "This uses the default error container color from the system theme. Tap to expand and see the full message."
+                        },
+                        {
+                            "key": "demo_warning_custom",
+                            "title": "Custom Color Warning",
+                            "description": "This warning uses a custom orange color to indicate a non-critical but important notice."
+                        },
+                        {
+                            "key": "demo_warning_blue",
+                            "title": "Info Notice",
+                            "description": "Blue-tinted informational notice. Use this for tips and non-dangerous information."
+                        },
+                        {
+                            "key": "demo_spacer_1"
+                        },
+                        {
+                            "key": "demo_info_text",
+                            "title": "Section Header",
+                            "description": "This is a text/info block. Use it to add explanatory text between settings."
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "demo_divider_dashed"
+                        },
+                        {
+                            "key": "demo_spacer_2"
+                        }
+                    ]
+                },
+                {
+                    "id": "groups-nested",
+                    "title": "Groups & Nesting",
+                    "subtitle": "Expandable groups, exclusive toggles",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_group_expandable",
+                            "title": "Expandable Group",
+                            "description": "Tap to expand and see nested settings",
+                            "settings": [
+                                {
+                                    "key": "demo_nested_toggle_a",
+                                    "title": "Nested Toggle A"
+                                },
+                                {
+                                    "key": "demo_nested_toggle_b",
+                                    "title": "Nested Toggle B"
+                                },
+                                {
+                                    "key": "demo_nested_slider",
+                                    "title": "Nested Slider"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_exclusive_info",
+                            "title": "Exclusive Toggles",
+                            "description": "Only one of these can be active at a time (exclusiveGroup)."
+                        },
+                        {
+                            "key": "demo_mode_fast",
+                            "title": "Fast Mode"
+                        },
+                        {
+                            "key": "demo_mode_safe",
+                            "title": "Safe Mode"
+                        },
+                        {
+                            "key": "demo_mode_eco",
+                            "title": "Eco Mode"
+                        }
+                    ]
+                },
+                {
+                    "id": "icons-showcase",
+                    "title": "Icons Showcase",
+                    "subtitle": "All icon shapes and types",
+                    "group": "gesture",
+                    "settings": [
+                        {
+                            "key": "demo_icon_none",
+                            "title": "No Shape (icon only)"
+                        },
+                        {
+                            "key": "demo_icon_circle",
+                            "title": "Circle Shape"
+                        },
+                        {
+                            "key": "demo_icon_rounded",
+                            "title": "Rounded Square Shape"
+                        },
+                        {
+                            "key": "demo_icon_small",
+                            "title": "Small Icon (12dp)"
+                        },
+                        {
+                            "key": "demo_icon_large",
+                            "title": "Large Icon (32dp)"
+                        },
+                        {
+                            "key": "demo_icon_filled",
+                            "title": "Filled Variant"
+                        },
+                        {
+                            "key": "demo_icon_outlined",
+                            "title": "Outlined Variant"
+                        },
+                        {
+                            "key": "demo_icon_file",
+                            "title": "File Icon (from JAR)",
+                            "description": "Loaded from META-INF/icons/custom_icon.png"
+                        }
+                    ]
+                },
+                {
+                    "id": "main/icons-showcase/material-gallery",
+                    "title": "Material Icons Gallery",
+                    "subtitle": "More icon examples",
+                    "settings": [
+                        {
+                            "key": "demo_icon_wifi",
+                            "title": "WiFi"
+                        },
+                        {
+                            "key": "demo_icon_bluetooth",
+                            "title": "Bluetooth"
+                        },
+                        {
+                            "key": "demo_icon_battery",
+                            "title": "Battery"
+                        },
+                        {
+                            "key": "demo_icon_volume",
+                            "title": "Volume"
+                        },
+                        {
+                            "key": "demo_icon_brightness",
+                            "title": "Brightness"
+                        },
+                        {
+                            "key": "demo_icon_location",
+                            "title": "Location"
+                        },
+                        {
+                            "key": "demo_icon_notifications",
+                            "title": "Notifications"
+                        },
+                        {
+                            "key": "demo_icon_security",
+                            "title": "Security"
+                        }
+                    ]
+                },
+                {
+                    "id": "advanced-features",
+                    "title": "Advanced Features",
+                    "subtitle": "File storage, app picker, complex scenarios",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_warning_advanced",
+                            "title": "Advanced Section",
+                            "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios."
+                        },
+                        {
+                            "key": "demo_file_picker",
+                            "title": "Config File",
+                            "description": "Select a JSON configuration file"
+                        },
+                        {
+                            "key": "demo_app_list",
+                            "title": "Target Apps",
+                            "description": "Select which apps this feature applies to"
+                        },
+                        {
+                            "key": "demo_complex_group",
+                            "title": "Multi-value Configuration",
+                            "description": "Complex nested settings with mixed types",
+                            "settings": [
+                                {
+                                    "key": "demo_complex_enabled",
+                                    "title": "Enable Feature"
+                                },
+                                {
+                                    "key": "demo_complex_intensity",
+                                    "title": "Intensity"
+                                },
+                                {
+                                    "key": "demo_complex_mode",
+                                    "title": "Mode",
+                                    "options": [
+                                        {
+                                            "value": "auto",
+                                            "label": "Авто"
+                                        },
+                                        {
+                                            "value": "manual",
+                                            "label": "Manual"
+                                        },
+                                        {
+                                            "value": "scheduled",
+                                            "label": "Scheduled"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "demo_complex_color",
+                                    "title": "Accent Color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/advanced-features/storage-demo",
+                    "title": "Storage Types Demo",
+                    "subtitle": "Different storage backends",
+                    "settings": [
+                        {
+                            "key": "demo_storage_global",
+                            "title": "Settings.Global",
+                            "description": "Stored in Settings.Global (default)"
+                        },
+                        {
+                            "key": "demo_storage_system",
+                            "title": "Settings.System",
+                            "description": "Stored in Settings.System"
+                        },
+                        {
+                            "key": "demo_storage_file",
+                            "title": "File Storage",
+                            "description": "Stored in addon data directory"
+                        }
+                    ]
+                },
+                {
+                    "id": "tiles-demo",
+                    "title": "QS Tiles",
+                    "subtitle": "Dynamic quick settings tile binding",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_tile_warning",
+                            "title": "Dynamic Tiles",
+                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                        },
+                        {
+                            "key": "demo_tile_toggle",
+                            "title": "Demo Toggle Tile",
+                            "description": "Выключено"
+                        },
+                        {
+                            "key": "demo_tile_carousel",
+                            "title": "Demo Carousel Tile",
+                            "description": "Disabled",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Disabled"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low Power"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "immersive-groups",
+                    "title": "Immersive Groups",
+                    "subtitle": "Flat inline groups without container",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_immersive_group",
+                            "title": "Display Settings",
+                            "description": "These settings appear inline without a separate container",
+                            "settings": [
+                                {
+                                    "key": "demo_imm_brightness",
+                                    "title": "Auto Brightness"
+                                },
+                                {
+                                    "key": "demo_imm_night_mode",
+                                    "title": "Night Mode"
+                                },
+                                {
+                                    "key": "demo_imm_refresh_rate",
+                                    "title": "Refresh Rate",
+                                    "options": [
+                                        {
+                                            "value": "60",
+                                            "label": "60 Hz"
+                                        },
+                                        {
+                                            "value": "90",
+                                            "label": "90 Hz"
+                                        },
+                                        {
+                                            "value": "120",
+                                            "label": "120 Hz"
+                                        },
+                                        {
+                                            "value": "auto",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_spacer_imm"
+                        },
+                        {
+                            "key": "demo_colored_group",
+                            "title": "Custom Background Group",
+                            "description": "This expandable group has a custom background color",
+                            "settings": [
+                                {
+                                    "key": "demo_cg_option_a",
+                                    "title": "Option A"
+                                },
+                                {
+                                    "key": "demo_cg_option_b",
+                                    "title": "Option B"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "file-options-demo",
+                    "title": "File-based Options",
+                    "subtitle": "Select options loaded from external JSON",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_file_warning",
+                            "title": "External Options Source",
+                            "description": "These selectors load their options from a JSON file in the addon data directory. A hook can generate this file at runtime, and the UI will read it dynamically."
+                        },
+                        {
+                            "key": "demo_file_select",
+                            "title": "Dynamic Profile",
+                            "description": "Options loaded from profiles.json"
+                        },
+                        {
+                            "key": "demo_file_select_button",
+                            "title": "Dynamic Mode",
+                            "description": "Button-style selector from modes.json"
+                        }
+                    ]
+                },
+                {
+                    "id": "custom-group-demo",
+                    "title": "Custom Category",
+                    "subtitle": "This uses a custom group name",
+                    "group": "Tweaks",
+                    "settings": [
+                        {
+                            "key": "demo_custom_group_info",
+                            "title": "Custom Group",
+                            "description": "This entry uses group='Tweaks' which creates a new section in the activity with that name. Custom groups are sorted by their highest priority entry."
+                        },
+                        {
+                            "key": "demo_tweak_a",
+                            "title": "Tweak A"
+                        },
+                        {
+                            "key": "demo_tweak_b",
+                            "title": "Tweak B"
+                        }
+                    ]
+                },
+                {
+                    "id": "app-selector-demo",
+                    "title": "App Selectors",
+                    "subtitle": "App list with showSelected parameter",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_apps_visible",
+                            "title": "Apps (chips visible)",
+                            "description": "Selected apps shown as chips below"
+                        },
+                        {
+                            "key": "demo_apps_hidden",
+                            "title": "Apps (chips hidden)",
+                            "description": "Selected apps NOT shown below the button"
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "Einstellungs-Galerie",
+            "author": "PixelParts Demo",
+            "description": "Vollständige Demonstration aller unterstützten Einstellungstypen, Icons, Formen, Aktivitäten und visuellen Elemente",
+            "settings": [
+                {
+                    "key": "demo_master_toggle",
+                    "title": "Master Enable",
+                    "description": "Global toggle for the demo addon"
+                },
+                {
+                    "key": "demo_warning_top",
+                    "title": "Demo Warning",
+                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                }
+            ],
+            "main": [
+                {
+                    "id": "basic-controls",
+                    "title": "Basic Controls",
+                    "subtitle": "Toggles, sliders, text fields",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_info_basic",
+                            "title": "Basic Input Controls",
+                            "description": "Standard controls for boolean, integer, float and string values."
+                        },
+                        {
+                            "key": "demo_toggle_1",
+                            "title": "Toggle (switch)",
+                            "description": "Standard on/off switch"
+                        },
+                        {
+                            "key": "demo_toggle_2",
+                            "title": "Toggle (checkbox)",
+                            "description": "Checkbox variant"
+                        },
+                        {
+                            "key": "demo_int_slider",
+                            "title": "Integer Slider",
+                            "description": "Discrete integer value with step"
+                        },
+                        {
+                            "key": "demo_float_slider",
+                            "title": "Float Slider",
+                            "description": "Continuous float value"
+                        },
+                        {
+                            "key": "demo_string_input",
+                            "title": "Text Input",
+                            "description": "Free-form string value"
+                        }
+                    ]
+                },
+                {
+                    "id": "selectors",
+                    "title": "Selection Controls",
+                    "subtitle": "Dropdown, button select, color picker",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_select_dropdown",
+                            "title": "Dropdown Select",
+                            "description": "Classic dropdown menu",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Aus"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low"
+                                },
+                                {
+                                    "value": "medium",
+                                    "label": "Medium"
+                                },
+                                {
+                                    "value": "high",
+                                    "label": "High"
+                                },
+                                {
+                                    "value": "extreme",
+                                    "label": "Extreme"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_select_button",
+                            "title": "Button Select",
+                            "description": "Radio-button style selection with animated highlight",
+                            "options": [
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "battery",
+                                    "label": "Battery Saver"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom Profile"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_color_hex",
+                            "title": "Color Picker (HEX)",
+                            "description": "Standard hex color without alpha"
+                        },
+                        {
+                            "key": "demo_color_rgba",
+                            "title": "Color Picker (RGBA + Alpha)",
+                            "description": "RGBA format with alpha slider"
+                        }
+                    ]
+                },
+                {
+                    "id": "visual-elements",
+                    "title": "Visual Elements",
+                    "subtitle": "Warnings, dividers, spacers, images, text blocks",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_warning_default",
+                            "title": "Default Warning",
+                            "description": "This uses the default error container color from the system theme. Tap to expand and see the full message."
+                        },
+                        {
+                            "key": "demo_warning_custom",
+                            "title": "Custom Color Warning",
+                            "description": "This warning uses a custom orange color to indicate a non-critical but important notice."
+                        },
+                        {
+                            "key": "demo_warning_blue",
+                            "title": "Info Notice",
+                            "description": "Blue-tinted informational notice. Use this for tips and non-dangerous information."
+                        },
+                        {
+                            "key": "demo_spacer_1"
+                        },
+                        {
+                            "key": "demo_info_text",
+                            "title": "Section Header",
+                            "description": "This is a text/info block. Use it to add explanatory text between settings."
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "demo_divider_dashed"
+                        },
+                        {
+                            "key": "demo_spacer_2"
+                        }
+                    ]
+                },
+                {
+                    "id": "groups-nested",
+                    "title": "Groups & Nesting",
+                    "subtitle": "Expandable groups, exclusive toggles",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_group_expandable",
+                            "title": "Expandable Group",
+                            "description": "Tap to expand and see nested settings",
+                            "settings": [
+                                {
+                                    "key": "demo_nested_toggle_a",
+                                    "title": "Nested Toggle A"
+                                },
+                                {
+                                    "key": "demo_nested_toggle_b",
+                                    "title": "Nested Toggle B"
+                                },
+                                {
+                                    "key": "demo_nested_slider",
+                                    "title": "Nested Slider"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_exclusive_info",
+                            "title": "Exclusive Toggles",
+                            "description": "Only one of these can be active at a time (exclusiveGroup)."
+                        },
+                        {
+                            "key": "demo_mode_fast",
+                            "title": "Fast Mode"
+                        },
+                        {
+                            "key": "demo_mode_safe",
+                            "title": "Safe Mode"
+                        },
+                        {
+                            "key": "demo_mode_eco",
+                            "title": "Eco Mode"
+                        }
+                    ]
+                },
+                {
+                    "id": "icons-showcase",
+                    "title": "Icons Showcase",
+                    "subtitle": "All icon shapes and types",
+                    "group": "gesture",
+                    "settings": [
+                        {
+                            "key": "demo_icon_none",
+                            "title": "No Shape (icon only)"
+                        },
+                        {
+                            "key": "demo_icon_circle",
+                            "title": "Circle Shape"
+                        },
+                        {
+                            "key": "demo_icon_rounded",
+                            "title": "Rounded Square Shape"
+                        },
+                        {
+                            "key": "demo_icon_small",
+                            "title": "Small Icon (12dp)"
+                        },
+                        {
+                            "key": "demo_icon_large",
+                            "title": "Large Icon (32dp)"
+                        },
+                        {
+                            "key": "demo_icon_filled",
+                            "title": "Filled Variant"
+                        },
+                        {
+                            "key": "demo_icon_outlined",
+                            "title": "Outlined Variant"
+                        },
+                        {
+                            "key": "demo_icon_file",
+                            "title": "File Icon (from JAR)",
+                            "description": "Loaded from META-INF/icons/custom_icon.png"
+                        }
+                    ]
+                },
+                {
+                    "id": "main/icons-showcase/material-gallery",
+                    "title": "Material Icons Gallery",
+                    "subtitle": "More icon examples",
+                    "settings": [
+                        {
+                            "key": "demo_icon_wifi",
+                            "title": "WiFi"
+                        },
+                        {
+                            "key": "demo_icon_bluetooth",
+                            "title": "Bluetooth"
+                        },
+                        {
+                            "key": "demo_icon_battery",
+                            "title": "Battery"
+                        },
+                        {
+                            "key": "demo_icon_volume",
+                            "title": "Volume"
+                        },
+                        {
+                            "key": "demo_icon_brightness",
+                            "title": "Brightness"
+                        },
+                        {
+                            "key": "demo_icon_location",
+                            "title": "Location"
+                        },
+                        {
+                            "key": "demo_icon_notifications",
+                            "title": "Notifications"
+                        },
+                        {
+                            "key": "demo_icon_security",
+                            "title": "Security"
+                        }
+                    ]
+                },
+                {
+                    "id": "advanced-features",
+                    "title": "Advanced Features",
+                    "subtitle": "File storage, app picker, complex scenarios",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_warning_advanced",
+                            "title": "Advanced Section",
+                            "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios."
+                        },
+                        {
+                            "key": "demo_file_picker",
+                            "title": "Config File",
+                            "description": "Select a JSON configuration file"
+                        },
+                        {
+                            "key": "demo_app_list",
+                            "title": "Target Apps",
+                            "description": "Select which apps this feature applies to"
+                        },
+                        {
+                            "key": "demo_complex_group",
+                            "title": "Multi-value Configuration",
+                            "description": "Complex nested settings with mixed types",
+                            "settings": [
+                                {
+                                    "key": "demo_complex_enabled",
+                                    "title": "Enable Feature"
+                                },
+                                {
+                                    "key": "demo_complex_intensity",
+                                    "title": "Intensity"
+                                },
+                                {
+                                    "key": "demo_complex_mode",
+                                    "title": "Mode",
+                                    "options": [
+                                        {
+                                            "value": "auto",
+                                            "label": "Auto"
+                                        },
+                                        {
+                                            "value": "manual",
+                                            "label": "Manual"
+                                        },
+                                        {
+                                            "value": "scheduled",
+                                            "label": "Scheduled"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "demo_complex_color",
+                                    "title": "Accent Color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/advanced-features/storage-demo",
+                    "title": "Storage Types Demo",
+                    "subtitle": "Different storage backends",
+                    "settings": [
+                        {
+                            "key": "demo_storage_global",
+                            "title": "Settings.Global",
+                            "description": "Stored in Settings.Global (default)"
+                        },
+                        {
+                            "key": "demo_storage_system",
+                            "title": "Settings.System",
+                            "description": "Stored in Settings.System"
+                        },
+                        {
+                            "key": "demo_storage_file",
+                            "title": "File Storage",
+                            "description": "Stored in addon data directory"
+                        }
+                    ]
+                },
+                {
+                    "id": "tiles-demo",
+                    "title": "QS Tiles",
+                    "subtitle": "Dynamic quick settings tile binding",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_tile_warning",
+                            "title": "Dynamic Tiles",
+                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                        },
+                        {
+                            "key": "demo_tile_toggle",
+                            "title": "Demo Toggle Tile",
+                            "description": "Aus"
+                        },
+                        {
+                            "key": "demo_tile_carousel",
+                            "title": "Demo Carousel Tile",
+                            "description": "Disabled",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Disabled"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low Power"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "immersive-groups",
+                    "title": "Immersive Groups",
+                    "subtitle": "Flat inline groups without container",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_immersive_group",
+                            "title": "Display Settings",
+                            "description": "These settings appear inline without a separate container",
+                            "settings": [
+                                {
+                                    "key": "demo_imm_brightness",
+                                    "title": "Auto Brightness"
+                                },
+                                {
+                                    "key": "demo_imm_night_mode",
+                                    "title": "Night Mode"
+                                },
+                                {
+                                    "key": "demo_imm_refresh_rate",
+                                    "title": "Refresh Rate",
+                                    "options": [
+                                        {
+                                            "value": "60",
+                                            "label": "60 Hz"
+                                        },
+                                        {
+                                            "value": "90",
+                                            "label": "90 Hz"
+                                        },
+                                        {
+                                            "value": "120",
+                                            "label": "120 Hz"
+                                        },
+                                        {
+                                            "value": "auto",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_spacer_imm"
+                        },
+                        {
+                            "key": "demo_colored_group",
+                            "title": "Custom Background Group",
+                            "description": "This expandable group has a custom background color",
+                            "settings": [
+                                {
+                                    "key": "demo_cg_option_a",
+                                    "title": "Option A"
+                                },
+                                {
+                                    "key": "demo_cg_option_b",
+                                    "title": "Option B"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "file-options-demo",
+                    "title": "File-based Options",
+                    "subtitle": "Select options loaded from external JSON",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_file_warning",
+                            "title": "External Options Source",
+                            "description": "These selectors load their options from a JSON file in the addon data directory. A hook can generate this file at runtime, and the UI will read it dynamically."
+                        },
+                        {
+                            "key": "demo_file_select",
+                            "title": "Dynamic Profile",
+                            "description": "Options loaded from profiles.json"
+                        },
+                        {
+                            "key": "demo_file_select_button",
+                            "title": "Dynamic Mode",
+                            "description": "Button-style selector from modes.json"
+                        }
+                    ]
+                },
+                {
+                    "id": "custom-group-demo",
+                    "title": "Custom Category",
+                    "subtitle": "This uses a custom group name",
+                    "group": "Tweaks",
+                    "settings": [
+                        {
+                            "key": "demo_custom_group_info",
+                            "title": "Custom Group",
+                            "description": "This entry uses group='Tweaks' which creates a new section in the activity with that name. Custom groups are sorted by their highest priority entry."
+                        },
+                        {
+                            "key": "demo_tweak_a",
+                            "title": "Tweak A"
+                        },
+                        {
+                            "key": "demo_tweak_b",
+                            "title": "Tweak B"
+                        }
+                    ]
+                },
+                {
+                    "id": "app-selector-demo",
+                    "title": "App Selectors",
+                    "subtitle": "App list with showSelected parameter",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_apps_visible",
+                            "title": "Apps (chips visible)",
+                            "description": "Selected apps shown as chips below"
+                        },
+                        {
+                            "key": "demo_apps_hidden",
+                            "title": "Apps (chips hidden)",
+                            "description": "Selected apps NOT shown below the button"
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "Galerie des paramètres",
+            "author": "PixelParts Demo",
+            "description": "Démonstration complète de tous les types de paramètres, icônes, formes, activités et éléments visuels pris en charge",
+            "settings": [
+                {
+                    "key": "demo_master_toggle",
+                    "title": "Master Enable",
+                    "description": "Global toggle for the demo addon"
+                },
+                {
+                    "key": "demo_warning_top",
+                    "title": "Demo Warning",
+                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                }
+            ],
+            "main": [
+                {
+                    "id": "basic-controls",
+                    "title": "Basic Controls",
+                    "subtitle": "Toggles, sliders, text fields",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_info_basic",
+                            "title": "Basic Input Controls",
+                            "description": "Standard controls for boolean, integer, float and string values."
+                        },
+                        {
+                            "key": "demo_toggle_1",
+                            "title": "Toggle (switch)",
+                            "description": "Standard on/off switch"
+                        },
+                        {
+                            "key": "demo_toggle_2",
+                            "title": "Toggle (checkbox)",
+                            "description": "Checkbox variant"
+                        },
+                        {
+                            "key": "demo_int_slider",
+                            "title": "Integer Slider",
+                            "description": "Discrete integer value with step"
+                        },
+                        {
+                            "key": "demo_float_slider",
+                            "title": "Float Slider",
+                            "description": "Continuous float value"
+                        },
+                        {
+                            "key": "demo_string_input",
+                            "title": "Text Input",
+                            "description": "Free-form string value"
+                        }
+                    ]
+                },
+                {
+                    "id": "selectors",
+                    "title": "Selection Controls",
+                    "subtitle": "Dropdown, button select, color picker",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_select_dropdown",
+                            "title": "Dropdown Select",
+                            "description": "Classic dropdown menu",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Désactivé"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low"
+                                },
+                                {
+                                    "value": "medium",
+                                    "label": "Medium"
+                                },
+                                {
+                                    "value": "high",
+                                    "label": "High"
+                                },
+                                {
+                                    "value": "extreme",
+                                    "label": "Extreme"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_select_button",
+                            "title": "Button Select",
+                            "description": "Radio-button style selection with animated highlight",
+                            "options": [
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "battery",
+                                    "label": "Battery Saver"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom Profile"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_color_hex",
+                            "title": "Color Picker (HEX)",
+                            "description": "Standard hex color without alpha"
+                        },
+                        {
+                            "key": "demo_color_rgba",
+                            "title": "Color Picker (RGBA + Alpha)",
+                            "description": "RGBA format with alpha slider"
+                        }
+                    ]
+                },
+                {
+                    "id": "visual-elements",
+                    "title": "Visual Elements",
+                    "subtitle": "Warnings, dividers, spacers, images, text blocks",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_warning_default",
+                            "title": "Default Warning",
+                            "description": "This uses the default error container color from the system theme. Tap to expand and see the full message."
+                        },
+                        {
+                            "key": "demo_warning_custom",
+                            "title": "Custom Color Warning",
+                            "description": "This warning uses a custom orange color to indicate a non-critical but important notice."
+                        },
+                        {
+                            "key": "demo_warning_blue",
+                            "title": "Info Notice",
+                            "description": "Blue-tinted informational notice. Use this for tips and non-dangerous information."
+                        },
+                        {
+                            "key": "demo_spacer_1"
+                        },
+                        {
+                            "key": "demo_info_text",
+                            "title": "Section Header",
+                            "description": "This is a text/info block. Use it to add explanatory text between settings."
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "demo_divider_dashed"
+                        },
+                        {
+                            "key": "demo_spacer_2"
+                        }
+                    ]
+                },
+                {
+                    "id": "groups-nested",
+                    "title": "Groups & Nesting",
+                    "subtitle": "Expandable groups, exclusive toggles",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_group_expandable",
+                            "title": "Expandable Group",
+                            "description": "Tap to expand and see nested settings",
+                            "settings": [
+                                {
+                                    "key": "demo_nested_toggle_a",
+                                    "title": "Nested Toggle A"
+                                },
+                                {
+                                    "key": "demo_nested_toggle_b",
+                                    "title": "Nested Toggle B"
+                                },
+                                {
+                                    "key": "demo_nested_slider",
+                                    "title": "Nested Slider"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_exclusive_info",
+                            "title": "Exclusive Toggles",
+                            "description": "Only one of these can be active at a time (exclusiveGroup)."
+                        },
+                        {
+                            "key": "demo_mode_fast",
+                            "title": "Fast Mode"
+                        },
+                        {
+                            "key": "demo_mode_safe",
+                            "title": "Safe Mode"
+                        },
+                        {
+                            "key": "demo_mode_eco",
+                            "title": "Eco Mode"
+                        }
+                    ]
+                },
+                {
+                    "id": "icons-showcase",
+                    "title": "Icons Showcase",
+                    "subtitle": "All icon shapes and types",
+                    "group": "gesture",
+                    "settings": [
+                        {
+                            "key": "demo_icon_none",
+                            "title": "No Shape (icon only)"
+                        },
+                        {
+                            "key": "demo_icon_circle",
+                            "title": "Circle Shape"
+                        },
+                        {
+                            "key": "demo_icon_rounded",
+                            "title": "Rounded Square Shape"
+                        },
+                        {
+                            "key": "demo_icon_small",
+                            "title": "Small Icon (12dp)"
+                        },
+                        {
+                            "key": "demo_icon_large",
+                            "title": "Large Icon (32dp)"
+                        },
+                        {
+                            "key": "demo_icon_filled",
+                            "title": "Filled Variant"
+                        },
+                        {
+                            "key": "demo_icon_outlined",
+                            "title": "Outlined Variant"
+                        },
+                        {
+                            "key": "demo_icon_file",
+                            "title": "File Icon (from JAR)",
+                            "description": "Loaded from META-INF/icons/custom_icon.png"
+                        }
+                    ]
+                },
+                {
+                    "id": "main/icons-showcase/material-gallery",
+                    "title": "Material Icons Gallery",
+                    "subtitle": "More icon examples",
+                    "settings": [
+                        {
+                            "key": "demo_icon_wifi",
+                            "title": "WiFi"
+                        },
+                        {
+                            "key": "demo_icon_bluetooth",
+                            "title": "Bluetooth"
+                        },
+                        {
+                            "key": "demo_icon_battery",
+                            "title": "Battery"
+                        },
+                        {
+                            "key": "demo_icon_volume",
+                            "title": "Volume"
+                        },
+                        {
+                            "key": "demo_icon_brightness",
+                            "title": "Brightness"
+                        },
+                        {
+                            "key": "demo_icon_location",
+                            "title": "Location"
+                        },
+                        {
+                            "key": "demo_icon_notifications",
+                            "title": "Notifications"
+                        },
+                        {
+                            "key": "demo_icon_security",
+                            "title": "Security"
+                        }
+                    ]
+                },
+                {
+                    "id": "advanced-features",
+                    "title": "Advanced Features",
+                    "subtitle": "File storage, app picker, complex scenarios",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_warning_advanced",
+                            "title": "Advanced Section",
+                            "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios."
+                        },
+                        {
+                            "key": "demo_file_picker",
+                            "title": "Config File",
+                            "description": "Select a JSON configuration file"
+                        },
+                        {
+                            "key": "demo_app_list",
+                            "title": "Target Apps",
+                            "description": "Select which apps this feature applies to"
+                        },
+                        {
+                            "key": "demo_complex_group",
+                            "title": "Multi-value Configuration",
+                            "description": "Complex nested settings with mixed types",
+                            "settings": [
+                                {
+                                    "key": "demo_complex_enabled",
+                                    "title": "Enable Feature"
+                                },
+                                {
+                                    "key": "demo_complex_intensity",
+                                    "title": "Intensity"
+                                },
+                                {
+                                    "key": "demo_complex_mode",
+                                    "title": "Mode",
+                                    "options": [
+                                        {
+                                            "value": "auto",
+                                            "label": "Auto"
+                                        },
+                                        {
+                                            "value": "manual",
+                                            "label": "Manual"
+                                        },
+                                        {
+                                            "value": "scheduled",
+                                            "label": "Scheduled"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "demo_complex_color",
+                                    "title": "Accent Color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/advanced-features/storage-demo",
+                    "title": "Storage Types Demo",
+                    "subtitle": "Different storage backends",
+                    "settings": [
+                        {
+                            "key": "demo_storage_global",
+                            "title": "Settings.Global",
+                            "description": "Stored in Settings.Global (default)"
+                        },
+                        {
+                            "key": "demo_storage_system",
+                            "title": "Settings.System",
+                            "description": "Stored in Settings.System"
+                        },
+                        {
+                            "key": "demo_storage_file",
+                            "title": "File Storage",
+                            "description": "Stored in addon data directory"
+                        }
+                    ]
+                },
+                {
+                    "id": "tiles-demo",
+                    "title": "QS Tiles",
+                    "subtitle": "Dynamic quick settings tile binding",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_tile_warning",
+                            "title": "Dynamic Tiles",
+                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                        },
+                        {
+                            "key": "demo_tile_toggle",
+                            "title": "Demo Toggle Tile",
+                            "description": "Désactivé"
+                        },
+                        {
+                            "key": "demo_tile_carousel",
+                            "title": "Demo Carousel Tile",
+                            "description": "Disabled",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Disabled"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low Power"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "immersive-groups",
+                    "title": "Immersive Groups",
+                    "subtitle": "Flat inline groups without container",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_immersive_group",
+                            "title": "Display Settings",
+                            "description": "These settings appear inline without a separate container",
+                            "settings": [
+                                {
+                                    "key": "demo_imm_brightness",
+                                    "title": "Auto Brightness"
+                                },
+                                {
+                                    "key": "demo_imm_night_mode",
+                                    "title": "Night Mode"
+                                },
+                                {
+                                    "key": "demo_imm_refresh_rate",
+                                    "title": "Refresh Rate",
+                                    "options": [
+                                        {
+                                            "value": "60",
+                                            "label": "60 Hz"
+                                        },
+                                        {
+                                            "value": "90",
+                                            "label": "90 Hz"
+                                        },
+                                        {
+                                            "value": "120",
+                                            "label": "120 Hz"
+                                        },
+                                        {
+                                            "value": "auto",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_spacer_imm"
+                        },
+                        {
+                            "key": "demo_colored_group",
+                            "title": "Custom Background Group",
+                            "description": "This expandable group has a custom background color",
+                            "settings": [
+                                {
+                                    "key": "demo_cg_option_a",
+                                    "title": "Option A"
+                                },
+                                {
+                                    "key": "demo_cg_option_b",
+                                    "title": "Option B"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "file-options-demo",
+                    "title": "File-based Options",
+                    "subtitle": "Select options loaded from external JSON",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_file_warning",
+                            "title": "External Options Source",
+                            "description": "These selectors load their options from a JSON file in the addon data directory. A hook can generate this file at runtime, and the UI will read it dynamically."
+                        },
+                        {
+                            "key": "demo_file_select",
+                            "title": "Dynamic Profile",
+                            "description": "Options loaded from profiles.json"
+                        },
+                        {
+                            "key": "demo_file_select_button",
+                            "title": "Dynamic Mode",
+                            "description": "Button-style selector from modes.json"
+                        }
+                    ]
+                },
+                {
+                    "id": "custom-group-demo",
+                    "title": "Custom Category",
+                    "subtitle": "This uses a custom group name",
+                    "group": "Tweaks",
+                    "settings": [
+                        {
+                            "key": "demo_custom_group_info",
+                            "title": "Custom Group",
+                            "description": "This entry uses group='Tweaks' which creates a new section in the activity with that name. Custom groups are sorted by their highest priority entry."
+                        },
+                        {
+                            "key": "demo_tweak_a",
+                            "title": "Tweak A"
+                        },
+                        {
+                            "key": "demo_tweak_b",
+                            "title": "Tweak B"
+                        }
+                    ]
+                },
+                {
+                    "id": "app-selector-demo",
+                    "title": "App Selectors",
+                    "subtitle": "App list with showSelected parameter",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_apps_visible",
+                            "title": "Apps (chips visible)",
+                            "description": "Selected apps shown as chips below"
+                        },
+                        {
+                            "key": "demo_apps_hidden",
+                            "title": "Apps (chips hidden)",
+                            "description": "Selected apps NOT shown below the button"
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "Вітрина налаштувань",
+            "author": "PixelParts Demo",
+            "description": "Повна демонстрація всіх підтримуваних типів налаштувань, іконок, форм, activity та візуальних елементів",
+            "settings": [
+                {
+                    "key": "demo_master_toggle",
+                    "title": "Master Enable",
+                    "description": "Global toggle for the demo addon"
+                },
+                {
+                    "key": "demo_warning_top",
+                    "title": "Demo Warning",
+                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                }
+            ],
+            "main": [
+                {
+                    "id": "basic-controls",
+                    "title": "Basic Controls",
+                    "subtitle": "Toggles, sliders, text fields",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_info_basic",
+                            "title": "Basic Input Controls",
+                            "description": "Standard controls for boolean, integer, float and string values."
+                        },
+                        {
+                            "key": "demo_toggle_1",
+                            "title": "Toggle (switch)",
+                            "description": "Standard on/off switch"
+                        },
+                        {
+                            "key": "demo_toggle_2",
+                            "title": "Toggle (checkbox)",
+                            "description": "Checkbox variant"
+                        },
+                        {
+                            "key": "demo_int_slider",
+                            "title": "Integer Slider",
+                            "description": "Discrete integer value with step"
+                        },
+                        {
+                            "key": "demo_float_slider",
+                            "title": "Float Slider",
+                            "description": "Continuous float value"
+                        },
+                        {
+                            "key": "demo_string_input",
+                            "title": "Text Input",
+                            "description": "Free-form string value"
+                        }
+                    ]
+                },
+                {
+                    "id": "selectors",
+                    "title": "Selection Controls",
+                    "subtitle": "Dropdown, button select, color picker",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_select_dropdown",
+                            "title": "Dropdown Select",
+                            "description": "Classic dropdown menu",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Вимкнено"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low"
+                                },
+                                {
+                                    "value": "medium",
+                                    "label": "Medium"
+                                },
+                                {
+                                    "value": "high",
+                                    "label": "High"
+                                },
+                                {
+                                    "value": "extreme",
+                                    "label": "Extreme"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_select_button",
+                            "title": "Button Select",
+                            "description": "Radio-button style selection with animated highlight",
+                            "options": [
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "battery",
+                                    "label": "Battery Saver"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom Profile"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_color_hex",
+                            "title": "Color Picker (HEX)",
+                            "description": "Standard hex color without alpha"
+                        },
+                        {
+                            "key": "demo_color_rgba",
+                            "title": "Color Picker (RGBA + Alpha)",
+                            "description": "RGBA format with alpha slider"
+                        }
+                    ]
+                },
+                {
+                    "id": "visual-elements",
+                    "title": "Visual Elements",
+                    "subtitle": "Warnings, dividers, spacers, images, text blocks",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_warning_default",
+                            "title": "Default Warning",
+                            "description": "This uses the default error container color from the system theme. Tap to expand and see the full message."
+                        },
+                        {
+                            "key": "demo_warning_custom",
+                            "title": "Custom Color Warning",
+                            "description": "This warning uses a custom orange color to indicate a non-critical but important notice."
+                        },
+                        {
+                            "key": "demo_warning_blue",
+                            "title": "Info Notice",
+                            "description": "Blue-tinted informational notice. Use this for tips and non-dangerous information."
+                        },
+                        {
+                            "key": "demo_spacer_1"
+                        },
+                        {
+                            "key": "demo_info_text",
+                            "title": "Section Header",
+                            "description": "This is a text/info block. Use it to add explanatory text between settings."
+                        },
+                        {
+                            "key": "demo_divider_solid"
+                        },
+                        {
+                            "key": "demo_divider_dashed"
+                        },
+                        {
+                            "key": "demo_spacer_2"
+                        }
+                    ]
+                },
+                {
+                    "id": "groups-nested",
+                    "title": "Groups & Nesting",
+                    "subtitle": "Expandable groups, exclusive toggles",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_group_expandable",
+                            "title": "Expandable Group",
+                            "description": "Tap to expand and see nested settings",
+                            "settings": [
+                                {
+                                    "key": "demo_nested_toggle_a",
+                                    "title": "Nested Toggle A"
+                                },
+                                {
+                                    "key": "demo_nested_toggle_b",
+                                    "title": "Nested Toggle B"
+                                },
+                                {
+                                    "key": "demo_nested_slider",
+                                    "title": "Nested Slider"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_exclusive_info",
+                            "title": "Exclusive Toggles",
+                            "description": "Only one of these can be active at a time (exclusiveGroup)."
+                        },
+                        {
+                            "key": "demo_mode_fast",
+                            "title": "Fast Mode"
+                        },
+                        {
+                            "key": "demo_mode_safe",
+                            "title": "Safe Mode"
+                        },
+                        {
+                            "key": "demo_mode_eco",
+                            "title": "Eco Mode"
+                        }
+                    ]
+                },
+                {
+                    "id": "icons-showcase",
+                    "title": "Icons Showcase",
+                    "subtitle": "All icon shapes and types",
+                    "group": "gesture",
+                    "settings": [
+                        {
+                            "key": "demo_icon_none",
+                            "title": "No Shape (icon only)"
+                        },
+                        {
+                            "key": "demo_icon_circle",
+                            "title": "Circle Shape"
+                        },
+                        {
+                            "key": "demo_icon_rounded",
+                            "title": "Rounded Square Shape"
+                        },
+                        {
+                            "key": "demo_icon_small",
+                            "title": "Small Icon (12dp)"
+                        },
+                        {
+                            "key": "demo_icon_large",
+                            "title": "Large Icon (32dp)"
+                        },
+                        {
+                            "key": "demo_icon_filled",
+                            "title": "Filled Variant"
+                        },
+                        {
+                            "key": "demo_icon_outlined",
+                            "title": "Outlined Variant"
+                        },
+                        {
+                            "key": "demo_icon_file",
+                            "title": "File Icon (from JAR)",
+                            "description": "Loaded from META-INF/icons/custom_icon.png"
+                        }
+                    ]
+                },
+                {
+                    "id": "main/icons-showcase/material-gallery",
+                    "title": "Material Icons Gallery",
+                    "subtitle": "More icon examples",
+                    "settings": [
+                        {
+                            "key": "demo_icon_wifi",
+                            "title": "WiFi"
+                        },
+                        {
+                            "key": "demo_icon_bluetooth",
+                            "title": "Bluetooth"
+                        },
+                        {
+                            "key": "demo_icon_battery",
+                            "title": "Battery"
+                        },
+                        {
+                            "key": "demo_icon_volume",
+                            "title": "Volume"
+                        },
+                        {
+                            "key": "demo_icon_brightness",
+                            "title": "Brightness"
+                        },
+                        {
+                            "key": "demo_icon_location",
+                            "title": "Location"
+                        },
+                        {
+                            "key": "demo_icon_notifications",
+                            "title": "Notifications"
+                        },
+                        {
+                            "key": "demo_icon_security",
+                            "title": "Security"
+                        }
+                    ]
+                },
+                {
+                    "id": "advanced-features",
+                    "title": "Advanced Features",
+                    "subtitle": "File storage, app picker, complex scenarios",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_warning_advanced",
+                            "title": "Advanced Section",
+                            "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios."
+                        },
+                        {
+                            "key": "demo_file_picker",
+                            "title": "Config File",
+                            "description": "Select a JSON configuration file"
+                        },
+                        {
+                            "key": "demo_app_list",
+                            "title": "Target Apps",
+                            "description": "Select which apps this feature applies to"
+                        },
+                        {
+                            "key": "demo_complex_group",
+                            "title": "Multi-value Configuration",
+                            "description": "Complex nested settings with mixed types",
+                            "settings": [
+                                {
+                                    "key": "demo_complex_enabled",
+                                    "title": "Enable Feature"
+                                },
+                                {
+                                    "key": "demo_complex_intensity",
+                                    "title": "Intensity"
+                                },
+                                {
+                                    "key": "demo_complex_mode",
+                                    "title": "Mode",
+                                    "options": [
+                                        {
+                                            "value": "auto",
+                                            "label": "Авто"
+                                        },
+                                        {
+                                            "value": "manual",
+                                            "label": "Manual"
+                                        },
+                                        {
+                                            "value": "scheduled",
+                                            "label": "Scheduled"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "demo_complex_color",
+                                    "title": "Accent Color"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "main/advanced-features/storage-demo",
+                    "title": "Storage Types Demo",
+                    "subtitle": "Different storage backends",
+                    "settings": [
+                        {
+                            "key": "demo_storage_global",
+                            "title": "Settings.Global",
+                            "description": "Stored in Settings.Global (default)"
+                        },
+                        {
+                            "key": "demo_storage_system",
+                            "title": "Settings.System",
+                            "description": "Stored in Settings.System"
+                        },
+                        {
+                            "key": "demo_storage_file",
+                            "title": "File Storage",
+                            "description": "Stored in addon data directory"
+                        }
+                    ]
+                },
+                {
+                    "id": "tiles-demo",
+                    "title": "QS Tiles",
+                    "subtitle": "Dynamic quick settings tile binding",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_tile_warning",
+                            "title": "Dynamic Tiles",
+                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                        },
+                        {
+                            "key": "demo_tile_toggle",
+                            "title": "Demo Toggle Tile",
+                            "description": "Вимкнено"
+                        },
+                        {
+                            "key": "demo_tile_carousel",
+                            "title": "Demo Carousel Tile",
+                            "description": "Disabled",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Disabled"
+                                },
+                                {
+                                    "value": "low",
+                                    "label": "Low Power"
+                                },
+                                {
+                                    "value": "balanced",
+                                    "label": "Balanced"
+                                },
+                                {
+                                    "value": "performance",
+                                    "label": "Performance"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "immersive-groups",
+                    "title": "Immersive Groups",
+                    "subtitle": "Flat inline groups without container",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_immersive_group",
+                            "title": "Display Settings",
+                            "description": "These settings appear inline without a separate container",
+                            "settings": [
+                                {
+                                    "key": "demo_imm_brightness",
+                                    "title": "Auto Brightness"
+                                },
+                                {
+                                    "key": "demo_imm_night_mode",
+                                    "title": "Night Mode"
+                                },
+                                {
+                                    "key": "demo_imm_refresh_rate",
+                                    "title": "Refresh Rate",
+                                    "options": [
+                                        {
+                                            "value": "60",
+                                            "label": "60 Hz"
+                                        },
+                                        {
+                                            "value": "90",
+                                            "label": "90 Hz"
+                                        },
+                                        {
+                                            "value": "120",
+                                            "label": "120 Hz"
+                                        },
+                                        {
+                                            "value": "auto",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "key": "demo_spacer_imm"
+                        },
+                        {
+                            "key": "demo_colored_group",
+                            "title": "Custom Background Group",
+                            "description": "This expandable group has a custom background color",
+                            "settings": [
+                                {
+                                    "key": "demo_cg_option_a",
+                                    "title": "Option A"
+                                },
+                                {
+                                    "key": "demo_cg_option_b",
+                                    "title": "Option B"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "file-options-demo",
+                    "title": "File-based Options",
+                    "subtitle": "Select options loaded from external JSON",
+                    "group": "network",
+                    "settings": [
+                        {
+                            "key": "demo_file_warning",
+                            "title": "External Options Source",
+                            "description": "These selectors load their options from a JSON file in the addon data directory. A hook can generate this file at runtime, and the UI will read it dynamically."
+                        },
+                        {
+                            "key": "demo_file_select",
+                            "title": "Dynamic Profile",
+                            "description": "Options loaded from profiles.json"
+                        },
+                        {
+                            "key": "demo_file_select_button",
+                            "title": "Dynamic Mode",
+                            "description": "Button-style selector from modes.json"
+                        }
+                    ]
+                },
+                {
+                    "id": "custom-group-demo",
+                    "title": "Custom Category",
+                    "subtitle": "This uses a custom group name",
+                    "group": "Tweaks",
+                    "settings": [
+                        {
+                            "key": "demo_custom_group_info",
+                            "title": "Custom Group",
+                            "description": "This entry uses group='Tweaks' which creates a new section in the activity with that name. Custom groups are sorted by their highest priority entry."
+                        },
+                        {
+                            "key": "demo_tweak_a",
+                            "title": "Tweak A"
+                        },
+                        {
+                            "key": "demo_tweak_b",
+                            "title": "Tweak B"
+                        }
+                    ]
+                },
+                {
+                    "id": "app-selector-demo",
+                    "title": "App Selectors",
+                    "subtitle": "App list with showSelected parameter",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "demo_apps_visible",
+                            "title": "Apps (chips visible)",
+                            "description": "Selected apps shown as chips below"
+                        },
+                        {
+                            "key": "demo_apps_hidden",
+                            "title": "Apps (chips hidden)",
+                            "description": "Selected apps NOT shown below the button"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

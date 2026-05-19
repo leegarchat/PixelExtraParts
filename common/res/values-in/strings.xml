@@ -304,7 +304,7 @@
     <string name="ims_desc_ut">Manajemen layanan tambahan melalui IMS.\n\nMemungkinkan pengaturan penerusan panggilan, panggilan tunggu, dan identifikasi pemanggil melalui menu pengaturan telepon menggunakan saluran IP alih-alih kode USSD lawas. Memperbaiki kesalahan seperti "Kesalahan jaringan atau kartu SIM" saat mencoba mengakses pengaturan panggilan di mode LTE-only.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Pengaturan Launcher</string>
+    <string name="launcher_settings_title">Lainnya</string>
     <string name="launcher_search_section">Pencarian &amp; Navigasi</string>
 
     <!-- Launcher Navigation Items -->
@@ -429,12 +429,12 @@
     <string name="main_root_desc">Aplikasi memerlukan hak superuser (Root) dan framework Xposed aktif.\n\nSilakan instal Magisk/KernelSU dan berikan izin.</string>
 
     <string name="dt_desc_activity">Manajemen gestur bangun dan tidur</string>
-    <string name="launcher_title_activity">Launcher</string>
+    <string name="launcher_title_activity">Lainnya</string>
     <string name="os_desc_activity">Pengaturan elastisitas dan inersia gulir</string>
     
     <string name="dt_title_activity">Ketuk Ganda</string>
     
-    <string name="launcher_desc_activity">Pengaturan Pixel Launcher</string>
+    <string name="launcher_desc_activity">Pengaturan lainnya</string>
     
     <string name="thermal_title_activity">Profil Termal</string>
     

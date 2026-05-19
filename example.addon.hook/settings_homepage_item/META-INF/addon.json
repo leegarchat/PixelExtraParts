@@ -12,142 +12,594 @@
     "accent": "#7EE3B4",
     "backgroundMode": "gradient",
     "backgroundAlpha": 55,
-    "backgroundGradientSteps": [0, 60, 100],
-    "settings": [
+    "backgroundGradientSteps": [
+        0,
+        60,
+        100
+    ],
+    "settings": [],
+    "main": [
         {
-            "key": "settings_homepage_intro",
-            "type": "info",
-            "title": "Settings entry",
-            "description": "Create a native-looking Pixel Extra Parts item on the main Settings page."
-        },
-        {
-            "key": "settings_homepage_item_enabled",
-            "title": "Show Pixel Extra Parts",
-            "description": "Enables the injected top-level Settings homepage item.",
-            "type": "switch",
-            "provider": "global",
-            "default": true,
-            "accent": "#7EE3B4"
-        },
-        {
-            "key": "settings_homepage_item_category_order",
-            "title": "Settings Menu Position",
-            "description": "Lower values are shown closer to the top of Settings.",
-            "type": "int",
-            "provider": "global",
-            "default": -139,
-            "min": -300,
-            "max": 300,
-            "step": 1
-        },
-        {
-            "key": "settings_homepage_style_line",
-            "type": "divider",
-            "height": 10,
-            "thickness": 1,
-            "color": "#667EE3B4"
-        },
-        {
-            "key": "settings_homepage_item_colored_icon",
-            "title": "Use Colored Icon",
-            "description": "Uses the Pixel Extra Parts launcher icon. Disabled uses a Settings-style icon with a homepage background.",
-            "type": "switch",
-            "provider": "global",
-            "default": false
-        },
-        {
-            "key": "settings_homepage_item_background_color_mode",
-            "title": "Icon Background Color",
-            "description": "Auto uses the Settings homepage color. Custom reads the hex field below.",
-            "type": "select",
-            "provider": "global",
-            "default": "auto",
-            "options": [
+            "id": "settings-homepage-item",
+            "title": "Settings Homepage Item",
+            "subtitle": "Pixel Extra Parts item on the Settings homepage.",
+            "icon": "Settings",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#7EE3B4",
+            "iconBackground": "#203A31",
+            "group": "system",
+            "priority": 80,
+            "settings": [
                 {
-                    "value": "auto",
-                    "label": "Auto"
+                    "key": "settings_homepage_item_enabled",
+                    "title": "Show Pixel Extra Parts",
+                    "description": "Adds an item to the Settings homepage.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "accent": "#7EE3B4"
                 },
                 {
-                    "value": "custom",
-                    "label": "Custom hex"
+                    "key": "settings_homepage_item_category_order",
+                    "title": "Settings position",
+                    "description": "Lower value places it higher in the list.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": -139,
+                    "min": -300,
+                    "max": 300,
+                    "step": 1
                 },
                 {
-                    "value": "#67DDF7",
-                    "label": "Blue"
+                    "key": "settings_homepage_item_colored_icon",
+                    "title": "Colored icon",
+                    "description": "Uses the Pixel Extra Parts launcher icon.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false
                 },
                 {
-                    "value": "#7EE3B4",
-                    "label": "Green"
+                    "key": "settings_homepage_item_background_color_mode",
+                    "title": "Icon background",
+                    "description": "Auto uses the Settings color. Custom uses the field below.",
+                    "type": "select",
+                    "provider": "global",
+                    "default": "auto",
+                    "options": [
+                        {
+                            "value": "auto",
+                            "label": "Auto"
+                        },
+                        {
+                            "value": "custom",
+                            "label": "Custom hex"
+                        },
+                        {
+                            "value": "#67DDF7",
+                            "label": "Blue"
+                        },
+                        {
+                            "value": "#7EE3B4",
+                            "label": "Green"
+                        },
+                        {
+                            "value": "#D7B8FF",
+                            "label": "Purple"
+                        },
+                        {
+                            "value": "#FFB4CA",
+                            "label": "Rose"
+                        },
+                        {
+                            "value": "#FFD18B",
+                            "label": "Amber"
+                        }
+                    ]
                 },
                 {
-                    "value": "#D7B8FF",
-                    "label": "Purple"
+                    "key": "settings_homepage_item_background_custom_hex",
+                    "title": "Custom background",
+                    "description": "Used in Custom hex mode.",
+                    "type": "color",
+                    "provider": "global",
+                    "default": "#67DDF7",
+                    "format": "hex"
                 },
                 {
-                    "value": "#FFB4CA",
-                    "label": "Rose"
+                    "key": "settings_homepage_item_icon_color_mode",
+                    "title": "Glyph color",
+                    "description": "Auto uses the Settings color. Custom uses the field below.",
+                    "type": "select",
+                    "provider": "global",
+                    "default": "auto",
+                    "options": [
+                        {
+                            "value": "auto",
+                            "label": "Auto"
+                        },
+                        {
+                            "value": "custom",
+                            "label": "Custom hex"
+                        },
+                        {
+                            "value": "#0B3D4F",
+                            "label": "Blue"
+                        },
+                        {
+                            "value": "#0B4B37",
+                            "label": "Green"
+                        },
+                        {
+                            "value": "#47216A",
+                            "label": "Purple"
+                        },
+                        {
+                            "value": "#6B1238",
+                            "label": "Rose"
+                        },
+                        {
+                            "value": "#5C3900",
+                            "label": "Amber"
+                        }
+                    ]
                 },
                 {
-                    "value": "#FFD18B",
-                    "label": "Amber"
+                    "key": "settings_homepage_item_icon_custom_hex",
+                    "title": "Custom glyph",
+                    "description": "Used in Custom hex mode.",
+                    "type": "color",
+                    "provider": "global",
+                    "default": "#0B3D4F",
+                    "format": "hex"
                 }
             ]
-        },
-        {
-            "key": "settings_homepage_item_background_custom_hex",
-            "title": "Custom Background",
-            "description": "Used when Icon Background Color is set to Custom hex.",
-            "type": "color",
-            "provider": "global",
-            "default": "#67DDF7",
-            "format": "hex"
-        },
-        {
-            "key": "settings_homepage_item_icon_color_mode",
-            "title": "Icon Glyph Color",
-            "description": "Auto uses the Settings homepage foreground color. Custom reads the hex field below.",
-            "type": "select",
-            "provider": "global",
-            "default": "auto",
-            "options": [
-                {
-                    "value": "auto",
-                    "label": "Auto"
-                },
-                {
-                    "value": "custom",
-                    "label": "Custom hex"
-                },
-                {
-                    "value": "#0B3D4F",
-                    "label": "Blue"
-                },
-                {
-                    "value": "#0B4B37",
-                    "label": "Green"
-                },
-                {
-                    "value": "#47216A",
-                    "label": "Purple"
-                },
-                {
-                    "value": "#6B1238",
-                    "label": "Rose"
-                },
-                {
-                    "value": "#5C3900",
-                    "label": "Amber"
-                }
-            ]
-        },
-        {
-            "key": "settings_homepage_item_icon_custom_hex",
-            "title": "Custom Glyph",
-            "description": "Used when Icon Glyph Color is set to Custom hex.",
-            "type": "color",
-            "provider": "global",
-            "default": "#0B3D4F",
-            "format": "hex"
         }
-    ]
+    ],
+    "locales": {
+        "ru": {
+            "name": "Пункт главной страницы Settings",
+            "author": "LeeGarChat",
+            "description": "Добавляет Pixel Extra Parts отдельным пунктом на главную страницу Settings без изменения пакета Settings.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "settings-homepage-item",
+                    "title": "Пункт главной страницы Settings",
+                    "subtitle": "Пункт Pixel Extra Parts на главной странице Settings.",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "settings_homepage_item_enabled",
+                            "title": "Показывать Pixel Extra Parts",
+                            "description": "Добавляет пункт на главную страницу Settings."
+                        },
+                        {
+                            "key": "settings_homepage_item_category_order",
+                            "title": "Позиция в Settings",
+                            "description": "Меньше значение - выше в списке."
+                        },
+                        {
+                            "key": "settings_homepage_item_colored_icon",
+                            "title": "Цветная иконка",
+                            "description": "Использует launcher icon Pixel Extra Parts."
+                        },
+                        {
+                            "key": "settings_homepage_item_background_color_mode",
+                            "title": "Фон иконки",
+                            "description": "Auto берет цвет Settings. Custom использует поле ниже.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Авто"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#67DDF7",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#7EE3B4",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#D7B8FF",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#FFB4CA",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#FFD18B",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_background_custom_hex",
+                            "title": "Свой фон",
+                            "description": "Используется в режиме Custom hex."
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_color_mode",
+                            "title": "Цвет glyph",
+                            "description": "Auto берет цвет Settings. Custom использует поле ниже.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Авто"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#0B3D4F",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#0B4B37",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#47216A",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#6B1238",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#5C3900",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_custom_hex",
+                            "title": "Свой glyph",
+                            "description": "Используется в режиме Custom hex."
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "Eintrag auf der Einstellungen-Startseite",
+            "author": "LeeGarChat",
+            "description": "Fügt Pixel Extra Parts als eigenen Bereich auf der Einstellungen-Startseite ein, ohne das Settings-Paket zu ändern.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "settings-homepage-item",
+                    "title": "Eintrag auf der Einstellungen-Startseite",
+                    "subtitle": "Pixel Extra Parts item on the Settings homepage.",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "settings_homepage_item_enabled",
+                            "title": "Show Pixel Extra Parts",
+                            "description": "Adds an item to the Settings homepage."
+                        },
+                        {
+                            "key": "settings_homepage_item_category_order",
+                            "title": "Settings position",
+                            "description": "Lower value places it higher in the list."
+                        },
+                        {
+                            "key": "settings_homepage_item_colored_icon",
+                            "title": "Colored icon",
+                            "description": "Uses the Pixel Extra Parts launcher icon."
+                        },
+                        {
+                            "key": "settings_homepage_item_background_color_mode",
+                            "title": "Icon background",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#67DDF7",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#7EE3B4",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#D7B8FF",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#FFB4CA",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#FFD18B",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_background_custom_hex",
+                            "title": "Custom background",
+                            "description": "Used in Custom hex mode."
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_color_mode",
+                            "title": "Glyph color",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#0B3D4F",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#0B4B37",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#47216A",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#6B1238",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#5C3900",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_custom_hex",
+                            "title": "Custom glyph",
+                            "description": "Used in Custom hex mode."
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "Élément d'accueil des Paramètres",
+            "author": "LeeGarChat",
+            "description": "Injecte Pixel Extra Parts dans une zone principale des Paramètres sans modifier le paquet Settings.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "settings-homepage-item",
+                    "title": "Élément d'accueil des Paramètres",
+                    "subtitle": "Pixel Extra Parts item on the Settings homepage.",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "settings_homepage_item_enabled",
+                            "title": "Show Pixel Extra Parts",
+                            "description": "Adds an item to the Settings homepage."
+                        },
+                        {
+                            "key": "settings_homepage_item_category_order",
+                            "title": "Settings position",
+                            "description": "Lower value places it higher in the list."
+                        },
+                        {
+                            "key": "settings_homepage_item_colored_icon",
+                            "title": "Colored icon",
+                            "description": "Uses the Pixel Extra Parts launcher icon."
+                        },
+                        {
+                            "key": "settings_homepage_item_background_color_mode",
+                            "title": "Icon background",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#67DDF7",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#7EE3B4",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#D7B8FF",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#FFB4CA",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#FFD18B",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_background_custom_hex",
+                            "title": "Custom background",
+                            "description": "Used in Custom hex mode."
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_color_mode",
+                            "title": "Glyph color",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Auto"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#0B3D4F",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#0B4B37",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#47216A",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#6B1238",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#5C3900",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_custom_hex",
+                            "title": "Custom glyph",
+                            "description": "Used in Custom hex mode."
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "Пункт головної сторінки Settings",
+            "author": "LeeGarChat",
+            "description": "Додає Pixel Extra Parts як окремий верхній пункт на головній сторінці Settings без зміни пакета Settings.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "settings-homepage-item",
+                    "title": "Пункт головної сторінки Settings",
+                    "subtitle": "Pixel Extra Parts item on the Settings homepage.",
+                    "group": "system",
+                    "settings": [
+                        {
+                            "key": "settings_homepage_item_enabled",
+                            "title": "Show Pixel Extra Parts",
+                            "description": "Adds an item to the Settings homepage."
+                        },
+                        {
+                            "key": "settings_homepage_item_category_order",
+                            "title": "Settings position",
+                            "description": "Lower value places it higher in the list."
+                        },
+                        {
+                            "key": "settings_homepage_item_colored_icon",
+                            "title": "Colored icon",
+                            "description": "Uses the Pixel Extra Parts launcher icon."
+                        },
+                        {
+                            "key": "settings_homepage_item_background_color_mode",
+                            "title": "Icon background",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Авто"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#67DDF7",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#7EE3B4",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#D7B8FF",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#FFB4CA",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#FFD18B",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_background_custom_hex",
+                            "title": "Custom background",
+                            "description": "Used in Custom hex mode."
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_color_mode",
+                            "title": "Glyph color",
+                            "description": "Auto uses the Settings color. Custom uses the field below.",
+                            "options": [
+                                {
+                                    "value": "auto",
+                                    "label": "Авто"
+                                },
+                                {
+                                    "value": "custom",
+                                    "label": "Custom hex"
+                                },
+                                {
+                                    "value": "#0B3D4F",
+                                    "label": "Blue"
+                                },
+                                {
+                                    "value": "#0B4B37",
+                                    "label": "Green"
+                                },
+                                {
+                                    "value": "#47216A",
+                                    "label": "Purple"
+                                },
+                                {
+                                    "value": "#6B1238",
+                                    "label": "Rose"
+                                },
+                                {
+                                    "value": "#5C3900",
+                                    "label": "Amber"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "settings_homepage_item_icon_custom_hex",
+                            "title": "Custom glyph",
+                            "description": "Used in Custom hex mode."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
 }

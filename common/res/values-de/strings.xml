@@ -304,7 +304,7 @@
     <string name="ims_desc_ut">Verwaltung von Zusatzdiensten über IMS.\n\nErmöglicht das Einstellen von Rufumleitung, Anklopfen und Rufnummernübermittlung über das Einstellungsmenü des Telefons unter Verwendung des IP-Kanals statt veralteter USSD-Codes. Behebt Fehler wie "Netzwerk- oder SIM-Kartenfehler" beim Versuch, Anrufeinstellungen in LTE-only-Netzen aufzurufen.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Launcher-Einstellungen</string>
+    <string name="launcher_settings_title">Sonstiges</string>
     <string name="launcher_search_section">Suche &amp; Navigation</string>
 
     <!-- Launcher Navigation Items -->
@@ -429,12 +429,12 @@
     <string name="main_root_desc">Die App benötigt Superuser-Rechte (Root) und ein aktives Xposed Framework.\n\nBitte installieren Sie Magisk/KernelSU und gewähren Sie die Rechte.</string>
 
     <string name="dt_desc_activity">Verwaltung von Aufwach- und Schlafgesten</string>
-    <string name="launcher_title_activity">Launcher</string>
+    <string name="launcher_title_activity">Sonstiges</string>
     <string name="os_desc_activity">Einstellungen für Scrollelastizität und Trägheit</string>
     
     <string name="dt_title_activity">Doppeltipp</string>
     
-    <string name="launcher_desc_activity">Pixel Launcher Einstellungen</string>
+    <string name="launcher_desc_activity">Sonstige Einstellungen</string>
     
     <string name="thermal_title_activity">Thermische Profile</string>
     

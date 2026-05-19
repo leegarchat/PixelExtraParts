@@ -34,17 +34,22 @@ class AddonPageActivity : ComponentActivity() {
         const val EXTRA_ADDON_ID = "addon_id"
         const val EXTRA_PAGE_ID  = "page_id"
         const val EXTRA_TITLE    = "title"
+        const val EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION = "org.pixel.customparts.extra.USE_SYSTEM_ACTIVITY_ANIMATION"
+        const val EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES = "org.pixel.customparts.extra.INCLUDE_TARGET_ACTIVITY_ENTRIES"
 
         fun start(
             context: Context,
             addonId: String,
             pageId: String? = null,
-            title: String? = null
+            title: String? = null,
+            includeTargetActivityEntries: Boolean = false
         ) {
             val intent = Intent(context, AddonPageActivity::class.java).apply {
                 putExtra(EXTRA_ADDON_ID, addonId)
                 if (pageId != null) putExtra(EXTRA_PAGE_ID, pageId)
                 if (title != null) putExtra(EXTRA_TITLE, title)
+                putExtra(EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION, true)
+                putExtra(EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, includeTargetActivityEntries)
             }
             context.startActivity(intent)
         }
@@ -58,6 +63,7 @@ class AddonPageActivity : ComponentActivity() {
             return
         }
         val pageId = intent.getStringExtra(EXTRA_PAGE_ID)
+        val includeTargetActivityEntries = intent.getBooleanExtra(EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, false)
 
         enableEdgeToEdge()
         setContent {
@@ -73,6 +79,7 @@ class AddonPageActivity : ComponentActivity() {
                     AddonPageScreen(
                         addonId = addonId,
                         pageId = pageId,
+                        includeTargetActivityEntries = includeTargetActivityEntries,
                         onBack = { finish() }
                     )
                 }

@@ -304,7 +304,7 @@
     <string name="ims_desc_ut">Gestion des services supplémentaires via IMS.\n\nPermet de configurer le renvoi d\'appel, l\'appel en attente et la présentation du numéro via le menu des paramètres du téléphone en utilisant le canal IP au lieu des anciens codes USSD. Corrige les erreurs de type « Erreur réseau ou carte SIM » lors de l\'accès aux paramètres d\'appel en mode LTE uniquement.</string>
 
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Paramètres du lanceur</string>
+    <string name="launcher_settings_title">Divers</string>
     <string name="launcher_search_section">Recherche &amp; Navigation</string>
 
     <!-- Launcher Navigation Items -->
@@ -429,12 +429,12 @@
     <string name="main_root_desc">L\'application nécessite des droits superutilisateur (Root) et un framework Xposed actif.\n\nVeuillez installer Magisk/KernelSU et accorder les permissions.</string>
 
     <string name="dt_desc_activity">Gestion des gestes de réveil et de veille</string>
-    <string name="launcher_title_activity">Lanceur</string>
+    <string name="launcher_title_activity">Divers</string>
     <string name="os_desc_activity">Paramètres d\'élasticité et d\'inertie du défilement</string>
     
     <string name="dt_title_activity">Double appui</string>
     
-    <string name="launcher_desc_activity">Paramètres du Pixel Launcher</string>
+    <string name="launcher_desc_activity">Paramètres divers</string>
     
     <string name="thermal_title_activity">Profils thermiques</string>
     

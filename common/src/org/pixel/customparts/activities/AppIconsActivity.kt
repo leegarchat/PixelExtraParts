@@ -65,6 +65,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
@@ -82,6 +83,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -106,6 +109,7 @@ import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
@@ -128,8 +132,13 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
+import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.addons.AddonMainEntry
+import org.pixel.customparts.ui.addons.AddonMainEntryRow
+import org.pixel.customparts.ui.addons.flattenSettings
+import org.pixel.customparts.ui.addons.scanAddonActivityEntries
 import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -371,6 +380,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
     var activeProgress by remember { mutableStateOf(IconPackManager.getActiveProgress()) }
     var completionResult by remember { mutableStateOf<IconApplyResult?>(null) }
     var handledProgressTaskId by rememberSaveable { mutableStateOf<String?>(null) }
+    var injectedAddonEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
     val initialModuleFlags = remember { readAppIconModuleFlags(context) }
     val initialSystemShapeFlags = remember { readAppIconSystemShapeFlags(context) }
     val initialNotificationShapeFlags = remember { readAppIconNotificationShapeFlags(context) }
@@ -388,6 +398,14 @@ fun AppIconsScreen(onBack: () -> Unit) {
     var launcherRemoveShapeEnabled by remember { mutableStateOf(initialLauncherShapeFlags.removeShape) }
     var launcherShapeScalePercent by remember { mutableStateOf(initialLauncherShapeFlags.scalePercent) }
     var shapeTintFlags by remember { mutableStateOf(initialShapeTintFlags) }
+    val injectedAddonSettings = remember(injectedAddonEntries) { injectedAddonEntries.flatMap { flattenSettings(it.settings) } }
+    val injectedAddonKeys = remember(injectedAddonSettings) { injectedAddonSettings.map { it.key }.toSet() }
+    val showHardcodedIconControls = injectedAddonEntries.isEmpty()
+    val showHardcodedLauncherIconControls = showHardcodedIconControls &&
+        SettingsKeys.APP_ICONS_LAUNCHER_ENABLED !in injectedAddonKeys &&
+        SettingsKeys.APP_ICONS_LAUNCHER_STRETCH_SHAPE !in injectedAddonKeys &&
+        SettingsKeys.APP_ICONS_LAUNCHER_REMOVE_SHAPE !in injectedAddonKeys &&
+        SettingsKeys.APP_ICONS_LAUNCHER_SHAPE_SCALE !in injectedAddonKeys
 
     suspend fun loadDashboard(showSpinner: Boolean = true, forceRefresh: Boolean = false) {
         if (showSpinner) isLoading = true
@@ -408,6 +426,12 @@ fun AppIconsScreen(onBack: () -> Unit) {
 
     LaunchedEffect(Unit) {
         loadDashboard(showSpinner = dashboard == null)
+    }
+
+    LaunchedEffect(Unit) {
+        injectedAddonEntries = withContext(Dispatchers.IO) {
+            scanAddonActivityEntries(context, "AppIconsActivity", "advanced")
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -525,6 +549,8 @@ fun AppIconsScreen(onBack: () -> Unit) {
                                     foregroundTintMode = shapeTintFlags.foregroundTintMode,
                                     foregroundTintColor = shapeTintFlags.foregroundTintColor,
                                     advancedExpanded = advancedSettingsExpanded,
+                                    showHardcodedControls = showHardcodedIconControls,
+                                    showLauncherControls = showHardcodedLauncherIconControls,
                                     onIconShapeClick = {
                                         context.startActivity(Intent(context, IconShapeActivity::class.java))
                                     },
@@ -674,6 +700,14 @@ fun AppIconsScreen(onBack: () -> Unit) {
                                     },
                                     onAdvancedExpandedChange = { advancedSettingsExpanded = it }
                                 )
+                            }
+
+                            if (injectedAddonEntries.isNotEmpty()) {
+                                item(key = "app_icons_addon_injected") {
+                                    AppIconsAddonInjectedSettings(
+                                        entries = injectedAddonEntries
+                                    )
+                                }
                             }
 
                             if (activeProgress != null) {
@@ -893,6 +927,32 @@ private fun LoadingCard() {
 }
 
 @Composable
+private fun AppIconsAddonInjectedSettings(
+    entries: List<AddonMainEntry>
+) {
+    val context = LocalContext.current
+    SettingsGroupCard(title = dynamicStringResource(R.string.app_icons_advanced_settings_title)) {
+        entries.forEachIndexed { index, entry ->
+            if (index > 0) HorizontalDivider()
+            key(entry.rawId) {
+                AddonMainEntryRow(
+                    entry = entry,
+                    onClick = {
+                        AddonPageActivity.start(
+                            context = context,
+                            addonId = entry.addonId,
+                            pageId = entry.leafId,
+                            title = entry.title,
+                            includeTargetActivityEntries = true
+                        )
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun AppIconsModuleSwitch(
     checked: Boolean,
     launcherOnlyChecked: Boolean,
@@ -910,6 +970,8 @@ private fun AppIconsModuleSwitch(
     foregroundTintMode: Int,
     foregroundTintColor: Int,
     advancedExpanded: Boolean,
+    showHardcodedControls: Boolean,
+    showLauncherControls: Boolean,
     onIconShapeClick: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onLauncherOnlyChange: (Boolean) -> Unit,
@@ -940,38 +1002,43 @@ private fun AppIconsModuleSwitch(
                 .fillMaxWidth()
                 .padding(vertical = 6.dp)
         ) {
-            AppIconsSwitchRow(
-                title = dynamicStringResource(R.string.app_icons_module_enabled_title),
-                summary = dynamicStringResource(R.string.app_icons_module_enabled_summary),
-                checked = checked,
-                enabled = true,
-                onCheckedChange = onCheckedChange
-            )
-            AppIconsSwitchRow(
-                title = dynamicStringResource(R.string.app_icons_launcher_only_title),
-                summary = dynamicStringResource(R.string.app_icons_launcher_only_summary),
-                checked = checked && launcherOnlyChecked,
-                enabled = checked,
-                onCheckedChange = onLauncherOnlyChange
-            )
+            if (showHardcodedControls) {
+                AppIconsSwitchRow(
+                    title = dynamicStringResource(R.string.app_icons_module_enabled_title),
+                    summary = dynamicStringResource(R.string.app_icons_module_enabled_summary),
+                    checked = checked,
+                    enabled = true,
+                    onCheckedChange = onCheckedChange
+                )
+            }
+            if (showHardcodedControls && showLauncherControls) {
+                AppIconsSwitchRow(
+                    title = dynamicStringResource(R.string.app_icons_launcher_only_title),
+                    summary = dynamicStringResource(R.string.app_icons_launcher_only_summary),
+                    checked = checked && launcherOnlyChecked,
+                    enabled = checked,
+                    onCheckedChange = onLauncherOnlyChange
+                )
+            }
             AppIconsNavigationRow(
                 title = dynamicStringResource(R.string.icon_shape_title),
                 summary = dynamicStringResource(R.string.icon_shape_summary),
                 onClick = onIconShapeClick
             )
-            ExpandableSectionHeaderContent(
-                title = dynamicStringResource(R.string.app_icons_advanced_settings_title),
-                subtitle = dynamicStringResource(R.string.app_icons_advanced_settings_summary),
-                icon = Icons.Rounded.Apps,
-                expanded = advancedExpanded,
-                onExpandChange = onAdvancedExpandedChange
-            )
-            AnimatedVisibility(
-                visible = advancedExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+            if (showHardcodedControls) {
+                ExpandableSectionHeaderContent(
+                    title = dynamicStringResource(R.string.app_icons_advanced_settings_title),
+                    subtitle = dynamicStringResource(R.string.app_icons_advanced_settings_summary),
+                    icon = Icons.Rounded.Apps,
+                    expanded = advancedExpanded,
+                    onExpandChange = onAdvancedExpandedChange
+                )
+                AnimatedVisibility(
+                    visible = advancedExpanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                     AppIconsSwitchRow(
                         title = dynamicStringResource(R.string.app_icons_system_stretch_shape_title),
                         summary = dynamicStringResource(R.string.app_icons_system_stretch_shape_summary),
@@ -1016,28 +1083,30 @@ private fun AppIconsModuleSwitch(
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onNotificationRemoveShapeChange
                     )
-                    AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_summary),
-                        checked = launcherOptionsEnabled && launcherStretchShapeChecked,
-                        enabled = launcherOptionsEnabled,
-                        onCheckedChange = onLauncherStretchShapeChange
-                    )
-                    if (launcherStretchShapeChecked) {
-                        AppIconsScaleSliderRow(
-                            title = dynamicStringResource(R.string.app_icons_launcher_shape_scale_title),
-                            value = launcherShapeScalePercent,
+                    if (showLauncherControls) {
+                        AppIconsSwitchRow(
+                            title = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_title),
+                            summary = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_summary),
+                            checked = launcherOptionsEnabled && launcherStretchShapeChecked,
                             enabled = launcherOptionsEnabled,
-                            onValueChange = onLauncherShapeScaleChange
+                            onCheckedChange = onLauncherStretchShapeChange
+                        )
+                        if (launcherStretchShapeChecked) {
+                            AppIconsScaleSliderRow(
+                                title = dynamicStringResource(R.string.app_icons_launcher_shape_scale_title),
+                                value = launcherShapeScalePercent,
+                                enabled = launcherOptionsEnabled,
+                                onValueChange = onLauncherShapeScaleChange
+                            )
+                        }
+                        AppIconsSwitchRow(
+                            title = dynamicStringResource(R.string.app_icons_launcher_remove_shape_title),
+                            summary = dynamicStringResource(R.string.app_icons_launcher_remove_shape_summary),
+                            checked = launcherOptionsEnabled && launcherRemoveShapeChecked,
+                            enabled = launcherOptionsEnabled,
+                            onCheckedChange = onLauncherRemoveShapeChange
                         )
                     }
-                    AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_launcher_remove_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_launcher_remove_shape_summary),
-                        checked = launcherOptionsEnabled && launcherRemoveShapeChecked,
-                        enabled = launcherOptionsEnabled,
-                        onCheckedChange = onLauncherRemoveShapeChange
-                    )
                     AppIconsTintControlRow(
                         title = dynamicStringResource(R.string.app_icons_shape_background_tint_title),
                         summary = dynamicStringResource(R.string.app_icons_shape_background_tint_summary),
@@ -1057,6 +1126,7 @@ private fun AppIconsModuleSwitch(
                         onColorChange = onForegroundTintColorChange
                     )
                 }
+            }
             }
         }
     }

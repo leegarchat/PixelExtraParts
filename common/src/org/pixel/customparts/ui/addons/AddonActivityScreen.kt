@@ -28,11 +28,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
+import org.pixel.customparts.SettingsKeys
+import org.pixel.customparts.activities.LauncherManager
+import org.pixel.customparts.icons.IconPackManager
 import org.pixel.customparts.ui.GraphicsLayerRecordingState
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
@@ -71,6 +78,7 @@ private data class PageStackEntry(
 fun AddonPageScreen(
     addonId: String,
     pageId: String? = null,
+    includeTargetActivityEntries: Boolean = false,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -79,9 +87,9 @@ fun AddonPageScreen(
     var model by remember { mutableStateOf<AddonMainMenuModel?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(addonId) {
+    LaunchedEffect(addonId, includeTargetActivityEntries) {
         withContext(Dispatchers.IO) {
-            val full = scanAddonMainEntries(context)
+            val full = scanAddonMainEntries(context, includeTargetActivityEntries = includeTargetActivityEntries)
             // Filter to entries belonging to this addon
             val filtered = full.entries.filter { it.addonId == addonId }
             model = AddonMainMenuModel(entries = filtered)
@@ -89,19 +97,27 @@ fun AddonPageScreen(
         isLoading = false
     }
 
-    // Back-stack: start at root
-    val backStack = remember { mutableStateListOf(PageStackEntry(entry = null, title = addonId)) }
+    // Back-stack starts at root, but direct page launches replace it with the real entry path.
+    val backStack = remember(addonId, pageId, includeTargetActivityEntries) { mutableStateListOf(PageStackEntry(entry = null, title = addonId)) }
     val current = backStack.last()
 
-    // If a specific pageId was requested, navigate to it once model is loaded
-    LaunchedEffect(model, pageId) {
+    // If a specific pageId was requested, navigate to it once model is loaded (without animation)
+    var initialNavigationDone by remember(addonId, pageId, includeTargetActivityEntries) { mutableStateOf(pageId == null) }
+    LaunchedEffect(model, pageId, includeTargetActivityEntries) {
         val m = model ?: return@LaunchedEffect
-        if (pageId != null && backStack.size == 1) {
-            val target = findEntryByLeafId(m.entries, pageId)
-            if (target != null) {
-                backStack.add(PageStackEntry(entry = target, title = target.title))
+        if (pageId != null && !initialNavigationDone) {
+            val path = findEntryPathByLeafId(m.entries, pageId)
+            if (path != null) {
+                backStack.clear()
+                backStack.addAll(path.map { PageStackEntry(entry = it, title = it.title) })
             }
+            initialNavigationDone = true
         }
+    }
+
+    // Handle system back gesture
+    androidx.activity.compose.BackHandler(enabled = backStack.size > 1) {
+        backStack.removeLast()
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -131,7 +147,12 @@ fun AddonPageScreen(
                         },
                         label = "titleAnim"
                     ) { title ->
-                        Text(title, fontWeight = FontWeight.Bold)
+                        val titleSizeSp = current.entry?.titleSizeSp ?: 0f
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.headlineSmall.withAddonTextSize(titleSizeSp),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 navigationIcon = {
@@ -149,7 +170,7 @@ fun AddonPageScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            if (isLoading) {
+            if (isLoading || !initialNavigationDone) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -216,6 +237,7 @@ private fun AddonPageContent(
     onNavigate: (AddonMainEntry) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var settingsRevision by remember { mutableIntStateOf(0) }
 
     LazyColumn(
@@ -236,9 +258,27 @@ private fun AddonPageContent(
         if (currentEntry != null && currentEntry.settings.isNotEmpty()) {
             item(key = "settings_card") {
                 val allSettings = remember(currentEntry.settings) { flattenSettings(currentEntry.settings) }
-                SettingsGroupCard(title = dynamicStringResource(R.string.addon_settings_title)) {
+                SettingsGroupCard(
+                    title = currentEntry.title.ifBlank { dynamicStringResource(R.string.addon_settings_title) },
+                    titleStyle = MaterialTheme.typography.titleMedium.withAddonTextSize(currentEntry.titleSizeSp)
+                ) {
+                    if (currentEntry.subtitle.isNotBlank()) {
+                        Text(
+                            text = currentEntry.subtitle,
+                            style = MaterialTheme.typography.bodySmall.withAddonTextSize(currentEntry.descriptionSizeSp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                        )
+                    }
                     for (setting in currentEntry.settings) {
-                        key(setting.key, settingsRevision) {
+                        key(setting.key) {
+                            val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                            } else {
+                                Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                            }
                             AddonSettingControl(
                                 setting = setting,
                                 addon = AddonUiModel(
@@ -255,7 +295,9 @@ private fun AddonPageContent(
                                     customTargets = emptySet(),
                                     isSystem = currentEntry.isSystemAddon
                                 ),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = settingModifier,
+                                allSettings = allSettings,
+                                dependencyRevision = settingsRevision,
                                 onSettingChanged = { changedSetting, boolVal ->
                                     if (boolVal == true) {
                                         applyExclusiveSettingLogic(
@@ -277,8 +319,14 @@ private fun AddonPageContent(
                                             changedSetting,
                                             allSettings
                                         )
-                                        settingsRevision++
                                     }
+                                    if (changedSetting.key.startsWith("pixelparts_app_icons_") || changedSetting.key.startsWith("pixelparts_icon_shape_")) {
+                                        IconPackManager.requestIconReload(context)
+                                    }
+                                    if (changedSetting.key == SettingsKeys.PIXEL_LAUNCHER_NATIVE_SEARCH && boolVal != null) {
+                                        scope.launch { LauncherManager.setNativeSearchEnabled(context, boolVal) }
+                                    }
+                                    settingsRevision++
                                 }
                             )
                         }
@@ -289,12 +337,18 @@ private fun AddonPageContent(
 
         // Child navigation entries
         if (entries.isNotEmpty()) {
-            // Group children by their group field (only meaningful at root level;
-            // nested pages typically have no group distinction)
+            // Group children by their group field
             val grouped = entries.groupBy { it.group }
-            val groupOrder = listOf("gesture", "system", "network")
+            // Known groups with fixed order; custom groups come after, sorted by max priority within group
+            val knownGroupOrder = listOf("launcher", "gesture", "system", "network")
             val sortedGroups = grouped.keys.sortedWith(
-                compareBy { groupOrder.indexOf(it).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
+                compareBy<String> {
+                    val knownIdx = knownGroupOrder.indexOf(it)
+                    if (knownIdx >= 0) knownIdx else knownGroupOrder.size
+                }.thenByDescending { groupKey ->
+                    // Custom groups sorted by highest priority entry within
+                    grouped[groupKey]?.maxOfOrNull { it.priority } ?: 0
+                }
             )
 
             for (group in sortedGroups) {
@@ -304,9 +358,11 @@ private fun AddonPageContent(
 
                 item(key = "group_$group") {
                     val groupTitle = when (group) {
+                        "launcher" -> dynamicStringResource(R.string.main_header_launcher)
                         "gesture" -> dynamicStringResource(R.string.main_header_gesture)
                         "network" -> dynamicStringResource(R.string.main_header_network)
-                        else -> dynamicStringResource(R.string.main_header_system)
+                        "system" -> dynamicStringResource(R.string.main_header_system)
+                        else -> group.replaceFirstChar { it.uppercase() }
                     }
                     SettingsGroupCard(title = groupTitle) {
                         groupEntries.forEachIndexed { index, entry ->
@@ -346,6 +402,80 @@ private fun AddonPageContent(
 // =====================================================================
 
 @Composable
+internal fun AddonMainEntryIcon(
+    entry: AddonMainEntry,
+    modifier: Modifier = Modifier,
+    containerSize: Dp = 36.dp,
+    fallbackTint: Color? = null,
+    fallbackContainer: Color? = null
+) {
+    val materialIcon = if (entry.iconBitmap == null && entry.icon.isNotBlank() && entry.iconType != "file") {
+        rememberMaterialIcon(entry.icon)
+    } else null
+    val shape = when (entry.iconShape.trim().lowercase()) {
+        "rounded" -> RoundedCornerShape(10.dp)
+        "none" -> null
+        else -> CircleShape
+    }
+    val iconSize = (entry.iconSize.takeIf { it > 0 } ?: 20).dp
+    val tint = parseOptionalColor(entry.iconColor)
+        ?: fallbackTint
+        ?: MaterialTheme.colorScheme.onSecondaryContainer
+    val containerColor = parseOptionalColor(entry.iconBackground)
+        ?: fallbackContainer
+        ?: MaterialTheme.colorScheme.secondaryContainer
+
+    if (entry.iconBitmap != null) {
+        val bmp = remember(entry.addonId, entry.rawId) { entry.iconBitmap.asImageBitmap() }
+        if (shape != null) {
+            Box(
+                modifier = modifier
+                    .size(containerSize)
+                    .clip(shape)
+                    .background(containerColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(bitmap = bmp, contentDescription = null, modifier = Modifier.size(iconSize))
+            }
+        } else {
+            Image(
+                bitmap = bmp,
+                contentDescription = null,
+                modifier = modifier
+                    .size(containerSize)
+                    .clip(RoundedCornerShape(10.dp))
+            )
+        }
+        return
+    }
+
+    val icon = materialIcon ?: Icons.Rounded.Extension
+    if (shape != null) {
+        Box(
+            modifier = modifier
+                .size(containerSize)
+                .clip(shape)
+                .background(containerColor),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(iconSize),
+                tint = tint
+            )
+        }
+    } else {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = modifier.size(iconSize),
+            tint = tint
+        )
+    }
+}
+
+@Composable
 fun AddonMainEntryRow(
     entry: AddonMainEntry,
     onClick: () -> Unit,
@@ -358,32 +488,7 @@ fun AddonMainEntryRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon: custom bitmap or default Extension icon
-        if (entry.iconBitmap != null) {
-            val bmp = remember(entry.addonId, entry.leafId) { entry.iconBitmap.asImageBitmap() }
-            Image(
-                bitmap = bmp,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(10.dp))
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Extension,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
-        }
+        AddonMainEntryIcon(entry = entry)
 
         Column(
             modifier = Modifier
@@ -392,14 +497,14 @@ fun AddonMainEntryRow(
         ) {
             Text(
                 text = entry.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.withAddonTextSize(entry.titleSizeSp),
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
             if (entry.subtitle.isNotEmpty()) {
                 Text(
                     text = entry.subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.withAddonTextSize(entry.descriptionSizeSp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
@@ -414,15 +519,46 @@ fun AddonMainEntryRow(
     }
 }
 
+private fun TextStyle.withAddonTextSize(sizeSp: Float): TextStyle {
+    return if (sizeSp > 0f) copy(fontSize = sizeSp.sp) else this
+}
+
 // =====================================================================
 // Helper: find entry by leafId in a tree
 // =====================================================================
 
 fun findEntryByLeafId(entries: List<AddonMainEntry>, leafId: String): AddonMainEntry? {
+    return findEntryPathByPageId(entries, leafId)?.lastOrNull()
+}
+
+private fun findEntryPathByLeafId(entries: List<AddonMainEntry>, leafId: String): List<AddonMainEntry>? {
+    return findEntryPathByPageId(entries, leafId)
+}
+
+private fun findEntryPathByPageId(entries: List<AddonMainEntry>, pageId: String): List<AddonMainEntry>? {
+    val normalizedPageId = normalizeAddonPageId(pageId)
     for (entry in entries) {
-        if (entry.leafId == leafId) return entry
-        val found = findEntryByLeafId(entry.children, leafId)
-        if (found != null) return found
+        if (entry.matchesPageId(normalizedPageId)) return listOf(entry)
+        val childPath = findEntryPathByPageId(entry.children, pageId)
+        if (childPath != null) return listOf(entry) + childPath
     }
     return null
+}
+
+private fun AddonMainEntry.matchesPageId(normalizedPageId: String): Boolean {
+    if (normalizedPageId.isBlank()) return false
+    val normalizedRawId = normalizeAddonPageId(rawId)
+    val normalizedPath = pathSegments.joinToString("/").lowercase()
+    return normalizedPageId == leafId.lowercase() ||
+            normalizedPageId == normalizedRawId ||
+            normalizedPageId == normalizedPath
+}
+
+private fun normalizeAddonPageId(value: String): String {
+    return value.trim()
+        .trim('/')
+        .split('/')
+        .filter { it.isNotBlank() && it != "main" }
+        .joinToString("/")
+        .lowercase()
 }

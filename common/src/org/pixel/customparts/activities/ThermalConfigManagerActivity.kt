@@ -113,10 +113,7 @@ import org.json.JSONTokener
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.services.ThermalManagerTileService
-import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
@@ -125,7 +122,6 @@ import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
-import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
@@ -302,26 +298,6 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentWindowInsets = WindowInsets.navigationBars,
-        floatingActionButton = {
-            RebootBubble(
-                extraActions = listOf(
-                    RebootBubbleMenuAction(
-                        icon = Icons.Rounded.Add,
-                        label = dynamicStringResource(R.string.thermal_manager_add_tile),
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {
-                            TileUtils.requestAddTileService(
-                                context,
-                                ThermalManagerTileService::class.java,
-                                R.string.thermal_manager_title,
-                                R.drawable.ic_thermal_tile
-                            )
-                        }
-                    )
-                )
-            )
-        },
         topBar = {
             TopAppBar(
                 title = {
@@ -612,7 +588,7 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
                 refreshSavedConfigs()
                 showToast(context.getString(R.string.thermal_manager_saved, file.name))
                 if (applyAfterSave) {
-                    if (ThermalProfileController.applyConfig(context, file.name)) {
+                    if (ThermalProfileController.updateGlobalConfig(context, file.name)) {
                         showToast(context.getString(R.string.thermal_manager_applied, file.name))
                     } else {
                         showToast(context.getString(R.string.thermal_manager_apply_failed))
@@ -2398,7 +2374,7 @@ private class ThermalConfigStore(private val context: Context) {
 
         val dir = ensureConfigDir()
         val file = File(dir, fileName)
-        file.writeText(json)
+        writeTextAtomically(file, json)
         file.setReadable(true, false)
         file.setWritable(true, true)
         ThermalProfileController.writeUserProfileMetadata(file.name, displayName, file.absolutePath)
@@ -2431,6 +2407,17 @@ private class ThermalConfigStore(private val context: Context) {
         dir.setReadable(true, false)
         dir.setExecutable(true, false)
         return dir
+    }
+
+    private fun writeTextAtomically(file: File, text: String) {
+        val temp = File(file.parentFile, ".${file.name}.${System.nanoTime()}.tmp")
+        temp.writeText(text)
+        temp.setReadable(true, false)
+        temp.setWritable(true, true)
+        if (!temp.renameTo(file)) {
+            temp.delete()
+            error(context.getString(R.string.thermal_manager_error_save, file.name))
+        }
     }
 
     private fun loadConfigWithIncludes(file: File, loadedPaths: MutableSet<String>): JSONObject {

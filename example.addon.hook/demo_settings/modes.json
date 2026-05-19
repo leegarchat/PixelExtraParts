@@ -1,0 +1,6 @@
+﻿[
+    {"name": "Auto", "value": "auto"},
+    {"name": "Manual", "value": "manual"},
+    {"name": "Scheduled", "value": "scheduled"},
+    {"name": "Adaptive", "value": "adaptive"}
+]

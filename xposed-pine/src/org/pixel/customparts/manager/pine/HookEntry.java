@@ -6,7 +6,6 @@ import org.pixel.customparts.core.IHookEnvironment;
 // Импорты твоих хуков
 import org.pixel.customparts.hooks.*;
 import org.pixel.customparts.hooks.recents.*;
-import org.pixel.customparts.hooks.systemui.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +17,7 @@ import java.util.Set;
 public class HookEntry {
     private static final String TAG = "HookEntry";
     private static final String PACKAGE_SYSTEMUI = "com.android.systemui";
+    private static final String PACKAGE_NEXUS_LAUNCHER = "com.google.android.apps.nexuslauncher";
 
     /** Hardcoded whitelist — packages that always get built-in hooks */
     private static final Set<String> BUILTIN_WHITELIST = new HashSet<>();
@@ -26,7 +26,7 @@ public class HookEntry {
     private static final IHookEnvironment environment = new PineEnvironment();
 
     static {
-        LAUNCHER_PACKAGES.add("com.google.android.apps.nexuslauncher");
+        LAUNCHER_PACKAGES.add(PACKAGE_NEXUS_LAUNCHER);
         LAUNCHER_PACKAGES.add("com.google.android.apps.pixel.launcher");
         LAUNCHER_PACKAGES.add("com.android.launcher3");
 
@@ -75,12 +75,11 @@ public class HookEntry {
 
             if (LAUNCHER_PACKAGES.contains(packageName)) {
                 environment.log(TAG, "MATCHED LAUNCHER PACKAGE: " + packageName);
-                initLauncherHooks(context, classLoader);
+                initLauncherHooks(context, classLoader, packageName);
             }
 
             if (PACKAGE_SYSTEMUI.equals(packageName)) {
-                environment.log(TAG, "MATCHED SYSTEMUI PACKAGE");
-                initSystemUIHooks(context, classLoader);
+                environment.log(TAG, "MATCHED SYSTEMUI PACKAGE: built-in hooks are provided by addons");
             }
         } else {
             environment.log(TAG, "Addon-only package: " + packageName + " (not in built-in whitelist)");
@@ -113,33 +112,21 @@ public class HookEntry {
         applyHooks(hooks, context, classLoader, "global");
     }
 
-    private static void initLauncherHooks(Context context, ClassLoader classLoader) {
+    private static void initLauncherHooks(Context context, ClassLoader classLoader, String packageName) {
         List<BaseHook> hooks = new ArrayList<>();
 
-        hooks.add(new LauncherIconOverrideHook());
-        hooks.add(new GridSizeAppMenuHook());
-        hooks.add(new UnifiedLauncherHook());
-        hooks.add(new GestureBarHook());
-        hooks.add(new RecentsUnifiedHook());
+        // if (!PACKAGE_NEXUS_LAUNCHER.equals(packageName)) {
+        //     hooks.add(new LauncherIconOverrideHook());
+        //     hooks.add(new GridSizeAppMenuHook());
+        //     hooks.add(new UnifiedLauncherHook());
+        //     hooks.add(new RecentsUnifiedHook());
+        // }
+        // if (!PACKAGE_NEXUS_LAUNCHER.equals(packageName)) {
+        //     hooks.add(new GestureBarHook());
+        // }
         // hooks.add(new OxygenRecentsIconStripHook());
 
         applyHooks(hooks, context, classLoader, "launcher");
-    }
-
-    private static void initSystemUIHooks(Context context, ClassLoader classLoader) {
-        List<BaseHook> hooks = new ArrayList<>();
-
-        hooks.add(new DozeTapDozeHook());
-        hooks.add(new DozeTapShadeHook());
-        hooks.add(new KeyguardBatteryPowerHook());
-        hooks.add(new ShadeUnifiedSurfaceHook());
-        hooks.add(new ShadeCompactMediaHook());
-        hooks.add(new NotificationIconShapeHook());
-        hooks.add(new AodNotificationIconColorHook());
-        hooks.add(new GestureBarHook());
-        hooks.add(new SystemUIRestartHook());
-
-        applyHooks(hooks, context, classLoader, "systemui");
     }
 
     private static void applyHooks(List<BaseHook> hooks, Context context, ClassLoader classLoader, String group) {

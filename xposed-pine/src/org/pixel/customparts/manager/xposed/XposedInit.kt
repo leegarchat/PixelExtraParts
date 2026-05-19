@@ -21,6 +21,7 @@ import org.pixel.customparts.hooks.systemui.KeyguardBatteryPowerHook
 import org.pixel.customparts.hooks.systemui.NotificationIconShapeHook
 import org.pixel.customparts.hooks.systemui.ShadeCompactMediaHook
 import org.pixel.customparts.hooks.systemui.ShadeUnifiedSurfaceHook
+import org.pixel.customparts.manager.pine.AddonLoader
 
 class XposedInit : IXposedHookLoadPackage {
 
@@ -30,6 +31,7 @@ class XposedInit : IXposedHookLoadPackage {
     private companion object {
         const val PACKAGE_SYSTEMUI = "com.android.systemui"
         const val PACKAGE_SELF = "org.pixel.customparts.xposed"
+        const val PACKAGE_NEXUS_LAUNCHER = "com.google.android.apps.nexuslauncher"
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -44,20 +46,24 @@ class XposedInit : IXposedHookLoadPackage {
         }
 
         
-        if (lpparam.packageName == "com.google.android.apps.nexuslauncher" || 
+        if (lpparam.packageName == PACKAGE_NEXUS_LAUNCHER ||
             lpparam.packageName == "com.google.android.apps.pixel.launcher" ||
             lpparam.packageName == "com.android.launcher3") {
             
             environment.log(TAG, "MATCHED Launcher package: ${lpparam.packageName}")
             
-            val hooks: List<BaseHook> = listOf(
-                LauncherIconOverrideHook(),
-                GridSizeAppMenuHook(),
-                UnifiedLauncherHook(),
-                GestureBarHook(),
-                // OxygenRecentsIconStripHook(),
-                RecentsUnifiedHook()
-            ).sortedByDescending { it.priority }
+            val hooks: List<BaseHook> = if (lpparam.packageName == PACKAGE_NEXUS_LAUNCHER) {
+                emptyList()
+            } else {
+                listOf(
+                    LauncherIconOverrideHook(),
+                    GridSizeAppMenuHook(),
+                    UnifiedLauncherHook(),
+                    GestureBarHook(),
+                    // OxygenRecentsIconStripHook(),
+                    RecentsUnifiedHook()
+                )
+            }.sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)
         }
@@ -73,12 +79,13 @@ class XposedInit : IXposedHookLoadPackage {
                 ShadeUnifiedSurfaceHook(),
                 ShadeCompactMediaHook(),
                 NotificationIconShapeHook(),
-                AodNotificationIconColorHook(),
-                GestureBarHook()
+                AodNotificationIconColorHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)
         }
+
+        loadAddonHooks(lpparam)
     }
 
     
@@ -131,6 +138,18 @@ class XposedInit : IXposedHookLoadPackage {
             XposedHelpers.callStaticMethod(activityThreadClass, "currentApplication") as? Context
         } catch (t: Throwable) {
             null
+        }
+    }
+
+    private fun loadAddonHooks(lpparam: XC_LoadPackage.LoadPackageParam) {
+        val packageName = lpparam.packageName ?: return
+        val context = currentApplicationContext() ?: return
+        try {
+            if (AddonLoader.hasAddonsForPackage(context, packageName)) {
+                AddonLoader.loadAndRunAddons(context, lpparam.classLoader, packageName)
+            }
+        } catch (t: Throwable) {
+            environment.logError(TAG, "Addon loading failed for $packageName", t)
         }
     }
 

@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -48,13 +47,10 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.services.MagnifierTileService
 import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.RadioSelectionGroup
-import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.SliderSettingFloat
@@ -62,7 +58,6 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 
 class MagnifierSettingsActivity : ComponentActivity() {
@@ -96,26 +91,6 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = {
-            RebootBubble(
-                extraActions = listOf(
-                    RebootBubbleMenuAction(
-                        icon = Icons.Rounded.Add,
-                        label = dynamicStringResource(R.string.magnifier_add_tile),
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        onClick = {
-                            TileUtils.requestAddTileService(
-                                context,
-                                MagnifierTileService::class.java,
-                                R.string.magnifier_section_title,
-                                R.drawable.ic_magnifier_tile
-                            )
-                        }
-                    )
-                )
-            )
-        },
         topBar = {
             TopAppBar(
                 title = {

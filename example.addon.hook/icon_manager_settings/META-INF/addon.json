@@ -1,0 +1,1005 @@
+{
+    "id": "icon_manager_settings",
+    "name": "Icon Manager Settings UI",
+    "author": "PixelExtraParts",
+    "description": "Settings-only addon UI for Icon Manager advanced controls.",
+    "version": "1.0.1",
+    "enabled": true,
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 72,
+    "backgroundGradientSteps": [
+        0,
+        36,
+        78,
+        100
+    ],
+    "backgroundBlur": true,
+    "backgroundBlurRadius": 14,
+    "backgroundScope": "header",
+    "settings": [],
+    "main": [
+        {
+            "id": "main/icon-manager/advanced-settings",
+            "title": "Advanced icon settings",
+            "subtitle": "System, notifications, Pixel Launcher, tinting and All Apps",
+            "icon": "Apps",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#D7B8FF",
+            "iconBackground": "#332A45",
+            "targetActivity": "AppIconsActivity",
+            "targetSlot": "advanced",
+            "priority": 1000,
+            "settings": [
+                {
+                    "key": "icon_manager_core_divider",
+                    "type": "dashed_line",
+                    "thickness": 1
+                },
+                {
+                    "key": "icon_manager_core_group",
+                    "type": "group",
+                    "title": "Core toggles",
+                    "description": "Global Icon Manager enable state and Pixel Launcher integration.",
+                    "mode": "inline",
+                    "defaultExpanded": false,
+                    "icon": "Rounded.Apps",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20,
+                    "settings": [
+                        {
+                            "key": "pixelparts_app_icons_enabled",
+                            "title": "Enable icon system",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true
+                        },
+                        {
+                            "key": "pixelparts_app_icons_launcher_enabled",
+                            "title": "Apply in Pixel Launcher",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": true
+                        }
+                    ]
+                },
+                {
+                    "key": "icon_manager_shape_divider",
+                    "type": "dashed_line",
+                    "thickness": 1
+                },
+                {
+                    "key": "icon_manager_shape_group",
+                    "type": "group",
+                    "title": "Shape and scale",
+                    "description": "Adaptive icon shape overrides for system, notification and launcher surfaces.",
+                    "mode": "inline",
+                    "defaultExpanded": false,
+                    "icon": "Rounded.Category",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20,
+                    "settings": [
+                        {
+                            "key": "pixelparts_app_icons_system_stretch_shape",
+                            "title": "Stretch system icon shape",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_system_remove_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_system_remove_shape",
+                            "title": "Remove system adaptive icon background",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_system_stretch_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_system_shape_scale",
+                            "title": "System shape scale",
+                            "type": "float",
+                            "provider": "global",
+                            "default": 72,
+                            "min": 0,
+                            "max": 200,
+                            "step": 1,
+                            "unit": "%",
+                            "enabledIfAny": [
+                                "pixelparts_app_icons_system_stretch_shape",
+                                "pixelparts_app_icons_system_remove_shape"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_notification_stretch_shape",
+                            "title": "Stretch notification shape",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_notification_remove_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_notification_remove_shape",
+                            "title": "Remove notification icon background",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_notification_stretch_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_notification_shape_scale",
+                            "title": "Notification shape scale",
+                            "type": "float",
+                            "provider": "global",
+                            "default": 72,
+                            "min": 0,
+                            "max": 200,
+                            "step": 1,
+                            "unit": "%",
+                            "enabledIfAny": [
+                                "pixelparts_app_icons_notification_stretch_shape",
+                                "pixelparts_app_icons_notification_remove_shape"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_launcher_stretch_shape",
+                            "title": "Stretch Pixel Launcher shape",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_launcher_remove_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_launcher_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_launcher_remove_shape",
+                            "title": "Remove Pixel Launcher icon background",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false,
+                            "exclusiveWith": [
+                                "pixelparts_app_icons_launcher_stretch_shape"
+                            ],
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_launcher_enabled"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_launcher_shape_scale",
+                            "title": "Pixel Launcher shape scale",
+                            "type": "float",
+                            "provider": "global",
+                            "default": 72,
+                            "min": 0,
+                            "max": 200,
+                            "step": 1,
+                            "unit": "%",
+                            "enabledIfAny": [
+                                "pixelparts_app_icons_launcher_stretch_shape",
+                                "pixelparts_app_icons_launcher_remove_shape"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "icon_manager_tint_divider",
+                    "type": "dashed_line",
+                    "thickness": 1
+                },
+                {
+                    "key": "icon_manager_tint_group",
+                    "type": "group",
+                    "title": "Tinting",
+                    "description": "Background and foreground color for generated icons.",
+                    "mode": "inline",
+                    "defaultExpanded": false,
+                    "icon": "Rounded.Palette",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20,
+                    "settings": [
+                        {
+                            "key": "pixelparts_app_icons_shape_background_tint_mode",
+                            "title": "Background tinting",
+                            "type": "select",
+                            "provider": "global",
+                            "default": "0",
+                            "options": [
+                                {
+                                    "value": "0",
+                                    "label": "Off"
+                                },
+                                {
+                                    "value": "1",
+                                    "label": "Color"
+                                },
+                                {
+                                    "value": "2",
+                                    "label": "Auto"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_shape_background_tint_color",
+                            "title": "Background color",
+                            "type": "color",
+                            "provider": "global",
+                            "default": "#00000000",
+                            "format": "hex_argb",
+                            "alpha": true,
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_shape_background_tint_mode=1"
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_shape_foreground_tint_mode",
+                            "title": "Icon tinting",
+                            "type": "select",
+                            "provider": "global",
+                            "default": "0",
+                            "options": [
+                                {
+                                    "value": "0",
+                                    "label": "Off"
+                                },
+                                {
+                                    "value": "1",
+                                    "label": "Color"
+                                },
+                                {
+                                    "value": "2",
+                                    "label": "Auto"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "pixelparts_app_icons_shape_foreground_tint_color",
+                            "title": "Icon color",
+                            "type": "color",
+                            "provider": "global",
+                            "default": "#FFFFFFFF",
+                            "format": "hex_argb",
+                            "alpha": true,
+                            "enabledIfAll": [
+                                "pixelparts_app_icons_shape_foreground_tint_mode=1"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "icon_manager_all_apps_divider",
+                    "type": "dashed_line",
+                    "thickness": 1
+                },
+                {
+                    "key": "icon_manager_all_apps_group",
+                    "type": "group",
+                    "title": "All Apps and per-app shapes",
+                    "description": "Workspace, All Apps, suggested icons and per-app shape overrides.",
+                    "mode": "inline",
+                    "defaultExpanded": false,
+                    "icon": "Rounded.GridView",
+                    "iconType": "app",
+                    "iconShape": "rounded",
+                    "iconSize": 20,
+                    "settings": [
+                        {
+                            "key": "pixelparts_icon_shape_workspace_match_all_apps",
+                            "title": "Workspace shape matches All Apps",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "pixelparts_icon_shape_ignore_custom_settings",
+                            "title": "Ignore per-app shapes",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "pixelparts_icon_shape_all_apps_follow_workspace",
+                            "title": "All Apps follows the workspace",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "pixelparts_icon_shape_all_apps_themed_icons",
+                            "title": "Themed icons in All Apps",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "pixelparts_icon_shape_all_apps_suggestions_themed_icons",
+                            "title": "Themed icons in suggestions",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "Настройки Icon Manager",
+            "author": "PixelExtraParts",
+            "description": "Addon только с UI настроек для расширенных возможностей Icon Manager.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/icon-manager/advanced-settings",
+                    "title": "Расширенные настройки иконок",
+                    "subtitle": "Система, уведомления, Pixel Launcher, тонировка и All Apps",
+                    "settings": [
+                        {
+                            "key": "icon_manager_core_divider"
+                        },
+                        {
+                            "key": "icon_manager_core_group",
+                            "title": "Основные переключатели",
+                            "description": "Общее включение Icon Manager и применение в Pixel Launcher.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_enabled",
+                                    "title": "Включить систему иконок"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_enabled",
+                                    "title": "Применять в Pixel Launcher"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_shape_divider"
+                        },
+                        {
+                            "key": "icon_manager_shape_group",
+                            "title": "Форма и масштаб",
+                            "description": "Переопределение adaptive icon shape для system, notification и launcher surfaces.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_system_stretch_shape",
+                                    "title": "Растягивать форму системных иконок"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_remove_shape",
+                                    "title": "Убирать фон системных adaptive icons"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_shape_scale",
+                                    "title": "Масштаб системной формы"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_stretch_shape",
+                                    "title": "Растягивать форму уведомлений"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_remove_shape",
+                                    "title": "Убирать фон иконок уведомлений"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_shape_scale",
+                                    "title": "Масштаб формы уведомлений"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_stretch_shape",
+                                    "title": "Растягивать форму Pixel Launcher"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_remove_shape",
+                                    "title": "Убирать фон Pixel Launcher icons"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_shape_scale",
+                                    "title": "Масштаб формы Pixel Launcher"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_tint_divider"
+                        },
+                        {
+                            "key": "icon_manager_tint_group",
+                            "title": "Тонировка",
+                            "description": "Цвет фона и foreground для сгенерированных иконок.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_mode",
+                                    "title": "Тонировка фона",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Выключено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Цвет"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_color",
+                                    "title": "Цвет фона"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_mode",
+                                    "title": "Тонировка иконки",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Выключено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Цвет"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_color",
+                                    "title": "Цвет иконки"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_all_apps_divider"
+                        },
+                        {
+                            "key": "icon_manager_all_apps_group",
+                            "title": "All Apps и индивидуальные формы",
+                            "description": "Связь workspace, All Apps, suggested icons и индивидуальных shape overrides.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_icon_shape_workspace_match_all_apps",
+                                    "title": "Форма рабочего стола как в All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_ignore_custom_settings",
+                                    "title": "Игнорировать индивидуальные формы"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_follow_workspace",
+                                    "title": "All Apps следует рабочему столу"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_themed_icons",
+                                    "title": "Themed icons в All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_suggestions_themed_icons",
+                                    "title": "Themed icons в подсказках"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "Icon-Manager-Einstellungen",
+            "author": "PixelExtraParts",
+            "description": "Reines Einstellungs-Addon für erweiterte Icon-Manager-Optionen.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/icon-manager/advanced-settings",
+                    "title": "Advanced icon settings",
+                    "subtitle": "System, notifications, Pixel Launcher, tinting and All Apps",
+                    "settings": [
+                        {
+                            "key": "icon_manager_core_divider"
+                        },
+                        {
+                            "key": "icon_manager_core_group",
+                            "title": "Core toggles",
+                            "description": "Global Icon Manager enable state and Pixel Launcher integration.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_enabled",
+                                    "title": "Enable icon system"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_enabled",
+                                    "title": "Apply in Pixel Launcher"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_shape_divider"
+                        },
+                        {
+                            "key": "icon_manager_shape_group",
+                            "title": "Shape and scale",
+                            "description": "Adaptive icon shape overrides for system, notification and launcher surfaces.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_system_stretch_shape",
+                                    "title": "Stretch system icon shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_remove_shape",
+                                    "title": "Remove system adaptive icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_shape_scale",
+                                    "title": "System shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_stretch_shape",
+                                    "title": "Stretch notification shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_remove_shape",
+                                    "title": "Remove notification icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_shape_scale",
+                                    "title": "Notification shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_stretch_shape",
+                                    "title": "Stretch Pixel Launcher shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_remove_shape",
+                                    "title": "Remove Pixel Launcher icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_shape_scale",
+                                    "title": "Pixel Launcher shape scale"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_tint_divider"
+                        },
+                        {
+                            "key": "icon_manager_tint_group",
+                            "title": "Tinting",
+                            "description": "Background and foreground color for generated icons.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_mode",
+                                    "title": "Background tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Aus"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Farbe"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_color",
+                                    "title": "Background color"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_mode",
+                                    "title": "Icon tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Aus"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Farbe"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_color",
+                                    "title": "Icon color"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_all_apps_divider"
+                        },
+                        {
+                            "key": "icon_manager_all_apps_group",
+                            "title": "All Apps and per-app shapes",
+                            "description": "Workspace, All Apps, suggested icons and per-app shape overrides.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_icon_shape_workspace_match_all_apps",
+                                    "title": "Workspace shape matches All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_ignore_custom_settings",
+                                    "title": "Ignore per-app shapes"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_follow_workspace",
+                                    "title": "All Apps follows the workspace"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_themed_icons",
+                                    "title": "Themed icons in All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_suggestions_themed_icons",
+                                    "title": "Themed icons in suggestions"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "Paramètres du gestionnaire d'icônes",
+            "author": "PixelExtraParts",
+            "description": "Addon de paramètres pour les contrôles avancés du gestionnaire d'icônes.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/icon-manager/advanced-settings",
+                    "title": "Advanced icon settings",
+                    "subtitle": "System, notifications, Pixel Launcher, tinting and All Apps",
+                    "settings": [
+                        {
+                            "key": "icon_manager_core_divider"
+                        },
+                        {
+                            "key": "icon_manager_core_group",
+                            "title": "Core toggles",
+                            "description": "Global Icon Manager enable state and Pixel Launcher integration.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_enabled",
+                                    "title": "Enable icon system"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_enabled",
+                                    "title": "Apply in Pixel Launcher"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_shape_divider"
+                        },
+                        {
+                            "key": "icon_manager_shape_group",
+                            "title": "Shape and scale",
+                            "description": "Adaptive icon shape overrides for system, notification and launcher surfaces.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_system_stretch_shape",
+                                    "title": "Stretch system icon shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_remove_shape",
+                                    "title": "Remove system adaptive icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_shape_scale",
+                                    "title": "System shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_stretch_shape",
+                                    "title": "Stretch notification shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_remove_shape",
+                                    "title": "Remove notification icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_shape_scale",
+                                    "title": "Notification shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_stretch_shape",
+                                    "title": "Stretch Pixel Launcher shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_remove_shape",
+                                    "title": "Remove Pixel Launcher icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_shape_scale",
+                                    "title": "Pixel Launcher shape scale"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_tint_divider"
+                        },
+                        {
+                            "key": "icon_manager_tint_group",
+                            "title": "Tinting",
+                            "description": "Background and foreground color for generated icons.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_mode",
+                                    "title": "Background tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Désactivé"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Couleur"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_color",
+                                    "title": "Background color"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_mode",
+                                    "title": "Icon tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Désactivé"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Couleur"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Auto"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_color",
+                                    "title": "Icon color"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_all_apps_divider"
+                        },
+                        {
+                            "key": "icon_manager_all_apps_group",
+                            "title": "All Apps and per-app shapes",
+                            "description": "Workspace, All Apps, suggested icons and per-app shape overrides.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_icon_shape_workspace_match_all_apps",
+                                    "title": "Workspace shape matches All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_ignore_custom_settings",
+                                    "title": "Ignore per-app shapes"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_follow_workspace",
+                                    "title": "All Apps follows the workspace"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_themed_icons",
+                                    "title": "Themed icons in All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_suggestions_themed_icons",
+                                    "title": "Themed icons in suggestions"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "Налаштування менеджера іконок",
+            "author": "PixelExtraParts",
+            "description": "Addon лише з UI налаштувань для розширених опцій Icon Manager.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/icon-manager/advanced-settings",
+                    "title": "Advanced icon settings",
+                    "subtitle": "System, notifications, Pixel Launcher, tinting and All Apps",
+                    "settings": [
+                        {
+                            "key": "icon_manager_core_divider"
+                        },
+                        {
+                            "key": "icon_manager_core_group",
+                            "title": "Core toggles",
+                            "description": "Global Icon Manager enable state and Pixel Launcher integration.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_enabled",
+                                    "title": "Enable icon system"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_enabled",
+                                    "title": "Apply in Pixel Launcher"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_shape_divider"
+                        },
+                        {
+                            "key": "icon_manager_shape_group",
+                            "title": "Shape and scale",
+                            "description": "Adaptive icon shape overrides for system, notification and launcher surfaces.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_system_stretch_shape",
+                                    "title": "Stretch system icon shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_remove_shape",
+                                    "title": "Remove system adaptive icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_system_shape_scale",
+                                    "title": "System shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_stretch_shape",
+                                    "title": "Stretch notification shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_remove_shape",
+                                    "title": "Remove notification icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_notification_shape_scale",
+                                    "title": "Notification shape scale"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_stretch_shape",
+                                    "title": "Stretch Pixel Launcher shape"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_remove_shape",
+                                    "title": "Remove Pixel Launcher icon background"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_launcher_shape_scale",
+                                    "title": "Pixel Launcher shape scale"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_tint_divider"
+                        },
+                        {
+                            "key": "icon_manager_tint_group",
+                            "title": "Tinting",
+                            "description": "Background and foreground color for generated icons.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_mode",
+                                    "title": "Background tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Вимкнено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Колір"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_background_tint_color",
+                                    "title": "Background color"
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_mode",
+                                    "title": "Icon tinting",
+                                    "options": [
+                                        {
+                                            "value": "0",
+                                            "label": "Вимкнено"
+                                        },
+                                        {
+                                            "value": "1",
+                                            "label": "Колір"
+                                        },
+                                        {
+                                            "value": "2",
+                                            "label": "Авто"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "key": "pixelparts_app_icons_shape_foreground_tint_color",
+                                    "title": "Icon color"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "icon_manager_all_apps_divider"
+                        },
+                        {
+                            "key": "icon_manager_all_apps_group",
+                            "title": "All Apps and per-app shapes",
+                            "description": "Workspace, All Apps, suggested icons and per-app shape overrides.",
+                            "settings": [
+                                {
+                                    "key": "pixelparts_icon_shape_workspace_match_all_apps",
+                                    "title": "Workspace shape matches All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_ignore_custom_settings",
+                                    "title": "Ignore per-app shapes"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_follow_workspace",
+                                    "title": "All Apps follows the workspace"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_themed_icons",
+                                    "title": "Themed icons in All Apps"
+                                },
+                                {
+                                    "key": "pixelparts_icon_shape_all_apps_suggestions_themed_icons",
+                                    "title": "Themed icons in suggestions"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
