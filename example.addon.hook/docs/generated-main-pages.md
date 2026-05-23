@@ -95,6 +95,21 @@ If a parent is missing, the entry is promoted to the nearest existing ancestor o
 
 Target matching accepts either full activity class names or short names without the `Activity` suffix. For example, `SystemUISettingsActivity`, `SystemUISettings`, and a matching fully qualified class can all resolve to the same activity.
 
+## Page Transitions
+
+Generated pages use an internal pseudo-activity stack. Forward navigation and back navigation follow the built-in Activity Transition open/close modes when they are configured.
+
+Built-in modes reuse the same app animation resources as normal Activity transitions. When a custom transition APK is active, generated addon pages load these animation resources from that package:
+
+```text
+custom_open_enter
+custom_open_exit
+custom_close_enter
+custom_close_exit
+```
+
+Forward navigation uses the custom open pair. Back navigation uses the custom close pair. If any resource or package lookup fails, the page stack falls back to the normal generated slide/fade animation.
+
 ## Icon Fields
 
 Material icon example:
@@ -130,4 +145,4 @@ If `icon` is absent or cannot resolve, the row falls back to the extension icon.
 
 ## Sorting
 
-Entries sort by `priority` descending and then by `title`. Use larger priorities for important pages.
+Entries sort by `priority` descending and then by `title`. Use larger priorities for important pages. Known top-level group values (`launcher`, `gesture`, `system`, `network`) keep the app-defined order. Custom group names are accepted and sorted after known groups by the highest priority entry inside each group.

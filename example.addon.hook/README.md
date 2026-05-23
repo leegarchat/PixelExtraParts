@@ -10,11 +10,12 @@ The old mixed guide was kept as `README_old.md` for reference. This README is th
 | --- | --- | --- |
 | Identity | root fields | Stable `id`, display metadata, version, author, accent, background and update URL. |
 | Runtime hook | `entryClass`, `targetPackages` | Loads Java code into selected target packages through the Pine/Xposed-compatible runtime. |
-| Addon card | root `settings[]`, update/import/export | Shows the addon in the manager. Cards always expand, even without `entryClass` or settings. |
+| Addon card | root `settings[]`, update/import/export | Shows the addon in the manager. Cards expose the same expandable area even without `entryClass` or settings. |
 | Generated controls | `settings[]` | Writes values to `Settings.Global`, `Settings.System`, `Settings.Secure`, or addon files. |
 | Main pages | `main[]` | Adds generated pages to Pixel Extra Parts navigation or to target activities. |
 | Target injection | `targetActivity`, `targetSlot` | Injects addon pages into built-in screens such as launcher, SystemUI or icon manager pages. |
 | Dynamic QS tiles | `type: "tile"` | Binds one of `DynamicAddonTile01..40` to addon settings. |
+| Runtime selection | `id`, `version` | Chooses the active JAR when both `/system_ext` and `/data` contain the same addon. |
 | Localization | `locales` or `addon_<lang>.json` | Overrides display text for the active system language. |
 
 ## Directory Layout
@@ -35,6 +36,7 @@ example.addon.hook/
 +-- ambient_extend_hook/
 +-- gcam_photo_torch/
 +-- icon_manager_settings/
++-- ims_carrier_config/
 +-- launcher_hooks/
 +-- settings_homepage_item/
 +-- systemui_hooks/
@@ -121,7 +123,9 @@ Pixel Extra Parts scans addon JARs from two locations:
 /data/pixelparts/addons
 ```
 
-System addons live under `system_ext`. User or test builds can live under `/data/pixelparts/addons`. When both locations contain an addon with the same `id`, the user addon fully overrides the system addon.
+System addons live under `system_ext`. User or test builds can live under `/data/pixelparts/addons`.
+
+Active-copy selection is version aware. The manager, boot whitelist sync and Pine/Xposed runtime compare descriptor `version` values for duplicate addon IDs. The higher version wins. If versions are equal, the `/data` copy wins as an explicit user override. If an OTA ships a newer system addon than the stale `/data` copy, the system JAR becomes active while the old data override remains removable from the manager.
 
 ## Manifest Root Fields
 
@@ -129,7 +133,7 @@ System addons live under `system_ext`. User or test builds can live under `/data
 | --- | --- | --- |
 | `id` | string | Required stable identifier. It is used for enable state, data overrides, settings export and dynamic tile ownership. |
 | `entryClass` | string | Fully qualified Java class implementing `IAddonHook`. Omit it for settings-only addons. |
-| `name`, `author`, `description`, `version` | string | Display metadata. The base manifest should be English. |
+| `name`, `author`, `description`, `version` | string | Display metadata. `version` is also used to choose the active copy when the same addon exists in system and data locations. The base manifest should be English. |
 | `targetPackages` | array | Runtime package allow-list. Target only the packages the addon actually hooks. |
 | `enabled` | boolean | Default enabled state on first install. |
 | `updateUrl` or `otaUrl` | string | Optional update JSON endpoint shown in the expanded addon card. |
@@ -139,7 +143,7 @@ System addons live under `system_ext`. User or test builds can live under `/data
 | `main` | array | Generated navigation entries and generated pages. |
 | `locales` | object | Inline localized descriptor overlays keyed by language, for example `ru`, `de`, `fr`, `uk`. |
 
-Addon cards always expand. The expanded state shows inline settings when present, generated page links when `main[]` exists without inline settings, and import/export actions for every addon. If `updateUrl` is present, the update button appears in the same expanded area.
+Addon cards can be expanded from the collapsed header area. The expanded state shows inline settings when present, generated page links when `main[]` exists without inline settings, and import/export actions for every addon. If `updateUrl` is present, the update button appears in the same expanded area.
 
 ## Localization
 
@@ -166,7 +170,7 @@ Keep the base `addon.json` in English. Localized text can be shipped inline:
 }
 ```
 
-External overlays are also supported: `META-INF/addon_ru.json`, `META-INF/addon_de.json`, `META-INF/addon_fr.json`, `META-INF/addon_uk.json`, or external files next to an installed JAR. Localized overlays merge display fields only: root `name`, `author`, `description`, `main[]` title/subtitle/description/group, setting title/description, select option labels, tile target labels and tile activity labels.
+External overlays are also supported: `META-INF/addon_ru.json`, `META-INF/addon_de.json`, `META-INF/addon_fr.json`, `META-INF/addon_uk.json`, or external files next to an installed JAR. Localized overlays merge display fields only: root `name`, `author`, `description`, `main[]` title/subtitle/description/group, setting title/description, setting category title/description, select option labels, tile target labels and tile activity labels. If a localized setting provides a `title` but omits `description`, the generated UI suppresses the base English description instead of mixing languages.
 
 ## Generated Settings UI
 
@@ -177,6 +181,7 @@ Settings are declared in root `settings[]` or inside a `main[]` entry. Common fi
 | `key` | Stable setting key. Required for non-visual controls. |
 | `type` | Control type. Aliases are accepted for many types. |
 | `title`, `description` | Display text. Use English in base manifest and overlays for localization. |
+| `category`, `categoryTitle`, `categoryDescription` | Optional generated-page category card. Settings with the same `category` are rendered together under one solid card with its own title and description. Aliases: `section`, `category_id`, `section_id`, `category_title`, `sectionTitle`, `category_description`, `sectionDescription`. |
 | `title_size`, `description_size` | Optional custom text size in `sp`; camel-case and `title_seize` / `description_seize` aliases are also accepted. |
 | `provider` | `global`, `system`, or `secure` for Android Settings storage. |
 | `default`, `min`, `max`, `step`, `unit` | Numeric and default value metadata. |
@@ -184,6 +189,8 @@ Settings are declared in root `settings[]` or inside a `main[]` entry. Common fi
 | `enabledIfAll`, `enabledIfAny`, `disabledIfAll`, `disabledIfAny` | Dependency gates for controls. |
 | `exclusiveGroup`, `exclusiveWith` | Mutually exclusive boolean logic. |
 | `icon`, `iconType`, `iconShape`, `iconSize` | Optional Material or file icons for rows and groups. |
+| `settingsOn`, `settingsOff` | Extra Settings writes applied when a boolean control is enabled or disabled. |
+| `binderOn`, `binderOff` | Allow-listed framework API actions applied when a boolean control changes state. Currently supports `carrier_config`. |
 
 Supported control types:
 
@@ -234,6 +241,27 @@ Boolean controls can define explicit on/off commands:
 
 When `showOutput` is true, the row expands after execution and displays stdout/stderr. Use `showOutput: false` for silent actions. Command fields are aliases-aware: `cmd`, `command`, `shell`, `cmdOn`, `commandOn`, `onCommand`, `cmdOff`, `commandOff`, `offCommand`.
 
+Boolean controls can also write multiple Settings keys in one toggle without shell commands:
+
+```json
+{
+    "key": "voice_stack_preset",
+    "type": "switch",
+    "storage": "addon_file",
+    "title": "Voice stack preset",
+    "settingsOn": [
+        { "provider": "secure", "key": "pixel_ims_volte", "type": "int", "value": 1 },
+        { "provider": "secure", "key": "pixel_ims_wfc", "type": "int", "value": 1 }
+    ],
+    "settingsOff": [
+        { "provider": "secure", "key": "pixel_ims_volte", "type": "int", "value": 0 },
+        { "provider": "secure", "key": "pixel_ims_wfc", "type": "int", "value": 0 }
+    ]
+}
+```
+
+`binderOn` and `binderOff` are intentionally allow-listed. The current action type is `carrier_config`, which calls `CarrierConfigManager.overrideConfig` for active or explicit subscription IDs. See `ims_carrier_config` for a complete example.
+
 ## Main Pages
 
 `main[]` creates generated navigation rows and pages. Each entry has an `id`, `title`, optional `subtitle`, optional icon fields, optional `group`, optional `priority`, and optional `settings[]` for the page body.
@@ -249,7 +277,45 @@ Nested pages are represented with slash-separated IDs:
 }
 ```
 
-Entries sort by `priority` descending and then by `title`. `targetActivity` and `targetSlot` can inject pages into existing Pixel Extra Parts screens instead of only the addon manager.
+Entries sort by `priority` descending and then by `title`. Known `group` values (`launcher`, `gesture`, `system`, `network`) keep their fixed app order; custom group names are accepted and are sorted after known groups by the highest entry priority in each group. `targetActivity` and `targetSlot` can inject pages into existing Pixel Extra Parts screens instead of only the addon manager.
+
+Internal page push/pop transitions follow the Activity Transition open/close modes. Built-in modes reuse the same app animation resources, and custom theme APK mode loads `custom_open_enter`, `custom_open_exit`, `custom_close_enter`, and `custom_close_exit` from that APK for pseudo-activity navigation.
+
+### Page Setting Categories
+
+`main[].settings[]` can split one generated activity page into several independent category cards without using `type: "group"`. Put the same `category` value on every setting that belongs to one card. The first setting in that category should provide `categoryTitle` and, optionally, `categoryDescription`.
+
+```json
+{
+    "id": "ambient-extend",
+    "title": "Ambient Extend",
+    "settings": [
+        {
+            "key": "ambient_timeout_enabled",
+            "type": "switch",
+            "title": "Enable blackout",
+            "category": "aod_blackout",
+            "categoryTitle": "AOD blackout",
+            "categoryDescription": "Turn the always-on display off after a quiet delay."
+        },
+        {
+            "key": "ambient_timeout_seconds",
+            "type": "int",
+            "title": "Delay",
+            "category": "aod_blackout"
+        },
+        {
+            "key": "ambient_dim_enabled",
+            "type": "switch",
+            "title": "Enable dimming",
+            "category": "doze_dimming",
+            "categoryTitle": "Doze dimming"
+        }
+    ]
+}
+```
+
+Use categories for page-level sections and `group` for nested inline/expandable/fullscreen containers inside a section. Categories preserve setting order by first category appearance. Uncategorized settings stay in a normal untitled card.
 
 ## Dynamic QS Tiles
 
@@ -320,6 +386,7 @@ Example-focused documents:
 - `gcam_photo_torch`: Google Camera hook that adds persistent Torch behavior to the photo flash menu.
 - `settings_homepage_item`: Settings hook that inserts Pixel Extra Parts into the Android Settings homepage.
 - `icon_manager_settings`: settings-only generated UI injected into the Icon Manager screen.
+- `ims_carrier_config`: settings-only IMS controls that combine Settings.Secure writes with `CarrierConfigManager.overrideConfig` actions.
 - `launcher_hooks`: Pixel Launcher addon for home screen, dock/search, app drawer, recents, gesture bar and dynamic launcher tiles.
 - `systemui_hooks`: SystemUI addon for lock screen, charging info, shade/media/scrim and notification icon controls.
 - `demo_settings`: settings-only showcase for every generated UI type and layout pattern.
@@ -327,6 +394,7 @@ Example-focused documents:
 ## Practical Rules
 
 - `id` values must be stable. They are used for enable state, data overrides, and user settings.
+- Increase `version` when shipping a system addon update; it controls whether `/system_ext` or `/data` wins for duplicate addon IDs.
 - `entryClass` must match the compiled Java class exactly. Omit it only for settings-only addons.
 - Keep setting keys stable. Hooks read the same keys that generated UI writes.
 - Keep base manifest text in English and put translations in `locales` or `addon_<lang>.json` overlays.

@@ -14,7 +14,7 @@ This example creates a top-level entry with three child pages.
       "iconShape": "circle",
       "iconColor": "#D7B8FF",
       "iconBackground": "#332A45",
-      "group": "system",
+      "group": "display-tools",
       "priority": 100
     },
     {
@@ -55,6 +55,8 @@ This example creates a top-level entry with three child pages.
 }
 ```
 
+Known group names keep the app-defined order. A custom group such as `display-tools` is accepted and appears after known groups, sorted by the highest priority entry inside the group.
+
 To inject a page into a host activity, add `targetActivity`:
 
 ```json
@@ -70,3 +72,5 @@ To inject a page into a host activity, add `targetActivity`:
   "settings": []
 }
 ```
+
+Internal navigation between generated pages follows the global Activity Transition setting. With a custom transition APK selected, the page stack uses that APK's `custom_open_*` resources for forward navigation and `custom_close_*` resources for back navigation.

@@ -261,48 +261,6 @@
     <string name="reboot_confirm_sysui_title">SystemUI neustarten?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI wird neugestartet. Navigationsleiste, Statusleiste und Benachrichtigungen verschwinden kurzzeitig.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">IMS-Konfiguration</string>
-    <string name="warning_info">Diese Einstellungen aktivieren zwangsweise Funktionen der Betreiberkonfiguration. Standardmäßig sind die meisten dieser Funktionen für nicht zertifizierte Regionen ausgeblendet oder deaktiviert.\n\nZum Anwenden der Änderungen muss der Flugmodus ein- und ausgeschaltet werden.</string>
-    <string name="ims_footer_info">Diese Einstellungen aktivieren zwangsweise Funktionen der Betreiberkonfiguration. Standardmäßig sind die meisten dieser Funktionen für nicht zertifizierte Regionen ausgeblendet oder deaktiviert.\n\nZum Anwenden der Änderungen muss der Flugmodus ein- und ausgeschaltet werden.</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Sprachdienste</string>
-    <string name="ims_sec_network">Netzwerk &amp; 5G</string>
-    <string name="ims_sec_advanced">Erweiterte Einstellungen</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE</string>
-    <string name="ims_desc_volte">Erzwingt VoLTE-Unterstützung in der Betreiberkonfiguration.\n\nErmöglicht Sprachanrufe über das 4G/LTE-Netzwerk ohne Wechsel zu 3G/2G. Gewährleistet schnelle Verbindung, HD-Tonqualität und gleichzeitige Internetnutzung während des Gesprächs. Behebt den fehlenden VoLTE-Schalter in den Einstellungen.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">WLAN-Anrufe</string>
-    <string name="ims_desc_vowifi">Erzwingt Unterstützung für WLAN-Anrufe (Wi-Fi Calling).\n\nErlaubt dem Telefon, sich über jedes verfügbare WLAN im IMS-Netzwerk des Betreibers zu registrieren. Unverzichtbar an Orten mit schlechtem Mobilfunkempfang (Keller, dicke Wände), aber vorhandenem Internet. Aktiviert das versteckte Menü "WLAN-Anrufe".</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Videoanrufe</string>
-    <string name="ims_desc_vt">Aktiviert native Unterstützung für Videoanrufe über den Betreiber.\n\nDies ist die in die Telefon-App integrierte Videofunktion (nicht über Messenger, sondern über das Standardprotokoll IR.94). Funktioniert, wenn der Betreiber Video over LTE unterstützt.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Backup-Anrufe</string>
-    <string name="ims_desc_cross_sim">Technologie für Backup-Anrufe über eine andere SIM-Karte.\n\nErlaubt die Nutzung des Datenverkehrs der zweiten SIM-Karte für die IMS-Registrierung der ersten SIM-Karte. Nützlich, wenn die Haupt-SIM das Netz verloren hat (z. B. im Roaming oder Funkloch), die zweite SIM aber Internetzugang hat.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Anrufe über 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Sprachanrufe in reinen 5G-Netzen (Standalone).\n\nDer modernste Standard für Sprachübertragung. Gewährleistet extrem niedrige Latenz und bessere Qualität als VoLTE. Funktioniert nur in 5G SA-Netzen und erfordert Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">5G Entsperren</string>
-    <string name="ims_desc_5g">Entfernt die softwareseitige 5G-Sperre in der Konfiguration.\n\nViele Betreiber blockieren den 5G-Zugang für Pixel-Geräte, die nicht auf ihrer "Whitelist" stehen, auch wenn Hardwareunterstützung vorhanden ist. Dieser Schalter fügt NR NSA und SA Bänder zwangsweise zur Liste der erlaubten hinzu.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Aggressives 5G-Signal</string>
-    <string name="ims_desc_5g_thresh">Ändert die Signalschwellenwerte für den Netzwerkwechsel.\n\nSenkt die Anforderungen an die Signalqualität für die Anzeige des 5G-Symbols und das Verbleiben im 5G-Netz. Hilft, wenn das Telefon zu schnell auf 4G/LTE zurückfällt, obwohl 5G verfügbar ist.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">UT-Schnittstelle</string>
-    <string name="ims_desc_ut">Verwaltung von Zusatzdiensten über IMS.\n\nErmöglicht das Einstellen von Rufumleitung, Anklopfen und Rufnummernübermittlung über das Einstellungsmenü des Telefons unter Verwendung des IP-Kanals statt veralteter USSD-Codes. Behebt Fehler wie "Netzwerk- oder SIM-Kartenfehler" beim Versuch, Anrufeinstellungen in LTE-only-Netzen aufzurufen.</string>
-
     <!-- LAUNCHER SETTINGS -->
     <string name="launcher_settings_title">Sonstiges</string>
     <string name="launcher_search_section">Suche &amp; Navigation</string>
@@ -420,6 +378,9 @@
     <string name="main_header_gesture">Gesten &amp; Eingabe</string>
     <string name="main_header_system">System</string>
     <string name="main_header_network">Netzwerk &amp; Verbindung</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Kamera</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Testfunktionen</string>
@@ -462,10 +423,6 @@
     <string name="os_norm_mode_behavior">Nur Verhalten</string>
     <string name="os_norm_mode_hybrid">Hybrid (empfohlen)</string>
     <string name="os_norm_mode_stacktrace">Nur Stack-Trace</string>
-
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">IMS-Konfig</string>
-
 
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Startseiten-Anpassung</string>

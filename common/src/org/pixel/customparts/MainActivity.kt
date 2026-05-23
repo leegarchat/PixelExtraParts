@@ -28,10 +28,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -134,6 +136,7 @@ fun NoRootDialog(onExit: () -> Unit) {
 @Composable
 fun MainDashboard() {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -149,10 +152,22 @@ fun MainDashboard() {
     var addonCustomGroups by remember { mutableStateOf<List<Pair<String, List<AddonMainEntry>>>>(emptyList()) }
     var addonSearchRootEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    val exitSearch = { searchQuery = "" }
+    var searchFieldFocused by remember { mutableStateOf(false) }
+    val hideSearchKeyboard = {
+        focusManager.clearFocus(force = true)
+        searchFieldFocused = false
+    }
+    val exitSearch = {
+        searchQuery = ""
+        hideSearchKeyboard()
+    }
 
-    androidx.activity.compose.BackHandler(enabled = searchQuery.isNotBlank()) {
-        exitSearch()
+    androidx.activity.compose.BackHandler(enabled = searchQuery.isNotBlank() || searchFieldFocused) {
+        if (searchFieldFocused) {
+            hideSearchKeyboard()
+        } else {
+            exitSearch()
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -173,7 +188,7 @@ fun MainDashboard() {
                     .sortedWith(
                         compareByDescending<Pair<String, List<AddonMainEntry>>> { (_, groupEntries) ->
                             groupEntries.maxOfOrNull { it.priority } ?: 0
-                        }.thenBy { (group, _) -> addonGroupTitle(group) }
+                        }.thenBy { (group, _) -> addonGroupTitle(context, group) }
                     )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -298,18 +313,6 @@ fun MainDashboard() {
                 )
             )
         }
-        add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.ims_title_activity),
-                subtitle = dynamicStringResource(R.string.ims_desc_activity),
-                section = dynamicStringResource(R.string.main_header_network),
-                keywords = "ims volte vowifi network carrier " + internalStringIndex.categoryText("ims"),
-                icon = Icons.Rounded.NetworkCell,
-                iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                onClick = { context.startActivity(Intent(context, ImsActivity::class.java)) }
-            )
-        )
         if (showTestThings) {
             add(
                 MainDashboardSearchItem(
@@ -329,7 +332,7 @@ fun MainDashboard() {
                 MainDashboardSearchItem(
                     title = entry.title,
                     subtitle = entry.subtitle,
-                    section = addonGroupTitle(entry.normalizedAddonGroup()),
+                    section = addonGroupTitle(context, entry.normalizedAddonGroup()),
                     keywords = entry.addonSearchText(),
                     icon = Icons.Rounded.Extension,
                     iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -347,7 +350,7 @@ fun MainDashboard() {
                     subtitle = listOf(setting.description, settingEntry.entry.title)
                         .filter { it.isNotBlank() }
                         .joinToString(" - "),
-                    section = addonGroupTitle(settingEntry.entry.normalizedAddonGroup()),
+                    section = addonGroupTitle(context, settingEntry.entry.normalizedAddonGroup()),
                     keywords = settingEntry.searchText(),
                     icon = Icons.Rounded.Tune,
                     iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -453,7 +456,8 @@ fun MainDashboard() {
                 item {
                     MainDashboardSearchBar(
                         query = searchQuery,
-                        onQueryChange = { searchQuery = it }
+                        onQueryChange = { searchQuery = it },
+                        onFocusChanged = { searchFieldFocused = it }
                     )
                 }
 
@@ -581,26 +585,18 @@ fun MainDashboard() {
                     }
                 }
 
-                item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.main_header_network)) {
-                        MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.ims_title_activity),
-                            subtitle = dynamicStringResource(R.string.ims_desc_activity),
-                            icon = Icons.Rounded.NetworkCell,
-                            iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            onClick = { context.startActivity(Intent(context, ImsActivity::class.java)) }
-                        )
-
-                        // Addon entries for "network" group
-                        addonNetworkEntries.forEach { entry ->
-                            HorizontalDivider()
-                            AddonMainEntryRow(
-                                entry = entry,
-                                onClick = {
-                                    AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
-                                }
-                            )
+                if (addonNetworkEntries.isNotEmpty()) {
+                    item {
+                        SettingsGroupCard(title = dynamicStringResource(R.string.main_header_network)) {
+                            addonNetworkEntries.forEachIndexed { index, entry ->
+                                if (index > 0) HorizontalDivider()
+                                AddonMainEntryRow(
+                                    entry = entry,
+                                    onClick = {
+                                        AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -632,7 +628,7 @@ fun MainDashboard() {
 
                 addonCustomGroups.forEach { (group, entries) ->
                     item(key = "addon_custom_group_$group") {
-                        SettingsGroupCard(title = addonGroupTitle(group)) {
+                        SettingsGroupCard(title = addonGroupTitle(context, group)) {
                             entries.forEachIndexed { index, entry ->
                                 if (index > 0) HorizontalDivider()
                                 AddonMainEntryRow(
@@ -689,7 +685,19 @@ private fun List<AddonMainEntry>.sortedForMainDashboard(): List<AddonMainEntry> 
     return sortedWith(compareByDescending<AddonMainEntry> { it.priority }.thenBy { it.title })
 }
 
-private fun addonGroupTitle(group: String): String {
+private fun addonGroupTitle(context: Context, group: String): String {
+    return when (group.trim().lowercase(Locale.ROOT)) {
+        "gesture" -> context.getString(R.string.main_header_gesture)
+        "system" -> context.getString(R.string.main_header_system)
+        "network" -> context.getString(R.string.main_header_network)
+        "launcher" -> context.getString(R.string.main_header_launcher)
+        "systemui", "system_ui" -> context.getString(R.string.main_header_systemui)
+        "camera" -> context.getString(R.string.main_header_camera)
+        else -> addonCustomGroupTitle(group)
+    }
+}
+
+private fun addonCustomGroupTitle(group: String): String {
     val words = group.replace('_', ' ').replace('-', ' ').trim()
     if (words.isEmpty()) return "Addons"
     return words.split(Regex("\\s+")).joinToString(" ") { word ->
@@ -729,12 +737,15 @@ private data class AddonSettingSearchEntry(
 @Composable
 private fun MainDashboardSearchBar(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    onFocusChanged: (Boolean) -> Unit
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { onFocusChanged(it.isFocused) },
         singleLine = true,
         shape = MaterialTheme.shapes.extraLarge,
         leadingIcon = {
@@ -930,7 +941,6 @@ private fun collectMainSearchResourceStrings(context: Context): Map<String, Stri
         "launcher" to listOf("launcher_", "recents_", "search_widget_", "grid_", "clear_all_", "gesture_bar_"),
         "thermal" to listOf("thermal_"),
         "addons" to listOf("addon_"),
-        "ims" to listOf("ims_"),
         "test" to listOf("test_")
     )
     val result = categories.keys.associateWith { StringBuilder() }.toMutableMap()

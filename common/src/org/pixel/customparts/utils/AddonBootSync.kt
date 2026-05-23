@@ -79,18 +79,53 @@ object AddonBootSync {
         return targets
     }
 
+    private data class DescriptorCandidate(
+        val descriptor: JSONObject,
+        val isSystem: Boolean,
+        val version: String
+    )
+
     private fun scanDescriptors(): Map<String, JSONObject> {
-        val descriptors = linkedMapOf<String, JSONObject>()
+        val descriptors = linkedMapOf<String, DescriptorCandidate>()
         listOf(SYSTEM_ADDON_DIR, ADDON_DIR).forEach { dirPath ->
+            val isSystemDir = dirPath == SYSTEM_ADDON_DIR
             val dir = File(dirPath)
             if (!dir.isDirectory) return@forEach
             dir.listFiles { file -> file.isFile && file.name.endsWith(".jar") }?.forEach { jar ->
                 val descriptor = readDescriptor(jar) ?: return@forEach
                 val id = descriptor.optString("id", descriptor.optString("entryClass", jar.nameWithoutExtension))
-                if (id.isNotBlank()) descriptors[id] = descriptor
+                if (id.isBlank()) return@forEach
+
+                val candidate = DescriptorCandidate(
+                    descriptor = descriptor,
+                    isSystem = isSystemDir,
+                    version = descriptor.optString("version", "1.0")
+                )
+                val existing = descriptors[id]
+                if (existing == null || shouldPrefer(candidate, existing)) {
+                    descriptors[id] = candidate
+                }
             }
         }
-        return descriptors
+        return descriptors.mapValues { it.value.descriptor }
+    }
+
+    private fun shouldPrefer(candidate: DescriptorCandidate, existing: DescriptorCandidate): Boolean {
+        val versionCompare = compareVersions(candidate.version, existing.version)
+        if (versionCompare != 0) return versionCompare > 0
+        return !candidate.isSystem && existing.isSystem
+    }
+
+    private fun compareVersions(left: String, right: String): Int {
+        val leftParts = left.split('.', '-', '_').map { it.toIntOrNull() ?: 0 }
+        val rightParts = right.split('.', '-', '_').map { it.toIntOrNull() ?: 0 }
+        val count = maxOf(leftParts.size, rightParts.size)
+        for (index in 0 until count) {
+            val leftPart = leftParts.getOrElse(index) { 0 }
+            val rightPart = rightParts.getOrElse(index) { 0 }
+            if (leftPart != rightPart) return leftPart.compareTo(rightPart)
+        }
+        return 0
     }
 
     private fun readDescriptor(jarFile: File): JSONObject? {

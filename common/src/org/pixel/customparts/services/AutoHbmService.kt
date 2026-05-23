@@ -161,6 +161,9 @@ class AutoHbmService : Service(), SensorEventListener {
             }
 
             if (AutoHbmController.isHbmActive(this)) {
+                if (!AutoHbmController.maintainHighBrightness(this)) {
+                    Log.w(TAG, "Failed to maintain high brightness")
+                }
                 if (activatedAt == 0L) activatedAt = now
                 if (System.currentTimeMillis() - activatedAt >= maxActiveMs) {
                     deactivateHighBrightness()
@@ -240,7 +243,12 @@ class AutoHbmService : Service(), SensorEventListener {
     }
 
     private fun deactivateHighBrightness() {
-        if (!AutoHbmController.restoreOriginalBrightness(this)) {
+        if (!AutoHbmController.restoreOriginalBrightness(
+                context = this,
+                smoothRamp = AutoHbmController.isSmoothRampEnabled(this),
+                rampTimeMs = AutoHbmController.getRampTimeMs(this)
+            )
+        ) {
             Log.w(TAG, "Failed to restore brightness")
         }
         AutoHbmController.restoreAutoBrightnessIfNeeded(this)

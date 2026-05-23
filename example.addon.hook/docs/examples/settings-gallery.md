@@ -86,6 +86,30 @@ Use this as a compact reference for different setting controls.
       "type": "app_list",
       "storage": "addon_file",
       "showSelected": true
+    },
+    {
+      "key": "gallery_multi_write",
+      "title": "Multi-write switch",
+      "type": "switch",
+      "storage": "addon_file",
+      "settingsOn": [
+        { "provider": "secure", "key": "gallery_secure_flag", "type": "int", "value": 1 }
+      ],
+      "settingsOff": [
+        { "provider": "secure", "key": "gallery_secure_flag", "type": "int", "value": 0 }
+      ]
+    },
+    {
+      "key": "gallery_carrier_action",
+      "title": "Carrier action switch",
+      "type": "switch",
+      "storage": "addon_file",
+      "binderOn": [
+        { "type": "carrier_config", "subIds": "active", "values": [ { "key": "carrier_volte_available_bool", "type": "bool", "value": true } ] }
+      ],
+      "binderOff": [
+        { "type": "carrier_config", "subIds": "active", "values": [ { "key": "carrier_volte_available_bool", "type": "bool", "value": false } ] }
+      ]
     }
   ]
 }

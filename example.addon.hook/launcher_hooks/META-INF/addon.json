@@ -4,13 +4,13 @@
     "name": "Pixel Launcher Settings",
     "author": "PixelExtraParts",
     "description": "Nexus Launcher layout, drawer, icons and recents customization moved to an addon.",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "targetPackages": [
         "com.google.android.apps.nexuslauncher"
     ],
     "enabled": true,
     "backgroundMode": "gradient",
-    "backgroundAlpha": 78,
+    "backgroundAlpha": 52,
     "backgroundGradientSteps": [
         0,
         34,
@@ -18,17 +18,17 @@
         100
     ],
     "backgroundBlur": true,
-    "backgroundBlurRadius": 18,
+    "backgroundBlurRadius": 8,
     "backgroundScope": "header",
     "settings": [],
     "main": [
         {
             "id": "pixel-launcher",
             "title": "Pixel Launcher Settings",
-            "subtitle": "Home screen, app drawer, icons and recents",
+            "subtitle": "Home screen, drawer, recents, gestures, and QS tiles",
             "group": "launcher",
             "priority": 120,
-            "icon": "Home",
+            "icon": "Rounded.Home",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#D7B8FF",
@@ -39,28 +39,27 @@
             "title": "Home screen",
             "subtitle": "Grid, labels, widget and sleep gesture",
             "priority": 100,
-            "icon": "Home",
+            "icon": "Rounded.Home",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#7EE3B4",
             "iconBackground": "#213A2F",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "launcher_homepage_sizer",
                     "title": "Modify home screen grid",
                     "description": "Enables custom column and row counts.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "home_grid",
+                    "categoryTitle": "Home grid",
+                    "categoryDescription": "Grid, icon size and label behavior."
                 },
                 {
                     "key": "launcher_homepage_h",
                     "title": "Columns",
+                    "description": "Number of icon columns on the home screen.",
                     "type": "int",
                     "provider": "global",
                     "default": 5,
@@ -69,11 +68,13 @@
                     "step": 1,
                     "enabledIfAll": [
                         "launcher_homepage_sizer"
-                    ]
+                    ],
+                    "category": "home_grid"
                 },
                 {
                     "key": "launcher_homepage_v",
                     "title": "Rows",
+                    "description": "Number of icon rows available on the home screen.",
                     "type": "int",
                     "provider": "global",
                     "default": 6,
@@ -82,7 +83,8 @@
                     "step": 1,
                     "enabledIfAll": [
                         "launcher_homepage_sizer"
-                    ]
+                    ],
+                    "category": "home_grid"
                 },
                 {
                     "key": "launcher_homepage_icon_size",
@@ -97,7 +99,8 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "launcher_homepage_sizer"
-                    ]
+                    ],
+                    "category": "home_grid"
                 },
                 {
                     "key": "launcher_homepage_text_mode",
@@ -126,7 +129,8 @@
                             "value": "3",
                             "label": "Hide"
                         }
-                    ]
+                    ],
+                    "category": "home_grid"
                 },
                 {
                     "key": "launcher_disable_top_widget",
@@ -134,7 +138,10 @@
                     "description": "Frees the top home screen row.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "home_surface",
+                    "categoryTitle": "Home surfaces",
+                    "categoryDescription": "Top widget and Discover feed."
                 },
                 {
                     "key": "launcher_disable_google_feed",
@@ -142,7 +149,8 @@
                     "description": "Removes the left Discover page.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "home_surface"
                 },
                 {
                     "key": "launcher_dt2s_enabled",
@@ -150,11 +158,15 @@
                     "description": "Double-tapping an empty workspace area locks the screen.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "home_gesture",
+                    "categoryTitle": "Sleep gesture",
+                    "categoryDescription": "Double-tap lock timing."
                 },
                 {
                     "key": "launcher_dt2s_timeout",
                     "title": "Double-tap window",
+                    "description": "Maximum time between taps before the gesture is ignored.",
                     "type": "int",
                     "provider": "global",
                     "default": 250,
@@ -164,7 +176,8 @@
                     "unit": "ms",
                     "enabledIfAll": [
                         "launcher_dt2s_enabled"
-                    ]
+                    ],
+                    "category": "home_gesture"
                 }
             ]
         },
@@ -173,23 +186,22 @@
             "title": "Dock and search",
             "subtitle": "Hotseat, search bar and page dots",
             "priority": 90,
-            "icon": "Search",
+            "icon": "Rounded.Search",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#A9C7FF",
             "iconBackground": "#243047",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "launcher_dock_enable",
                     "title": "Modify dock and search",
+                    "description": "Enable custom hotseat, search bar, page dots, and padding values.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "dock_layout",
+                    "categoryTitle": "Dock and search",
+                    "categoryDescription": "Dock, search bar and visibility controls."
                 },
                 {
                     "key": "pixel_launcher_native_search",
@@ -197,7 +209,8 @@
                     "description": "Toggles enable_one_search through device_config.",
                     "type": "switch",
                     "provider": "global",
-                    "default": true
+                    "default": true,
+                    "category": "dock_layout"
                 },
                 {
                     "key": "launcher_hotseat_icons",
@@ -211,11 +224,13 @@
                     "step": 1,
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_layout"
                 },
                 {
                     "key": "launcher_hotseat_icon_size",
                     "title": "Dock icon size",
+                    "description": "Scale hotseat icons relative to the launcher default.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -225,37 +240,37 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_layout"
                 },
                 {
                     "key": "launcher_hidden_dock",
                     "title": "Hide dock",
+                    "description": "Remove the hotseat row from the workspace.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_layout"
                 },
                 {
                     "key": "launcher_hidden_search",
                     "title": "Hide search",
+                    "description": "Remove the bottom search bar from the workspace.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
-                },
-                {
-                    "key": "dock_search_divider",
-                    "type": "divider",
-                    "height": 12,
-                    "thickness": 1
+                    ],
+                    "category": "dock_layout"
                 },
                 {
                     "key": "launcher_padding_homepage",
                     "title": "Home screen bottom padding",
+                    "description": "Move workspace content above or below the stock bottom position.",
                     "type": "int",
                     "provider": "global",
                     "default": -45,
@@ -265,11 +280,15 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_offsets",
+                    "categoryTitle": "Offsets",
+                    "categoryDescription": "Workspace, dock, search and page dot offsets."
                 },
                 {
                     "key": "launcher_padding_dock",
                     "title": "Dock offset",
+                    "description": "Vertical offset applied to the hotseat row.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
@@ -279,11 +298,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_offsets"
                 },
                 {
                     "key": "launcher_padding_search",
                     "title": "Search offset",
+                    "description": "Vertical offset applied to the search bar.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
@@ -293,11 +314,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_offsets"
                 },
                 {
                     "key": "launcher_padding_dots",
                     "title": "Page dots vertical offset",
+                    "description": "Move page dots up or down independently from the dock.",
                     "type": "int",
                     "provider": "global",
                     "default": 45,
@@ -307,11 +330,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_offsets"
                 },
                 {
                     "key": "launcher_padding_dots_x",
                     "title": "Page dots horizontal offset",
+                    "description": "Move page dots left or right from the centered position.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
@@ -321,7 +346,8 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "launcher_dock_enable"
-                    ]
+                    ],
+                    "category": "dock_offsets"
                 }
             ]
         },
@@ -330,27 +356,27 @@
             "title": "App drawer",
             "subtitle": "Grid, suggestions and search results",
             "priority": 80,
-            "icon": "Apps",
+            "icon": "Rounded.Apps",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#F0B7FF",
             "iconBackground": "#3B2B45",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "launcher_menupage_sizer",
                     "title": "Modify app drawer",
+                    "description": "Enable custom drawer grid, icon size, label mode, and suggestion settings.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "drawer_grid",
+                    "categoryTitle": "Drawer grid",
+                    "categoryDescription": "Drawer density, icons and labels."
                 },
                 {
                     "key": "launcher_menupage_h",
                     "title": "Columns",
+                    "description": "Number of app columns in the drawer grid.",
                     "type": "int",
                     "provider": "global",
                     "default": 5,
@@ -359,11 +385,13 @@
                     "step": 1,
                     "enabledIfAll": [
                         "launcher_menupage_sizer"
-                    ]
+                    ],
+                    "category": "drawer_grid"
                 },
                 {
                     "key": "launcher_menupage_row_height",
                     "title": "Row height",
+                    "description": "Vertical density of each drawer row.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -373,11 +401,13 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "launcher_menupage_sizer"
-                    ]
+                    ],
+                    "category": "drawer_grid"
                 },
                 {
                     "key": "launcher_menupage_icon_size",
                     "title": "Icon size",
+                    "description": "Scale app drawer icons relative to the stock size.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -387,11 +417,13 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "launcher_menupage_sizer"
-                    ]
+                    ],
+                    "category": "drawer_grid"
                 },
                 {
                     "key": "launcher_menupage_text_mode",
                     "title": "App labels",
+                    "description": "Label behavior for apps in the main drawer grid.",
                     "type": "select",
                     "provider": "global",
                     "default": "0",
@@ -415,21 +447,27 @@
                             "value": "3",
                             "label": "Hide"
                         }
-                    ]
+                    ],
+                    "category": "drawer_grid"
                 },
                 {
                     "key": "launcher_suggestion_disable",
                     "title": "Hide suggestions row",
+                    "description": "Remove the suggested apps row from the top of the drawer.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "launcher_menupage_sizer"
-                    ]
+                    ],
+                    "category": "drawer_suggestions",
+                    "categoryTitle": "Suggestions",
+                    "categoryDescription": "Suggested apps row and labels."
                 },
                 {
                     "key": "launcher_suggestion_icon_size",
                     "title": "Suggestion icon size",
+                    "description": "Scale icons in the drawer suggestions row.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -442,11 +480,13 @@
                     ],
                     "disabledIfAny": [
                         "launcher_suggestion_disable"
-                    ]
+                    ],
+                    "category": "drawer_suggestions"
                 },
                 {
                     "key": "launcher_suggestion_text_mode",
                     "title": "Suggestion labels",
+                    "description": "Label behavior for suggested apps.",
                     "type": "select",
                     "provider": "global",
                     "default": "0",
@@ -473,11 +513,13 @@
                             "value": "3",
                             "label": "Hide"
                         }
-                    ]
+                    ],
+                    "category": "drawer_suggestions"
                 },
                 {
                     "key": "launcher_search_icon_size",
                     "title": "Search icon size",
+                    "description": "Scale app icons shown in launcher search results.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -487,11 +529,15 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "launcher_menupage_sizer"
-                    ]
+                    ],
+                    "category": "drawer_search",
+                    "categoryTitle": "Search results",
+                    "categoryDescription": "Launcher search result icons and labels."
                 },
                 {
                     "key": "launcher_search_text_mode",
                     "title": "Search labels",
+                    "description": "Label behavior for launcher search result icons.",
                     "type": "select",
                     "provider": "global",
                     "default": "0",
@@ -515,7 +561,8 @@
                             "value": "3",
                             "label": "Hide"
                         }
-                    ]
+                    ],
+                    "category": "drawer_search"
                 }
             ]
         },
@@ -524,7 +571,7 @@
             "title": "Recents",
             "subtitle": "Task carousel and clear-all button",
             "priority": 60,
-            "icon": "Dashboard",
+            "icon": "Rounded.Dashboard",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#C8D7FF",
@@ -535,139 +582,203 @@
             "title": "Task carousel",
             "subtitle": "Scale, opacity, blur and spacing",
             "priority": 100,
-            "icon": "ViewCarousel",
+            "icon": "Rounded.ViewCarousel",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#A9C7FF",
             "iconBackground": "#2C3448",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "launcher_recents_modify_enable",
                     "title": "Modify carousel",
+                    "description": "Enable custom task carousel spacing, opacity, blur, tint, and icon offsets.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "recents_carousel_motion",
+                    "categoryTitle": "Carousel layout",
+                    "categoryDescription": "Spacing, scale, opacity and blur."
                 },
                 {
                     "key": "launcher_recents_carousel_spacing",
                     "title": "Extra spacing",
+                    "description": "Additional horizontal spacing between recent task cards.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
                     "min": -200,
                     "max": 200,
                     "step": 1,
-                    "unit": "px"
+                    "unit": "px",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_motion"
                 },
                 {
                     "key": "launcher_recents_carousel_scale",
                     "title": "Minimum scale",
+                    "description": "Smallest task scale used while the carousel is away from center.",
                     "type": "float",
                     "provider": "global",
                     "default": 1.0,
                     "min": 0.5,
                     "max": 1.5,
                     "step": 0.01,
-                    "unit": "x"
+                    "unit": "x",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_motion"
                 },
                 {
                     "key": "launcher_recents_carousel_alpha",
                     "title": "Minimum opacity",
+                    "description": "Lowest card opacity used by side tasks in the carousel.",
                     "type": "float",
                     "provider": "global",
                     "default": 1.0,
                     "min": 0.1,
                     "max": 1.0,
-                    "step": 0.01
+                    "step": 0.01,
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_motion"
                 },
                 {
                     "key": "launcher_recents_carousel_blur_radius",
                     "title": "Card blur",
+                    "description": "Blur radius applied to task cards during carousel transforms.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
                     "min": 0,
                     "max": 80,
                     "step": 1,
-                    "unit": "px"
+                    "unit": "px",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_motion"
                 },
                 {
                     "key": "launcher_recents_carousel_blur_overflow",
                     "title": "Blur beyond bounds",
+                    "description": "Allow blur to render outside each task card bounds.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_motion"
                 },
                 {
                     "key": "launcher_recents_carousel_tint_color",
                     "title": "Tint color",
+                    "description": "Base color used by the carousel card tint overlay.",
                     "type": "color",
                     "provider": "global",
                     "default": "#000000",
-                    "format": "hex"
+                    "format": "hex",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_tint",
+                    "categoryTitle": "Tint and icon overlay",
+                    "categoryDescription": "Card tint plus app icon position."
                 },
                 {
                     "key": "launcher_recents_carousel_tint_intensity",
                     "title": "Tint strength",
+                    "description": "Opacity of the tint overlay applied to task cards.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
                     "min": 0,
                     "max": 100,
                     "step": 1,
-                    "unit": "%"
+                    "unit": "%",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_tint"
                 },
                 {
                     "key": "launcher_recents_carousel_icon_offset_x",
                     "title": "Icon offset X",
+                    "description": "Horizontal offset for the app icon shown over each task card.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
                     "min": -120,
                     "max": 120,
                     "step": 1,
-                    "unit": "px"
+                    "unit": "px",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_tint"
                 },
                 {
                     "key": "launcher_recents_carousel_icon_offset_y",
                     "title": "Icon offset Y",
+                    "description": "Vertical offset for the app icon shown over each task card.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
                     "min": -120,
                     "max": 120,
                     "step": 1,
-                    "unit": "px"
+                    "unit": "px",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_tint"
                 },
                 {
                     "key": "launcher_recents_disable_livetile",
                     "title": "Disable Live Tile",
+                    "description": "Use static task snapshots instead of the launcher Live Tile surface.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_live",
+                    "categoryTitle": "Live Tile and scale",
+                    "categoryDescription": "Task snapshot mode and global scaling."
                 },
                 {
                     "key": "launcher_recents_scale_enable",
                     "title": "Global task scale",
+                    "description": "Enable a fixed overall scale multiplier for task cards.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable"
+                    ],
+                    "category": "recents_carousel_live"
                 },
                 {
                     "key": "launcher_recents_scale_percent",
                     "title": "Scale percent",
+                    "description": "Overall task card scale when global task scale is enabled.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
                     "min": 50,
                     "max": 150,
                     "step": 1,
-                    "unit": "%"
+                    "unit": "%",
+                    "enabledIfAll": [
+                        "launcher_recents_modify_enable",
+                        "launcher_recents_scale_enable"
+                    ],
+                    "category": "recents_carousel_live"
                 }
             ]
         },
@@ -676,37 +787,39 @@
             "title": "Clear-all button",
             "subtitle": "Clear All placement and action row",
             "priority": 90,
-            "icon": "Delete",
+            "icon": "Rounded.Delete",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#FFB4A8",
             "iconBackground": "#45312D",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "launcher_clear_all",
                     "title": "Enable clear-all button",
+                    "description": "Show the custom Clear All action in recents.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "clear_all_action",
+                    "categoryTitle": "Clear-all action",
+                    "categoryDescription": "Button visibility, placement and margins."
                 },
                 {
                     "key": "launcher_clear_all_hide_actions_row",
                     "title": "Hide action row",
+                    "description": "Hide Screenshot and Select actions when Clear All is enabled.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "launcher_clear_all"
-                    ]
+                    ],
+                    "category": "clear_all_action"
                 },
                 {
                     "key": "launcher_replace_on_clear",
                     "title": "Button mode",
+                    "description": "Choose whether Clear All appears at the bottom or replaces an action row slot.",
                     "type": "select",
                     "provider": "global",
                     "default": "0",
@@ -730,11 +843,13 @@
                             "value": "2",
                             "label": "Select"
                         }
-                    ]
+                    ],
+                    "category": "clear_all_action"
                 },
                 {
                     "key": "launcher_clear_all_bottom_margin",
                     "title": "Button bottom margin",
+                    "description": "Vertical spacing below the bottom Clear All button.",
                     "type": "float",
                     "provider": "global",
                     "default": 3.0,
@@ -745,7 +860,8 @@
                     "enabledIfAll": [
                         "launcher_clear_all",
                         "launcher_replace_on_clear=0"
-                    ]
+                    ],
+                    "category": "clear_all_action"
                 }
             ]
         },
@@ -754,28 +870,27 @@
             "title": "Gesture bar",
             "subtitle": "Size, gesture zone, hiding and color",
             "priority": 80,
-            "icon": "Tune",
+            "icon": "Rounded.Tune",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#D7B8FF",
             "iconBackground": "#30313B",
             "settings": [
                 {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
-                {
                     "key": "gesture_bar_enabled",
                     "title": "Enable gesture bar tuning",
                     "description": "Overrides size, gesture area and bottom handle visibility.",
                     "type": "switch",
                     "provider": "global",
-                    "default": false
+                    "default": false,
+                    "category": "gesture_size",
+                    "categoryTitle": "Handle geometry",
+                    "categoryDescription": "Size, position and reserved gesture area."
                 },
                 {
                     "key": "gesture_bar_width_percent",
                     "title": "Width",
+                    "description": "Handle width as a percentage of the available bottom area.",
                     "type": "int",
                     "provider": "global",
                     "default": 28,
@@ -785,11 +900,13 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_height_dp",
                     "title": "Height",
+                    "description": "Visual thickness of the gesture handle.",
                     "type": "int",
                     "provider": "global",
                     "default": 4,
@@ -799,11 +916,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_offset_x_dp",
                     "title": "X offset",
+                    "description": "Horizontal position adjustment for the handle.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
@@ -813,11 +932,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_offset_y_dp",
                     "title": "Y offset",
+                    "description": "Vertical position adjustment for the handle.",
                     "type": "int",
                     "provider": "global",
                     "default": 0,
@@ -827,11 +948,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_reserved_area_dp",
                     "title": "Reserved area",
+                    "description": "Bottom inset reserved for the gesture handle surface.",
                     "type": "int",
                     "provider": "global",
                     "default": 24,
@@ -841,11 +964,13 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_gesture_area_dp",
                     "title": "System gesture area",
+                    "description": "Gesture capture zone height reported to the system.",
                     "type": "int",
                     "provider": "global",
                     "default": 24,
@@ -855,21 +980,27 @@
                     "unit": "dp",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_size"
                 },
                 {
                     "key": "gesture_bar_hide_on_launcher",
                     "title": "Hide on launcher",
+                    "description": "Auto-hide the handle while Pixel Launcher is visible.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_visibility",
+                    "categoryTitle": "Auto-hide",
+                    "categoryDescription": "Hide rules for launcher, apps and lock screen."
                 },
                 {
                     "key": "gesture_bar_launcher_hide_timeout_ms",
                     "title": "Hide delay on launcher",
+                    "description": "Delay before hiding the handle on the launcher surface.",
                     "type": "int",
                     "provider": "global",
                     "default": 3000,
@@ -880,21 +1011,25 @@
                     "enabledIfAll": [
                         "gesture_bar_enabled",
                         "gesture_bar_hide_on_launcher"
-                    ]
+                    ],
+                    "category": "gesture_visibility"
                 },
                 {
                     "key": "gesture_bar_hide_in_apps",
                     "title": "Hide in apps",
+                    "description": "Auto-hide the handle while regular apps are visible.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_visibility"
                 },
                 {
                     "key": "gesture_bar_app_hide_timeout_ms",
                     "title": "Hide delay in apps",
+                    "description": "Delay before hiding the handle while an app is foregrounded.",
                     "type": "int",
                     "provider": "global",
                     "default": 3000,
@@ -905,31 +1040,37 @@
                     "enabledIfAll": [
                         "gesture_bar_enabled",
                         "gesture_bar_hide_in_apps"
-                    ]
+                    ],
+                    "category": "gesture_visibility"
                 },
                 {
                     "key": "gesture_bar_hide_on_lockscreen",
                     "title": "Hide on lock screen",
+                    "description": "Keep the gesture handle hidden on the lock screen.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_visibility"
                 },
                 {
                     "key": "gesture_bar_remove_reserved_area",
                     "title": "Remove reserved area",
+                    "description": "Let content use the bottom area normally reserved for the gesture handle.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_visibility"
                 },
                 {
                     "key": "gesture_bar_alpha_percent",
                     "title": "Opacity",
+                    "description": "Visible handle opacity when it is shown.",
                     "type": "int",
                     "provider": "global",
                     "default": 100,
@@ -939,11 +1080,15 @@
                     "unit": "%",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_animation",
+                    "categoryTitle": "Appearance and animation",
+                    "categoryDescription": "Opacity, fade timing and custom color."
                 },
                 {
                     "key": "gesture_bar_fade_in_ms",
                     "title": "Fade-in animation",
+                    "description": "Duration of the handle show animation.",
                     "type": "int",
                     "provider": "global",
                     "default": 220,
@@ -953,11 +1098,13 @@
                     "unit": "ms",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_animation"
                 },
                 {
                     "key": "gesture_bar_fade_out_ms",
                     "title": "Fade-out animation",
+                    "description": "Duration of the handle hide animation.",
                     "type": "int",
                     "provider": "global",
                     "default": 220,
@@ -967,28 +1114,33 @@
                     "unit": "ms",
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_animation"
                 },
                 {
                     "key": "gesture_bar_tint_enabled",
                     "title": "Set color",
+                    "description": "Use a custom color instead of the system gesture handle color.",
                     "type": "switch",
                     "provider": "global",
                     "default": false,
                     "enabledIfAll": [
                         "gesture_bar_enabled"
-                    ]
+                    ],
+                    "category": "gesture_animation"
                 },
                 {
                     "key": "gesture_bar_tint_color",
                     "title": "Bar color",
+                    "description": "Color used when custom gesture handle tinting is enabled.",
                     "type": "color",
                     "provider": "global",
                     "default": "#FFFFFF",
                     "enabledIfAll": [
                         "gesture_bar_enabled",
                         "gesture_bar_tint_enabled"
-                    ]
+                    ],
+                    "category": "gesture_animation"
                 }
             ]
         },
@@ -997,17 +1149,12 @@
             "title": "Quick Settings tiles",
             "subtitle": "Manual and configurable QS tiles for launcher settings",
             "priority": 50,
-            "icon": "Dashboard",
+            "icon": "Rounded.Dashboard",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#8BDDED",
             "iconBackground": "#263A40",
             "settings": [
-                {
-                    "key": "demo_divider_dashed",
-                    "type": "dashed_line",
-                    "thickness": 1
-                },
                 {
                     "key": "launcher_dt2s_tile",
                     "settingKey": "launcher_dt2s_enabled",
@@ -1015,8 +1162,11 @@
                     "title": "Double-tap sleep",
                     "description": "Toggles the home screen sleep gesture.",
                     "default": "toggle",
-                    "unit": "Вкл",
-                    "pageId": "main/pixel-launcher/home-screen"
+                    "unit": "On",
+                    "pageId": "main/pixel-launcher/home-screen",
+                    "category": "tiles_fixed",
+                    "categoryTitle": "Fixed tiles",
+                    "categoryDescription": "Ready-made launcher Quick Settings tiles."
                 },
                 {
                     "key": "launcher_custom_tile",
@@ -1132,7 +1282,10 @@
                             "value": "main/pixel-launcher/tiles",
                             "label": "Quick Settings tiles"
                         }
-                    ]
+                    ],
+                    "category": "tiles_custom",
+                    "categoryTitle": "Configurable tiles",
+                    "categoryDescription": "User-selected target and long-press page."
                 }
             ]
         }
@@ -1147,7 +1300,7 @@
                 {
                     "id": "pixel-launcher",
                     "title": "Настройки Pixel Launcher",
-                    "subtitle": "Рабочий стол, меню приложений, иконки и недавние",
+                    "subtitle": "Рабочий стол, меню приложений, недавние, жесты и быстрые плитки",
                     "group": "launcher"
                 },
                 {
@@ -1156,25 +1309,33 @@
                     "subtitle": "Сетка, подписи, виджет и жест сна",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_home_overview",
+                            "title": "Макет рабочего стола",
+                            "description": "Настрой сетку, подписи, верхние элементы и жест сна двойным тапом."
                         },
                         {
                             "key": "launcher_homepage_sizer",
                             "title": "Изменять сетку рабочего стола",
-                            "description": "Включает переопределение количества колонок и строк."
+                            "description": "Включает переопределение количества колонок и строк.",
+                            "category": "home_grid",
+                            "categoryTitle": "Сетка рабочего стола",
+                            "categoryDescription": "Сетка, размер иконок и режим подписей."
                         },
                         {
                             "key": "launcher_homepage_h",
-                            "title": "Колонки"
+                            "title": "Колонки",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_v",
-                            "title": "Строки"
+                            "title": "Строки",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_icon_size",
                             "title": "Размер иконок",
-                            "description": "100% оставляет стандартный размер."
+                            "description": "100% оставляет стандартный размер.",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_text_mode",
@@ -1197,85 +1358,108 @@
                                     "value": "3",
                                     "label": "Скрыть"
                                 }
-                            ]
+                            ],
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_disable_top_widget",
                             "title": "Скрыть верхний виджет",
-                            "description": "Освобождает верхнюю строку рабочего стола."
+                            "description": "Освобождает верхнюю строку рабочего стола.",
+                            "category": "home_surface",
+                            "categoryTitle": "Поверхности рабочего стола",
+                            "categoryDescription": "Верхний виджет и лента Discover."
                         },
                         {
                             "key": "launcher_disable_google_feed",
                             "title": "Отключить Google Feed",
-                            "description": "Убирает левую страницу Discover."
+                            "description": "Убирает левую страницу Discover.",
+                            "category": "home_surface"
                         },
                         {
                             "key": "launcher_dt2s_enabled",
                             "title": "Двойной тап для сна",
-                            "description": "Двойной тап по пустому месту блокирует экран."
+                            "description": "Двойной тап по пустому месту блокирует экран.",
+                            "category": "home_gesture",
+                            "categoryTitle": "Жест сна",
+                            "categoryDescription": "Блокировка по двойному тапу и окно распознавания."
                         },
                         {
                             "key": "launcher_dt2s_timeout",
-                            "title": "Окно двойного тапа"
+                            "title": "Окно двойного тапа",
+                            "category": "home_gesture"
                         }
                     ]
                 },
                 {
                     "id": "main/pixel-launcher/dock-search",
                     "title": "Док и поиск",
-                    "subtitle": "Hotseat, строка поиска и точки страниц",
+                    "subtitle": "Док, строка поиска и точки страниц",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_dock_overview",
+                            "title": "Док и нижняя зона",
+                            "description": "Настрой hotseat, строку поиска, точки страниц и нижние отступы вместе."
                         },
                         {
                             "key": "launcher_dock_enable",
-                            "title": "Изменять док и поиск"
+                            "title": "Изменять док и поиск",
+                            "category": "dock_layout",
+                            "categoryTitle": "Док и поиск",
+                            "categoryDescription": "Док, строка поиска и видимость элементов."
                         },
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Использовать нативный поиск",
-                            "description": "Переключает enable_one_search через device_config."
+                            "description": "Переключает enable_one_search через device_config.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icons",
                             "title": "Иконок в доке",
-                            "description": "0 оставляет стандартное значение лаунчера."
+                            "description": "0 оставляет стандартное значение лаунчера.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icon_size",
-                            "title": "Размер иконок дока"
+                            "title": "Размер иконок дока",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_dock",
-                            "title": "Скрыть док"
+                            "title": "Скрыть док",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_search",
-                            "title": "Скрыть поиск"
-                        },
-                        {
-                            "key": "dock_search_divider"
+                            "title": "Скрыть поиск",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_padding_homepage",
-                            "title": "Нижний отступ рабочего стола"
+                            "title": "Нижний отступ рабочего стола",
+                            "category": "dock_offsets",
+                            "categoryTitle": "Отступы",
+                            "categoryDescription": "Смещения рабочего стола, дока, поиска и точек страниц."
                         },
                         {
                             "key": "launcher_padding_dock",
-                            "title": "Отступ дока"
+                            "title": "Отступ дока",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_search",
-                            "title": "Отступ поиска"
+                            "title": "Отступ поиска",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots",
-                            "title": "Вертикальные отступ точек страниц"
+                            "title": "Вертикальные отступ точек страниц",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots_x",
-                            "title": "Горизонтальный сдвиг точек"
+                            "title": "Горизонтальный сдвиг точек",
+                            "category": "dock_offsets"
                         }
                     ]
                 },
@@ -1285,23 +1469,31 @@
                     "subtitle": "Сетка, подсказки и результаты поиска",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_drawer_overview",
+                            "title": "Макет меню приложений",
+                            "description": "Настрой плотность All Apps, подписи, подсказки и результаты поиска."
                         },
                         {
                             "key": "launcher_menupage_sizer",
-                            "title": "Изменять меню приложений"
+                            "title": "Изменять меню приложений",
+                            "category": "drawer_grid",
+                            "categoryTitle": "Сетка меню приложений",
+                            "categoryDescription": "Плотность, иконки и подписи в меню приложений."
                         },
                         {
                             "key": "launcher_menupage_h",
-                            "title": "Колонки"
+                            "title": "Колонки",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_row_height",
-                            "title": "Высота строки"
+                            "title": "Высота строки",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_icon_size",
-                            "title": "Размер иконок"
+                            "title": "Размер иконок",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_text_mode",
@@ -1323,15 +1515,20 @@
                                     "value": "3",
                                     "label": "Скрыть"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_suggestion_disable",
-                            "title": "Скрыть ряд подсказок"
+                            "title": "Скрыть ряд подсказок",
+                            "category": "drawer_suggestions",
+                            "categoryTitle": "Подсказки",
+                            "categoryDescription": "Строка предложенных приложений и подписи."
                         },
                         {
                             "key": "launcher_suggestion_icon_size",
-                            "title": "Размер иконок подсказок"
+                            "title": "Размер иконок подсказок",
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_suggestion_text_mode",
@@ -1353,11 +1550,15 @@
                                     "value": "3",
                                     "label": "Скрыть"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_search_icon_size",
-                            "title": "Размер иконок поиска"
+                            "title": "Размер иконок поиска",
+                            "category": "drawer_search",
+                            "categoryTitle": "Результаты поиска",
+                            "categoryDescription": "Иконки и подписи в поиске лаунчера."
                         },
                         {
                             "key": "launcher_search_text_mode",
@@ -1379,7 +1580,8 @@
                                     "value": "3",
                                     "label": "Скрыть"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_search"
                         }
                     ]
                 },
@@ -1394,77 +1596,104 @@
                     "subtitle": "Масштаб, прозрачность, размытие и отступы",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_recents_carousel_overview",
+                            "title": "Карусель задач",
+                            "description": "Настрой отступы задач, карточки, Live Tile и общий масштаб."
                         },
                         {
                             "key": "launcher_recents_modify_enable",
-                            "title": "Изменять карусель"
+                            "title": "Изменять карусель",
+                            "category": "recents_carousel_motion",
+                            "categoryTitle": "Карусель задач",
+                            "categoryDescription": "Отступы, масштаб, прозрачность и размытие."
                         },
                         {
                             "key": "launcher_recents_carousel_spacing",
-                            "title": "Дополнительный отступ"
+                            "title": "Дополнительный отступ",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_scale",
-                            "title": "Минимальный масштаб"
+                            "title": "Минимальный масштаб",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_alpha",
-                            "title": "Минимальная прозрачность"
+                            "title": "Минимальная прозрачность",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_radius",
-                            "title": "Размытие карточек"
+                            "title": "Размытие карточек",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_overflow",
-                            "title": "Размывать за границами"
+                            "title": "Размывать за границами",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_tint_color",
-                            "title": "Цвет тонировки"
+                            "title": "Цвет тонировки",
+                            "category": "recents_carousel_tint",
+                            "categoryTitle": "Тонировка и иконка",
+                            "categoryDescription": "Цвет карточек и позиция иконки приложения."
                         },
                         {
                             "key": "launcher_recents_carousel_tint_intensity",
-                            "title": "Сила тонировки"
+                            "title": "Сила тонировки",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_x",
-                            "title": "Сдвиг иконки X"
+                            "title": "Сдвиг иконки X",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_y",
-                            "title": "Сдвиг иконки Y"
+                            "title": "Сдвиг иконки Y",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_disable_livetile",
-                            "title": "Отключить Live Tile"
+                            "title": "Отключить Live Tile",
+                            "category": "recents_carousel_live",
+                            "categoryTitle": "Live Tile и масштаб",
+                            "categoryDescription": "Режим снимков задач и общий масштаб."
                         },
                         {
                             "key": "launcher_recents_scale_enable",
-                            "title": "Общий масштаб задач"
+                            "title": "Общий масштаб задач",
+                            "category": "recents_carousel_live"
                         },
                         {
                             "key": "launcher_recents_scale_percent",
-                            "title": "Процент масштаба"
+                            "title": "Процент масштаба",
+                            "category": "recents_carousel_live"
                         }
                     ]
                 },
                 {
                     "id": "main/pixel-launcher/recents/clear-all",
                     "title": "Кнопка очистки",
-                    "subtitle": "Расположение Clear All и строка действий",
+                    "subtitle": "Расположение кнопки очистки и строка действий",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_clear_all_overview",
+                            "title": "Действие очистки",
+                            "description": "Добавь Clear All и выбери, как он работает со строкой действий."
                         },
                         {
                             "key": "launcher_clear_all",
-                            "title": "Включить кнопку очистки"
+                            "title": "Включить кнопку очистки",
+                            "category": "clear_all_action",
+                            "categoryTitle": "Кнопка очистки",
+                            "categoryDescription": "Видимость, расположение и нижний отступ."
                         },
                         {
                             "key": "launcher_clear_all_hide_actions_row",
-                            "title": "Скрыть строку действий"
+                            "title": "Скрыть строку действий",
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_replace_on_clear",
@@ -1482,11 +1711,13 @@
                                     "value": "2",
                                     "label": "Выбор"
                                 }
-                            ]
+                            ],
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_clear_all_bottom_margin",
-                            "title": "Нижний отступ кнопки"
+                            "title": "Нижний отступ кнопки",
+                            "category": "clear_all_action"
                         }
                     ]
                 },
@@ -1496,95 +1727,126 @@
                     "subtitle": "Размер, зона жестов, скрытие и цвет",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "gesture_bar_overview",
+                            "title": "Жестовая полоска",
+                            "description": "Настрой размер, область жестов, автоскрытие и цвет нижнего handle."
                         },
                         {
                             "key": "gesture_bar_enabled",
                             "title": "Включить настройку жестовой полоски",
-                            "description": "Переопределяет размер, область жестов и видимость нижнего handle."
+                            "description": "Переопределяет размер, область жестов и видимость нижнего handle.",
+                            "category": "gesture_size",
+                            "categoryTitle": "Геометрия полоски",
+                            "categoryDescription": "Размер, позиция и зарезервированная зона жеста."
                         },
                         {
                             "key": "gesture_bar_width_percent",
-                            "title": "Ширина"
+                            "title": "Ширина",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_height_dp",
-                            "title": "Высота"
+                            "title": "Высота",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_x_dp",
-                            "title": "Смещение по X"
+                            "title": "Смещение по X",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_y_dp",
-                            "title": "Смещение по Y"
+                            "title": "Смещение по Y",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_reserved_area_dp",
-                            "title": "Зарезервированная область"
+                            "title": "Зарезервированная область",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_gesture_area_dp",
-                            "title": "Область системного жеста"
+                            "title": "Область системного жеста",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_hide_on_launcher",
-                            "title": "Скрывать на рабочем столе"
+                            "title": "Скрывать на рабочем столе",
+                            "category": "gesture_visibility",
+                            "categoryTitle": "Автоскрытие",
+                            "categoryDescription": "Правила скрытия на лаунчере, в приложениях и на экране блокировки."
                         },
                         {
                             "key": "gesture_bar_launcher_hide_timeout_ms",
-                            "title": "Задержка скрытия на рабочем столе"
+                            "title": "Задержка скрытия на рабочем столе",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_in_apps",
-                            "title": "Скрывать в приложениях"
+                            "title": "Скрывать в приложениях",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_app_hide_timeout_ms",
-                            "title": "Задержка скрытия в приложениях"
+                            "title": "Задержка скрытия в приложениях",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_on_lockscreen",
-                            "title": "Скрывать на экране блокировки"
+                            "title": "Скрывать на экране блокировки",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_remove_reserved_area",
-                            "title": "Убрать зарезервированную область"
+                            "title": "Убрать зарезервированную область",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_alpha_percent",
-                            "title": "Прозрачность"
+                            "title": "Прозрачность",
+                            "category": "gesture_animation",
+                            "categoryTitle": "Внешний вид и анимация",
+                            "categoryDescription": "Прозрачность, анимации появления и цвет."
                         },
                         {
                             "key": "gesture_bar_fade_in_ms",
-                            "title": "Анимация появления"
+                            "title": "Анимация появления",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_fade_out_ms",
-                            "title": "Анимация скрытия"
+                            "title": "Анимация скрытия",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_enabled",
-                            "title": "Задать цвет"
+                            "title": "Задать цвет",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_color",
-                            "title": "Цвет полоски"
+                            "title": "Цвет полоски",
+                            "category": "gesture_animation"
                         }
                     ]
                 },
                 {
                     "id": "main/pixel-launcher/tiles",
                     "title": "Быстрые плитки",
-                    "subtitle": "Ручные и настраиваемые QS tiles для настроек лаунчера",
+                    "subtitle": "Ручные и настраиваемые быстрые плитки для настроек лаунчера",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_tiles_overview",
+                            "title": "Плитки лаунчера",
+                            "description": "Вынеси частые переключатели лаунчера в фиксированные или настраиваемые QS плитки."
                         },
                         {
                             "key": "launcher_dt2s_tile",
                             "title": "Сон двойным тапом",
-                            "description": "Переключает жест сна на рабочем столе."
+                            "description": "Переключает жест сна на рабочем столе.",
+                            "category": "tiles_fixed",
+                            "categoryTitle": "Готовые плитки",
+                            "categoryDescription": "Быстрые плитки для частых настроек лаунчера."
                         },
                         {
                             "key": "launcher_custom_tile",
@@ -1670,7 +1932,10 @@
                                     "value": "main/pixel-launcher/tiles",
                                     "label": "Быстрые плитки"
                                 }
-                            ]
+                            ],
+                            "category": "tiles_custom",
+                            "categoryTitle": "Настраиваемые плитки",
+                            "categoryDescription": "Выбор целевой настройки и страницы долгого нажатия."
                         }
                     ]
                 }
@@ -1685,7 +1950,7 @@
                 {
                     "id": "pixel-launcher",
                     "title": "Pixel Launcher-Einstellungen",
-                    "subtitle": "Home screen, app drawer, icons and recents",
+                    "subtitle": "Startbildschirm, Drawer, Recents, Gesten und QS-Kacheln",
                     "group": "launcher"
                 },
                 {
@@ -1694,25 +1959,33 @@
                     "subtitle": "Grid, labels, widget and sleep gesture",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_home_overview",
+                            "title": "Startbildschirm-Layout",
+                            "description": "Passe Raster, Labels, obere Elemente und die Doppeltipp-Schlafgeste an."
                         },
                         {
                             "key": "launcher_homepage_sizer",
                             "title": "Modify home screen grid",
-                            "description": "Enables custom column and row counts."
+                            "description": "Enables custom column and row counts.",
+                            "category": "home_grid",
+                            "categoryTitle": "Startbildschirmraster",
+                            "categoryDescription": "Raster, Symbolgröße und Beschriftungen."
                         },
                         {
                             "key": "launcher_homepage_h",
-                            "title": "Spalten"
+                            "title": "Spalten",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_v",
-                            "title": "Zeilen"
+                            "title": "Zeilen",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_icon_size",
                             "title": "Icon size",
-                            "description": "100% keeps the stock size."
+                            "description": "100% keeps the stock size.",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_text_mode",
@@ -1735,26 +2008,35 @@
                                     "value": "3",
                                     "label": "Ausblenden"
                                 }
-                            ]
+                            ],
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_disable_top_widget",
                             "title": "Hide top widget",
-                            "description": "Frees the top home screen row."
+                            "description": "Frees the top home screen row.",
+                            "category": "home_surface",
+                            "categoryTitle": "Startbildschirmflächen",
+                            "categoryDescription": "Oberes Widget und Discover-Feed."
                         },
                         {
                             "key": "launcher_disable_google_feed",
                             "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page."
+                            "description": "Removes the left Discover page.",
+                            "category": "home_surface"
                         },
                         {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
-                            "description": "Double-tapping an empty workspace area locks the screen."
+                            "description": "Double-tapping an empty workspace area locks the screen.",
+                            "category": "home_gesture",
+                            "categoryTitle": "Schlafgeste",
+                            "categoryDescription": "Sperren per Doppeltipp und Erkennungsfenster."
                         },
                         {
                             "key": "launcher_dt2s_timeout",
-                            "title": "Double-tap window"
+                            "title": "Double-tap window",
+                            "category": "home_gesture"
                         }
                     ]
                 },
@@ -1764,56 +2046,70 @@
                     "subtitle": "Hotseat, search bar and page dots",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_dock_overview",
+                            "title": "Dock-Bereich",
+                            "description": "Passe Hotseat, Suche, Seitenpunkte und untere Abstaende gemeinsam an."
                         },
                         {
                             "key": "launcher_dock_enable",
-                            "title": "Modify dock and search"
+                            "title": "Modify dock and search",
+                            "category": "dock_layout",
+                            "categoryTitle": "Dock und Suche",
+                            "categoryDescription": "Dock, Suchleiste und Sichtbarkeit."
                         },
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config."
+                            "description": "Toggles enable_one_search through device_config.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icons",
                             "title": "Dock icons",
-                            "description": "0 keeps the launcher default."
+                            "description": "0 keeps the launcher default.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icon_size",
-                            "title": "Dock icon size"
+                            "title": "Dock icon size",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_dock",
-                            "title": "Hide dock"
+                            "title": "Hide dock",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_search",
-                            "title": "Hide search"
-                        },
-                        {
-                            "key": "dock_search_divider"
+                            "title": "Hide search",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_padding_homepage",
-                            "title": "Home screen bottom padding"
+                            "title": "Home screen bottom padding",
+                            "category": "dock_offsets",
+                            "categoryTitle": "Versatz",
+                            "categoryDescription": "Abstände für Arbeitsfläche, Dock, Suche und Seitenpunkte."
                         },
                         {
                             "key": "launcher_padding_dock",
-                            "title": "Dock offset"
+                            "title": "Dock offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_search",
-                            "title": "Search offset"
+                            "title": "Search offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots",
-                            "title": "Page dots vertical offset"
+                            "title": "Page dots vertical offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots_x",
-                            "title": "Page dots horizontal offset"
+                            "title": "Page dots horizontal offset",
+                            "category": "dock_offsets"
                         }
                     ]
                 },
@@ -1823,23 +2119,31 @@
                     "subtitle": "Grid, suggestions and search results",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_drawer_overview",
+                            "title": "Drawer-Layout",
+                            "description": "Passe All-Apps-Dichte, Labels, Vorschlaege und Suchergebnisse an."
                         },
                         {
                             "key": "launcher_menupage_sizer",
-                            "title": "Modify app drawer"
+                            "title": "Modify app drawer",
+                            "category": "drawer_grid",
+                            "categoryTitle": "App-Drawer-Raster",
+                            "categoryDescription": "Dichte, Symbole und Beschriftungen im Drawer."
                         },
                         {
                             "key": "launcher_menupage_h",
-                            "title": "Spalten"
+                            "title": "Spalten",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_row_height",
-                            "title": "Row height"
+                            "title": "Row height",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_icon_size",
-                            "title": "Icon size"
+                            "title": "Icon size",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_text_mode",
@@ -1861,15 +2165,20 @@
                                     "value": "3",
                                     "label": "Ausblenden"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_suggestion_disable",
-                            "title": "Hide suggestions row"
+                            "title": "Hide suggestions row",
+                            "category": "drawer_suggestions",
+                            "categoryTitle": "Vorschläge",
+                            "categoryDescription": "Vorgeschlagene Apps und Beschriftungen."
                         },
                         {
                             "key": "launcher_suggestion_icon_size",
-                            "title": "Suggestion icon size"
+                            "title": "Suggestion icon size",
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_suggestion_text_mode",
@@ -1891,11 +2200,15 @@
                                     "value": "3",
                                     "label": "Ausblenden"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_search_icon_size",
-                            "title": "Search icon size"
+                            "title": "Search icon size",
+                            "category": "drawer_search",
+                            "categoryTitle": "Suchergebnisse",
+                            "categoryDescription": "Symbole und Beschriftungen der Launcher-Suche."
                         },
                         {
                             "key": "launcher_search_text_mode",
@@ -1917,7 +2230,8 @@
                                     "value": "3",
                                     "label": "Ausblenden"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_search"
                         }
                     ]
                 },
@@ -1932,59 +2246,80 @@
                     "subtitle": "Scale, opacity, blur and spacing",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_recents_carousel_overview",
+                            "title": "Task-Karussell",
+                            "description": "Passe Aufgabenabstaende, Kartenstil, Live Tile und globale Skalierung an."
                         },
                         {
                             "key": "launcher_recents_modify_enable",
-                            "title": "Modify carousel"
+                            "title": "Modify carousel",
+                            "category": "recents_carousel_motion",
+                            "categoryTitle": "Aufgabenkarussell",
+                            "categoryDescription": "Abstand, Skalierung, Deckkraft und Unschärfe."
                         },
                         {
                             "key": "launcher_recents_carousel_spacing",
-                            "title": "Extra spacing"
+                            "title": "Extra spacing",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_scale",
-                            "title": "Minimum scale"
+                            "title": "Minimum scale",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_alpha",
-                            "title": "Minimum opacity"
+                            "title": "Minimum opacity",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_radius",
-                            "title": "Card blur"
+                            "title": "Card blur",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_overflow",
-                            "title": "Blur beyond bounds"
+                            "title": "Blur beyond bounds",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_tint_color",
-                            "title": "Tint color"
+                            "title": "Tint color",
+                            "category": "recents_carousel_tint",
+                            "categoryTitle": "Tönung und Symbol",
+                            "categoryDescription": "Kartentönung und Position des App-Symbols."
                         },
                         {
                             "key": "launcher_recents_carousel_tint_intensity",
-                            "title": "Tint strength"
+                            "title": "Tint strength",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_x",
-                            "title": "Icon offset X"
+                            "title": "Icon offset X",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_y",
-                            "title": "Icon offset Y"
+                            "title": "Icon offset Y",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_disable_livetile",
-                            "title": "Disable Live Tile"
+                            "title": "Disable Live Tile",
+                            "category": "recents_carousel_live",
+                            "categoryTitle": "Live Tile und Skalierung",
+                            "categoryDescription": "Aufgabenschnappschüsse und globale Skalierung."
                         },
                         {
                             "key": "launcher_recents_scale_enable",
-                            "title": "Global task scale"
+                            "title": "Global task scale",
+                            "category": "recents_carousel_live"
                         },
                         {
                             "key": "launcher_recents_scale_percent",
-                            "title": "Scale percent"
+                            "title": "Scale percent",
+                            "category": "recents_carousel_live"
                         }
                     ]
                 },
@@ -1994,15 +2329,21 @@
                     "subtitle": "Clear All placement and action row",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_clear_all_overview",
+                            "title": "Clear-All-Aktion",
+                            "description": "Fuege Clear All hinzu und waehle das Verhalten in der Aktionszeile."
                         },
                         {
                             "key": "launcher_clear_all",
-                            "title": "Enable clear-all button"
+                            "title": "Enable clear-all button",
+                            "category": "clear_all_action",
+                            "categoryTitle": "Alles-löschen-Aktion",
+                            "categoryDescription": "Sichtbarkeit, Platzierung und Abstand der Schaltfläche."
                         },
                         {
                             "key": "launcher_clear_all_hide_actions_row",
-                            "title": "Hide action row"
+                            "title": "Hide action row",
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_replace_on_clear",
@@ -2020,11 +2361,13 @@
                                     "value": "2",
                                     "label": "Select"
                                 }
-                            ]
+                            ],
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_clear_all_bottom_margin",
-                            "title": "Button bottom margin"
+                            "title": "Button bottom margin",
+                            "category": "clear_all_action"
                         }
                     ]
                 },
@@ -2034,80 +2377,106 @@
                     "subtitle": "Size, gesture zone, hiding and color",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "gesture_bar_overview",
+                            "title": "Gestenleiste",
+                            "description": "Passe Groesse, Gestenbereich, Auto-Hide und Farbe des unteren Handles an."
                         },
                         {
                             "key": "gesture_bar_enabled",
                             "title": "Enable gesture bar tuning",
-                            "description": "Overrides size, gesture area and bottom handle visibility."
+                            "description": "Overrides size, gesture area and bottom handle visibility.",
+                            "category": "gesture_size",
+                            "categoryTitle": "Griffgeometrie",
+                            "categoryDescription": "Größe, Position und reservierter Gestenbereich."
                         },
                         {
                             "key": "gesture_bar_width_percent",
-                            "title": "Breite"
+                            "title": "Breite",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_height_dp",
-                            "title": "Höhe"
+                            "title": "Höhe",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_x_dp",
-                            "title": "X offset"
+                            "title": "X offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_y_dp",
-                            "title": "Y offset"
+                            "title": "Y offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_reserved_area_dp",
-                            "title": "Reserved area"
+                            "title": "Reserved area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_gesture_area_dp",
-                            "title": "System gesture area"
+                            "title": "System gesture area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_hide_on_launcher",
-                            "title": "Hide on launcher"
+                            "title": "Hide on launcher",
+                            "category": "gesture_visibility",
+                            "categoryTitle": "Automatisch ausblenden",
+                            "categoryDescription": "Regeln für Launcher, Apps und Sperrbildschirm."
                         },
                         {
                             "key": "gesture_bar_launcher_hide_timeout_ms",
-                            "title": "Hide delay on launcher"
+                            "title": "Hide delay on launcher",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_in_apps",
-                            "title": "Hide in apps"
+                            "title": "Hide in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_app_hide_timeout_ms",
-                            "title": "Hide delay in apps"
+                            "title": "Hide delay in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_on_lockscreen",
-                            "title": "Hide on lock screen"
+                            "title": "Hide on lock screen",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_remove_reserved_area",
-                            "title": "Remove reserved area"
+                            "title": "Remove reserved area",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_alpha_percent",
-                            "title": "Deckkraft"
+                            "title": "Deckkraft",
+                            "category": "gesture_animation",
+                            "categoryTitle": "Darstellung und Animation",
+                            "categoryDescription": "Deckkraft, Ein-/Ausblenden und Farbe."
                         },
                         {
                             "key": "gesture_bar_fade_in_ms",
-                            "title": "Fade-in animation"
+                            "title": "Fade-in animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_fade_out_ms",
-                            "title": "Fade-out animation"
+                            "title": "Fade-out animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_enabled",
-                            "title": "Set color"
+                            "title": "Set color",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_color",
-                            "title": "Bar color"
+                            "title": "Bar color",
+                            "category": "gesture_animation"
                         }
                     ]
                 },
@@ -2117,12 +2486,17 @@
                     "subtitle": "Manual and configurable QS tiles for launcher settings",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_tiles_overview",
+                            "title": "Launcher-Kacheln",
+                            "description": "Lege haeufige Launcher-Schalter als feste oder konfigurierbare QS-Kacheln an."
                         },
                         {
                             "key": "launcher_dt2s_tile",
                             "title": "Double-tap sleep",
-                            "description": "Toggles the home screen sleep gesture."
+                            "description": "Toggles the home screen sleep gesture.",
+                            "category": "tiles_fixed",
+                            "categoryTitle": "Feste Kacheln",
+                            "categoryDescription": "Fertige Quick-Settings-Kacheln für Launcher."
                         },
                         {
                             "key": "launcher_custom_tile",
@@ -2208,7 +2582,10 @@
                                     "value": "main/pixel-launcher/tiles",
                                     "label": "Schnelleinstellungen-Kacheln"
                                 }
-                            ]
+                            ],
+                            "category": "tiles_custom",
+                            "categoryTitle": "Konfigurierbare Kacheln",
+                            "categoryDescription": "Ziel-Einstellung und Seite für langes Drücken."
                         }
                     ]
                 }
@@ -2223,7 +2600,7 @@
                 {
                     "id": "pixel-launcher",
                     "title": "Paramètres Pixel Launcher",
-                    "subtitle": "Home screen, app drawer, icons and recents",
+                    "subtitle": "Accueil, tiroir, recents, gestes et tuiles QS",
                     "group": "launcher"
                 },
                 {
@@ -2232,25 +2609,33 @@
                     "subtitle": "Grid, labels, widget and sleep gesture",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_home_overview",
+                            "title": "Disposition accueil",
+                            "description": "Ajuste la grille, les libelles, les elements du haut et le double tap sommeil."
                         },
                         {
                             "key": "launcher_homepage_sizer",
                             "title": "Modify home screen grid",
-                            "description": "Enables custom column and row counts."
+                            "description": "Enables custom column and row counts.",
+                            "category": "home_grid",
+                            "categoryTitle": "Grille d'accueil",
+                            "categoryDescription": "Grille, taille des icones et libelles."
                         },
                         {
                             "key": "launcher_homepage_h",
-                            "title": "Colonnes"
+                            "title": "Colonnes",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_v",
-                            "title": "Lignes"
+                            "title": "Lignes",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_icon_size",
                             "title": "Icon size",
-                            "description": "100% keeps the stock size."
+                            "description": "100% keeps the stock size.",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_text_mode",
@@ -2273,26 +2658,35 @@
                                     "value": "3",
                                     "label": "Masquer"
                                 }
-                            ]
+                            ],
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_disable_top_widget",
                             "title": "Hide top widget",
-                            "description": "Frees the top home screen row."
+                            "description": "Frees the top home screen row.",
+                            "category": "home_surface",
+                            "categoryTitle": "Surfaces d'accueil",
+                            "categoryDescription": "Widget superieur et flux Discover."
                         },
                         {
                             "key": "launcher_disable_google_feed",
                             "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page."
+                            "description": "Removes the left Discover page.",
+                            "category": "home_surface"
                         },
                         {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
-                            "description": "Double-tapping an empty workspace area locks the screen."
+                            "description": "Double-tapping an empty workspace area locks the screen.",
+                            "category": "home_gesture",
+                            "categoryTitle": "Geste de veille",
+                            "categoryDescription": "Verrouillage par double appui et delai."
                         },
                         {
                             "key": "launcher_dt2s_timeout",
-                            "title": "Double-tap window"
+                            "title": "Double-tap window",
+                            "category": "home_gesture"
                         }
                     ]
                 },
@@ -2302,56 +2696,70 @@
                     "subtitle": "Hotseat, search bar and page dots",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_dock_overview",
+                            "title": "Zone dock",
+                            "description": "Ajuste hotseat, recherche, points de pages et marges basses ensemble."
                         },
                         {
                             "key": "launcher_dock_enable",
-                            "title": "Modify dock and search"
+                            "title": "Modify dock and search",
+                            "category": "dock_layout",
+                            "categoryTitle": "Dock et recherche",
+                            "categoryDescription": "Dock, barre de recherche et visibilite."
                         },
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config."
+                            "description": "Toggles enable_one_search through device_config.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icons",
                             "title": "Dock icons",
-                            "description": "0 keeps the launcher default."
+                            "description": "0 keeps the launcher default.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icon_size",
-                            "title": "Dock icon size"
+                            "title": "Dock icon size",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_dock",
-                            "title": "Hide dock"
+                            "title": "Hide dock",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_search",
-                            "title": "Hide search"
-                        },
-                        {
-                            "key": "dock_search_divider"
+                            "title": "Hide search",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_padding_homepage",
-                            "title": "Home screen bottom padding"
+                            "title": "Home screen bottom padding",
+                            "category": "dock_offsets",
+                            "categoryTitle": "Decalages",
+                            "categoryDescription": "Decalages de l'accueil, du dock, de la recherche et des points."
                         },
                         {
                             "key": "launcher_padding_dock",
-                            "title": "Dock offset"
+                            "title": "Dock offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_search",
-                            "title": "Search offset"
+                            "title": "Search offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots",
-                            "title": "Page dots vertical offset"
+                            "title": "Page dots vertical offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots_x",
-                            "title": "Page dots horizontal offset"
+                            "title": "Page dots horizontal offset",
+                            "category": "dock_offsets"
                         }
                     ]
                 },
@@ -2361,23 +2769,31 @@
                     "subtitle": "Grid, suggestions and search results",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_drawer_overview",
+                            "title": "Disposition tiroir",
+                            "description": "Ajuste la densite All Apps, les libelles, suggestions et resultats de recherche."
                         },
                         {
                             "key": "launcher_menupage_sizer",
-                            "title": "Modify app drawer"
+                            "title": "Modify app drawer",
+                            "category": "drawer_grid",
+                            "categoryTitle": "Grille du tiroir",
+                            "categoryDescription": "Densite, icones et libelles du tiroir."
                         },
                         {
                             "key": "launcher_menupage_h",
-                            "title": "Colonnes"
+                            "title": "Colonnes",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_row_height",
-                            "title": "Row height"
+                            "title": "Row height",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_icon_size",
-                            "title": "Icon size"
+                            "title": "Icon size",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_text_mode",
@@ -2399,15 +2815,20 @@
                                     "value": "3",
                                     "label": "Masquer"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_suggestion_disable",
-                            "title": "Hide suggestions row"
+                            "title": "Hide suggestions row",
+                            "category": "drawer_suggestions",
+                            "categoryTitle": "Suggestions",
+                            "categoryDescription": "Ligne des apps suggerees et libelles."
                         },
                         {
                             "key": "launcher_suggestion_icon_size",
-                            "title": "Suggestion icon size"
+                            "title": "Suggestion icon size",
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_suggestion_text_mode",
@@ -2429,11 +2850,15 @@
                                     "value": "3",
                                     "label": "Masquer"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_search_icon_size",
-                            "title": "Search icon size"
+                            "title": "Search icon size",
+                            "category": "drawer_search",
+                            "categoryTitle": "Resultats de recherche",
+                            "categoryDescription": "Icones et libelles des resultats du lanceur."
                         },
                         {
                             "key": "launcher_search_text_mode",
@@ -2455,7 +2880,8 @@
                                     "value": "3",
                                     "label": "Masquer"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_search"
                         }
                     ]
                 },
@@ -2470,59 +2896,80 @@
                     "subtitle": "Scale, opacity, blur and spacing",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_recents_carousel_overview",
+                            "title": "Carrousel des taches",
+                            "description": "Ajuste espacement, cartes, Live Tile et echelle globale des taches."
                         },
                         {
                             "key": "launcher_recents_modify_enable",
-                            "title": "Modify carousel"
+                            "title": "Modify carousel",
+                            "category": "recents_carousel_motion",
+                            "categoryTitle": "Carrousel des taches",
+                            "categoryDescription": "Espacement, echelle, opacite et flou."
                         },
                         {
                             "key": "launcher_recents_carousel_spacing",
-                            "title": "Extra spacing"
+                            "title": "Extra spacing",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_scale",
-                            "title": "Minimum scale"
+                            "title": "Minimum scale",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_alpha",
-                            "title": "Minimum opacity"
+                            "title": "Minimum opacity",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_radius",
-                            "title": "Card blur"
+                            "title": "Card blur",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_overflow",
-                            "title": "Blur beyond bounds"
+                            "title": "Blur beyond bounds",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_tint_color",
-                            "title": "Tint color"
+                            "title": "Tint color",
+                            "category": "recents_carousel_tint",
+                            "categoryTitle": "Teinte et icone",
+                            "categoryDescription": "Teinte des cartes et position de l'icone d'app."
                         },
                         {
                             "key": "launcher_recents_carousel_tint_intensity",
-                            "title": "Tint strength"
+                            "title": "Tint strength",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_x",
-                            "title": "Icon offset X"
+                            "title": "Icon offset X",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_y",
-                            "title": "Icon offset Y"
+                            "title": "Icon offset Y",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_disable_livetile",
-                            "title": "Disable Live Tile"
+                            "title": "Disable Live Tile",
+                            "category": "recents_carousel_live",
+                            "categoryTitle": "Live Tile et echelle",
+                            "categoryDescription": "Instantanes de taches et echelle globale."
                         },
                         {
                             "key": "launcher_recents_scale_enable",
-                            "title": "Global task scale"
+                            "title": "Global task scale",
+                            "category": "recents_carousel_live"
                         },
                         {
                             "key": "launcher_recents_scale_percent",
-                            "title": "Scale percent"
+                            "title": "Scale percent",
+                            "category": "recents_carousel_live"
                         }
                     ]
                 },
@@ -2532,15 +2979,21 @@
                     "subtitle": "Clear All placement and action row",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_clear_all_overview",
+                            "title": "Action Clear All",
+                            "description": "Ajoute Clear All et choisis son comportement avec la ligne d'actions."
                         },
                         {
                             "key": "launcher_clear_all",
-                            "title": "Enable clear-all button"
+                            "title": "Enable clear-all button",
+                            "category": "clear_all_action",
+                            "categoryTitle": "Action Tout effacer",
+                            "categoryDescription": "Visibilite, position et marge du bouton."
                         },
                         {
                             "key": "launcher_clear_all_hide_actions_row",
-                            "title": "Hide action row"
+                            "title": "Hide action row",
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_replace_on_clear",
@@ -2558,11 +3011,13 @@
                                     "value": "2",
                                     "label": "Select"
                                 }
-                            ]
+                            ],
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_clear_all_bottom_margin",
-                            "title": "Button bottom margin"
+                            "title": "Button bottom margin",
+                            "category": "clear_all_action"
                         }
                     ]
                 },
@@ -2572,80 +3027,106 @@
                     "subtitle": "Size, gesture zone, hiding and color",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "gesture_bar_overview",
+                            "title": "Barre de gestes",
+                            "description": "Controle taille, zone de gestes, masquage auto et couleur du handle bas."
                         },
                         {
                             "key": "gesture_bar_enabled",
                             "title": "Enable gesture bar tuning",
-                            "description": "Overrides size, gesture area and bottom handle visibility."
+                            "description": "Overrides size, gesture area and bottom handle visibility.",
+                            "category": "gesture_size",
+                            "categoryTitle": "Geometrie de la barre",
+                            "categoryDescription": "Taille, position et zone gestuelle reservee."
                         },
                         {
                             "key": "gesture_bar_width_percent",
-                            "title": "Largeur"
+                            "title": "Largeur",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_height_dp",
-                            "title": "Hauteur"
+                            "title": "Hauteur",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_x_dp",
-                            "title": "X offset"
+                            "title": "X offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_y_dp",
-                            "title": "Y offset"
+                            "title": "Y offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_reserved_area_dp",
-                            "title": "Reserved area"
+                            "title": "Reserved area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_gesture_area_dp",
-                            "title": "System gesture area"
+                            "title": "System gesture area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_hide_on_launcher",
-                            "title": "Hide on launcher"
+                            "title": "Hide on launcher",
+                            "category": "gesture_visibility",
+                            "categoryTitle": "Masquage auto",
+                            "categoryDescription": "Regles pour le lanceur, les apps et l'ecran verrouille."
                         },
                         {
                             "key": "gesture_bar_launcher_hide_timeout_ms",
-                            "title": "Hide delay on launcher"
+                            "title": "Hide delay on launcher",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_in_apps",
-                            "title": "Hide in apps"
+                            "title": "Hide in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_app_hide_timeout_ms",
-                            "title": "Hide delay in apps"
+                            "title": "Hide delay in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_on_lockscreen",
-                            "title": "Hide on lock screen"
+                            "title": "Hide on lock screen",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_remove_reserved_area",
-                            "title": "Remove reserved area"
+                            "title": "Remove reserved area",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_alpha_percent",
-                            "title": "Opacité"
+                            "title": "Opacité",
+                            "category": "gesture_animation",
+                            "categoryTitle": "Apparence et animation",
+                            "categoryDescription": "Opacite, fondus et couleur personnalisee."
                         },
                         {
                             "key": "gesture_bar_fade_in_ms",
-                            "title": "Fade-in animation"
+                            "title": "Fade-in animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_fade_out_ms",
-                            "title": "Fade-out animation"
+                            "title": "Fade-out animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_enabled",
-                            "title": "Set color"
+                            "title": "Set color",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_color",
-                            "title": "Bar color"
+                            "title": "Bar color",
+                            "category": "gesture_animation"
                         }
                     ]
                 },
@@ -2655,12 +3136,17 @@
                     "subtitle": "Manual and configurable QS tiles for launcher settings",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_tiles_overview",
+                            "title": "Tuiles launcher",
+                            "description": "Expose les interrupteurs frequents en tuiles QS fixes ou configurables."
                         },
                         {
                             "key": "launcher_dt2s_tile",
                             "title": "Double-tap sleep",
-                            "description": "Toggles the home screen sleep gesture."
+                            "description": "Toggles the home screen sleep gesture.",
+                            "category": "tiles_fixed",
+                            "categoryTitle": "Tuiles fixes",
+                            "categoryDescription": "Tuiles rapides pretes pour le lanceur."
                         },
                         {
                             "key": "launcher_custom_tile",
@@ -2746,7 +3232,10 @@
                                     "value": "main/pixel-launcher/tiles",
                                     "label": "Tuiles QS"
                                 }
-                            ]
+                            ],
+                            "category": "tiles_custom",
+                            "categoryTitle": "Tuiles configurables",
+                            "categoryDescription": "Reglage cible et page dappui long."
                         }
                     ]
                 }
@@ -2761,7 +3250,7 @@
                 {
                     "id": "pixel-launcher",
                     "title": "Налаштування Pixel Launcher",
-                    "subtitle": "Home screen, app drawer, icons and recents",
+                    "subtitle": "Головний екран, меню, Recents, жести та QS плитки",
                     "group": "launcher"
                 },
                 {
@@ -2770,25 +3259,33 @@
                     "subtitle": "Grid, labels, widget and sleep gesture",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_home_overview",
+                            "title": "Макет головного екрана",
+                            "description": "Налаштуй сітку, підписи, верхні елементи та жест сну подвійним тапом."
                         },
                         {
                             "key": "launcher_homepage_sizer",
                             "title": "Modify home screen grid",
-                            "description": "Enables custom column and row counts."
+                            "description": "Enables custom column and row counts.",
+                            "category": "home_grid",
+                            "categoryTitle": "Сітка головного екрана",
+                            "categoryDescription": "Сітка, розмір іконок і режим підписів."
                         },
                         {
                             "key": "launcher_homepage_h",
-                            "title": "Стовпці"
+                            "title": "Стовпці",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_v",
-                            "title": "Рядки"
+                            "title": "Рядки",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_icon_size",
                             "title": "Icon size",
-                            "description": "100% keeps the stock size."
+                            "description": "100% keeps the stock size.",
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_homepage_text_mode",
@@ -2811,26 +3308,35 @@
                                     "value": "3",
                                     "label": "Приховати"
                                 }
-                            ]
+                            ],
+                            "category": "home_grid"
                         },
                         {
                             "key": "launcher_disable_top_widget",
                             "title": "Hide top widget",
-                            "description": "Frees the top home screen row."
+                            "description": "Frees the top home screen row.",
+                            "category": "home_surface",
+                            "categoryTitle": "Поверхні головного екрана",
+                            "categoryDescription": "Верхній віджет і стрічка Discover."
                         },
                         {
                             "key": "launcher_disable_google_feed",
                             "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page."
+                            "description": "Removes the left Discover page.",
+                            "category": "home_surface"
                         },
                         {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
-                            "description": "Double-tapping an empty workspace area locks the screen."
+                            "description": "Double-tapping an empty workspace area locks the screen.",
+                            "category": "home_gesture",
+                            "categoryTitle": "Жест сну",
+                            "categoryDescription": "Блокування подвійним дотиком і вікно розпізнавання."
                         },
                         {
                             "key": "launcher_dt2s_timeout",
-                            "title": "Double-tap window"
+                            "title": "Double-tap window",
+                            "category": "home_gesture"
                         }
                     ]
                 },
@@ -2840,56 +3346,70 @@
                     "subtitle": "Hotseat, search bar and page dots",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_dock_overview",
+                            "title": "Док і нижня зона",
+                            "description": "Налаштуй hotseat, пошук, точки сторінок і нижні відступи разом."
                         },
                         {
                             "key": "launcher_dock_enable",
-                            "title": "Modify dock and search"
+                            "title": "Modify dock and search",
+                            "category": "dock_layout",
+                            "categoryTitle": "Док і пошук",
+                            "categoryDescription": "Док, рядок пошуку та видимість елементів."
                         },
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config."
+                            "description": "Toggles enable_one_search through device_config.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icons",
                             "title": "Dock icons",
-                            "description": "0 keeps the launcher default."
+                            "description": "0 keeps the launcher default.",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hotseat_icon_size",
-                            "title": "Dock icon size"
+                            "title": "Dock icon size",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_dock",
-                            "title": "Hide dock"
+                            "title": "Hide dock",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_hidden_search",
-                            "title": "Hide search"
-                        },
-                        {
-                            "key": "dock_search_divider"
+                            "title": "Hide search",
+                            "category": "dock_layout"
                         },
                         {
                             "key": "launcher_padding_homepage",
-                            "title": "Home screen bottom padding"
+                            "title": "Home screen bottom padding",
+                            "category": "dock_offsets",
+                            "categoryTitle": "Відступи",
+                            "categoryDescription": "Зміщення робочого столу, дока, пошуку і точок сторінок."
                         },
                         {
                             "key": "launcher_padding_dock",
-                            "title": "Dock offset"
+                            "title": "Dock offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_search",
-                            "title": "Search offset"
+                            "title": "Search offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots",
-                            "title": "Page dots vertical offset"
+                            "title": "Page dots vertical offset",
+                            "category": "dock_offsets"
                         },
                         {
                             "key": "launcher_padding_dots_x",
-                            "title": "Page dots horizontal offset"
+                            "title": "Page dots horizontal offset",
+                            "category": "dock_offsets"
                         }
                     ]
                 },
@@ -2899,23 +3419,31 @@
                     "subtitle": "Grid, suggestions and search results",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_drawer_overview",
+                            "title": "Макет меню додатків",
+                            "description": "Налаштуй щільність All Apps, підписи, підказки та результати пошуку."
                         },
                         {
                             "key": "launcher_menupage_sizer",
-                            "title": "Modify app drawer"
+                            "title": "Modify app drawer",
+                            "category": "drawer_grid",
+                            "categoryTitle": "Сітка меню застосунків",
+                            "categoryDescription": "Щільність, іконки та підписи в меню."
                         },
                         {
                             "key": "launcher_menupage_h",
-                            "title": "Стовпці"
+                            "title": "Стовпці",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_row_height",
-                            "title": "Row height"
+                            "title": "Row height",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_icon_size",
-                            "title": "Icon size"
+                            "title": "Icon size",
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_menupage_text_mode",
@@ -2937,15 +3465,20 @@
                                     "value": "3",
                                     "label": "Приховати"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_grid"
                         },
                         {
                             "key": "launcher_suggestion_disable",
-                            "title": "Hide suggestions row"
+                            "title": "Hide suggestions row",
+                            "category": "drawer_suggestions",
+                            "categoryTitle": "Підказки",
+                            "categoryDescription": "Рядок запропонованих застосунків і підписи."
                         },
                         {
                             "key": "launcher_suggestion_icon_size",
-                            "title": "Suggestion icon size"
+                            "title": "Suggestion icon size",
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_suggestion_text_mode",
@@ -2967,11 +3500,15 @@
                                     "value": "3",
                                     "label": "Приховати"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_suggestions"
                         },
                         {
                             "key": "launcher_search_icon_size",
-                            "title": "Search icon size"
+                            "title": "Search icon size",
+                            "category": "drawer_search",
+                            "categoryTitle": "Результати пошуку",
+                            "categoryDescription": "Іконки та підписи в пошуку лаунчера."
                         },
                         {
                             "key": "launcher_search_text_mode",
@@ -2993,7 +3530,8 @@
                                     "value": "3",
                                     "label": "Приховати"
                                 }
-                            ]
+                            ],
+                            "category": "drawer_search"
                         }
                     ]
                 },
@@ -3008,59 +3546,80 @@
                     "subtitle": "Scale, opacity, blur and spacing",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_recents_carousel_overview",
+                            "title": "Карусель задач",
+                            "description": "Налаштуй відступи задач, картки, Live Tile і загальний масштаб."
                         },
                         {
                             "key": "launcher_recents_modify_enable",
-                            "title": "Modify carousel"
+                            "title": "Modify carousel",
+                            "category": "recents_carousel_motion",
+                            "categoryTitle": "Карусель задач",
+                            "categoryDescription": "Відступи, масштаб, прозорість і розмиття."
                         },
                         {
                             "key": "launcher_recents_carousel_spacing",
-                            "title": "Extra spacing"
+                            "title": "Extra spacing",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_scale",
-                            "title": "Minimum scale"
+                            "title": "Minimum scale",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_alpha",
-                            "title": "Minimum opacity"
+                            "title": "Minimum opacity",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_radius",
-                            "title": "Card blur"
+                            "title": "Card blur",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_blur_overflow",
-                            "title": "Blur beyond bounds"
+                            "title": "Blur beyond bounds",
+                            "category": "recents_carousel_motion"
                         },
                         {
                             "key": "launcher_recents_carousel_tint_color",
-                            "title": "Tint color"
+                            "title": "Tint color",
+                            "category": "recents_carousel_tint",
+                            "categoryTitle": "Тонування та іконка",
+                            "categoryDescription": "Колір карток і позиція іконки застосунку."
                         },
                         {
                             "key": "launcher_recents_carousel_tint_intensity",
-                            "title": "Tint strength"
+                            "title": "Tint strength",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_x",
-                            "title": "Icon offset X"
+                            "title": "Icon offset X",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_carousel_icon_offset_y",
-                            "title": "Icon offset Y"
+                            "title": "Icon offset Y",
+                            "category": "recents_carousel_tint"
                         },
                         {
                             "key": "launcher_recents_disable_livetile",
-                            "title": "Disable Live Tile"
+                            "title": "Disable Live Tile",
+                            "category": "recents_carousel_live",
+                            "categoryTitle": "Live Tile і масштаб",
+                            "categoryDescription": "Режим знімків задач і загальний масштаб."
                         },
                         {
                             "key": "launcher_recents_scale_enable",
-                            "title": "Global task scale"
+                            "title": "Global task scale",
+                            "category": "recents_carousel_live"
                         },
                         {
                             "key": "launcher_recents_scale_percent",
-                            "title": "Scale percent"
+                            "title": "Scale percent",
+                            "category": "recents_carousel_live"
                         }
                     ]
                 },
@@ -3070,15 +3629,21 @@
                     "subtitle": "Clear All placement and action row",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_clear_all_overview",
+                            "title": "Дія очищення",
+                            "description": "Додай Clear All і вибери, як він працює з рядком дій."
                         },
                         {
                             "key": "launcher_clear_all",
-                            "title": "Enable clear-all button"
+                            "title": "Enable clear-all button",
+                            "category": "clear_all_action",
+                            "categoryTitle": "Кнопка очищення",
+                            "categoryDescription": "Видимість, розташування та нижній відступ."
                         },
                         {
                             "key": "launcher_clear_all_hide_actions_row",
-                            "title": "Hide action row"
+                            "title": "Hide action row",
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_replace_on_clear",
@@ -3096,11 +3661,13 @@
                                     "value": "2",
                                     "label": "Select"
                                 }
-                            ]
+                            ],
+                            "category": "clear_all_action"
                         },
                         {
                             "key": "launcher_clear_all_bottom_margin",
-                            "title": "Button bottom margin"
+                            "title": "Button bottom margin",
+                            "category": "clear_all_action"
                         }
                     ]
                 },
@@ -3110,80 +3677,106 @@
                     "subtitle": "Size, gesture zone, hiding and color",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "gesture_bar_overview",
+                            "title": "Жестова смужка",
+                            "description": "Налаштуй розмір, область жестів, автоприховування та колір нижнього handle."
                         },
                         {
                             "key": "gesture_bar_enabled",
                             "title": "Enable gesture bar tuning",
-                            "description": "Overrides size, gesture area and bottom handle visibility."
+                            "description": "Overrides size, gesture area and bottom handle visibility.",
+                            "category": "gesture_size",
+                            "categoryTitle": "Геометрія смужки",
+                            "categoryDescription": "Розмір, позиція та зарезервована зона жесту."
                         },
                         {
                             "key": "gesture_bar_width_percent",
-                            "title": "Ширина"
+                            "title": "Ширина",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_height_dp",
-                            "title": "Висота"
+                            "title": "Висота",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_x_dp",
-                            "title": "X offset"
+                            "title": "X offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_offset_y_dp",
-                            "title": "Y offset"
+                            "title": "Y offset",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_reserved_area_dp",
-                            "title": "Reserved area"
+                            "title": "Reserved area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_gesture_area_dp",
-                            "title": "System gesture area"
+                            "title": "System gesture area",
+                            "category": "gesture_size"
                         },
                         {
                             "key": "gesture_bar_hide_on_launcher",
-                            "title": "Hide on launcher"
+                            "title": "Hide on launcher",
+                            "category": "gesture_visibility",
+                            "categoryTitle": "Автоприховування",
+                            "categoryDescription": "Правила приховування на лаунчері, у застосунках і на екрані блокування."
                         },
                         {
                             "key": "gesture_bar_launcher_hide_timeout_ms",
-                            "title": "Hide delay on launcher"
+                            "title": "Hide delay on launcher",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_in_apps",
-                            "title": "Hide in apps"
+                            "title": "Hide in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_app_hide_timeout_ms",
-                            "title": "Hide delay in apps"
+                            "title": "Hide delay in apps",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_hide_on_lockscreen",
-                            "title": "Hide on lock screen"
+                            "title": "Hide on lock screen",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_remove_reserved_area",
-                            "title": "Remove reserved area"
+                            "title": "Remove reserved area",
+                            "category": "gesture_visibility"
                         },
                         {
                             "key": "gesture_bar_alpha_percent",
-                            "title": "Прозорість"
+                            "title": "Прозорість",
+                            "category": "gesture_animation",
+                            "categoryTitle": "Вигляд і анімація",
+                            "categoryDescription": "Прозорість, анімації появи та колір."
                         },
                         {
                             "key": "gesture_bar_fade_in_ms",
-                            "title": "Fade-in animation"
+                            "title": "Fade-in animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_fade_out_ms",
-                            "title": "Fade-out animation"
+                            "title": "Fade-out animation",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_enabled",
-                            "title": "Set color"
+                            "title": "Set color",
+                            "category": "gesture_animation"
                         },
                         {
                             "key": "gesture_bar_tint_color",
-                            "title": "Bar color"
+                            "title": "Bar color",
+                            "category": "gesture_animation"
                         }
                     ]
                 },
@@ -3193,12 +3786,17 @@
                     "subtitle": "Manual and configurable QS tiles for launcher settings",
                     "settings": [
                         {
-                            "key": "demo_divider_dashed"
+                            "key": "launcher_tiles_overview",
+                            "title": "Плитки лаунчера",
+                            "description": "Винеси часті перемикачі лаунчера у фіксовані або налаштовувані QS плитки."
                         },
                         {
                             "key": "launcher_dt2s_tile",
                             "title": "Double-tap sleep",
-                            "description": "Toggles the home screen sleep gesture."
+                            "description": "Toggles the home screen sleep gesture.",
+                            "category": "tiles_fixed",
+                            "categoryTitle": "Готові плитки",
+                            "categoryDescription": "Швидкі плитки для частих налаштувань лаунчера."
                         },
                         {
                             "key": "launcher_custom_tile",
@@ -3284,7 +3882,10 @@
                                     "value": "main/pixel-launcher/tiles",
                                     "label": "Плитки швидких налаштувань"
                                 }
-                            ]
+                            ],
+                            "category": "tiles_custom",
+                            "categoryTitle": "Налаштовувані плитки",
+                            "categoryDescription": "Вибір цільового налаштування і сторінки довгого натискання."
                         }
                     ]
                 }

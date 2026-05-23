@@ -109,6 +109,8 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             final Class<?> idpClass = XposedHelpers.findClass("com.android.launcher3.InvariantDeviceProfile", classLoader);
             
             hookLauncherLifecycle(launcherClass, classLoader);
+            hookModelCallbacks(classLoader);
+            hookLauncherUnlockAnimation(classLoader);
             hookInvariantDeviceProfile(idpClass);
             hookBubbleTextView(bubbleTextViewClass, classLoader);
             hookFloatingIconView(classLoader);
@@ -146,6 +148,7 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                         applyDockSettings(activity);
                         forceUpdateDots(activity);
                         applyDT2SListener(activity);
+                        removeHiddenTopWidgetBlankScreen(activity);
                     }
                 };
 
@@ -561,6 +564,48 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
         }
     }
 
+    private void hookModelCallbacks(ClassLoader classLoader) {
+        try {
+            Class<?> modelCallbacksClass = XposedHelpers.findClass("com.android.launcher3.ModelCallbacks", classLoader);
+            XposedHelpers.findAndHookMethod(modelCallbacksClass, "bindItems", List.class, boolean.class, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    try {
+                        Object launcher = XposedHelpers.getObjectField(param.thisObject, "launcher");
+                        if (launcher instanceof Activity) {
+                            removeHiddenTopWidgetBlankScreen((Activity) launcher);
+                        }
+                    } catch (Throwable t) {
+                        logError("Failed to trim hidden top widget blank screen after binding", t);
+                    }
+                }
+            });
+        } catch (Throwable e) {
+            logError("Failed to hook ModelCallbacks", e);
+        }
+    }
+
+    private void hookLauncherUnlockAnimation(ClassLoader classLoader) {
+        try {
+            Class<?> unlockControllerClass = XposedHelpers.findClass("k6.t", classLoader);
+            XposedHelpers.findAndHookMethod(unlockControllerClass, "b", boolean.class, new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    try {
+                        Object launcher = XposedHelpers.getObjectField(param.thisObject, "f15810a");
+                        if (launcher instanceof Activity) {
+                            removeHiddenTopWidgetBlankScreen((Activity) launcher);
+                        }
+                    } catch (Throwable t) {
+                        logError("Failed to trim blank first screen before unlock animation", t);
+                    }
+                }
+            });
+        } catch (Throwable e) {
+            logError("Failed to hook Launcher unlock animation", e);
+        }
+    }
+
     // =========================================================================
     // SECTION 4: WORKSPACE (Padding, Dots, Gestures, TopWidget)
     // =========================================================================
@@ -591,22 +636,13 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             }
         });
 
-        XposedHelpers.findAndHookMethod(workspaceClass, "bindAndInitFirstWorkspaceScreen", new XC_MethodReplacement() {
+        XposedHelpers.findAndHookMethod(workspaceClass, "bindAndInitFirstWorkspaceScreen", new XC_MethodHook() {
             @Override
-            protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+            protected void afterHookedMethod(MethodHookParam param) {
                 ViewGroup workspace = (ViewGroup) param.thisObject;
                 Context context = workspace.getContext();
                 if (getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1) {
-                    try {
-                        int childCount = workspace.getChildCount();
-                        XposedHelpers.callMethod(workspace, "insertNewWorkspaceScreen", 0, childCount);
-                    } catch (Throwable e) {
-                        logError("Failed to create first workspace screen without top widget", e);
-                        return XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
-                    }
-                    return null;
-                } else {
-                    return XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
+                    removeFirstPagePinnedItem(workspace);
                 }
             }
         });
@@ -689,6 +725,150 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
         if (params != null && params.height != 0) {
             params.height = 0;
             view.setLayoutParams(params);
+        }
+    }
+
+    private void removeFirstPagePinnedItem(ViewGroup workspace) {
+        try {
+            Object pinnedItem = XposedHelpers.getObjectField(workspace, "mFirstPagePinnedItem");
+            if (pinnedItem instanceof View) {
+                View pinnedView = (View) pinnedItem;
+                ViewGroup parent = (ViewGroup) pinnedView.getParent();
+                if (parent != null) {
+                    parent.removeView(pinnedView);
+                }
+                XposedHelpers.setObjectField(workspace, "mFirstPagePinnedItem", null);
+            }
+        } catch (Throwable t) {
+            logError("Failed to remove first page pinned item", t);
+        }
+    }
+
+    private void removeHiddenTopWidgetBlankScreen(Activity activity) {
+        if (activity == null) return;
+        boolean hideTopWidget = getIntSetting(activity, KEY_TOP_WIDGET_ENABLE, 0) == 1;
+        boolean customHomeGrid = isSettingEnabled(activity, KEY_HOME_ENABLE);
+        if (!hideTopWidget && !customHomeGrid) return;
+        try {
+            Object workspaceObject = XposedHelpers.getObjectField(activity, "mWorkspace");
+            if (!(workspaceObject instanceof ViewGroup)) return;
+
+            ViewGroup workspace = (ViewGroup) workspaceObject;
+            if (hideTopWidget) {
+                removeFirstPagePinnedItem(workspace);
+            }
+            if (workspace.getChildCount() <= 1) return;
+
+            Object screenOrder = XposedHelpers.getObjectField(workspace, "mScreenOrder");
+            Object workspaceScreens = XposedHelpers.getObjectField(workspace, "mWorkspaceScreens");
+            if (screenOrder == null || workspaceScreens == null) return;
+            if (getIntFieldSafely(screenOrder, "mSize", 0) <= 1) return;
+
+            Object firstScreenIdObj = XposedHelpers.callMethod(screenOrder, "get", 0);
+            if (!(firstScreenIdObj instanceof Integer) || ((Integer) firstScreenIdObj) != 0) return;
+
+            Object firstScreenObject = XposedHelpers.callMethod(workspaceScreens, "get", 0);
+            if (!(firstScreenObject instanceof View)) return;
+            View firstScreen = (View) firstScreenObject;
+            int firstScreenChildCount = getWorkspaceItemChildCount(firstScreen);
+            int firstScreenRealItemCount = getWorkspaceRealItemChildCount(firstScreen);
+            int firstRealPageIndex = findFirstRealWorkspacePageIndex(workspace, screenOrder, workspaceScreens);
+            if (firstScreenRealItemCount > 0 || firstRealPageIndex <= 0) return;
+
+            if (firstScreenChildCount != 0) {
+                setWorkspaceCurrentPage(workspace, firstRealPageIndex);
+                return;
+            }
+
+            XposedHelpers.callMethod(workspaceScreens, "remove", 0);
+            XposedHelpers.callMethod(screenOrder, "removeValue", 0);
+            workspace.removeView(firstScreen);
+            setWorkspaceCurrentPage(workspace, 0);
+        } catch (Throwable t) {
+            logError("Failed to remove hidden top widget blank screen", t);
+        }
+    }
+
+    private int findFirstRealWorkspacePageIndex(ViewGroup workspace, Object screenOrder, Object workspaceScreens) {
+        int size = getIntFieldSafely(screenOrder, "mSize", workspace.getChildCount());
+        for (int i = 0; i < size; i++) {
+            try {
+                Object screenIdObj = XposedHelpers.callMethod(screenOrder, "get", i);
+                if (!(screenIdObj instanceof Integer)) continue;
+                int screenId = (Integer) screenIdObj;
+                if (screenId < 0) continue;
+                Object screenObject = XposedHelpers.callMethod(workspaceScreens, "get", screenId);
+                if (screenObject instanceof View && getWorkspaceRealItemChildCount((View) screenObject) > 0) {
+                    return i;
+                }
+            } catch (Throwable ignored) { }
+        }
+        return -1;
+    }
+
+    private int getWorkspaceItemChildCount(View screen) {
+        ViewGroup shortcutsAndWidgets = getShortcutsAndWidgetsContainer(screen);
+        if (shortcutsAndWidgets != null) {
+            return shortcutsAndWidgets.getChildCount();
+        }
+        if (screen instanceof ViewGroup) {
+            return ((ViewGroup) screen).getChildCount();
+        }
+        return 0;
+    }
+
+    private int getWorkspaceRealItemChildCount(View screen) {
+        ViewGroup shortcutsAndWidgets = getShortcutsAndWidgetsContainer(screen);
+        if (shortcutsAndWidgets == null) return getWorkspaceItemChildCount(screen);
+
+        int count = 0;
+        for (int i = 0; i < shortcutsAndWidgets.getChildCount(); i++) {
+            View child = shortcutsAndWidgets.getChildAt(i);
+            if (!isPinnedSmartspaceView(child)) count++;
+        }
+        return count;
+    }
+
+    private ViewGroup getShortcutsAndWidgetsContainer(View screen) {
+        try {
+            Object shortcutsAndWidgets = XposedHelpers.getObjectField(screen, "mShortcutsAndWidgets");
+            if (shortcutsAndWidgets instanceof ViewGroup) {
+                return (ViewGroup) shortcutsAndWidgets;
+            }
+        } catch (Throwable ignored) { }
+        return null;
+    }
+
+    private boolean isPinnedSmartspaceView(View view) {
+        if (view == null) return false;
+        String className = view.getClass().getName();
+        if (className.contains("SmartspaceViewContainer") || className.contains("BcSmartspaceView")) return true;
+        try {
+            int id = view.getId();
+            if (id != View.NO_ID) {
+                String entryName = view.getResources().getResourceEntryName(id);
+                return "search_container_workspace".equals(entryName);
+            }
+        } catch (Throwable ignored) { }
+        return false;
+    }
+
+    private void setWorkspaceCurrentPage(ViewGroup workspace, int pageIndex) {
+        try {
+            XposedHelpers.callMethod(workspace, "setCurrentPage", pageIndex, pageIndex);
+        } catch (Throwable ignored) {
+            XposedHelpers.callMethod(workspace, "setCurrentPage", pageIndex);
+        }
+        try {
+            XposedHelpers.callMethod(workspace, "updatePageScrollValues");
+        } catch (Throwable ignored) { }
+    }
+
+    private int getIntFieldSafely(Object object, String fieldName, int fallback) {
+        try {
+            return XposedHelpers.getIntField(object, fieldName);
+        } catch (Throwable ignored) {
+            return fallback;
         }
     }
 

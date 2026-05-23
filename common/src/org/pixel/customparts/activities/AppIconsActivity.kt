@@ -531,181 +531,186 @@ fun AppIconsScreen(onBack: () -> Unit) {
                     else -> {
                         val state = dashboard
                         if (state != null) {
-                            item {
-                                AppIconsModuleSwitch(
-                                    checked = moduleEnabled,
-                                    launcherOnlyChecked = launcherOnlyEnabled,
-                                    systemStretchShapeChecked = systemStretchShapeEnabled,
-                                    systemRemoveShapeChecked = systemRemoveShapeEnabled,
-                                    notificationStretchShapeChecked = notificationStretchShapeEnabled,
-                                    notificationRemoveShapeChecked = notificationRemoveShapeEnabled,
-                                    launcherStretchShapeChecked = launcherStretchShapeEnabled,
-                                    launcherRemoveShapeChecked = launcherRemoveShapeEnabled,
-                                    systemShapeScalePercent = systemShapeScalePercent,
-                                    notificationShapeScalePercent = notificationShapeScalePercent,
-                                    launcherShapeScalePercent = launcherShapeScalePercent,
-                                    backgroundTintMode = shapeTintFlags.backgroundTintMode,
-                                    backgroundTintColor = shapeTintFlags.backgroundTintColor,
-                                    foregroundTintMode = shapeTintFlags.foregroundTintMode,
-                                    foregroundTintColor = shapeTintFlags.foregroundTintColor,
-                                    advancedExpanded = advancedSettingsExpanded,
-                                    showHardcodedControls = showHardcodedIconControls,
-                                    showLauncherControls = showHardcodedLauncherIconControls,
-                                    onIconShapeClick = {
-                                        context.startActivity(Intent(context, IconShapeActivity::class.java))
-                                    },
-                                    onCheckedChange = { enabled ->
-                                        moduleEnabled = enabled
-                                        launcherOnlyEnabled = false
-                                        writeAppIconModuleFlags(
-                                            context = context,
-                                            moduleEnabled = enabled,
-                                            launcherOnly = false
-                                        )
-                                    },
-                                    onLauncherOnlyChange = { enabled ->
-                                        if (moduleEnabled) {
-                                            launcherOnlyEnabled = enabled
+                            if (showHardcodedIconControls) {
+                                item {
+                                    AppIconsModuleSwitch(
+                                        checked = moduleEnabled,
+                                        launcherOnlyChecked = launcherOnlyEnabled,
+                                        systemStretchShapeChecked = systemStretchShapeEnabled,
+                                        systemRemoveShapeChecked = systemRemoveShapeEnabled,
+                                        notificationStretchShapeChecked = notificationStretchShapeEnabled,
+                                        notificationRemoveShapeChecked = notificationRemoveShapeEnabled,
+                                        launcherStretchShapeChecked = launcherStretchShapeEnabled,
+                                        launcherRemoveShapeChecked = launcherRemoveShapeEnabled,
+                                        systemShapeScalePercent = systemShapeScalePercent,
+                                        notificationShapeScalePercent = notificationShapeScalePercent,
+                                        launcherShapeScalePercent = launcherShapeScalePercent,
+                                        backgroundTintMode = shapeTintFlags.backgroundTintMode,
+                                        backgroundTintColor = shapeTintFlags.backgroundTintColor,
+                                        foregroundTintMode = shapeTintFlags.foregroundTintMode,
+                                        foregroundTintColor = shapeTintFlags.foregroundTintColor,
+                                        advancedExpanded = advancedSettingsExpanded,
+                                        showHardcodedControls = showHardcodedIconControls,
+                                        showLauncherControls = showHardcodedLauncherIconControls,
+                                        onIconShapeClick = {
+                                            context.startActivity(Intent(context, IconShapeActivity::class.java))
+                                        },
+                                        onCheckedChange = { enabled ->
+                                            moduleEnabled = enabled
+                                            launcherOnlyEnabled = false
                                             writeAppIconModuleFlags(
                                                 context = context,
-                                                moduleEnabled = true,
-                                                launcherOnly = enabled
+                                                moduleEnabled = enabled,
+                                                launcherOnly = false
                                             )
-                                        }
-                                    },
-                                    onSystemStretchShapeChange = { enabled ->
-                                        systemStretchShapeEnabled = enabled
-                                        if (enabled) {
-                                            systemRemoveShapeEnabled = false
-                                        }
-                                        writeAppIconSystemShapeFlags(
-                                            context = context,
-                                            stretchShape = enabled,
-                                            removeShape = if (enabled) false else systemRemoveShapeEnabled,
-                                            scalePercent = systemShapeScalePercent
-                                        )
-                                    },
-                                    onSystemRemoveShapeChange = { enabled ->
-                                        systemRemoveShapeEnabled = enabled
-                                        if (enabled) {
-                                            systemStretchShapeEnabled = false
-                                        }
-                                        writeAppIconSystemShapeFlags(
-                                            context = context,
-                                            stretchShape = if (enabled) false else systemStretchShapeEnabled,
-                                            removeShape = enabled,
-                                            scalePercent = systemShapeScalePercent
-                                        )
-                                    },
-                                    onNotificationStretchShapeChange = { enabled ->
-                                        notificationStretchShapeEnabled = enabled
-                                        if (enabled) {
-                                            notificationRemoveShapeEnabled = false
-                                        }
-                                        writeAppIconNotificationShapeFlags(
-                                            context = context,
-                                            stretchShape = enabled,
-                                            removeShape = if (enabled) false else notificationRemoveShapeEnabled,
-                                            scalePercent = notificationShapeScalePercent
-                                        )
-                                    },
-                                    onNotificationRemoveShapeChange = { enabled ->
-                                        notificationRemoveShapeEnabled = enabled
-                                        if (enabled) {
-                                            notificationStretchShapeEnabled = false
-                                        }
-                                        writeAppIconNotificationShapeFlags(
-                                            context = context,
-                                            stretchShape = if (enabled) false else notificationStretchShapeEnabled,
-                                            removeShape = enabled,
-                                            scalePercent = notificationShapeScalePercent
-                                        )
-                                    },
-                                    onLauncherStretchShapeChange = { enabled ->
-                                        launcherStretchShapeEnabled = enabled
-                                        if (enabled) {
-                                            launcherRemoveShapeEnabled = false
-                                        }
-                                        writeAppIconLauncherShapeFlags(
-                                            context = context,
-                                            stretchShape = enabled,
-                                            removeShape = if (enabled) false else launcherRemoveShapeEnabled,
-                                            scalePercent = launcherShapeScalePercent
-                                        )
-                                    },
-                                    onLauncherRemoveShapeChange = { enabled ->
-                                        launcherRemoveShapeEnabled = enabled
-                                        if (enabled) {
-                                            launcherStretchShapeEnabled = false
-                                        }
-                                        writeAppIconLauncherShapeFlags(
-                                            context = context,
-                                            stretchShape = if (enabled) false else launcherStretchShapeEnabled,
-                                            removeShape = enabled,
-                                            scalePercent = launcherShapeScalePercent
-                                        )
-                                    },
-                                    onSystemShapeScaleChange = { value ->
-                                        systemShapeScalePercent = value
-                                        writeAppIconSystemShapeFlags(
-                                            context = context,
-                                            stretchShape = systemStretchShapeEnabled,
-                                            removeShape = systemRemoveShapeEnabled,
-                                            scalePercent = value
-                                        )
-                                    },
-                                    onNotificationShapeScaleChange = { value ->
-                                        notificationShapeScalePercent = value
-                                        writeAppIconNotificationShapeFlags(
-                                            context = context,
-                                            stretchShape = notificationStretchShapeEnabled,
-                                            removeShape = notificationRemoveShapeEnabled,
-                                            scalePercent = value
-                                        )
-                                    },
-                                    onLauncherShapeScaleChange = { value ->
-                                        launcherShapeScalePercent = value
-                                        writeAppIconLauncherShapeFlags(
-                                            context = context,
-                                            stretchShape = launcherStretchShapeEnabled,
-                                            removeShape = launcherRemoveShapeEnabled,
-                                            scalePercent = value
-                                        )
-                                    },
-                                    onBackgroundTintModeChange = { mode ->
-                                        val updated = shapeTintFlags.copy(backgroundTintMode = normalizeTintMode(mode))
-                                        shapeTintFlags = updated
-                                        writeAppIconShapeTintFlags(context, updated)
-                                    },
-                                    onBackgroundTintColorChange = { color ->
-                                        val updated = shapeTintFlags.copy(
-                                            backgroundTintMode = APP_ICON_TINT_MODE_CUSTOM,
-                                            backgroundTintColor = color
-                                        )
-                                        shapeTintFlags = updated
-                                        writeAppIconShapeTintFlags(context, updated)
-                                    },
-                                    onForegroundTintModeChange = { mode ->
-                                        val updated = shapeTintFlags.copy(foregroundTintMode = normalizeTintMode(mode))
-                                        shapeTintFlags = updated
-                                        writeAppIconShapeTintFlags(context, updated)
-                                    },
-                                    onForegroundTintColorChange = { color ->
-                                        val updated = shapeTintFlags.copy(
-                                            foregroundTintMode = APP_ICON_TINT_MODE_CUSTOM,
-                                            foregroundTintColor = color
-                                        )
-                                        shapeTintFlags = updated
-                                        writeAppIconShapeTintFlags(context, updated)
-                                    },
-                                    onAdvancedExpandedChange = { advancedSettingsExpanded = it }
-                                )
+                                        },
+                                        onLauncherOnlyChange = { enabled ->
+                                            if (moduleEnabled) {
+                                                launcherOnlyEnabled = enabled
+                                                writeAppIconModuleFlags(
+                                                    context = context,
+                                                    moduleEnabled = true,
+                                                    launcherOnly = enabled
+                                                )
+                                            }
+                                        },
+                                        onSystemStretchShapeChange = { enabled ->
+                                            systemStretchShapeEnabled = enabled
+                                            if (enabled) {
+                                                systemRemoveShapeEnabled = false
+                                            }
+                                            writeAppIconSystemShapeFlags(
+                                                context = context,
+                                                stretchShape = enabled,
+                                                removeShape = if (enabled) false else systemRemoveShapeEnabled,
+                                                scalePercent = systemShapeScalePercent
+                                            )
+                                        },
+                                        onSystemRemoveShapeChange = { enabled ->
+                                            systemRemoveShapeEnabled = enabled
+                                            if (enabled) {
+                                                systemStretchShapeEnabled = false
+                                            }
+                                            writeAppIconSystemShapeFlags(
+                                                context = context,
+                                                stretchShape = if (enabled) false else systemStretchShapeEnabled,
+                                                removeShape = enabled,
+                                                scalePercent = systemShapeScalePercent
+                                            )
+                                        },
+                                        onNotificationStretchShapeChange = { enabled ->
+                                            notificationStretchShapeEnabled = enabled
+                                            if (enabled) {
+                                                notificationRemoveShapeEnabled = false
+                                            }
+                                            writeAppIconNotificationShapeFlags(
+                                                context = context,
+                                                stretchShape = enabled,
+                                                removeShape = if (enabled) false else notificationRemoveShapeEnabled,
+                                                scalePercent = notificationShapeScalePercent
+                                            )
+                                        },
+                                        onNotificationRemoveShapeChange = { enabled ->
+                                            notificationRemoveShapeEnabled = enabled
+                                            if (enabled) {
+                                                notificationStretchShapeEnabled = false
+                                            }
+                                            writeAppIconNotificationShapeFlags(
+                                                context = context,
+                                                stretchShape = if (enabled) false else notificationStretchShapeEnabled,
+                                                removeShape = enabled,
+                                                scalePercent = notificationShapeScalePercent
+                                            )
+                                        },
+                                        onLauncherStretchShapeChange = { enabled ->
+                                            launcherStretchShapeEnabled = enabled
+                                            if (enabled) {
+                                                launcherRemoveShapeEnabled = false
+                                            }
+                                            writeAppIconLauncherShapeFlags(
+                                                context = context,
+                                                stretchShape = enabled,
+                                                removeShape = if (enabled) false else launcherRemoveShapeEnabled,
+                                                scalePercent = launcherShapeScalePercent
+                                            )
+                                        },
+                                        onLauncherRemoveShapeChange = { enabled ->
+                                            launcherRemoveShapeEnabled = enabled
+                                            if (enabled) {
+                                                launcherStretchShapeEnabled = false
+                                            }
+                                            writeAppIconLauncherShapeFlags(
+                                                context = context,
+                                                stretchShape = if (enabled) false else launcherStretchShapeEnabled,
+                                                removeShape = enabled,
+                                                scalePercent = launcherShapeScalePercent
+                                            )
+                                        },
+                                        onSystemShapeScaleChange = { value ->
+                                            systemShapeScalePercent = value
+                                            writeAppIconSystemShapeFlags(
+                                                context = context,
+                                                stretchShape = systemStretchShapeEnabled,
+                                                removeShape = systemRemoveShapeEnabled,
+                                                scalePercent = value
+                                            )
+                                        },
+                                        onNotificationShapeScaleChange = { value ->
+                                            notificationShapeScalePercent = value
+                                            writeAppIconNotificationShapeFlags(
+                                                context = context,
+                                                stretchShape = notificationStretchShapeEnabled,
+                                                removeShape = notificationRemoveShapeEnabled,
+                                                scalePercent = value
+                                            )
+                                        },
+                                        onLauncherShapeScaleChange = { value ->
+                                            launcherShapeScalePercent = value
+                                            writeAppIconLauncherShapeFlags(
+                                                context = context,
+                                                stretchShape = launcherStretchShapeEnabled,
+                                                removeShape = launcherRemoveShapeEnabled,
+                                                scalePercent = value
+                                            )
+                                        },
+                                        onBackgroundTintModeChange = { mode ->
+                                            val updated = shapeTintFlags.copy(backgroundTintMode = normalizeTintMode(mode))
+                                            shapeTintFlags = updated
+                                            writeAppIconShapeTintFlags(context, updated)
+                                        },
+                                        onBackgroundTintColorChange = { color ->
+                                            val updated = shapeTintFlags.copy(
+                                                backgroundTintMode = APP_ICON_TINT_MODE_CUSTOM,
+                                                backgroundTintColor = color
+                                            )
+                                            shapeTintFlags = updated
+                                            writeAppIconShapeTintFlags(context, updated)
+                                        },
+                                        onForegroundTintModeChange = { mode ->
+                                            val updated = shapeTintFlags.copy(foregroundTintMode = normalizeTintMode(mode))
+                                            shapeTintFlags = updated
+                                            writeAppIconShapeTintFlags(context, updated)
+                                        },
+                                        onForegroundTintColorChange = { color ->
+                                            val updated = shapeTintFlags.copy(
+                                                foregroundTintMode = APP_ICON_TINT_MODE_CUSTOM,
+                                                foregroundTintColor = color
+                                            )
+                                            shapeTintFlags = updated
+                                            writeAppIconShapeTintFlags(context, updated)
+                                        },
+                                        onAdvancedExpandedChange = { advancedSettingsExpanded = it }
+                                    )
+                                }
                             }
 
                             if (injectedAddonEntries.isNotEmpty()) {
                                 item(key = "app_icons_addon_injected") {
                                     AppIconsAddonInjectedSettings(
-                                        entries = injectedAddonEntries
+                                        entries = injectedAddonEntries,
+                                        onIconShapeClick = {
+                                            context.startActivity(Intent(context, IconShapeActivity::class.java))
+                                        }
                                     )
                                 }
                             }
@@ -928,15 +933,23 @@ private fun LoadingCard() {
 
 @Composable
 private fun AppIconsAddonInjectedSettings(
-    entries: List<AddonMainEntry>
+    entries: List<AddonMainEntry>,
+    onIconShapeClick: () -> Unit
 ) {
     val context = LocalContext.current
     SettingsGroupCard(title = dynamicStringResource(R.string.app_icons_advanced_settings_title)) {
+        AppIconsNavigationRow(
+            title = dynamicStringResource(R.string.icon_shape_title),
+            summary = dynamicStringResource(R.string.icon_shape_summary),
+            onClick = onIconShapeClick
+        )
+        if (entries.isNotEmpty()) HorizontalDivider()
         entries.forEachIndexed { index, entry ->
             if (index > 0) HorizontalDivider()
             key(entry.rawId) {
                 AddonMainEntryRow(
                     entry = entry,
+                    iconContainerSize = 44.dp,
                     onClick = {
                         AddonPageActivity.start(
                             context = context,
@@ -1020,11 +1033,6 @@ private fun AppIconsModuleSwitch(
                     onCheckedChange = onLauncherOnlyChange
                 )
             }
-            AppIconsNavigationRow(
-                title = dynamicStringResource(R.string.icon_shape_title),
-                summary = dynamicStringResource(R.string.icon_shape_summary),
-                onClick = onIconShapeClick
-            )
             if (showHardcodedControls) {
                 ExpandableSectionHeaderContent(
                     title = dynamicStringResource(R.string.app_icons_advanced_settings_title),
@@ -1039,6 +1047,12 @@ private fun AppIconsModuleSwitch(
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
+                    AppIconsNavigationRow(
+                        title = dynamicStringResource(R.string.icon_shape_title),
+                        summary = dynamicStringResource(R.string.icon_shape_summary),
+                        onClick = onIconShapeClick
+                    )
+                    HorizontalDivider()
                     AppIconsSwitchRow(
                         title = dynamicStringResource(R.string.app_icons_system_stretch_shape_title),
                         summary = dynamicStringResource(R.string.app_icons_system_stretch_shape_summary),
@@ -1187,12 +1201,17 @@ private fun AppIconsNavigationRow(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            Icons.Rounded.Apps,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(24.dp)
-        )
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ) {
+            Icon(
+                Icons.Rounded.Apps,
+                contentDescription = null,
+                modifier = Modifier.padding(10.dp)
+            )
+        }
         Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(

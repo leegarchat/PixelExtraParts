@@ -113,7 +113,10 @@ import org.json.JSONTokener
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.ThermalManagerTileService
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
+import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
@@ -122,6 +125,7 @@ import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
@@ -129,6 +133,8 @@ import java.text.Normalizer
 import java.util.Locale
 
 private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
+private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
+private const val RESERVED_CUSTOM_SUFFIX = "_custom"
 private const val EXTRA_OPEN_CREATE_PROFILE = "org.pixel.customparts.extra.OPEN_THERMAL_PROFILE_CREATOR"
 
 private val FILE_NAME_TRANSLIT = mapOf(
@@ -298,6 +304,26 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         contentWindowInsets = WindowInsets.navigationBars,
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.thermal_manager_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                ThermalManagerTileService::class.java,
+                                R.string.thermal_manager_title,
+                                R.drawable.ic_thermal_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -2346,7 +2372,11 @@ private class ThermalConfigStore(private val context: Context) {
     fun listSavedConfigs(): List<SavedThermalConfig> {
         val dir = ensureConfigDir()
         return dir.listFiles { file -> file.isFile && file.name.endsWith(".json", ignoreCase = true) }
-            ?.filterNot { it.name == ThermalProfileController.MAP_FILE_NAME || it.name == ThermalProfileController.PROFILE_METADATA_FILE_NAME }
+            ?.filterNot {
+                it.name == ThermalProfileController.MAP_FILE_NAME ||
+                    it.name == ThermalProfileController.PROFILE_METADATA_FILE_NAME ||
+                    it.name.equals(STOCK_THERMAL_CONFIG_FILE_NAME, ignoreCase = true)
+            }
             ?.sortedByDescending { it.lastModified() }
             ?.map { file ->
                 val metadata = ThermalProfileController.profileMetadata(file.name)
@@ -2368,12 +2398,13 @@ private class ThermalConfigStore(private val context: Context) {
     }
 
     fun saveConfig(fileName: String, json: String, displayName: String): File {
-        if (ThermalProfileController.isVendorPreset(fileName)) {
+        val safeFileName = avoidReservedCustomConfigName(fileName)
+        if (ThermalProfileController.isVendorPreset(safeFileName)) {
             error(context.getString(R.string.thermal_manager_vendor_read_only))
         }
 
         val dir = ensureConfigDir()
-        val file = File(dir, fileName)
+        val file = File(dir, safeFileName)
         writeTextAtomically(file, json)
         file.setReadable(true, false)
         file.setWritable(true, true)
@@ -2940,7 +2971,19 @@ private fun sanitizeConfigName(rawName: String): String? {
         .trim('_', '.', '-')
 
     if (cleaned.isBlank() || cleaned == "." || cleaned == "..") return null
-    return "$cleaned.json"
+    return avoidReservedCustomConfigName("$cleaned.json")
+}
+
+private fun avoidReservedCustomConfigName(fileName: String): String {
+    val trimmed = fileName.trim()
+    val normalizedFileName = if (trimmed.endsWith(".json", ignoreCase = true)) trimmed else "$trimmed.json"
+    val baseName = normalizedFileName.substringBeforeLast(".")
+    val stockBaseName = STOCK_THERMAL_CONFIG_FILE_NAME.removeSuffix(".json")
+    return if (baseName.equals(stockBaseName, ignoreCase = true)) {
+        "$baseName$RESERVED_CUSTOM_SUFFIX.json"
+    } else {
+        normalizedFileName
+    }
 }
 
 private fun transliterateForFileName(rawName: String): String {

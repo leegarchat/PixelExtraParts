@@ -4,7 +4,7 @@
     "name": "Ambient Extend",
     "author": "LeeGarChat",
     "description": "AOD timeout, ambient Smart Pixels, and extra Doze dimming for SystemUI.",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "targetPackages": [
         "com.android.systemui"
     ],
@@ -24,8 +24,8 @@
         {
             "id": "ambient-extend",
             "title": "Ambient Extend",
-            "subtitle": "AOD timeout, Smart Pixels and extra dimming.",
-            "icon": "BrightnessHigh",
+            "subtitle": "AOD blackout, pixel mask, and low-light doze dimming.",
+            "icon": "Rounded.DarkMode",
             "iconType": "app",
             "iconShape": "circle",
             "iconColor": "#8BDDED",
@@ -34,127 +34,98 @@
             "priority": 85,
             "settings": [
                 {
-                    "key": "demo_divider_solid",
-                    "type": "divider",
-                    "thickness": 6
+                    "key": "ambient_extend_hook_timeout_enabled",
+                    "title": "Enable blackout",
+                    "description": "Hide the AOD surface after the delay instead of leaving it fully lit.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "category": "aod_blackout",
+                    "categoryTitle": "AOD blackout",
+                    "categoryDescription": "Turn the always-on display off after a quiet delay."
                 },
                 {
-                    "key": "ambient_timeout_group",
-                    "title": "AOD blackout",
-                    "description": "Turns off AOD after the configured delay.",
-                    "type": "group",
-                    "mode": "inline",
-                    "icon": "BrightnessHigh",
-                    "iconType": "app",
-                    "iconShape": "circle",
-                    "iconSize": 20,
-                    "settings": [
-                        {
-                            "key": "demo_divider_dashed",
-                            "type": "dashed_line",
-                            "thickness": 1
-                        },
-                        {
-                            "key": "ambient_extend_hook_timeout_enabled",
-                            "title": "Enable blackout",
-                            "description": "Dims AOD after the selected delay.",
-                            "type": "toggle",
-                            "provider": "global",
-                            "default": false
-                        },
-                        {
-                            "key": "ambient_extend_hook_timeout_seconds",
-                            "title": "Delay",
-                            "type": "int",
-                            "provider": "global",
-                            "default": 60,
-                            "min": 1,
-                            "max": 600,
-                            "step": 1,
-                            "unit": "s"
-                        },
-                        {
-                            "key": "ambient_extend_hook_timeout_fade_ms",
-                            "title": "Fade duration",
-                            "type": "int",
-                            "provider": "global",
-                            "default": 1200,
-                            "min": 0,
-                            "max": 10000,
-                            "step": 50,
-                            "unit": "ms"
-                        }
-                    ]
+                    "key": "ambient_extend_hook_timeout_seconds",
+                    "title": "Delay",
+                    "description": "Seconds to keep AOD visible before blackout starts.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 60,
+                    "min": 1,
+                    "max": 600,
+                    "step": 1,
+                    "unit": "s",
+                    "category": "aod_blackout"
                 },
                 {
-                    "key": "ambient_smart_pixels_group",
-                    "title": "Smart Pixels",
-                    "description": "Reduces the number of active pixels in doze.",
-                    "type": "group",
-                    "mode": "inline",
-                    "icon": "Apps",
-                    "iconType": "app",
-                    "iconShape": "circle",
-                    "iconSize": 20,
-                    "settings": [
-                        {
-                            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-                            "title": "Enable Smart Pixels",
-                            "type": "toggle",
-                            "provider": "global",
-                            "default": false
-                        },
-                        {
-                            "key": "ambient_extend_hook_smart_pixels_aod_percent",
-                            "title": "Disabled pixels",
-                            "type": "int",
-                            "provider": "global",
-                            "default": 25,
-                            "min": 10,
-                            "max": 100,
-                            "step": 1,
-                            "unit": "%"
-                        },
-                        {
-                            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-                            "title": "Mask shifting",
-                            "description": "Periodically shifts the pixel mask.",
-                            "type": "toggle",
-                            "provider": "global",
-                            "default": false
-                        }
-                    ]
+                    "key": "ambient_extend_hook_timeout_fade_ms",
+                    "title": "Fade duration",
+                    "description": "Length of the transition into blackout.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 1200,
+                    "min": 0,
+                    "max": 10000,
+                    "step": 50,
+                    "unit": "ms",
+                    "category": "aod_blackout"
                 },
                 {
-                    "key": "ambient_dimming_group",
-                    "title": "Doze dimming",
-                    "description": "Extra dimming layer over ambient.",
-                    "type": "group",
-                    "mode": "inline",
-                    "icon": "Tune",
-                    "iconType": "app",
-                    "iconShape": "circle",
-                    "iconSize": 20,
-                    "settings": [
-                        {
-                            "key": "ambient_extend_hook_dim_enabled",
-                            "title": "Enable dimming",
-                            "type": "toggle",
-                            "provider": "global",
-                            "default": false
-                        },
-                        {
-                            "key": "ambient_extend_hook_dim_percent",
-                            "title": "Dimming strength",
-                            "type": "int",
-                            "provider": "global",
-                            "default": 30,
-                            "min": 0,
-                            "max": 100,
-                            "step": 1,
-                            "unit": "%"
-                        }
-                    ]
+                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                    "title": "Enable Smart Pixels",
+                    "description": "Apply the pixel mask while the device is in doze.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "category": "smart_pixels",
+                    "categoryTitle": "Smart Pixels",
+                    "categoryDescription": "Reduce active pixels while keeping the ambient layout readable."
+                },
+                {
+                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                    "title": "Disabled pixels",
+                    "description": "Share of pixels masked out on the ambient surface.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 25,
+                    "min": 10,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "category": "smart_pixels"
+                },
+                {
+                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                    "title": "Mask shifting",
+                    "description": "Move the mask pattern over time to avoid static hot spots.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "category": "smart_pixels"
+                },
+                {
+                    "key": "ambient_extend_hook_dim_enabled",
+                    "title": "Enable dimming",
+                    "description": "Apply the additional dim layer while dozing.",
+                    "type": "toggle",
+                    "provider": "global",
+                    "default": false,
+                    "category": "doze_dimming",
+                    "categoryTitle": "Doze dimming",
+                    "categoryDescription": "Add a soft darkness layer over ambient content."
+                },
+                {
+                    "key": "ambient_extend_hook_dim_percent",
+                    "title": "Dimming strength",
+                    "description": "Opacity of the extra dim layer.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 30,
+                    "min": 0,
+                    "max": 100,
+                    "step": 1,
+                    "unit": "%",
+                    "category": "doze_dimming"
                 }
             ]
         }
@@ -169,69 +140,61 @@
                 {
                     "id": "ambient-extend",
                     "title": "Ambient Extend",
-                    "subtitle": "AOD timeout, Smart Pixels и дополнительное затемнение.",
+                    "subtitle": "Таймер AOD, маска пикселей и затемнение Doze.",
                     "group": "systemui",
                     "settings": [
                         {
-                            "key": "demo_divider_solid"
+                            "key": "ambient_overview_note",
+                            "title": "Поведение Ambient",
+                            "description": "Настрой время видимости AOD, активные пиксели и глубину затемнения doze."
                         },
                         {
-                            "key": "ambient_timeout_group",
-                            "title": "AOD blackout",
-                            "description": "Гасит AOD после заданной задержки.",
-                            "settings": [
-                                {
-                                    "key": "demo_divider_dashed"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_enabled",
-                                    "title": "Включить blackout",
-                                    "description": "Затемняет AOD после выбранной задержки."
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_seconds",
-                                    "title": "Задержка"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_fade_ms",
-                                    "title": "Плавность"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_enabled",
+                            "title": "Включить гашение AOD",
+                            "description": "Скрывает AOD после выбранной задержки.",
+                            "categoryTitle": "Гашение AOD",
+                            "categoryDescription": "Выключает поверхность AOD после заданной задержки.",
+                            "category": "ambient_timeout_group"
                         },
                         {
-                            "key": "ambient_smart_pixels_group",
-                            "title": "Smart Pixels",
-                            "description": "Снижает число активных пикселей в doze.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-                                    "title": "Включить Smart Pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
-                                    "title": "Отключенные пиксели"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-                                    "title": "Сдвиг маски",
-                                    "description": "Периодически смещает маску пикселей."
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_seconds",
+                            "title": "Задержка",
+                            "category": "ambient_timeout_group"
                         },
                         {
-                            "key": "ambient_dimming_group",
-                            "title": "Doze dimming",
-                            "description": "Дополнительный слой затемнения поверх ambient.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_dim_enabled",
-                                    "title": "Включить затемнение"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_dim_percent",
-                                    "title": "Сила затемнения"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_fade_ms",
+                            "title": "Плавность",
+                            "category": "ambient_timeout_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                            "title": "Включить Smart Pixels",
+                            "categoryTitle": "Smart Pixels",
+                            "categoryDescription": "Снижает число активных пикселей в doze.",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                            "title": "Отключенные пиксели",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                            "title": "Сдвиг маски",
+                            "description": "Периодически смещает маску пикселей.",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_enabled",
+                            "title": "Включить затемнение",
+                            "categoryTitle": "Затемнение Doze",
+                            "categoryDescription": "Дополнительный слой затемнения поверх ambient.",
+                            "category": "ambient_dimming_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_percent",
+                            "title": "Сила затемнения",
+                            "category": "ambient_dimming_group"
                         }
                     ]
                 }
@@ -250,65 +213,57 @@
                     "group": "systemui",
                     "settings": [
                         {
-                            "key": "demo_divider_solid"
+                            "key": "ambient_overview_note",
+                            "title": "Ambient behavior",
+                            "description": "Tune how long AOD stays visible, how many pixels stay active, and how dark doze becomes."
                         },
                         {
-                            "key": "ambient_timeout_group",
-                            "title": "AOD blackout",
-                            "description": "Turns off AOD after the configured delay.",
-                            "settings": [
-                                {
-                                    "key": "demo_divider_dashed"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_enabled",
-                                    "title": "Enable blackout",
-                                    "description": "Dims AOD after the selected delay."
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_seconds",
-                                    "title": "Delay"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_fade_ms",
-                                    "title": "Fade duration"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_enabled",
+                            "title": "Enable blackout",
+                            "description": "Dims AOD after the selected delay.",
+                            "category": "ambient_timeout_group",
+                            "categoryTitle": "AOD blackout",
+                            "categoryDescription": "Turns off AOD after the configured delay."
                         },
                         {
-                            "key": "ambient_smart_pixels_group",
-                            "title": "Smart Pixels",
-                            "description": "Reduces the number of active pixels in doze.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-                                    "title": "Enable Smart Pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
-                                    "title": "Disabled pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-                                    "title": "Mask shifting",
-                                    "description": "Periodically shifts the pixel mask."
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_seconds",
+                            "title": "Delay",
+                            "category": "ambient_timeout_group"
                         },
                         {
-                            "key": "ambient_dimming_group",
-                            "title": "Doze dimming",
-                            "description": "Extra dimming layer over ambient.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_dim_enabled",
-                                    "title": "Enable dimming"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_dim_percent",
-                                    "title": "Dimming strength"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_fade_ms",
+                            "title": "Fade duration",
+                            "category": "ambient_timeout_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                            "title": "Enable Smart Pixels",
+                            "category": "ambient_smart_pixels_group",
+                            "categoryTitle": "Smart Pixels",
+                            "categoryDescription": "Reduces the number of active pixels in doze."
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                            "title": "Disabled pixels",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                            "title": "Mask shifting",
+                            "description": "Periodically shifts the pixel mask.",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_enabled",
+                            "title": "Enable dimming",
+                            "category": "ambient_dimming_group",
+                            "categoryTitle": "Doze dimming",
+                            "categoryDescription": "Extra dimming layer over ambient."
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_percent",
+                            "title": "Dimming strength",
+                            "category": "ambient_dimming_group"
                         }
                     ]
                 }
@@ -327,65 +282,57 @@
                     "group": "systemui",
                     "settings": [
                         {
-                            "key": "demo_divider_solid"
+                            "key": "ambient_overview_note",
+                            "title": "Comportement Ambient",
+                            "description": "Ajuste la durée de visibilité AOD, les pixels actifs et l'assombrissement doze."
                         },
                         {
-                            "key": "ambient_timeout_group",
-                            "title": "AOD blackout",
-                            "description": "Turns off AOD after the configured delay.",
-                            "settings": [
-                                {
-                                    "key": "demo_divider_dashed"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_enabled",
-                                    "title": "Enable blackout",
-                                    "description": "Dims AOD after the selected delay."
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_seconds",
-                                    "title": "Delay"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_fade_ms",
-                                    "title": "Fade duration"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_enabled",
+                            "title": "Enable blackout",
+                            "description": "Dims AOD after the selected delay.",
+                            "category": "ambient_timeout_group",
+                            "categoryTitle": "AOD blackout",
+                            "categoryDescription": "Turns off AOD after the configured delay."
                         },
                         {
-                            "key": "ambient_smart_pixels_group",
-                            "title": "Smart Pixels",
-                            "description": "Reduces the number of active pixels in doze.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-                                    "title": "Enable Smart Pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
-                                    "title": "Disabled pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-                                    "title": "Mask shifting",
-                                    "description": "Periodically shifts the pixel mask."
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_seconds",
+                            "title": "Delay",
+                            "category": "ambient_timeout_group"
                         },
                         {
-                            "key": "ambient_dimming_group",
-                            "title": "Doze dimming",
-                            "description": "Extra dimming layer over ambient.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_dim_enabled",
-                                    "title": "Enable dimming"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_dim_percent",
-                                    "title": "Dimming strength"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_fade_ms",
+                            "title": "Fade duration",
+                            "category": "ambient_timeout_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                            "title": "Enable Smart Pixels",
+                            "category": "ambient_smart_pixels_group",
+                            "categoryTitle": "Smart Pixels",
+                            "categoryDescription": "Reduces the number of active pixels in doze."
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                            "title": "Disabled pixels",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                            "title": "Mask shifting",
+                            "description": "Periodically shifts the pixel mask.",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_enabled",
+                            "title": "Enable dimming",
+                            "category": "ambient_dimming_group",
+                            "categoryTitle": "Doze dimming",
+                            "categoryDescription": "Extra dimming layer over ambient."
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_percent",
+                            "title": "Dimming strength",
+                            "category": "ambient_dimming_group"
                         }
                     ]
                 }
@@ -404,65 +351,57 @@
                     "group": "systemui",
                     "settings": [
                         {
-                            "key": "demo_divider_solid"
+                            "key": "ambient_overview_note",
+                            "title": "Поведінка Ambient",
+                            "description": "Налаштуй час видимості AOD, активні пікселі та глибину затемнення doze."
                         },
                         {
-                            "key": "ambient_timeout_group",
-                            "title": "AOD blackout",
-                            "description": "Turns off AOD after the configured delay.",
-                            "settings": [
-                                {
-                                    "key": "demo_divider_dashed"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_enabled",
-                                    "title": "Enable blackout",
-                                    "description": "Dims AOD after the selected delay."
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_seconds",
-                                    "title": "Delay"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_timeout_fade_ms",
-                                    "title": "Fade duration"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_enabled",
+                            "title": "Enable blackout",
+                            "description": "Dims AOD after the selected delay.",
+                            "category": "ambient_timeout_group",
+                            "categoryTitle": "AOD blackout",
+                            "categoryDescription": "Turns off AOD after the configured delay."
                         },
                         {
-                            "key": "ambient_smart_pixels_group",
-                            "title": "Smart Pixels",
-                            "description": "Reduces the number of active pixels in doze.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_enabled",
-                                    "title": "Enable Smart Pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_aod_percent",
-                                    "title": "Disabled pixels"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_smart_pixels_shift_enabled",
-                                    "title": "Mask shifting",
-                                    "description": "Periodically shifts the pixel mask."
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_seconds",
+                            "title": "Delay",
+                            "category": "ambient_timeout_group"
                         },
                         {
-                            "key": "ambient_dimming_group",
-                            "title": "Doze dimming",
-                            "description": "Extra dimming layer over ambient.",
-                            "settings": [
-                                {
-                                    "key": "ambient_extend_hook_dim_enabled",
-                                    "title": "Enable dimming"
-                                },
-                                {
-                                    "key": "ambient_extend_hook_dim_percent",
-                                    "title": "Dimming strength"
-                                }
-                            ]
+                            "key": "ambient_extend_hook_timeout_fade_ms",
+                            "title": "Fade duration",
+                            "category": "ambient_timeout_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_enabled",
+                            "title": "Enable Smart Pixels",
+                            "category": "ambient_smart_pixels_group",
+                            "categoryTitle": "Smart Pixels",
+                            "categoryDescription": "Reduces the number of active pixels in doze."
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_aod_percent",
+                            "title": "Disabled pixels",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_smart_pixels_shift_enabled",
+                            "title": "Mask shifting",
+                            "description": "Periodically shifts the pixel mask.",
+                            "category": "ambient_smart_pixels_group"
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_enabled",
+                            "title": "Enable dimming",
+                            "category": "ambient_dimming_group",
+                            "categoryTitle": "Doze dimming",
+                            "categoryDescription": "Extra dimming layer over ambient."
+                        },
+                        {
+                            "key": "ambient_extend_hook_dim_percent",
+                            "title": "Dimming strength",
+                            "category": "ambient_dimming_group"
                         }
                     ]
                 }

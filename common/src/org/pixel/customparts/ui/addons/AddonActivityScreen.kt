@@ -30,6 +30,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,7 +60,8 @@ import org.pixel.customparts.utils.dynamicStringResource
  */
 private data class PageStackEntry(
     val entry: AddonMainEntry?,   // null = root list of top-level entries
-    val title: String
+    val title: String,
+    val depth: Int
 )
 
 // =====================================================================
@@ -98,7 +100,7 @@ fun AddonPageScreen(
     }
 
     // Back-stack starts at root, but direct page launches replace it with the real entry path.
-    val backStack = remember(addonId, pageId, includeTargetActivityEntries) { mutableStateListOf(PageStackEntry(entry = null, title = addonId)) }
+    val backStack = remember(addonId, pageId, includeTargetActivityEntries) { mutableStateListOf(PageStackEntry(entry = null, title = addonId, depth = 0)) }
     val current = backStack.last()
 
     // If a specific pageId was requested, navigate to it once model is loaded (without animation)
@@ -109,7 +111,7 @@ fun AddonPageScreen(
             val path = findEntryPathByLeafId(m.entries, pageId)
             if (path != null) {
                 backStack.clear()
-                backStack.addAll(path.map { PageStackEntry(entry = it, title = it.title) })
+                backStack.addAll(path.mapIndexed { index, entry -> PageStackEntry(entry = entry, title = entry.title, depth = index + 1) })
             }
             initialNavigationDone = true
         }
@@ -132,7 +134,6 @@ fun AddonPageScreen(
     }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         floatingActionButton = { RebootBubble() },
         topBar = {
@@ -180,19 +181,10 @@ fun AddonPageScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                AnimatedContent(
+                AddonPageTransitionHost(
                     targetState = current,
-                    transitionSpec = {
-                        val forward = targetState.entry != null || initialState.entry != null
-                        if (forward) {
-                            (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
-                                    (slideOutHorizontally { -it / 3 } + fadeOut())
-                        } else {
-                            (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
-                                    (slideOutHorizontally { it / 3 } + fadeOut())
-                        }
-                    },
-                    label = "pageAnim"
+                    modifier = Modifier.fillMaxSize(),
+                    isForward = { initialState, targetState -> targetState.depth > initialState.depth }
                 ) { page ->
                     val entries = if (page.entry == null) {
                         model?.entries ?: emptyList()
@@ -204,10 +196,11 @@ fun AddonPageScreen(
                         entries = entries,
                         currentEntry = page.entry,
                         lazyListState = lazyListState,
+                        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                         innerPadding = innerPadding,
                         blurState = blurState,
                         onNavigate = { child ->
-                            backStack.add(PageStackEntry(entry = child, title = child.title))
+                            backStack.add(PageStackEntry(entry = child, title = child.title, depth = page.depth + 1))
                         }
                     )
                 }
@@ -232,6 +225,7 @@ private fun AddonPageContent(
     entries: List<AddonMainEntry>,
     currentEntry: AddonMainEntry?,
     lazyListState: androidx.compose.foundation.lazy.LazyListState,
+    modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     blurState: GraphicsLayerRecordingState,
     onNavigate: (AddonMainEntry) -> Unit
@@ -242,7 +236,7 @@ private fun AddonPageContent(
 
     LazyColumn(
         state = lazyListState,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .recordLayer(blurState)
             .background(MaterialTheme.colorScheme.surfaceContainer),
@@ -258,67 +252,34 @@ private fun AddonPageContent(
         if (currentEntry != null && currentEntry.settings.isNotEmpty()) {
             item(key = "settings_card") {
                 val allSettings = remember(currentEntry.settings) { flattenSettings(currentEntry.settings) }
-                SettingsGroupCard(
-                    title = currentEntry.title.ifBlank { dynamicStringResource(R.string.addon_settings_title) },
-                    titleStyle = MaterialTheme.typography.titleMedium.withAddonTextSize(currentEntry.titleSizeSp)
-                ) {
-                    if (currentEntry.subtitle.isNotBlank()) {
-                        Text(
-                            text = currentEntry.subtitle,
-                            style = MaterialTheme.typography.bodySmall.withAddonTextSize(currentEntry.descriptionSizeSp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                        )
-                    }
-                    for (setting in currentEntry.settings) {
-                        key(setting.key) {
-                            val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                            } else {
-                                Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                            }
-                            AddonSettingControl(
-                                setting = setting,
-                                addon = AddonUiModel(
-                                    id = currentEntry.addonId,
-                                    entryClass = "",
-                                    name = currentEntry.title,
-                                    author = "",
-                                    description = "",
-                                    version = "",
-                                    jarPath = currentEntry.addonJarPath,
-                                    defaultTargets = emptySet(),
-                                    enabled = true,
-                                    scopeMode = 0,
-                                    customTargets = emptySet(),
-                                    isSystem = currentEntry.isSystemAddon
-                                ),
-                                modifier = settingModifier,
+                val categories = remember(currentEntry.settings) { buildAddonSettingCategories(currentEntry.settings) }
+                val addonUiModel = remember(currentEntry) {
+                    AddonUiModel(
+                        id = currentEntry.addonId,
+                        entryClass = "",
+                        name = currentEntry.title,
+                        author = "",
+                        description = "",
+                        version = "",
+                        jarPath = currentEntry.addonJarPath,
+                        defaultTargets = emptySet(),
+                        enabled = true,
+                        scopeMode = 0,
+                        customTargets = emptySet(),
+                        isSystem = currentEntry.isSystemAddon
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    categories.forEach { category ->
+                        key("category_${category.key}") {
+                            AddonPageSettingsCategoryCard(
+                                category = category,
+                                addon = addonUiModel,
                                 allSettings = allSettings,
                                 dependencyRevision = settingsRevision,
                                 onSettingChanged = { changedSetting, boolVal ->
                                     if (boolVal == true) {
-                                        applyExclusiveSettingLogic(
-                                            context,
-                                            AddonUiModel(
-                                                id = currentEntry.addonId,
-                                                entryClass = "",
-                                                name = currentEntry.title,
-                                                author = "",
-                                                description = "",
-                                                version = "",
-                                                jarPath = currentEntry.addonJarPath,
-                                                defaultTargets = emptySet(),
-                                                enabled = true,
-                                                scopeMode = 0,
-                                                customTargets = emptySet(),
-                                                isSystem = currentEntry.isSystemAddon
-                                            ),
-                                            changedSetting,
-                                            allSettings
-                                        )
+                                        applyExclusiveSettingLogic(context, addonUiModel, changedSetting, allSettings)
                                     }
                                     if (changedSetting.key.startsWith("pixelparts_app_icons_") || changedSetting.key.startsWith("pixelparts_icon_shape_")) {
                                         IconPackManager.requestIconReload(context)
@@ -340,7 +301,7 @@ private fun AddonPageContent(
             // Group children by their group field
             val grouped = entries.groupBy { it.group }
             // Known groups with fixed order; custom groups come after, sorted by max priority within group
-            val knownGroupOrder = listOf("launcher", "gesture", "system", "network")
+            val knownGroupOrder = listOf("launcher", "gesture", "system", "systemui", "camera", "network")
             val sortedGroups = grouped.keys.sortedWith(
                 compareBy<String> {
                     val knownIdx = knownGroupOrder.indexOf(it)
@@ -350,7 +311,6 @@ private fun AddonPageContent(
                     grouped[groupKey]?.maxOfOrNull { it.priority } ?: 0
                 }
             )
-
             for (group in sortedGroups) {
                 val groupEntries = grouped[group]
                     ?.sortedWith(compareByDescending<AddonMainEntry> { it.priority }.thenBy { it.title })
@@ -362,6 +322,8 @@ private fun AddonPageContent(
                         "gesture" -> dynamicStringResource(R.string.main_header_gesture)
                         "network" -> dynamicStringResource(R.string.main_header_network)
                         "system" -> dynamicStringResource(R.string.main_header_system)
+                        "systemui", "system_ui" -> dynamicStringResource(R.string.main_header_systemui)
+                        "camera" -> dynamicStringResource(R.string.main_header_camera)
                         else -> group.replaceFirstChar { it.uppercase() }
                     }
                     SettingsGroupCard(title = groupTitle) {
@@ -390,6 +352,60 @@ private fun AddonPageContent(
                         dynamicStringResource(R.string.addon_settings_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddonPageSettingsCategoryCard(
+    category: AddonSettingCategory,
+    addon: AddonUiModel,
+    allSettings: List<AddonSettingDef>,
+    dependencyRevision: Int,
+    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+            if (category.title.isNotBlank()) {
+                Text(
+                    text = category.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+            if (category.description.isNotBlank()) {
+                Text(
+                    text = category.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                )
+            }
+            category.settings.forEach { setting ->
+                key(setting.key) {
+                    val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    } else {
+                        Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                    }
+                    AddonSettingControl(
+                        setting = setting,
+                        addon = addon,
+                        modifier = settingModifier,
+                        allSettings = allSettings,
+                        dependencyRevision = dependencyRevision,
+                        onSettingChanged = onSettingChanged
                     )
                 }
             }
@@ -479,7 +495,8 @@ internal fun AddonMainEntryIcon(
 fun AddonMainEntryRow(
     entry: AddonMainEntry,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconContainerSize: Dp = 36.dp
 ) {
     Row(
         modifier = modifier
@@ -488,7 +505,7 @@ fun AddonMainEntryRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AddonMainEntryIcon(entry = entry)
+        AddonMainEntryIcon(entry = entry, containerSize = iconContainerSize)
 
         Column(
             modifier = Modifier
@@ -499,14 +516,16 @@ fun AddonMainEntryRow(
                 text = entry.title,
                 style = MaterialTheme.typography.titleMedium.withAddonTextSize(entry.titleSizeSp),
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
             if (entry.subtitle.isNotEmpty()) {
                 Text(
                     text = entry.subtitle,
                     style = MaterialTheme.typography.bodyMedium.withAddonTextSize(entry.descriptionSizeSp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

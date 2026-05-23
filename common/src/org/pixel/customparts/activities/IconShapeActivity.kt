@@ -99,7 +99,6 @@ import org.pixel.customparts.icons.IconShapeOverlayManager
 import org.pixel.customparts.icons.IconShapeOverlayManager.ShapeOption
 import org.pixel.customparts.icons.IconShapeOverlayManager.ShapeSource
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
@@ -118,6 +117,7 @@ private const val DEFAULT_CUSTOM_SHAPE_WAVE = 0.12f
 private const val DEFAULT_CUSTOM_SHAPE_ROTATION = 0f
 private const val DEFAULT_CUSTOM_SHAPE_SCALE = 1f
 private const val DEFAULT_CUSTOM_SHAPE_OFFSET = 0f
+private const val DEFAULT_CUSTOM_SHAPE_NAME = "PixelParts custom"
 
 class IconShapeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -151,13 +151,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     var options by remember { mutableStateOf<List<ShapeOption>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isBusy by remember { mutableStateOf(false) }
-    val savedCustomName = remember {
-        SettingsCompat.getString(context, SettingsKeys.ICON_SHAPE_CUSTOM_NAME, "PixelParts custom") ?: "PixelParts custom"
-    }
-    val savedCustomPath = remember {
-        SettingsCompat.getString(context, SettingsKeys.ICON_SHAPE_CUSTOM_PATH, "") ?: ""
-    }
-    var customName by rememberSaveable { mutableStateOf(savedCustomName) }
+    var customName by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_NAME) }
     var mode by rememberSaveable { mutableIntStateOf(IconShapeOverlayManager.MODE_SUPERELLIPSE) }
     var sides by rememberSaveable { mutableIntStateOf(DEFAULT_CUSTOM_SHAPE_SIDES) }
     var roundness by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) }
@@ -168,23 +162,8 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     var scaleY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
     var offsetX by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
     var offsetY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
-    var importedPath by rememberSaveable { mutableStateOf(savedCustomPath) }
+    var importedPath by rememberSaveable { mutableStateOf("") }
     var resultLog by remember { mutableStateOf<List<String>>(emptyList()) }
-    var workspaceMatchAllApps by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS, false))
-    }
-    var ignoreCustomSettingsShape by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_IGNORE_CUSTOM_SETTINGS, false))
-    }
-    var allAppsFollowWorkspace by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE, false))
-    }
-    var allAppsThemedIcons by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_ALL_APPS_THEMED_ICONS, false))
-    }
-    var allAppsSuggestionsThemedIcons by remember {
-        mutableStateOf(SettingsCompat.isEnabled(context, SettingsKeys.ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS, false))
-    }
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
     var infoDialogText by remember { mutableStateOf<String?>(null) }
     var infoDialogVideo by remember { mutableStateOf<String?>(null) }
@@ -241,8 +220,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             }
             resultLog = result.log + listOfNotNull(result.error)
             if (result.success) {
-                SettingsCompat.putString(context, SettingsKeys.ICON_SHAPE_CUSTOM_NAME, customName)
-                SettingsCompat.putString(context, SettingsKeys.ICON_SHAPE_CUSTOM_PATH, pathData)
                 IconPackManager.requestIconReload(context)
             }
             showApplyResult(result.success)
@@ -269,11 +246,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
         }
     }
 
-    fun setLauncherFlag(key: String, enabled: Boolean) {
-        SettingsCompat.putInt(context, key, if (enabled) 1 else 0)
-        IconPackManager.requestIconReload(context)
-    }
-
     val showInfoDialog: (String, String, String?) -> Unit = { title, text, video ->
         infoDialogTitle = title
         infoDialogText = text
@@ -287,7 +259,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 if (!IconShapeOverlayManager.isValidPath(importedPath)) {
                     Toast.makeText(context, context.getString(R.string.icon_shape_custom_invalid), Toast.LENGTH_SHORT).show()
                 } else {
-                    SettingsCompat.putString(context, SettingsKeys.ICON_SHAPE_CUSTOM_PATH, importedPath)
                     Toast.makeText(context, context.getString(R.string.icon_shape_import_success), Toast.LENGTH_SHORT).show()
                 }
             }
@@ -387,79 +358,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                             onApplyGenerated = { applyCustom(generatedPath) },
                             onPickFile = { importLauncher.launch("*/*") },
                             onApplyImported = { applyCustom(importedPath) }
-                        )
-                    }
-                }
-
-                item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.icon_shape_launcher_section)) {
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_workspace_match_all_apps_title),
-                            checked = workspaceMatchAllApps,
-                            onCheckedChange = { checked ->
-                                workspaceMatchAllApps = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS, checked)
-                                if (checked && allAppsFollowWorkspace) {
-                                    allAppsFollowWorkspace = false
-                                    setLauncherFlag(SettingsKeys.ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE, false)
-                                }
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_workspace_match_all_apps_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_workspace_match_all_apps_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_ignore_custom_settings_title),
-                            checked = ignoreCustomSettingsShape,
-                            onCheckedChange = { checked ->
-                                ignoreCustomSettingsShape = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_IGNORE_CUSTOM_SETTINGS, checked)
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_ignore_custom_settings_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_ignore_custom_settings_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_all_apps_follow_workspace_title),
-                            checked = allAppsFollowWorkspace,
-                            onCheckedChange = { checked ->
-                                allAppsFollowWorkspace = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_ALL_APPS_FOLLOW_WORKSPACE, checked)
-                                if (checked && workspaceMatchAllApps) {
-                                    workspaceMatchAllApps = false
-                                    setLauncherFlag(SettingsKeys.ICON_SHAPE_WORKSPACE_MATCH_ALL_APPS, false)
-                                }
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_all_apps_follow_workspace_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_all_apps_follow_workspace_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_all_apps_themed_icons_title),
-                            checked = allAppsThemedIcons,
-                            onCheckedChange = { checked ->
-                                allAppsThemedIcons = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_ALL_APPS_THEMED_ICONS, checked)
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_all_apps_themed_icons_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_all_apps_themed_icons_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
-                        )
-                        GenericSwitchRow(
-                            title = dynamicStringResource(R.string.icon_shape_all_apps_suggestions_themed_icons_title),
-                            checked = allAppsSuggestionsThemedIcons,
-                            onCheckedChange = { checked ->
-                                allAppsSuggestionsThemedIcons = checked
-                                setLauncherFlag(SettingsKeys.ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS, checked)
-                            },
-                            summary = dynamicStringResource(R.string.icon_shape_all_apps_suggestions_themed_icons_summary),
-                            infoText = dynamicStringResource(R.string.icon_shape_all_apps_suggestions_themed_icons_info),
-                            enabled = !isBusy,
-                            onInfoClick = showInfoDialog
                         )
                     }
                 }

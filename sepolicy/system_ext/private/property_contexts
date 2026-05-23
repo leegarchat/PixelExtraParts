@@ -1,7 +1,5 @@
 persist.sys.pixelparts.soc             u:object_r:system_pixelparts_prop:s0
 persist.sys.pixelparts.battery         u:object_r:system_pixelparts_prop:s0
 persist.sys.pixelparts.thermal_config  u:object_r:system_pixelparts_prop:s0
+persist.sys.pixelparts.thermal_config_request u:object_r:system_pixelparts_prop:s0
 persist.sys.pixelparts.thermal_available u:object_r:system_pixelparts_prop:s0
-sys.pixelparts.thermal_config_request u:object_r:system_pixelparts_prop:s0
-sys.pixelparts.thermal_config_file_request u:object_r:system_pixelparts_prop:s0
-sys.pixelparts.thermal_config_file_request_serial u:object_r:system_pixelparts_prop:s0

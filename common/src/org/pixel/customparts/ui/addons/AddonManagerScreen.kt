@@ -9,7 +9,10 @@ import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.provider.Settings
+import android.telephony.CarrierConfigManager
+import android.telephony.SubscriptionManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -138,6 +141,7 @@ data class AddonUiModel(
     val updateUrl: String = "",
     val hasDataOverride: Boolean = false,
     val systemJarPath: String = "",
+    val dataOverrideJarPath: String = "",
     /** Top-level main[] entries for this addon (tree already built). Empty if addon has no main[]. */
     val mainEntries: List<AddonMainEntry> = emptyList()
 )
@@ -147,6 +151,9 @@ data class AddonSettingDef(
     val key: String,
     val title: String,
     val description: String = "",
+    val category: String = "",
+    val categoryTitle: String = "",
+    val categoryDescription: String = "",
     val titleSizeSp: Float = 0f,
     val descriptionSizeSp: Float = 0f,
     val type: SettingType,
@@ -201,7 +208,11 @@ data class AddonSettingDef(
     val command: String = "",
     val commandOn: String = "",
     val commandOff: String = "",
-    val showOutput: Boolean = true
+    val showOutput: Boolean = true,
+    val settingsOn: List<SettingsAssignmentDef> = emptyList(),
+    val settingsOff: List<SettingsAssignmentDef> = emptyList(),
+    val binderOn: List<BinderActionDef> = emptyList(),
+    val binderOff: List<BinderActionDef> = emptyList()
 )
 
 enum class SettingType { INT, FLOAT, STRING, SELECT, SELECT_BUTTON, FILE, TOGGLE, SWITCH, CHECKBOX, APP_LIST, COLOR, GROUP, VISUAL, TILE, COMMAND_BUTTON }
@@ -229,6 +240,32 @@ data class AddonUpdateInfo(
     val changelog: String,
     val extraInfo: String
 )
+
+data class SettingsAssignmentDef(
+    val key: String,
+    val provider: SettingProvider = SettingProvider.GLOBAL,
+    val value: String = "1",
+    val valueType: AssignmentValueType = AssignmentValueType.INT
+)
+
+enum class AssignmentValueType { STRING, INT, FLOAT, BOOL }
+
+data class BinderActionDef(
+    val type: String,
+    val targetSubIds: List<Int> = emptyList(),
+    val useActiveSubscriptions: Boolean = true,
+    val fallbackSubIds: List<Int> = emptyList(),
+    val clear: Boolean = false,
+    val values: List<BinderValueDef> = emptyList()
+)
+
+data class BinderValueDef(
+    val key: String,
+    val value: Any?,
+    val valueType: BinderValueType = BinderValueType.BOOL
+)
+
+enum class BinderValueType { STRING, BOOL, INT, LONG, DOUBLE, INT_ARRAY, LONG_ARRAY, STRING_ARRAY, BOOL_ARRAY }
 
 // =====================================================================
 // Main-menu entry models (addon.json "main" array)
@@ -259,10 +296,9 @@ data class AddonUpdateInfo(
  * }
  *
  * Path resolution rules:
+                    val defaultSettingsTitle = dynamicStringResource(R.string.addon_settings_title)
  *  - "foo"            → top-level entry with id "foo"
- *  - "main/foo/bar"   → child of "foo" named "bar"
- *  - If the parent segment is not found the entry is promoted to the nearest found ancestor,
- *    or to the top level if no ancestor exists.
+                        val categoryTitle = category.title.ifBlank { if (settingCategories.size == 1) defaultSettingsTitle else "" }
  */
 data class AddonMainEntry(
     val addonId: String,          // owning addon id
@@ -437,6 +473,152 @@ private fun writeSettingFloat(context: Context, provider: SettingProvider, key: 
         }
         if (provider == SettingProvider.GLOBAL) PixelPartsTileRefresher.requestForSetting(context, key)
     } catch (t: Throwable) { Log.e(TAG, "writeSettingFloat($key) failed", t) }
+}
+
+private fun applySettingsAssignments(context: Context, assignments: List<SettingsAssignmentDef>) {
+    assignments.forEach { assignment ->
+        when (assignment.valueType) {
+            AssignmentValueType.BOOL, AssignmentValueType.INT -> {
+                val intValue = assignment.value.toBooleanStrictOrNull()?.let { if (it) 1 else 0 }
+                    ?: assignment.value.toIntOrNull()
+                    ?: if (assignment.value.equals("true", ignoreCase = true)) 1 else 0
+                writeSettingInt(context, assignment.provider, assignment.key, intValue)
+            }
+            AssignmentValueType.FLOAT -> writeSettingFloat(context, assignment.provider, assignment.key, assignment.value.toFloatOrNull() ?: 0f)
+            AssignmentValueType.STRING -> writeSettingString(context, assignment.provider, assignment.key, assignment.value)
+        }
+    }
+}
+
+private fun applyBinderActions(context: Context, actions: List<BinderActionDef>): String {
+    if (actions.isEmpty()) return ""
+    val output = mutableListOf<String>()
+    actions.forEach { action ->
+        when (action.type) {
+            "carrier_config" -> output += applyCarrierConfigOverride(context, action)
+            else -> output += "Unsupported binder action: ${action.type}"
+        }
+    }
+    return output.filter { it.isNotBlank() }.joinToString("\n")
+}
+
+private fun applyCarrierConfigOverride(context: Context, action: BinderActionDef): String {
+    val manager = context.getSystemService(CarrierConfigManager::class.java)
+        ?: return "CarrierConfigManager is not available"
+    val subIds = resolveCarrierConfigSubIds(context, action)
+    if (subIds.isEmpty()) return "No subscription IDs resolved for carrier_config action"
+    val bundle = if (action.clear) null else buildCarrierConfigBundle(action.values)
+    if (!action.clear && (bundle == null || bundle.isEmpty)) return "carrier_config action has no values"
+    val results = mutableListOf<String>()
+    subIds.forEach { subId ->
+        try {
+            manager.overrideConfig(subId, bundle)
+            results += if (action.clear) {
+                "Cleared carrier config override for subId $subId"
+            } else {
+                "Applied carrier config override for subId $subId (${action.values.size} values)"
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "carrier_config override failed for subId $subId", t)
+            results += "carrier_config override failed for subId $subId: ${t.message ?: t.javaClass.simpleName}"
+        }
+    }
+    return results.joinToString("\n")
+}
+
+private fun resolveCarrierConfigSubIds(context: Context, action: BinderActionDef): List<Int> {
+    if (action.targetSubIds.isNotEmpty()) return action.targetSubIds.distinct()
+    val activeSubIds = if (action.useActiveSubscriptions) getActiveSubscriptionIds(context) else emptyList()
+    return (activeSubIds.ifEmpty { action.fallbackSubIds }).distinct()
+}
+
+private fun getActiveSubscriptionIds(context: Context): List<Int> {
+    return try {
+        val subscriptionManager = context.getSystemService(SubscriptionManager::class.java) ?: return emptyList()
+        subscriptionManager.activeSubscriptionInfoList.orEmpty().map { it.subscriptionId }
+    } catch (t: Throwable) {
+        Log.e(TAG, "active subscription lookup failed", t)
+        emptyList()
+    }
+}
+
+private fun buildCarrierConfigBundle(values: List<BinderValueDef>): PersistableBundle {
+    val bundle = PersistableBundle()
+    values.forEach { value ->
+        when (value.valueType) {
+            BinderValueType.STRING -> bundle.putString(value.key, value.value?.toString().orEmpty())
+            BinderValueType.BOOL -> bundle.putBoolean(value.key, value.value.toBooleanValue())
+            BinderValueType.INT -> bundle.putInt(value.key, value.value.toIntValue())
+            BinderValueType.LONG -> bundle.putLong(value.key, value.value.toLongValue())
+            BinderValueType.DOUBLE -> bundle.putDouble(value.key, value.value.toDoubleValue())
+            BinderValueType.INT_ARRAY -> bundle.putIntArray(value.key, value.value.toIntArrayValue())
+            BinderValueType.LONG_ARRAY -> bundle.putLongArray(value.key, value.value.toLongArrayValue())
+            BinderValueType.STRING_ARRAY -> bundle.putStringArray(value.key, value.value.toStringArrayValue())
+            BinderValueType.BOOL_ARRAY -> bundle.putBooleanArray(value.key, value.value.toBooleanArrayValue())
+        }
+    }
+    return bundle
+}
+
+private fun Any?.toBooleanValue(): Boolean {
+    return when (this) {
+        is Boolean -> this
+        is Number -> toInt() != 0
+        is String -> trim().let { it.equals("true", ignoreCase = true) || it == "1" }
+        else -> false
+    }
+}
+
+private fun Any?.toIntValue(): Int {
+    return when (this) {
+        is Number -> toInt()
+        is String -> trim().toIntOrNull() ?: 0
+        is Boolean -> if (this) 1 else 0
+        else -> 0
+    }
+}
+
+private fun Any?.toLongValue(): Long {
+    return when (this) {
+        is Number -> toLong()
+        is String -> trim().toLongOrNull() ?: 0L
+        is Boolean -> if (this) 1L else 0L
+        else -> 0L
+    }
+}
+
+private fun Any?.toDoubleValue(): Double {
+    return when (this) {
+        is Number -> toDouble()
+        is String -> trim().toDoubleOrNull() ?: 0.0
+        is Boolean -> if (this) 1.0 else 0.0
+        else -> 0.0
+    }
+}
+
+private fun Any?.toIntArrayValue(): IntArray {
+    return toJsonArrayList().map { it.toIntValue() }.toIntArray()
+}
+
+private fun Any?.toLongArrayValue(): LongArray {
+    return toJsonArrayList().map { it.toLongValue() }.toLongArray()
+}
+
+private fun Any?.toStringArrayValue(): Array<String> {
+    return toJsonArrayList().map { it?.toString().orEmpty() }.toTypedArray()
+}
+
+private fun Any?.toBooleanArrayValue(): BooleanArray {
+    return toJsonArrayList().map { it.toBooleanValue() }.toBooleanArray()
+}
+
+private fun Any?.toJsonArrayList(): List<Any?> {
+    return when (this) {
+        is JSONArray -> (0 until length()).map { index -> opt(index) }
+        is String -> parseStringList(this)
+        null -> emptyList()
+        else -> listOf(this)
+    }
 }
 
 private fun addonDataDir(addonId: String, addonJarPath: String, isSystemAddon: Boolean): File {
@@ -884,49 +1066,17 @@ fun buildMainEntryTree(flat: List<AddonMainEntry>): List<AddonMainEntry> {
  */
 fun scanAddonMainEntries(context: android.content.Context, includeTargetActivityEntries: Boolean = false): AddonMainMenuModel {
     val flat = mutableListOf<AddonMainEntry>()
-    val dirs = listOf(SYSTEM_ADDON_DIR, ADDON_DIR)
+    for (candidate in scanPreferredAddonJars(context)) {
+        try {
+            val defaultEnabled = candidate.descriptor.optBoolean("enabled", true)
+            if (!readAddonEnabled(context, candidate.id, defaultEnabled)) continue
 
-    // Track which addon IDs have a user override (data dir takes priority)
-    val userOverrideIds = mutableSetOf<String>()
-    val userDir = java.io.File(ADDON_DIR)
-    if (userDir.exists() && userDir.isDirectory) {
-        userDir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".jar")) return@forEach
-            try {
-                val json = readDescriptor(file, context) ?: return@forEach
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-                userOverrideIds.add(id)
-            } catch (_: Throwable) {}
-        }
-    }
-
-    for (dirPath in dirs) {
-        val isSystemDir = dirPath == SYSTEM_ADDON_DIR
-        val dir = java.io.File(dirPath)
-        if (!dir.exists() || !dir.isDirectory) continue
-        val files = dir.listFiles() ?: continue
-
-        for (file in files) {
-            if (!file.name.endsWith(".jar")) continue
-            try {
-                val json = readDescriptor(file, context) ?: continue
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-
-                // Skip system addon if user override exists
-                if (isSystemDir && id in userOverrideIds) continue
-
-                val defaultEnabled = json.optBoolean("enabled", true)
-                if (!readAddonEnabled(context, id, defaultEnabled)) continue
-
-                flat.addAll(
-                    parseMainEntries(json, id, file.absolutePath, isSystemDir, file)
-                        .filter { includeTargetActivityEntries || it.targetActivity.isBlank() }
-                )
-            } catch (t: Throwable) {
-                Log.e(TAG, "scanAddonMainEntries: failed for ${file.name}", t)
-            }
+            flat.addAll(
+                parseMainEntries(candidate.descriptor, candidate.id, candidate.file.absolutePath, candidate.isSystem, candidate.file)
+                    .filter { includeTargetActivityEntries || it.targetActivity.isBlank() }
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "scanAddonMainEntries: failed for ${candidate.file.name}", t)
         }
     }
 
@@ -938,41 +1088,16 @@ fun scanAddonMainEntries(context: android.content.Context, includeTargetActivity
 
 fun scanAddonActivityEntries(context: Context, activityName: String, slot: String = ""): List<AddonMainEntry> {
     val entries = mutableListOf<AddonMainEntry>()
-    val dirs = listOf(SYSTEM_ADDON_DIR, ADDON_DIR)
-    val userOverrideIds = mutableSetOf<String>()
-    val userDir = File(ADDON_DIR)
-    if (userDir.exists() && userDir.isDirectory) {
-        userDir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".jar")) return@forEach
-            try {
-                val json = readDescriptor(file, context) ?: return@forEach
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-                userOverrideIds.add(id)
-            } catch (_: Throwable) {}
-        }
-    }
-
-    for (dirPath in dirs) {
-        val isSystemDir = dirPath == SYSTEM_ADDON_DIR
-        val dir = File(dirPath)
-        if (!dir.exists() || !dir.isDirectory) continue
-        dir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".jar")) return@forEach
-            try {
-                val json = readDescriptor(file, context) ?: return@forEach
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-                if (isSystemDir && id in userOverrideIds) return@forEach
-                if (!readAddonEnabled(context, id, json.optBoolean("enabled", true))) return@forEach
-                entries += parseMainEntries(json, id, file.absolutePath, isSystemDir, file)
-                    .filter { entry ->
-                        targetActivityMatches(entry.targetActivity, activityName) &&
-                                (slot.isBlank() || entry.targetSlot.isBlank() || entry.targetSlot == slot.lowercase(Locale.ROOT))
-                    }
-            } catch (t: Throwable) {
-                Log.e(TAG, "scanAddonActivityEntries: failed for ${file.name}", t)
-            }
+    for (candidate in scanPreferredAddonJars(context)) {
+        try {
+            if (!readAddonEnabled(context, candidate.id, candidate.descriptor.optBoolean("enabled", true))) continue
+            entries += parseMainEntries(candidate.descriptor, candidate.id, candidate.file.absolutePath, candidate.isSystem, candidate.file)
+                .filter { entry ->
+                    targetActivityMatches(entry.targetActivity, activityName) &&
+                            (slot.isBlank() || entry.targetSlot.isBlank() || entry.targetSlot == slot.lowercase(Locale.ROOT))
+                }
+        } catch (t: Throwable) {
+            Log.e(TAG, "scanAddonActivityEntries: failed for ${candidate.file.name}", t)
         }
     }
 
@@ -984,6 +1109,68 @@ private fun targetActivityMatches(target: String, activityName: String): Boolean
     val normalizedTarget = target.substringAfterLast('.').removeSuffix("Activity").lowercase(Locale.ROOT)
     val normalizedActivity = activityName.substringAfterLast('.').removeSuffix("Activity").lowercase(Locale.ROOT)
     return target == activityName || normalizedTarget == normalizedActivity
+}
+
+private data class AddonJarCandidate(
+    val id: String,
+    val file: File,
+    val descriptor: JSONObject,
+    val isSystem: Boolean,
+    val version: String,
+    val systemJarPath: String = "",
+    val dataOverrideJarPath: String = ""
+) {
+    val hasDataOverride: Boolean get() = systemJarPath.isNotBlank() && dataOverrideJarPath.isNotBlank()
+}
+
+private fun scanPreferredAddonJars(context: Context): List<AddonJarCandidate> {
+    val preferred = linkedMapOf<String, AddonJarCandidate>()
+    val systemPaths = mutableMapOf<String, String>()
+    val dataPaths = mutableMapOf<String, String>()
+
+    listOf(SYSTEM_ADDON_DIR, ADDON_DIR).forEach { dirPath ->
+        val isSystemDir = dirPath == SYSTEM_ADDON_DIR
+        val dir = File(dirPath)
+        if (!dir.exists() || !dir.isDirectory) return@forEach
+        dir.listFiles()?.forEach { file ->
+            if (!file.isFile || !file.name.endsWith(".jar")) return@forEach
+            try {
+                val descriptor = readDescriptor(file, context) ?: return@forEach
+                val entryClassStr = descriptor.optString("entryClass", "")
+                val id = descriptor.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
+                if (id.isBlank()) return@forEach
+
+                val candidate = AddonJarCandidate(
+                    id = id,
+                    file = file,
+                    descriptor = descriptor,
+                    isSystem = isSystemDir,
+                    version = descriptor.optString("version", "1.0")
+                )
+                if (isSystemDir) systemPaths[id] = file.absolutePath else dataPaths[id] = file.absolutePath
+
+                val existing = preferred[id]
+                if (existing == null || shouldPreferAddonCandidate(candidate, existing)) {
+                    preferred[id] = candidate
+                }
+            } catch (t: Throwable) {
+                Log.e(TAG, "scanPreferredAddonJars: failed for ${file.name}", t)
+            }
+        }
+    }
+
+    return preferred.values.map { candidate ->
+        candidate.copy(
+            systemJarPath = systemPaths[candidate.id].orEmpty(),
+            dataOverrideJarPath = dataPaths[candidate.id].orEmpty()
+        )
+    }
+}
+
+private fun shouldPreferAddonCandidate(candidate: AddonJarCandidate, existing: AddonJarCandidate): Boolean {
+    val versionCompare = compareVersions(candidate.version, existing.version)
+    if (versionCompare != 0) return versionCompare > 0
+    return !candidate.isSystem && existing.isSystem
 }
 
 private fun parseSettingsArray(arr: JSONArray): List<AddonSettingDef> {
@@ -1084,6 +1271,9 @@ private fun parseSettingsArray(arr: JSONArray): List<AddonSettingDef> {
             key = key,
             title = obj.optString("title", key),
             description = obj.optString("description", ""),
+            category = optStringTrim(obj, "category", "categoryId", "category_id", "section", "sectionId", "section_id"),
+            categoryTitle = optStringTrim(obj, "categoryTitle", "category_title", "sectionTitle", "section_title"),
+            categoryDescription = optStringTrim(obj, "categoryDescription", "category_description", "sectionDescription", "section_description"),
             titleSizeSp = optTextSizeSp(obj, "title_size", "titleSize", "title_seize", "titleSeize", "titleTextSize", "title_text_size", "titleSp", "title_sp"),
             descriptionSizeSp = optTextSizeSp(obj, "description_size", "descriptionSize", "description_seize", "descriptionSeize", "descriptionTextSize", "description_text_size", "descriptionSp", "description_sp"),
             type = type,
@@ -1138,7 +1328,11 @@ private fun parseSettingsArray(arr: JSONArray): List<AddonSettingDef> {
             command = optStringTrim(obj, "cmd", "command", "shell", "shellCommand", "shell_command"),
             commandOn = optStringTrim(obj, "cmdOn", "cmd_on", "commandOn", "command_on", "onCommand", "on_command", "shellOn", "shell_on"),
             commandOff = optStringTrim(obj, "cmdOff", "cmd_off", "commandOff", "command_off", "offCommand", "off_command", "shellOff", "shell_off"),
-            showOutput = obj.optBoolean("showOutput", obj.optBoolean("show_output", obj.optBoolean("logOutput", obj.optBoolean("showLog", obj.optBoolean("show_log", true)))))
+            showOutput = obj.optBoolean("showOutput", obj.optBoolean("show_output", obj.optBoolean("logOutput", obj.optBoolean("showLog", obj.optBoolean("show_log", true))))),
+            settingsOn = parseSettingsAssignments(obj, provider, true, "settingsOn", "settings_on", "setOn", "set_on", "writeOn", "write_on", "trueSettings", "true_settings"),
+            settingsOff = parseSettingsAssignments(obj, provider, false, "settingsOff", "settings_off", "setOff", "set_off", "writeOff", "write_off", "falseSettings", "false_settings"),
+            binderOn = parseBinderActions(obj, "binderOn", "binder_on", "apiOn", "api_on", "carrierConfigOn", "carrier_config_on"),
+            binderOff = parseBinderActions(obj, "binderOff", "binder_off", "apiOff", "api_off", "carrierConfigOff", "carrier_config_off")
         ))
     }
     return result
@@ -1156,6 +1350,216 @@ private fun parseSelectOptions(array: JSONArray?): List<SelectOption> {
             val value = array.optString(index).trim()
             if (value.isNotEmpty()) SelectOption(value, value) else null
         }
+    }
+}
+
+private fun parseSettingsAssignments(
+    obj: JSONObject,
+    defaultProvider: SettingProvider,
+    defaultOnValue: Boolean,
+    vararg names: String
+): List<SettingsAssignmentDef> {
+    for (name in names) {
+        if (!obj.has(name)) continue
+        return when (val value = obj.opt(name)) {
+            is JSONArray -> parseSettingsAssignmentArray(value, defaultProvider, defaultOnValue)
+            is JSONObject -> parseSettingsAssignmentObject(value, defaultProvider)
+            is String -> parseStringList(value).map { key ->
+                SettingsAssignmentDef(key = key, provider = defaultProvider, value = if (defaultOnValue) "1" else "0", valueType = AssignmentValueType.INT)
+            }
+            else -> emptyList()
+        }
+    }
+    return emptyList()
+}
+
+private fun parseSettingsAssignmentArray(
+    array: JSONArray,
+    defaultProvider: SettingProvider,
+    defaultOnValue: Boolean
+): List<SettingsAssignmentDef> {
+    return (0 until array.length()).mapNotNull { index ->
+        val item = array.opt(index)
+        when (item) {
+            is JSONObject -> parseSettingsAssignmentItem(item, defaultProvider)
+            is String -> item.trim().takeIf { it.isNotEmpty() }?.let { key ->
+                SettingsAssignmentDef(key = key, provider = defaultProvider, value = if (defaultOnValue) "1" else "0", valueType = AssignmentValueType.INT)
+            }
+            else -> null
+        }
+    }
+}
+
+private fun parseSettingsAssignmentObject(
+    obj: JSONObject,
+    defaultProvider: SettingProvider
+): List<SettingsAssignmentDef> {
+    val singleKey = obj.optString("key", obj.optString("name", "")).trim()
+    if (singleKey.isNotEmpty()) return listOfNotNull(parseSettingsAssignmentItem(obj, defaultProvider))
+    val assignments = mutableListOf<SettingsAssignmentDef>()
+    obj.keys().forEach { key ->
+        assignments += assignmentFromValue(key, obj.opt(key), defaultProvider)
+    }
+    return assignments
+}
+
+private fun parseSettingsAssignmentItem(obj: JSONObject, defaultProvider: SettingProvider): SettingsAssignmentDef? {
+    val key = obj.optString("key", obj.optString("name", obj.optString("setting", ""))).trim()
+    if (key.isEmpty()) return null
+    val provider = parseSettingProvider(obj.optString("provider", obj.optString("namespace", "")), defaultProvider)
+    val value = obj.opt("value") ?: obj.opt("set") ?: obj.opt("to") ?: true
+    return assignmentFromValue(key, value, provider, obj.optString("type", obj.optString("valueType", obj.optString("value_type", ""))))
+}
+
+private fun assignmentFromValue(
+    key: String,
+    rawValue: Any?,
+    provider: SettingProvider,
+    forcedType: String = ""
+): SettingsAssignmentDef {
+    val type = when (forcedType.trim().lowercase(Locale.ROOT)) {
+        "string", "str" -> AssignmentValueType.STRING
+        "float", "double" -> AssignmentValueType.FLOAT
+        "bool", "boolean" -> AssignmentValueType.BOOL
+        "int", "integer" -> AssignmentValueType.INT
+        else -> when (rawValue) {
+            is Boolean -> AssignmentValueType.BOOL
+            is Float, is Double -> AssignmentValueType.FLOAT
+            is Number -> AssignmentValueType.INT
+            else -> AssignmentValueType.STRING
+        }
+    }
+    val value = when (rawValue) {
+        is Boolean -> if (rawValue) "1" else "0"
+        null -> ""
+        else -> rawValue.toString()
+    }
+    return SettingsAssignmentDef(key = key.trim(), provider = provider, value = value, valueType = type)
+}
+
+private fun parseSettingProvider(value: String, defaultProvider: SettingProvider = SettingProvider.GLOBAL): SettingProvider {
+    return when (value.trim().lowercase(Locale.ROOT)) {
+        "system" -> SettingProvider.SYSTEM
+        "secure" -> SettingProvider.SECURE
+        "global" -> SettingProvider.GLOBAL
+        else -> defaultProvider
+    }
+}
+
+private fun parseBinderActions(obj: JSONObject, vararg names: String): List<BinderActionDef> {
+    for (name in names) {
+        if (!obj.has(name)) continue
+        return when (val value = obj.opt(name)) {
+            is JSONArray -> (0 until value.length()).mapNotNull { index ->
+                value.optJSONObject(index)?.let { parseBinderAction(it) }
+            }
+            is JSONObject -> listOfNotNull(parseBinderAction(value))
+            else -> emptyList()
+        }
+    }
+    return emptyList()
+}
+
+private fun parseBinderAction(obj: JSONObject): BinderActionDef? {
+    val type = optStringTrim(obj, "type", "action", "service", "method").ifBlank { "carrier_config" }
+    val normalizedType = type.trim().lowercase(Locale.ROOT).replace('-', '_')
+    if (normalizedType !in setOf("carrier_config", "carrier_config_override", "override_carrier_config")) return null
+    return BinderActionDef(
+        type = "carrier_config",
+        targetSubIds = parseIntList(obj.opt("subIds") ?: obj.opt("sub_ids") ?: obj.opt("subscriptions") ?: obj.opt("subscriptionIds")),
+        useActiveSubscriptions = parseActiveSubscriptionsFlag(obj),
+        fallbackSubIds = parseIntList(obj.opt("fallbackSubIds") ?: obj.opt("fallback_sub_ids")),
+        clear = obj.optBoolean("clear", obj.optBoolean("clearOverride", obj.optBoolean("clear_override", false))),
+        values = parseBinderValues(obj.opt("values") ?: obj.opt("params") ?: obj.opt("parameters") ?: obj.opt("bundle"))
+    )
+}
+
+private fun parseActiveSubscriptionsFlag(obj: JSONObject): Boolean {
+    val target = listOf("subIds", "sub_ids", "subscriptions", "subscriptionIds").firstNotNullOfOrNull { key ->
+        obj.opt(key)?.takeIf { it is String }
+    } as? String
+    return when (target?.trim()?.lowercase(Locale.ROOT)) {
+        "active", "active_subscriptions", "active-subscriptions" -> true
+        "none", "false" -> false
+        else -> obj.optBoolean("activeSubscriptions", obj.optBoolean("active_subscriptions", true))
+    }
+}
+
+private fun parseBinderValues(raw: Any?): List<BinderValueDef> {
+    return when (raw) {
+        is JSONArray -> (0 until raw.length()).mapNotNull { index ->
+            when (val item = raw.opt(index)) {
+                is JSONObject -> parseBinderValueItem(item)
+                else -> null
+            }
+        }
+        is JSONObject -> {
+            val singleKey = raw.optString("key", raw.optString("name", "")).trim()
+            if (singleKey.isNotEmpty()) {
+                listOfNotNull(parseBinderValueItem(raw))
+            } else {
+                raw.keys().asSequence().map { key ->
+                    binderValueFromRaw(key, raw.opt(key), "")
+                }.toList()
+            }
+        }
+        else -> emptyList()
+    }
+}
+
+private fun parseBinderValueItem(obj: JSONObject): BinderValueDef? {
+    val key = obj.optString("key", obj.optString("name", "")).trim()
+    if (key.isEmpty()) return null
+    val value = obj.opt("value") ?: obj.opt("set") ?: obj.opt("to") ?: true
+    return binderValueFromRaw(key, value, obj.optString("type", obj.optString("valueType", obj.optString("value_type", ""))))
+}
+
+private fun binderValueFromRaw(key: String, rawValue: Any?, forcedType: String): BinderValueDef {
+    val type = when (forcedType.trim().lowercase(Locale.ROOT)) {
+        "string", "str" -> BinderValueType.STRING
+        "bool", "boolean" -> BinderValueType.BOOL
+        "int", "integer" -> BinderValueType.INT
+        "long" -> BinderValueType.LONG
+        "double", "float" -> BinderValueType.DOUBLE
+        "int_array", "intarray", "integer_array", "integerarray", "ints" -> BinderValueType.INT_ARRAY
+        "long_array", "longarray", "longs" -> BinderValueType.LONG_ARRAY
+        "string_array", "stringarray", "strings" -> BinderValueType.STRING_ARRAY
+        "bool_array", "boolean_array", "boolarray", "booleanarray", "booleans" -> BinderValueType.BOOL_ARRAY
+        else -> inferBinderValueType(rawValue)
+    }
+    return BinderValueDef(key = key.trim(), value = rawValue, valueType = type)
+}
+
+private fun inferBinderValueType(rawValue: Any?): BinderValueType {
+    return when (rawValue) {
+        is Boolean -> BinderValueType.BOOL
+        is Int -> BinderValueType.INT
+        is Long -> BinderValueType.LONG
+        is Float, is Double -> BinderValueType.DOUBLE
+        is JSONArray -> when ((0 until rawValue.length()).firstNotNullOfOrNull { index -> rawValue.opt(index) }) {
+            is Boolean -> BinderValueType.BOOL_ARRAY
+            is Number -> BinderValueType.INT_ARRAY
+            else -> BinderValueType.STRING_ARRAY
+        }
+        else -> BinderValueType.STRING
+    }
+}
+
+private fun parseIntList(raw: Any?): List<Int> {
+    return when (raw) {
+        is JSONArray -> (0 until raw.length()).mapNotNull { raw.optIntOrNull(it) }
+        is Number -> listOf(raw.toInt())
+        is String -> parseStringList(raw).mapNotNull { it.toIntOrNull() }
+        else -> emptyList()
+    }
+}
+
+private fun JSONArray.optIntOrNull(index: Int): Int? {
+    val value = opt(index)
+    return when (value) {
+        is Number -> value.toInt()
+        is String -> value.trim().toIntOrNull()
+        else -> null
     }
 }
 
@@ -1266,130 +1670,85 @@ private fun parseStringList(raw: String): List<String> {
 // =====================================================================
 
 private fun scanAddons(context: Context): List<AddonUiModel> {
-    val result = linkedMapOf<String, AddonUiModel>()
-    val dirs = listOf(SYSTEM_ADDON_DIR, ADDON_DIR)
+    val result = mutableListOf<AddonUiModel>()
 
-    val systemAddonPathsById = mutableMapOf<String, String>()
-    val systemDir = File(SYSTEM_ADDON_DIR)
-    if (systemDir.exists() && systemDir.isDirectory) {
-        systemDir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".jar")) return@forEach
-            try {
-                val json = readDescriptor(file, context) ?: return@forEach
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-                systemAddonPathsById[id] = file.absolutePath
-            } catch (_: Throwable) {}
-        }
-    }
+    for (candidate in scanPreferredAddonJars(context)) {
+        val file = candidate.file
+        val json = candidate.descriptor
+        val id = candidate.id
+        val isSystemDir = candidate.isSystem
+        try {
+            val entryClassStr = json.optString("entryClass", "")
+            val name = json.optString("name", id)
+            val author = json.optString("author", context.getString(R.string.addon_author_unknown))
+            val description = json.optString("description", "")
+            val version = json.optString("version", "1.0")
+            val defaultEnabled = json.optBoolean("enabled", true)
 
-    // Pre-scan user dir to know which IDs have overrides
-    val userOverrideIds = mutableSetOf<String>()
-    val userDir = File(ADDON_DIR)
-    if (userDir.exists() && userDir.isDirectory) {
-        userDir.listFiles()?.forEach { file ->
-            if (!file.name.endsWith(".jar")) return@forEach
-            try {
-                val json = readDescriptor(file, context) ?: return@forEach
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-                userOverrideIds.add(id)
-            } catch (_: Throwable) {}
-        }
-    }
-
-    for (dirPath in dirs) {
-        val isSystemDir = dirPath == SYSTEM_ADDON_DIR
-        val dir = File(dirPath)
-        if (!dir.exists() || !dir.isDirectory) continue
-        val files = dir.listFiles() ?: continue
-
-        for (file in files) {
-            if (!file.name.endsWith(".jar")) continue
-            try {
-                val json = readDescriptor(file, context) ?: continue
-                val entryClassStr = json.optString("entryClass", "")
-                val id = json.optString("id", entryClassStr.ifEmpty { file.nameWithoutExtension })
-
-                // Skip system addon entirely if user override exists — user version takes full priority
-                if (isSystemDir && id in userOverrideIds) continue
-
-                val name = json.optString("name", id)
-                val author = json.optString("author", context.getString(R.string.addon_author_unknown))
-                val description = json.optString("description", "")
-                val version = json.optString("version", "1.0")
-                val defaultEnabled = json.optBoolean("enabled", true)
-
-                val defaultTargets = mutableSetOf<String>()
-                val arr = json.optJSONArray("targetPackages")
-                if (arr != null) {
-                    for (i in 0 until arr.length()) {
-                        val pkg = arr.optString(i)
-                        if (pkg.isNotEmpty()) defaultTargets.add(pkg)
-                    }
+            val defaultTargets = mutableSetOf<String>()
+            val arr = json.optJSONArray("targetPackages")
+            if (arr != null) {
+                for (i in 0 until arr.length()) {
+                    val pkg = arr.optString(i)
+                    if (pkg.isNotEmpty()) defaultTargets.add(pkg)
                 }
-
-                // Extract icon and background from JAR
-                val iconPath = json.optString("icon", "")
-                val bgPath = json.optString("background", "")
-                val bgMode = json.optString("backgroundMode", "gradient")
-                val bgAlpha = json.optInt("backgroundAlpha", 50).coerceIn(0, 100)
-                val bgGradientStepsArr = json.optJSONArray("backgroundGradientSteps")
-                val bgGradientSteps = if (bgGradientStepsArr != null && bgGradientStepsArr.length() >= 2) {
-                    (0 until bgGradientStepsArr.length()).map { bgGradientStepsArr.optInt(it, 0).coerceIn(0, 100) }
-                } else listOf(0, 100)
-                val bgBlur = json.optBoolean("backgroundBlur", false)
-                val bgBlurRadius = json.optInt("backgroundBlurRadius", 25).coerceIn(0, 100)
-                val cardColorStr = json.optString("cardColor", "")
-                val bgScope = json.optString("backgroundScope", "full")
-                val accentColorStr = json.optString("accent", json.optString("accentColor", ""))
-                val updateUrl = json.optString("updateUrl", json.optString("otaUrl", ""))
-                val iconBitmap = extractBitmapFromJar(file, iconPath)
-                val bgBitmap = extractBitmapFromJar(file, bgPath)
-
-                // Parse main[] entries for this addon
-                val mainFlat = parseMainEntries(json, id, file.absolutePath, isSystemDir, file)
-                val mainTopLevel = buildMainEntryTree(mainFlat.filter { it.targetActivity.isBlank() })
-                    .sortedWith(compareByDescending<AddonMainEntry> { it.priority }.thenBy { it.title })
-
-                val model = AddonUiModel(
-                    id = id, entryClass = entryClassStr, name = name, author = author, description = description,
-                    version = version, jarPath = file.absolutePath,
-                    defaultTargets = defaultTargets,
-                    enabled = readAddonEnabled(context, id, defaultEnabled),
-                    scopeMode = readScopeMode(context, id),
-                    customTargets = readCustomTargets(context, id),
-                    settings = parseSettings(json),
-                    isSystem = isSystemDir,
-                    settingsOnly = entryClassStr.isEmpty(),
-                    iconBitmap = iconBitmap,
-                    backgroundBitmap = bgBitmap,
-                    backgroundMode = bgMode,
-                    backgroundAlpha = bgAlpha,
-                    backgroundGradientSteps = bgGradientSteps,
-                    backgroundBlur = bgBlur,
-                    backgroundBlurRadius = bgBlurRadius,
-                    cardColor = cardColorStr,
-                    backgroundScope = bgScope,
-                    accentColor = accentColorStr,
-                    updateUrl = updateUrl,
-                    mainEntries = mainTopLevel
-                )
-                val existing = result[id]
-                val systemJarPath = systemAddonPathsById[id]
-                result[id] = if (!isSystemDir && systemJarPath != null) {
-                    model.copy(isSystem = true, hasDataOverride = true, systemJarPath = systemJarPath)
-                } else if (!isSystemDir && existing?.isSystem == true) {
-                    model.copy(isSystem = true, hasDataOverride = true, systemJarPath = existing.jarPath)
-                } else {
-                    model
-                }
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to read addon: ${file.name}", t)
             }
+
+            // Extract icon and background from JAR
+            val iconPath = json.optString("icon", "")
+            val bgPath = json.optString("background", "")
+            val bgMode = json.optString("backgroundMode", "gradient")
+            val bgAlpha = json.optInt("backgroundAlpha", 50).coerceIn(0, 100)
+            val bgGradientStepsArr = json.optJSONArray("backgroundGradientSteps")
+            val bgGradientSteps = if (bgGradientStepsArr != null && bgGradientStepsArr.length() >= 2) {
+                (0 until bgGradientStepsArr.length()).map { bgGradientStepsArr.optInt(it, 0).coerceIn(0, 100) }
+            } else listOf(0, 100)
+            val bgBlur = json.optBoolean("backgroundBlur", false)
+            val bgBlurRadius = json.optInt("backgroundBlurRadius", 25).coerceIn(0, 100)
+            val cardColorStr = json.optString("cardColor", "")
+            val bgScope = json.optString("backgroundScope", "full")
+            val accentColorStr = json.optString("accent", json.optString("accentColor", ""))
+            val updateUrl = json.optString("updateUrl", json.optString("otaUrl", ""))
+            val iconBitmap = extractBitmapFromJar(file, iconPath)
+            val bgBitmap = extractBitmapFromJar(file, bgPath)
+
+            // Parse main[] entries for this addon
+            val mainFlat = parseMainEntries(json, id, file.absolutePath, isSystemDir, file)
+            val mainTopLevel = buildMainEntryTree(mainFlat.filter { it.targetActivity.isBlank() })
+                .sortedWith(compareByDescending<AddonMainEntry> { it.priority }.thenBy { it.title })
+            val modelIsSystem = isSystemDir || candidate.systemJarPath.isNotBlank()
+
+            result += AddonUiModel(
+                id = id, entryClass = entryClassStr, name = name, author = author, description = description,
+                version = version, jarPath = file.absolutePath,
+                defaultTargets = defaultTargets,
+                enabled = readAddonEnabled(context, id, defaultEnabled),
+                scopeMode = readScopeMode(context, id),
+                customTargets = readCustomTargets(context, id),
+                settings = parseSettings(json),
+                isSystem = modelIsSystem,
+                settingsOnly = entryClassStr.isEmpty(),
+                iconBitmap = iconBitmap,
+                backgroundBitmap = bgBitmap,
+                backgroundMode = bgMode,
+                backgroundAlpha = bgAlpha,
+                backgroundGradientSteps = bgGradientSteps,
+                backgroundBlur = bgBlur,
+                backgroundBlurRadius = bgBlurRadius,
+                cardColor = cardColorStr,
+                backgroundScope = bgScope,
+                accentColor = accentColorStr,
+                updateUrl = updateUrl,
+                hasDataOverride = candidate.hasDataOverride,
+                systemJarPath = candidate.systemJarPath,
+                dataOverrideJarPath = candidate.dataOverrideJarPath,
+                mainEntries = mainTopLevel
+            )
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to read addon: ${file.name}", t)
         }
     }
-    return result.values.toList()
+    return result
 }
 
 private fun readDescriptor(jarFile: File): org.json.JSONObject? = readDescriptor(jarFile, null)
@@ -1480,9 +1839,7 @@ private fun mergeLocalizedMainEntries(baseMain: JSONArray, localizedMain: JSONAr
     for (index in 0 until baseMain.length()) {
         val base = baseMain.optJSONObject(index) ?: continue
         val localized = localizedById[base.optString("id", "")] ?: continue
-        listOf("title", "subtitle", "description", "group").forEach { field ->
-            if (localized.has(field)) base.put(field, localized.optString(field, base.optString(field)))
-        }
+        mergeLocalizedMainEntryText(base, localized)
         val baseSettings = base.optJSONArray("settings") ?: base.optJSONArray("children")
         val localizedSettings = localized.optJSONArray("settings") ?: localized.optJSONArray("children")
         if (baseSettings != null && localizedSettings != null) {
@@ -1491,19 +1848,39 @@ private fun mergeLocalizedMainEntries(baseMain: JSONArray, localizedMain: JSONAr
     }
 }
 
+private fun mergeLocalizedMainEntryText(base: JSONObject, localized: JSONObject) {
+    listOf("title", "group").forEach { field ->
+        if (localized.has(field)) base.put(field, localized.optString(field, base.optString(field)))
+    }
+
+    when {
+        localized.has("subtitle") -> base.put("subtitle", localized.optString("subtitle", base.optString("subtitle")))
+        localized.has("description") -> base.put("subtitle", localized.optString("description", base.optString("subtitle")))
+        localized.has("title") -> base.put("subtitle", "")
+    }
+
+    when {
+        localized.has("description") -> base.put("description", localized.optString("description", base.optString("description")))
+        localized.has("subtitle") -> base.put("description", localized.optString("subtitle", base.optString("description")))
+        localized.has("title") -> base.put("description", "")
+    }
+}
+
 private fun mergeLocalizedSettings(baseSettings: JSONArray, localizedSettings: JSONArray) {
     val localizedByKey = mutableMapOf<String, JSONObject>()
-    for (index in 0 until localizedSettings.length()) {
-        val localized = localizedSettings.optJSONObject(index) ?: continue
-        val key = localized.optString("key", "")
-        if (key.isNotBlank()) localizedByKey[key] = localized
-    }
+    collectLocalizedSettingsByKey(localizedSettings, localizedByKey)
     for (index in 0 until baseSettings.length()) {
         val base = baseSettings.optJSONObject(index) ?: continue
         val localized = localizedByKey[base.optString("key", "")] ?: continue
-        listOf("title", "description").forEach { field ->
-            if (localized.has(field)) base.put(field, localized.optString(field, base.optString(field)))
+        if (localized.has("title")) {
+            base.put("title", localized.optString("title", base.optString("title")))
         }
+        when {
+            localized.has("description") -> base.put("description", localized.optString("description", base.optString("description")))
+            localized.has("title") -> base.put("description", "")
+        }
+        mergeLocalizedAliasText(base, localized, "categoryTitle", "categoryTitle", "category_title", "sectionTitle", "section_title")
+        mergeLocalizedAliasText(base, localized, "categoryDescription", "categoryDescription", "category_description", "sectionDescription", "section_description")
         mergeLocalizedOptions(base.optJSONArray("options"), localized.optJSONArray("options"))
         mergeLocalizedOptions(base.optJSONArray("activities") ?: base.optJSONArray("longPressActivities") ?: base.optJSONArray("pages"),
             localized.optJSONArray("activities") ?: localized.optJSONArray("longPressActivities") ?: localized.optJSONArray("pages"))
@@ -1514,6 +1891,77 @@ private fun mergeLocalizedSettings(baseSettings: JSONArray, localizedSettings: J
         if (baseChildren != null && localizedChildren != null) {
             mergeLocalizedSettings(baseChildren, localizedChildren)
         }
+    }
+}
+
+private fun collectLocalizedSettingsByKey(settings: JSONArray, out: MutableMap<String, JSONObject>) {
+    for (index in 0 until settings.length()) {
+        val localized = settings.optJSONObject(index) ?: continue
+        val key = localized.optString("key", "")
+        if (key.isNotBlank() && !out.containsKey(key)) out[key] = localized
+        val children = localized.optJSONArray("settings") ?: localized.optJSONArray("children")
+        if (children != null) collectLocalizedSettingsByKey(children, out)
+    }
+}
+
+private fun mergeLocalizedAliasText(base: JSONObject, localized: JSONObject, targetField: String, vararg aliases: String) {
+    val localizedField = aliases.firstOrNull { localized.has(it) } ?: return
+    base.put(targetField, localized.optString(localizedField, base.optString(targetField)))
+}
+
+internal data class AddonSettingCategory(
+    val key: String,
+    val title: String,
+    val description: String,
+    val settings: List<AddonSettingDef>
+)
+
+private data class AddonSettingCategoryBuilder(
+    val key: String,
+    var title: String,
+    var description: String,
+    val settings: MutableList<AddonSettingDef> = mutableListOf()
+)
+
+internal fun buildAddonSettingCategories(settings: List<AddonSettingDef>): List<AddonSettingCategory> {
+    val hasCategories = settings.any {
+        it.category.isNotBlank() || it.categoryTitle.isNotBlank() || it.categoryDescription.isNotBlank()
+    }
+    if (!hasCategories) {
+        return listOf(AddonSettingCategory(key = "", title = "", description = "", settings = settings))
+    }
+
+    val categories = linkedMapOf<String, AddonSettingCategoryBuilder>()
+    settings.forEach { setting ->
+        val rawCategory = setting.category.trim()
+        val key = rawCategory.ifBlank { "__default" }
+        val category = categories.getOrPut(key) {
+            AddonSettingCategoryBuilder(
+                key = key,
+                title = setting.categoryTitle.ifBlank { rawCategory.toAddonCategoryTitle() },
+                description = setting.categoryDescription
+            )
+        }
+        if (category.title.isBlank() && setting.categoryTitle.isNotBlank()) category.title = setting.categoryTitle
+        if (category.description.isBlank() && setting.categoryDescription.isNotBlank()) category.description = setting.categoryDescription
+        category.settings += setting
+    }
+
+    return categories.values.map { category ->
+        AddonSettingCategory(
+            key = category.key,
+            title = category.title,
+            description = category.description,
+            settings = category.settings.toList()
+        )
+    }
+}
+
+private fun String.toAddonCategoryTitle(): String {
+    val words = replace('_', ' ').replace('-', ' ').trim()
+    if (words.isEmpty()) return ""
+    return words.split(Regex("\\s+")).joinToString(" ") { word ->
+        if (word.length <= 3) word.uppercase(Locale.ROOT) else word.replaceFirstChar { it.uppercase() }
     }
 }
 
@@ -1730,9 +2178,15 @@ private fun deleteAddon(context: Context, addon: AddonUiModel, allAddons: List<A
         val descFile = File(addon.jarPath + ".json")
 
         if (addon.isSystem && addon.hasDataOverride) {
-            if (jarFile.exists()) jarFile.delete()
-            if (descFile.exists()) descFile.delete()
-            val dataOverrideDir = File(File(addon.jarPath).parentFile ?: File(ADDON_DIR), File(addon.jarPath).nameWithoutExtension + "_data")
+            val dataOverrideJar = addon.dataOverrideJarPath
+                .takeIf { it.isNotBlank() }
+                ?.let(::File)
+                ?: jarFile.takeIf { it.absolutePath.startsWith(ADDON_DIR) }
+                ?: return
+            val dataOverrideDesc = File(dataOverrideJar.absolutePath + ".json")
+            if (dataOverrideJar.exists()) dataOverrideJar.delete()
+            if (dataOverrideDesc.exists()) dataOverrideDesc.delete()
+            val dataOverrideDir = File(dataOverrideJar.parentFile ?: File(ADDON_DIR), dataOverrideJar.nameWithoutExtension + "_data")
             if (dataOverrideDir.exists()) dataOverrideDir.deleteRecursively()
             Log.d(TAG, "Deleted data override for system addon: ${addon.id}")
             return
@@ -2349,11 +2803,14 @@ private fun AddonCardHeader(
     isSystem: Boolean,
     onHeaderClick: () -> Unit = {}
 ) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onHeaderClick() }
+    ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onHeaderClick() }
+                modifier = Modifier.fillMaxWidth()
             ) {
                 // Custom icon or default Extension icon
                 if (addon.iconBitmap != null) {
@@ -2523,6 +2980,7 @@ private fun AddonCardHeader(
                     }
                 }
             }
+    }
 }
 
 @Composable
@@ -2570,7 +3028,6 @@ private fun AddonCardSettings(
                             end = if (addon.backgroundScope == "header") 16.dp else 0.dp,
                             bottom = if (addon.backgroundScope == "header") 16.dp else 0.dp
                         )
-                        .clickable(onClick = {})
                 ) {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
@@ -2662,7 +3119,6 @@ private fun AddonCardSettings(
                             end = if (addon.backgroundScope == "header") 16.dp else 0.dp,
                             bottom = if (addon.backgroundScope == "header") 16.dp else 0.dp
                         )
-                        .clickable(onClick = {})
                 ) {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
@@ -2705,38 +3161,55 @@ private fun AddonCardSettings(
                     .padding(top = 8.dp, start = if (addon.backgroundScope == "header") 16.dp else 0.dp,
                              end = if (addon.backgroundScope == "header") 16.dp else 0.dp,
                              bottom = if (addon.backgroundScope == "header") 16.dp else 0.dp)
-                    .clickable(onClick = {}) // consume clicks — prevent Card onClick (detail dialog)
                 ) {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
-                    Text(
-                        dynamicStringResource(R.string.addon_settings_title),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = parseOptionalColor(addon.accentColor) ?: MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    for (setting in addon.settings) {
-                        key(setting.key) {
-                            val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp)
-                            } else {
-                                Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                            }
-                            AddonSettingControl(
-                                setting = setting,
-                                addon = addon,
-                                modifier = settingModifier,
-                                allSettings = allSettings,
-                                dependencyRevision = settingsRevision,
-                                onSettingChanged = ::onSettingChanged
+                    val settingCategories = remember(addon.settings) { buildAddonSettingCategories(addon.settings) }
+                    settingCategories.forEachIndexed { categoryIndex, category ->
+                        val categoryTitle = category.title.ifBlank {
+                            if (settingCategories.size == 1) dynamicStringResource(R.string.addon_settings_title) else ""
+                        }
+                        if (categoryTitle.isNotBlank()) {
+                            Text(
+                                categoryTitle,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = parseOptionalColor(addon.accentColor) ?: MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
+                        }
+                        if (category.description.isNotBlank()) {
+                            Text(
+                                category.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
+                        for (setting in category.settings) {
+                            key(setting.key) {
+                                val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 8.dp)
+                                } else {
+                                    Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                                }
+                                AddonSettingControl(
+                                    setting = setting,
+                                    addon = addon,
+                                    modifier = settingModifier,
+                                    allSettings = allSettings,
+                                    dependencyRevision = settingsRevision,
+                                    onSettingChanged = ::onSettingChanged
+                                )
+                            }
+                        }
+                        if (categoryIndex < settingCategories.lastIndex) {
+                            Spacer(Modifier.height(8.dp))
                         }
                     }
 
@@ -2823,8 +3296,8 @@ private fun AddonSettingControlInner(
         SettingType.GROUP -> GroupSettingControl(setting, addon, modifier, allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
         SettingType.VISUAL -> VisualSettingControl(setting, addon, modifier)
         SettingType.COMMAND_BUTTON -> CommandButtonSettingControl(setting, addon, modifier)
-        SettingType.TOGGLE, SettingType.SWITCH -> SwitchSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.CHECKBOX -> CheckboxSettingControl(setting, addon, modifier, onSettingChanged)
+        SettingType.TOGGLE, SettingType.SWITCH -> SwitchSettingControl(setting, addon, modifier, dependencyRevision, onSettingChanged)
+        SettingType.CHECKBOX -> CheckboxSettingControl(setting, addon, modifier, dependencyRevision, onSettingChanged)
         SettingType.TILE -> TileBindingControl(setting, addon, modifier)
     }
 }
@@ -2837,9 +3310,11 @@ private fun CommandButtonSettingControl(
     addon: AddonUiModel,
     modifier: Modifier
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val accent = settingAccent(setting, addon)
     val command = setting.command.ifBlank { setting.commandOn }
+    val binderActions = setting.binderOn
     var running by remember { mutableStateOf(false) }
     var output by remember { mutableStateOf("") }
 
@@ -2849,16 +3324,22 @@ private fun CommandButtonSettingControl(
         }
         Button(
             onClick = {
-                if (command.isBlank() || running) return@Button
+                if ((command.isBlank() && binderActions.isEmpty()) || running) return@Button
                 running = true
                 if (setting.showOutput) output = ""
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { runShellCommandForResult(command) }
-                    if (setting.showOutput) output = result.combinedOutput()
+                    val result = withContext(Dispatchers.IO) {
+                        val lines = mutableListOf<String>()
+                        val binderOutput = applyBinderActions(context, binderActions)
+                        if (binderOutput.isNotBlank()) lines += binderOutput
+                        if (command.isNotBlank()) lines += runShellCommandForResult(command).combinedOutput()
+                        lines.filter { it.isNotBlank() }.joinToString("\n")
+                    }
+                    if (setting.showOutput) output = result
                     running = false
                 }
             },
-            enabled = command.isNotBlank() && !running,
+            enabled = (command.isNotBlank() || binderActions.isNotEmpty()) && !running,
             colors = ButtonDefaults.buttonColors(containerColor = accent),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -2925,12 +3406,13 @@ private fun SwitchSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    dependencyRevision: Int,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
     val accent = settingAccent(setting, addon)
     val defaultVal = if (setting.defaultBool) 1 else setting.defaultInt
-    var checked by remember {
+    var checked by remember(setting.key, dependencyRevision) {
         mutableStateOf(readStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, defaultVal) != 0)
     }
     val scope = rememberCoroutineScope()
@@ -2941,14 +3423,22 @@ private fun SwitchSettingControl(
         if (commandRunning) return
         checked = newChecked
         writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, if (newChecked) 1 else 0)
+        applySettingsAssignments(context, if (newChecked) setting.settingsOn else setting.settingsOff)
         onSettingChanged(setting, newChecked)
         val command = if (newChecked) setting.commandOn else setting.commandOff
-        if (command.isBlank()) return
+        val binderActions = if (newChecked) setting.binderOn else setting.binderOff
+        if (command.isBlank() && binderActions.isEmpty()) return
         commandRunning = true
         if (setting.showOutput) commandOutput = ""
         scope.launch {
-            val result = withContext(Dispatchers.IO) { runShellCommandForResult(command) }
-            if (setting.showOutput) commandOutput = result.combinedOutput()
+            val output = withContext(Dispatchers.IO) {
+                val lines = mutableListOf<String>()
+                val binderOutput = applyBinderActions(context, binderActions)
+                if (binderOutput.isNotBlank()) lines += binderOutput
+                if (command.isNotBlank()) lines += runShellCommandForResult(command).combinedOutput()
+                lines.filter { it.isNotBlank() }.joinToString("\n")
+            }
+            if (setting.showOutput) commandOutput = output
             commandRunning = false
         }
     }
@@ -2978,7 +3468,7 @@ private fun SwitchSettingControl(
                 )
             )
         }
-        if (setting.showOutput && (setting.commandOn.isNotBlank() || setting.commandOff.isNotBlank())) {
+        if (setting.showOutput && (setting.commandOn.isNotBlank() || setting.commandOff.isNotBlank() || setting.binderOn.isNotEmpty() || setting.binderOff.isNotEmpty())) {
             CommandOutputPanel(output = commandOutput, running = commandRunning, modifier = Modifier.padding(top = 4.dp))
         }
     }
@@ -2991,33 +3481,33 @@ private fun CheckboxSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    dependencyRevision: Int,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
     val accent = settingAccent(setting, addon)
     val defaultVal = if (setting.defaultBool) 1 else setting.defaultInt
-    var checked by remember {
+    var checked by remember(setting.key, dependencyRevision) {
         mutableStateOf(readStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, defaultVal) != 0)
+    }
+
+    fun updateChecked(newChecked: Boolean) {
+        checked = newChecked
+        writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, if (newChecked) 1 else 0)
+        applySettingsAssignments(context, if (newChecked) setting.settingsOn else setting.settingsOff)
+        onSettingChanged(setting, newChecked)
     }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable {
-                checked = !checked
-                writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, if (checked) 1 else 0)
-                onSettingChanged(setting, checked)
-            }
+            .clickable { updateChecked(!checked) }
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = {
-                checked = it
-                writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, if (it) 1 else 0)
-                onSettingChanged(setting, it)
-            },
+            onCheckedChange = { updateChecked(it) },
             colors = CheckboxDefaults.colors(checkedColor = accent)
         )
         Spacer(Modifier.width(8.dp))
@@ -4031,16 +4521,21 @@ private fun GroupSettingControl(
             if (setting.title.isNotEmpty()) {
                 SettingTitleText(
                     setting,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = parseOptionalColor(setting.accentColor) ?: parseOptionalColor(addon.accentColor) ?: MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.padding(bottom = 2.dp)
                 )
             }
             if (setting.description.isNotEmpty()) {
                 SettingDescriptionText(
                     setting,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = Int.MAX_VALUE,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
             }
             setting.children.forEach { child ->
@@ -4063,11 +4558,12 @@ private fun GroupSettingControl(
             shape = RoundedCornerShape(16.dp),
             modifier = modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Column {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expanded = !expanded },
+                        .clickable { expanded = !expanded }
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
@@ -4094,7 +4590,7 @@ private fun GroupSettingControl(
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    Column(modifier = Modifier.padding(top = 12.dp)) {
+                    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
                         setting.children.forEach { child ->
                             AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
                         }
@@ -4122,11 +4618,12 @@ private fun GroupSettingControl(
         shape = RoundedCornerShape(12.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { openAction() },
+                    .clickable { openAction() }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SettingIcon(setting, addon, Modifier.padding(end = 8.dp))
@@ -4147,7 +4644,7 @@ private fun GroupSettingControl(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(top = 10.dp)) {
+                Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
                     setting.children.forEach { child ->
                         AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
                     }
@@ -4221,10 +4718,18 @@ private fun VisualSettingControl(setting: AddonSettingDef, addon: AddonUiModel, 
         VisualType.TEXT -> {
             Column(modifier = modifier.fillMaxWidth()) {
                 if (setting.title.isNotEmpty()) {
-                    SettingTitleText(setting, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = parseOptionalColor(setting.accentColor) ?: MaterialTheme.colorScheme.primary)
+                    SettingTitleText(
+                        setting,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = parseOptionalColor(setting.accentColor) ?: MaterialTheme.colorScheme.primary,
+                        maxLines = Int.MAX_VALUE,
+                        overflow = TextOverflow.Clip,
+                        modifier = Modifier.padding(bottom = 2.dp)
+                    )
                 }
                 if (setting.description.isNotEmpty()) {
-                    SettingDescriptionText(setting, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)
+                    SettingDescriptionText(setting, style = MaterialTheme.typography.bodyMedium, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)
                 }
             }
         }

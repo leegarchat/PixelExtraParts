@@ -535,48 +535,6 @@
     <string name="reboot_confirm_sysui_title">Перезапустить SystemUI?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI будет перезапущен. Панель навигации, строка состояния и уведомления ненадолго исчезнут.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">Конфигурация IMS</string>
-    <string name="warning_info">Эти настройки принудительно активируют возможности оператора (Carrier Config). По умолчанию большинство этих функций скрыто или отключено для несертифицированных регионов.\n\nДля применения изменений необходимо включить и выключить "Режим полета".</string>
-    <string name="ims_footer_info">Эти настройки принудительно активируют возможности оператора (Carrier Config). По умолчанию большинство этих функций скрыто или отключено для несертифицированных регионов.\n\nДля применения изменений необходимо включить и выключить "Режим полета".</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Голосовые сервисы</string>
-    <string name="ims_sec_network">Сеть и 5G</string>
-    <string name="ims_sec_advanced">Расширенные настройки</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE</string>
-    <string name="ims_desc_volte">Принудительно включает поддержку VoLTE в конфигурации оператора.\n\nПозволяет совершать голосовые вызовы через сеть 4G/LTE без переключения в 3G/2G. Обеспечивает быстрое соединение, HD-качество звука и одновременную работу интернета во время разговора. Исправляет отсутствие переключателя VoLTE в настройках.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">Звонки через Wi-Fi</string>
-    <string name="ims_desc_vowifi">Принудительно включает поддержку звонков через Wi-Fi.\n\nПозволяет телефону регистрироваться в IMS-сети оператора через любой доступный Wi-Fi. Незаменимо в местах с плохим приемом сотовой сети (подвалы, толстые стены), но наличием интернета. Активирует скрытое меню "Звонки по Wi-Fi".</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Видеовызовы</string>
-    <string name="ims_desc_vt">Включает нативную поддержку видеозвонков через оператора.\n\nЭто встроенная в "звонилку" функция видеосвязи (не через мессенджеры, а через стандартный протокол IR.94). Работает, если оператор поддерживает Video over LTE.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Резервные вызовы</string>
-    <string name="ims_desc_cross_sim">Технология резервного вызова через другую SIM-карту.\n\nПозволяет использовать интернет-трафик второй SIM-карты для регистрации IMS-сервисов первой SIM-карты. Полезно, когда основная SIM-карта потеряла сеть (например, в роуминге или "слепой зоне"), а вторая SIM-карта имеет доступ к интернету.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Звонки через 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Голосовые вызовы в чистых сетях 5G.\n\nСамый современный стандарт передачи голоса. Обеспечивает сверхнизкую задержку и лучшее качество, чем VoLTE. Работает только в сетях 5G SA и требует Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">Разблокировка 5G</string>
-    <string name="ims_desc_5g">Снимает программную блокировку 5G со стороны конфигурации.\n\nМногие операторы блокируют доступ к 5G для устройств Pixel, которых нет в их "белом списке", даже если аппаратная поддержка есть. Этот свитч принудительно добавляет диапазоны NR NSA и SA в список разрешенных.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Агрессивный сигнал 5G</string>
-    <string name="ims_desc_5g_thresh">Изменяет пороги уровня сигнала для переключения сетей.\n\nЗанижает требования к качеству сигнала для отображения значка 5G и удержания в сети 5G. Помогает, если телефон слишком охотно сваливается в 4G/LTE, даже когда 5G доступен.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">Интерфейс UT</string>
-    <string name="ims_desc_ut">Управление дополнительными услугами через IMS.\n\nПозволяет настраивать переадресацию, ожидание вызова и АОН через меню настроек телефона, используя IP-канал вместо устаревших USSD-кодов. Исправляет ошибки типа "Ошибка сети или SIM-карты" при попытке войти в настройки вызовов в сетях LTE-only.</string>
-
     <!-- LAUNCHER SETTINGS -->
     <string name="launcher_settings_title">Разное</string>
     <string name="launcher_search_section">Поиск и навигация</string>
@@ -713,6 +671,8 @@
     <string name="main_header_system">Система</string>
     <string name="main_header_network">Сеть и связь</string>
     <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Камера</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Тестовые штуки</string>
@@ -959,10 +919,6 @@
     <string name="os_norm_mode_behavior">Только поведение</string>
     <string name="os_norm_mode_hybrid">Гибрид (рекомендуется)</string>
     <string name="os_norm_mode_stacktrace">Только стек-трейс</string>
-
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">IMS Конфиг</string>
-
 
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Настройка главного экрана</string>

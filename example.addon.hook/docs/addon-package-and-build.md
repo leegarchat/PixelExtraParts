@@ -47,9 +47,13 @@ The manager scans addon JARs from:
 /data/pixelparts/addons
 ```
 
-The system directory is for built-in or ROM-provided addons. The data directory is for user or test overrides. If both directories contain a JAR with the same `id`, the data version wins and the system version is skipped entirely.
+The system directory is for built-in or ROM-provided addons. The data directory is for user or test overrides.
+
+If both directories contain a JAR with the same addon `id`, Pixel Extra Parts compares descriptor `version` values and uses the higher version. Equal versions keep the `/data` JAR active as the user's explicit override. This lets an OTA-provided system addon replace a stale `/data` override when the system version is newer, while still letting the user remove the stale data copy from the manager.
 
 An external base descriptor can also sit next to the JAR as `<jar-file>.json`. For example, `my_addon.jar.json` is read before the packed `META-INF/addon.json`.
+
+Use monotonically increasing semantic-like versions (`1.2.0`, `1.2.1`, `2.0`) for system addons. Numeric segments are compared numerically; when versions compare equal, `/data` remains preferred.
 
 ## Build Script
 

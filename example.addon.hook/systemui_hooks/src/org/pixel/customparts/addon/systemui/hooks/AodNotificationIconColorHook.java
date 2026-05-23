@@ -54,7 +54,7 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
                     + " updateColorHooks=" + updateColorHooks
                     + " darkChangedHooks=" + darkChangedHooks);
         } catch (Throwable t) {
-            logError("Unable to hook notification app icon colors", t);
+            logHookWarning("Unable to hook notification app icon colors", t);
         }
     }
 
@@ -78,7 +78,7 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
                 }
             });
         } catch (Throwable t) {
-            logError("Unable to hook StatusBarIconView.setIconStyle", t);
+            logHookWarning("StatusBarIconView.setIconStyle hook unavailable", t);
             return 0;
         }
     }
@@ -119,7 +119,7 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
             }
             return count;
         } catch (Throwable t) {
-            logError("Unable to hook IconManager notification setIcon", t);
+            logHookWarning("IconManager notification setIcon hook unavailable", t);
             return 0;
         }
     }
@@ -129,7 +129,7 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
         try {
             statusBarIconClass = XposedHelpers.findClass("com.android.internal.statusbar.StatusBarIcon", classLoader);
         } catch (Throwable t) {
-            logError("Unable to resolve StatusBarIcon class for notification drawable hook", t);
+            logHookWarning("StatusBarIcon class unavailable for notification drawable hook", t);
             return 0;
         }
 
@@ -198,9 +198,22 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
             XposedBridge.hookMethod(method, hook);
             return 1;
         } catch (Throwable t) {
-            logError("Unable to hook method by signature: " + method, t);
+            logHookWarning("Unable to hook method by signature: " + method, t);
             return 0;
         }
+    }
+
+    private void logHookWarning(String message, Throwable throwable) {
+        log(message + ": " + throwableSummary(throwable));
+    }
+
+    private static String throwableSummary(Throwable throwable) {
+        if (throwable == null) {
+            return "unknown";
+        }
+        String detail = throwable.getMessage();
+        String name = throwable.getClass().getSimpleName();
+        return detail == null || detail.isEmpty() ? name : name + ": " + detail;
     }
 
     private static void clearIconTint(ImageView imageView) {

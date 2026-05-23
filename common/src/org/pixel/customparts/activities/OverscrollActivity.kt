@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,10 +47,15 @@ import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.services.OverscrollTileService
 import org.pixel.customparts.ui.ModuleStatus
+import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
+import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.RemoteStringsManager
 
@@ -148,6 +154,26 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        floatingActionButton = {
+            RebootBubble(
+                extraActions = listOf(
+                    RebootBubbleMenuAction(
+                        icon = Icons.Rounded.Add,
+                        label = dynamicStringResource(R.string.overscroll_add_tile),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        onClick = {
+                            TileUtils.requestAddTileService(
+                                context,
+                                OverscrollTileService::class.java,
+                                R.string.os_title_activity,
+                                R.drawable.ic_overscroll_tile
+                            )
+                        }
+                    )
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -173,7 +199,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding() + 16.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING,
                     start = 16.dp,
                     end = 16.dp
                 ),

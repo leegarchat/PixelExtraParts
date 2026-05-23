@@ -48,7 +48,6 @@ class AddonPageActivity : ComponentActivity() {
                 putExtra(EXTRA_ADDON_ID, addonId)
                 if (pageId != null) putExtra(EXTRA_PAGE_ID, pageId)
                 if (title != null) putExtra(EXTRA_TITLE, title)
-                putExtra(EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION, true)
                 putExtra(EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, includeTargetActivityEntries)
             }
             context.startActivity(intent)

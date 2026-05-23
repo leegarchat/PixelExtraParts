@@ -504,8 +504,51 @@ public class AddonLoader {
 
         AddonInfo info = new AddonInfo(id, entryClass, name, author, description,
                                        version, defaultTargets, jarFile.getAbsolutePath());
+        AddonInfo existing = loadedAddons.get(id);
+        if (existing != null && !shouldPreferAddon(info, existing)) {
+            Log.d(TAG, "Skipping older addon copy: " + id + " " + info.version + " at " + info.jarPath);
+            return;
+        }
         loadedAddons.put(id, info);
         Log.d(TAG, "Indexed addon: " + id + " -> " + defaultTargets);
+    }
+
+    private static boolean shouldPreferAddon(AddonInfo candidate, AddonInfo existing) {
+        int versionCompare = compareVersions(candidate.version, existing.version);
+        if (versionCompare != 0) {
+            return versionCompare > 0;
+        }
+        return !isSystemAddon(candidate) && isSystemAddon(existing);
+    }
+
+    private static int compareVersions(String left, String right) {
+        String[] leftParts = splitVersion(left);
+        String[] rightParts = splitVersion(right);
+        int count = Math.max(leftParts.length, rightParts.length);
+        for (int i = 0; i < count; i++) {
+            int leftPart = parseVersionPart(leftParts, i);
+            int rightPart = parseVersionPart(rightParts, i);
+            if (leftPart != rightPart) {
+                return leftPart < rightPart ? -1 : 1;
+            }
+        }
+        return 0;
+    }
+
+    private static String[] splitVersion(String version) {
+        if (version == null || version.trim().isEmpty()) {
+            return new String[0];
+        }
+        return version.trim().split("[.\\-_]");
+    }
+
+    private static int parseVersionPart(String[] parts, int index) {
+        if (index >= parts.length) return 0;
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (Throwable ignored) {
+            return 0;
+        }
     }
 
     /**
@@ -693,7 +736,7 @@ public class AddonLoader {
                     lastTimestamp = Long.parseLong(parts[1].trim());
                 }
             } catch (Throwable t) {
-                Log.w(TAG, "Failed to read boot guard file", t);
+                Log.d(TAG, "Failed to read boot guard file: " + throwableSummary(t));
             }
         }
 
@@ -720,12 +763,13 @@ public class AddonLoader {
         // Increment crash counter
         count++;
         try {
-            guardFile.getParentFile().mkdirs();
+            File parent = guardFile.getParentFile();
+            if (parent != null) parent.mkdirs();
             java.io.FileOutputStream fos = new java.io.FileOutputStream(guardFile);
             fos.write((count + "\n" + now + "\n").getBytes("UTF-8"));
             fos.close();
         } catch (Throwable t) {
-            Log.w(TAG, "Failed to write boot guard file", t);
+            Log.d(TAG, "Failed to write boot guard file: " + throwableSummary(t));
         }
 
         if (count > 1) {
@@ -742,6 +786,15 @@ public class AddonLoader {
             File guardFile = new File(BOOT_GUARD_FILE);
             if (guardFile.exists()) guardFile.delete();
         } catch (Throwable ignored) {}
+    }
+
+    private static String throwableSummary(Throwable throwable) {
+        if (throwable == null) {
+            return "unknown";
+        }
+        String detail = throwable.getMessage();
+        String name = throwable.getClass().getSimpleName();
+        return detail == null || detail.isEmpty() ? name : name + ": " + detail;
     }
 
     /**

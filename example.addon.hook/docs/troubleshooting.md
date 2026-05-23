@@ -38,6 +38,17 @@ Check:
 - The value type matches the reader: int for switches, string for select/carousel, float for float sliders.
 - Dependencies are not forcing a setting value when disabled.
 
+## The Wrong Copy Loads After OTA Or Manual Install
+
+When both `/system_ext/etc/pixelparts/addons` and `/data/pixelparts/addons` contain the same addon `id`, the active copy is selected by descriptor `version`.
+
+Check:
+
+- The system addon version is higher than the stale `/data` copy when an OTA should take over.
+- Equal versions intentionally keep the `/data` copy active as a user override.
+- The manager shows and removes the stale data override for an OTA-newer system addon.
+- The updated JAR really contains the new `META-INF/addon.json` version.
+
 ## A Generated Page Does Not Show In A Target Activity
 
 Check:

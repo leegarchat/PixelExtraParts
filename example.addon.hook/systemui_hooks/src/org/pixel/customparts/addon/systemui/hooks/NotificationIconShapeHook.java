@@ -104,7 +104,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
             hookFetchAppIconBitmapInfo(classLoader, providerClass, iconFactoryClass);
             log("Hooked notification app icon shape controls");
         } catch (Throwable t) {
-            logError("Unable to hook notification app icons", t);
+            logHookWarning("Unable to hook notification app icons", t);
         }
     }
 
@@ -123,7 +123,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
                         }
                     });
         } catch (Throwable t) {
-            logError("Unable to hook AppIconProviderImpl.getOrFetchAppIcon", t);
+            logHookWarning("AppIconProviderImpl.getOrFetchAppIcon hook unavailable", t);
         }
 
         try {
@@ -139,7 +139,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
                         }
                     });
         } catch (Throwable t) {
-            logError("Unable to hook AppIconProviderImpl.getOrFetchSkeletonAppIcon", t);
+            logHookWarning("AppIconProviderImpl.getOrFetchSkeletonAppIcon hook unavailable", t);
         }
     }
 
@@ -194,7 +194,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
                                     param.args[0], "createBadgedIconBitmap", icon, options);
                             param.setResult(bitmapInfo);
                         } catch (Throwable t) {
-                            logError("Unable to apply notification icon shape for " + packageName, t);
+                            logHookWarning("Unable to apply notification icon shape for " + packageName, t);
                         }
                     }
                 });
@@ -285,7 +285,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
             synchronized (NotificationIconShapeHook.class) {
                 reloadReceiverRegistered = false;
             }
-            logError("Unable to register notification icon reload receiver", t);
+            logHookWarning("Unable to register notification icon reload receiver", t);
         }
     }
 
@@ -298,7 +298,7 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
             clearAppIconCache(XposedHelpers.getObjectField(provider, "standardCache"));
             clearAppIconCache(XposedHelpers.getObjectField(provider, "skeletonCache"));
         } catch (Throwable t) {
-            logError("Unable to purge notification app icon cache", t);
+            logHookWarning("Unable to purge notification app icon cache", t);
         }
     }
 
@@ -601,6 +601,19 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
             XposedHelpers.setObjectField(object, fieldName, value);
         } catch (Throwable ignored) {
         }
+    }
+
+    private void logHookWarning(String message, Throwable throwable) {
+        log(message + ": " + throwableSummary(throwable));
+    }
+
+    private static String throwableSummary(Throwable throwable) {
+        if (throwable == null) {
+            return "unknown";
+        }
+        String detail = throwable.getMessage();
+        String name = throwable.getClass().getSimpleName();
+        return detail == null || detail.isEmpty() ? name : name + ": " + detail;
     }
 
     private static final class ShapeConfig {

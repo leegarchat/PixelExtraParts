@@ -1,0 +1,962 @@
+{
+    "id": "ims_carrier_config",
+    "name": "IMS Carrier Config",
+    "author": "Pixel Extra Parts",
+    "description": "Settings-only IMS controls that write Pixel IMS flags and apply CarrierConfig overrides through the system API.",
+    "version": "1.1",
+    "enabled": true,
+    "accent": "#4FC3F7",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 45,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "ims-carrier-config",
+            "title": "IMS Carrier Config",
+            "subtitle": "Carrier IMS flags and active SIM overrides",
+            "group": "system",
+            "priority": 88,
+            "settings": [
+                {
+                    "key": "ims_api_notice",
+                    "type": "warning",
+                    "title": "System API path",
+                    "description": "Switches write the same Settings.Secure flags used by the built-in IMS screen and then call CarrierConfigManager.overrideConfig for active subscriptions.",
+                    "color": "#4FC3F7"
+                },
+                {
+                    "key": "ims_voice_stack_preset",
+                    "title": "Voice stack preset",
+                    "description": "One switch that enables or disables VoLTE, Wi-Fi calling, video calling and UT flags together, then applies the matching carrier config values.",
+                    "type": "switch",
+                    "storage": "addon_file",
+                    "default": false,
+                    "settingsOn": [
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_volte",
+                            "type": "int",
+                            "value": 1
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_wfc",
+                            "type": "int",
+                            "value": 1
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_vt",
+                            "type": "int",
+                            "value": 1
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_ut",
+                            "type": "int",
+                            "value": 1
+                        }
+                    ],
+                    "settingsOff": [
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_volte",
+                            "type": "int",
+                            "value": 0
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_wfc",
+                            "type": "int",
+                            "value": 0
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_vt",
+                            "type": "int",
+                            "value": 0
+                        },
+                        {
+                            "provider": "secure",
+                            "key": "pixel_ims_ut",
+                            "type": "int",
+                            "value": 0
+                        }
+                    ],
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_volte_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "hide_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_lte_plus_data_icon_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "enhanced_4g_lte_on_by_default_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "carrier_wfc_ims_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "carrier_wfc_supports_wifi_only_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_wfc_mode_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_wfc_roaming_mode_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "show_wifi_calling_icon_in_status_bar_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "carrier_vt_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "carrier_supports_ss_over_ut_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_volte_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_lte_plus_data_icon_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "enhanced_4g_lte_on_by_default_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "carrier_wfc_ims_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "carrier_wfc_supports_wifi_only_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_wfc_mode_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_wfc_roaming_mode_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "show_wifi_calling_icon_in_status_bar_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "carrier_vt_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "carrier_supports_ss_over_ut_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "key": "pixel_ims_volte",
+                    "title": "VoLTE",
+                    "description": "Enable carrier VoLTE availability and expose the enhanced LTE controls.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_volte_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "hide_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_lte_plus_data_icon_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "enhanced_4g_lte_on_by_default_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_volte_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_enhanced_4g_lte_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "hide_lte_plus_data_icon_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "enhanced_4g_lte_on_by_default_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_voice_group",
+                    "categoryTitle": "Voice services",
+                    "categoryDescription": "Individual IMS voice capabilities written to Settings.Secure and CarrierConfig."
+                },
+                {
+                    "key": "pixel_ims_wfc",
+                    "title": "Wi-Fi calling",
+                    "description": "Enable IMS Wi-Fi calling, Wi-Fi-only support and editable roaming modes.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_wfc_ims_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "carrier_wfc_supports_wifi_only_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_wfc_mode_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "editable_wfc_roaming_mode_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "show_wifi_calling_icon_in_status_bar_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_wfc_ims_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "carrier_wfc_supports_wifi_only_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_wfc_mode_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "editable_wfc_roaming_mode_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "show_wifi_calling_icon_in_status_bar_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_voice_group"
+                },
+                {
+                    "key": "pixel_ims_vt",
+                    "title": "Video calling",
+                    "description": "Enable carrier video telephony availability.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_vt_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_vt_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_voice_group"
+                },
+                {
+                    "key": "pixel_ims_cross_sim",
+                    "title": "Cross-SIM calling",
+                    "description": "Enable cross-SIM IMS availability and opportunistic data calling support.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_cross_sim_ims_available_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "enable_cross_sim_calling_on_opportunistic_data_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_cross_sim_ims_available_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "enable_cross_sim_calling_on_opportunistic_data_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_voice_group"
+                },
+                {
+                    "key": "pixel_ims_ut",
+                    "title": "UT supplementary services",
+                    "description": "Enable supplementary service support over UT.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_supports_ss_over_ut_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_supports_ss_over_ut_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_voice_group"
+                },
+                {
+                    "key": "pixel_ims_vonr",
+                    "title": "VoNR",
+                    "description": "Enable VoNR and make the VoNR setting visible on Android 14 and newer builds.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "vonr_enabled_bool",
+                                    "type": "bool",
+                                    "value": true
+                                },
+                                {
+                                    "key": "vonr_setting_visibility_bool",
+                                    "type": "bool",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "vonr_enabled_bool",
+                                    "type": "bool",
+                                    "value": false
+                                },
+                                {
+                                    "key": "vonr_setting_visibility_bool",
+                                    "type": "bool",
+                                    "value": false
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_network_group",
+                    "categoryTitle": "Network services",
+                    "categoryDescription": "NR and VoNR overrides applied only to active subscriptions."
+                },
+                {
+                    "key": "pixel_ims_5g",
+                    "title": "5G NR availability",
+                    "description": "Override NR availability with NSA and SA support values.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_nr_availabilities_int_array",
+                                    "type": "int_array",
+                                    "value": [
+                                        1,
+                                        2
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "carrier_nr_availabilities_int_array",
+                                    "type": "int_array",
+                                    "value": []
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_network_group"
+                },
+                {
+                    "key": "pixel_ims_5g_thresh",
+                    "title": "5G signal thresholds",
+                    "description": "Apply the NR SSRSRP threshold array used by the built-in IMS profile.",
+                    "type": "switch",
+                    "provider": "secure",
+                    "default": false,
+                    "enabledIfAll": [
+                        "pixel_ims_5g"
+                    ],
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "5g_nr_ssrsrp_thresholds_int_array",
+                                    "type": "int_array",
+                                    "value": [
+                                        -128,
+                                        -118,
+                                        -108,
+                                        -98
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "binderOff": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "values": [
+                                {
+                                    "key": "5g_nr_ssrsrp_thresholds_int_array",
+                                    "type": "int_array",
+                                    "value": []
+                                }
+                            ]
+                        }
+                    ],
+                    "category": "ims_network_group"
+                },
+                {
+                    "key": "ims_clear_override",
+                    "title": "Clear carrier override",
+                    "description": "Clear CarrierConfig overrides for active subscriptions through CarrierConfigManager.overrideConfig.",
+                    "type": "button",
+                    "showOutput": true,
+                    "binderOn": [
+                        {
+                            "type": "carrier_config",
+                            "subIds": "active",
+                            "clear": true
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "IMS Carrier Config",
+            "description": "Настройки IMS без runtime hook: запись Pixel IMS флагов и применение CarrierConfig через системный API.",
+            "main": [
+                {
+                    "id": "ims-carrier-config",
+                    "title": "IMS Carrier Config",
+                    "subtitle": "IMS-флаги оператора и настройки активных SIM",
+                    "settings": [
+                        {
+                            "key": "ims_api_notice",
+                            "title": "Системный API",
+                            "description": "Переключатели пишут те же Settings.Secure флаги, что и встроенный экран IMS, затем вызывают CarrierConfigManager.overrideConfig для активных SIM."
+                        },
+                        {
+                            "key": "ims_voice_stack_preset",
+                            "title": "Пресет голосового стека",
+                            "description": "Один переключатель включает или отключает VoLTE, Wi-Fi calling, видеозвонки и UT, затем применяет соответствующие carrier config значения."
+                        },
+                        {
+                            "key": "pixel_ims_volte",
+                            "title": "VoLTE",
+                            "description": "Включает доступность VoLTE у оператора и показывает enhanced LTE controls.",
+                            "category": "ims_voice_group",
+                            "categoryTitle": "Голосовые сервисы",
+                            "categoryDescription": "Отдельные IMS-возможности для голоса через Settings.Secure и CarrierConfig."
+                        },
+                        {
+                            "key": "pixel_ims_wfc",
+                            "title": "Wi-Fi calling",
+                            "description": "Включает IMS Wi-Fi calling, Wi-Fi-only и редактируемые roaming modes.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vt",
+                            "title": "Видеозвонки",
+                            "description": "Включает доступность carrier video telephony.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_cross_sim",
+                            "title": "Cross-SIM calling",
+                            "description": "Включает cross-SIM IMS и opportunistic data calling support.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_ut",
+                            "title": "UT supplementary services",
+                            "description": "Включает supplementary services over UT.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vonr",
+                            "title": "VoNR",
+                            "description": "Включает VoNR и показывает настройку VoNR на Android 14+ сборках.",
+                            "category": "ims_network_group",
+                            "categoryTitle": "Сетевые сервисы",
+                            "categoryDescription": "NR и VoNR overrides, применяемые только к активным подпискам."
+                        },
+                        {
+                            "key": "pixel_ims_5g",
+                            "title": "5G NR availability",
+                            "description": "Применяет override NR availability со значениями NSA и SA.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "pixel_ims_5g_thresh",
+                            "title": "5G signal thresholds",
+                            "description": "Применяет массив NR SSRSRP thresholds из встроенного IMS профиля.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "ims_clear_override",
+                            "title": "Очистить carrier override",
+                            "description": "Очищает CarrierConfig overrides для активных SIM через CarrierConfigManager.overrideConfig."
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "IMS Carrier Config",
+            "description": "IMS-Steuerung ohne Runtime-Hook: Pixel-IMS-Flags schreiben und CarrierConfig ueber die System-API anwenden.",
+            "main": [
+                {
+                    "id": "ims-carrier-config",
+                    "title": "IMS Carrier Config",
+                    "subtitle": "Carrier-IMS-Flags und Overrides fuer aktive SIMs",
+                    "settings": [
+                        {
+                            "key": "ims_api_notice",
+                            "title": "System-API",
+                            "description": "Schalter schreiben dieselben Settings.Secure-Flags wie die eingebaute IMS-Seite und rufen danach CarrierConfigManager.overrideConfig fuer aktive SIMs auf."
+                        },
+                        {
+                            "key": "ims_voice_stack_preset",
+                            "title": "Sprachdienste-Preset",
+                            "description": "Ein Schalter aktiviert oder deaktiviert VoLTE, WLAN-Anrufe, Videoanrufe und UT gemeinsam und wendet passende CarrierConfig-Werte an."
+                        },
+                        {
+                            "key": "pixel_ims_volte",
+                            "title": "VoLTE",
+                            "description": "Aktiviert VoLTE-Verfuegbarkeit und zeigt Enhanced-LTE-Steuerungen.",
+                            "category": "ims_voice_group",
+                            "categoryTitle": "Sprachdienste",
+                            "categoryDescription": "Einzelne IMS-Sprachfunktionen ueber Settings.Secure und CarrierConfig."
+                        },
+                        {
+                            "key": "pixel_ims_wfc",
+                            "title": "WLAN-Anrufe",
+                            "description": "Aktiviert IMS-WLAN-Anrufe, Wi-Fi-only-Unterstuetzung und editierbare Roaming-Modi.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vt",
+                            "title": "Videoanrufe",
+                            "description": "Aktiviert Carrier-Video-Telefonie.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_cross_sim",
+                            "title": "Cross-SIM-Anrufe",
+                            "description": "Aktiviert Cross-SIM IMS und opportunistische Datenanrufe.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_ut",
+                            "title": "UT-Zusatzdienste",
+                            "description": "Aktiviert Zusatzdienste ueber UT.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vonr",
+                            "title": "VoNR",
+                            "description": "Aktiviert VoNR und macht die VoNR-Einstellung auf Android 14+ sichtbar.",
+                            "category": "ims_network_group",
+                            "categoryTitle": "Netzdienste",
+                            "categoryDescription": "NR- und VoNR-Overrides nur fuer aktive Abonnements."
+                        },
+                        {
+                            "key": "pixel_ims_5g",
+                            "title": "5G NR-Verfuegbarkeit",
+                            "description": "Setzt NR-Verfuegbarkeit mit NSA- und SA-Werten.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "pixel_ims_5g_thresh",
+                            "title": "5G-Signalschwellen",
+                            "description": "Wendet das NR-SSRSRP-Schwellenarray des eingebauten IMS-Profils an.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "ims_clear_override",
+                            "title": "Carrier Override loeschen",
+                            "description": "Loescht CarrierConfig-Overrides fuer aktive SIMs ueber CarrierConfigManager.overrideConfig."
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "IMS Carrier Config",
+            "description": "Controle IMS sans hook runtime : ecrit les flags Pixel IMS et applique CarrierConfig via l'API systeme.",
+            "main": [
+                {
+                    "id": "ims-carrier-config",
+                    "title": "IMS Carrier Config",
+                    "subtitle": "Flags IMS operateur et overrides SIM actives",
+                    "settings": [
+                        {
+                            "key": "ims_api_notice",
+                            "title": "API systeme",
+                            "description": "Les interrupteurs ecrivent les memes flags Settings.Secure que l'ecran IMS integre puis appellent CarrierConfigManager.overrideConfig pour les SIM actives."
+                        },
+                        {
+                            "key": "ims_voice_stack_preset",
+                            "title": "Preset voix",
+                            "description": "Un seul interrupteur active ou desactive VoLTE, appels Wi-Fi, appels video et UT, puis applique les valeurs CarrierConfig associees."
+                        },
+                        {
+                            "key": "pixel_ims_volte",
+                            "title": "VoLTE",
+                            "description": "Active la disponibilite VoLTE operateur et affiche les controles LTE avances.",
+                            "category": "ims_voice_group",
+                            "categoryTitle": "Services voix",
+                            "categoryDescription": "Capacites IMS voix separees via Settings.Secure et CarrierConfig."
+                        },
+                        {
+                            "key": "pixel_ims_wfc",
+                            "title": "Appels Wi-Fi",
+                            "description": "Active les appels Wi-Fi IMS, le mode Wi-Fi seul et les modes roaming modifiables.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vt",
+                            "title": "Appels video",
+                            "description": "Active la telephonie video operateur.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_cross_sim",
+                            "title": "Appels Cross-SIM",
+                            "description": "Active Cross-SIM IMS et les appels via donnees opportunistes.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_ut",
+                            "title": "Services UT",
+                            "description": "Active les services supplementaires via UT.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vonr",
+                            "title": "VoNR",
+                            "description": "Active VoNR et rend le reglage visible sur Android 14+.",
+                            "category": "ims_network_group",
+                            "categoryTitle": "Services reseau",
+                            "categoryDescription": "Overrides NR et VoNR appliques seulement aux abonnements actifs."
+                        },
+                        {
+                            "key": "pixel_ims_5g",
+                            "title": "Disponibilite 5G NR",
+                            "description": "Applique la disponibilite NR avec les valeurs NSA et SA.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "pixel_ims_5g_thresh",
+                            "title": "Seuils signal 5G",
+                            "description": "Applique le tableau NR SSRSRP du profil IMS integre.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "ims_clear_override",
+                            "title": "Effacer l'override operateur",
+                            "description": "Efface les overrides CarrierConfig des SIM actives via CarrierConfigManager.overrideConfig."
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "IMS Carrier Config",
+            "description": "IMS-керування без runtime hook: запис Pixel IMS прапорців і застосування CarrierConfig через системний API.",
+            "main": [
+                {
+                    "id": "ims-carrier-config",
+                    "title": "IMS Carrier Config",
+                    "subtitle": "IMS-прапорці оператора та overrides активних SIM",
+                    "settings": [
+                        {
+                            "key": "ims_api_notice",
+                            "title": "Системний API",
+                            "description": "Перемикачі записують ті самі Settings.Secure прапорці, що й вбудований IMS екран, а потім викликають CarrierConfigManager.overrideConfig для активних SIM."
+                        },
+                        {
+                            "key": "ims_voice_stack_preset",
+                            "title": "Пресет голосового стеку",
+                            "description": "Один перемикач вмикає або вимикає VoLTE, Wi-Fi calling, відеодзвінки та UT, після чого застосовує відповідні CarrierConfig значення."
+                        },
+                        {
+                            "key": "pixel_ims_volte",
+                            "title": "VoLTE",
+                            "description": "Вмикає доступність VoLTE оператора та показує enhanced LTE controls.",
+                            "category": "ims_voice_group",
+                            "categoryTitle": "Голосові сервіси",
+                            "categoryDescription": "Окремі IMS-можливості для голосу через Settings.Secure і CarrierConfig."
+                        },
+                        {
+                            "key": "pixel_ims_wfc",
+                            "title": "Wi-Fi calling",
+                            "description": "Вмикає IMS Wi-Fi calling, Wi-Fi-only support і редаговані roaming modes.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vt",
+                            "title": "Відеодзвінки",
+                            "description": "Вмикає carrier video telephony.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_cross_sim",
+                            "title": "Cross-SIM calling",
+                            "description": "Вмикає cross-SIM IMS та opportunistic data calling support.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_ut",
+                            "title": "UT supplementary services",
+                            "description": "Вмикає supplementary services over UT.",
+                            "category": "ims_voice_group"
+                        },
+                        {
+                            "key": "pixel_ims_vonr",
+                            "title": "VoNR",
+                            "description": "Вмикає VoNR і показує налаштування VoNR на Android 14+.",
+                            "category": "ims_network_group",
+                            "categoryTitle": "Мережеві сервіси",
+                            "categoryDescription": "NR та VoNR overrides, що застосовуються лише до активних підписок."
+                        },
+                        {
+                            "key": "pixel_ims_5g",
+                            "title": "5G NR availability",
+                            "description": "Застосовує NR availability override зі значеннями NSA та SA.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "pixel_ims_5g_thresh",
+                            "title": "5G signal thresholds",
+                            "description": "Застосовує масив NR SSRSRP thresholds із вбудованого IMS профілю.",
+                            "category": "ims_network_group"
+                        },
+                        {
+                            "key": "ims_clear_override",
+                            "title": "Очистити carrier override",
+                            "description": "Очищає CarrierConfig overrides для активних SIM через CarrierConfigManager.overrideConfig."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

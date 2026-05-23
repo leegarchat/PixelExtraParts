@@ -48,7 +48,7 @@
 | `name` | string | User-facing addon name. Defaults to `id`. |
 | `author` | string | User-facing author. |
 | `description` | string | User-facing addon description. |
-| `version` | string | User-facing version. Defaults to `1.0`. |
+| `version` | string | User-facing version. Defaults to `1.0`. Also used for duplicate system/data addon selection. |
 | `targetPackages` | string array | Default target packages. Empty means the addon can apply broadly. |
 | `enabled` | boolean | Default enabled state before the user changes it. |
 | `settings` | array | Inline generated settings shown in the addon card. |
@@ -103,11 +103,13 @@
 | `iconSize` | int | Icon size in dp. |
 | `iconColor` or `iconTint` | string | Icon tint as hex. |
 | `iconBackground` or `iconBackgroundColor` | string | Icon container color as hex. |
-| `group` | string | Main menu group, such as `launcher`, `system`, `network`, `gesture`. |
+| `group` | string | Main menu group. Known values are `launcher`, `system`, `network`, `gesture`; custom group names are also accepted. |
 | `priority` | int | Higher priority entries sort first. |
 | `targetActivity` | string | Injects the entry into an existing activity page. |
 | `targetSlot` | string | Optional slot name used by the target activity. |
 | `settings` | array | Settings displayed on this page. |
+
+When the same addon `id` exists in `/system_ext/etc/pixelparts/addons` and `/data/pixelparts/addons`, the active copy is chosen by `version`: higher version wins, equal version prefers `/data`. Keep system addon versions increasing across OTA releases so stale user overrides do not mask newer built-in code.
 
 ## Localization
 

@@ -26,11 +26,11 @@ object ThermalProfileController {
     private const val VENDOR_MIRROR_CONFIG_DIR = "/data/vendor/pixelparts/ThermalConfigs"
     private const val VENDOR_THERMAL_PREFIX = "thermal_info_config_"
     private const val STOCK_CONFIG_VALUE = "thermal_info_config.json"
-    private const val PROP_CONFIG_REQUEST = "sys.pixelparts.thermal_config_request"
-    private const val PROP_CONFIG_FILE_REQUEST = "sys.pixelparts.thermal_config_file_request"
-    private const val PROP_CONFIG_FILE_REQUEST_SERIAL = "sys.pixelparts.thermal_config_file_request_serial"
+    private const val PROP_CONFIG_CURRENT = "persist.sys.pixelparts.thermal_config"
+    private const val PROP_CONFIG_REQUEST = "persist.sys.pixelparts.thermal_config_request"
     private const val PROP_VENDOR_THERMAL_CONFIG = "vendor.thermal.config"
     private const val MIRROR_CLEANUP_DELAY_MS = 5000L
+    @Volatile private var lastTriggerSerial = 0L
 
     fun listConfigChoices(includeFollowGlobal: Boolean = false): List<ThermalConfigChoice> {
         seedVendorConfigs()
@@ -57,7 +57,8 @@ object ThermalProfileController {
         val vendorNames = vendorPresetNames()
         choices += ensureConfigDir().listFiles { file ->
             file.isFile && file.name.endsWith(".json", ignoreCase = true) &&
-                file.name != MAP_FILE_NAME && file.name != PROFILE_METADATA_FILE_NAME
+                file.name != MAP_FILE_NAME && file.name != PROFILE_METADATA_FILE_NAME &&
+                file.name != STOCK_CONFIG_VALUE
         }?.sortedBy { it.name.lowercase() }?.map { file ->
             val itemMetadata = metadata[file.name]
             val source = itemMetadata?.source ?: if (vendorNames.contains(file.name)) PROFILE_SOURCE_SYSTEM else PROFILE_SOURCE_USER
@@ -315,26 +316,21 @@ object ThermalProfileController {
     }
 
     fun applyConfig(context: Context, configId: String): Boolean {
+        seedVendorConfigs()
         val normalized = normalizeConfigId(configId)
         if (normalized.isNotBlank() && normalized != STOCK_CONFIG_ID && !isConfigAvailable(normalized)) {
             return false
         }
 
         val propertyValue = resolvePropertyValue(configId)
-        val activeMirrorName: String?
-        val applied = if (propertyValue.startsWith('/')) {
-            val sourceFile = File(propertyValue)
-            if (!sourceFile.isFile || sourceFile.length() <= 0L) return false
-            val fileName = sourceFile.name.takeIf { it.isNotBlank() } ?: return false
-            activeMirrorName = fileName
-            setSystemProperty(PROP_CONFIG_FILE_REQUEST, fileName) &&
-                setSystemProperty(PROP_CONFIG_FILE_REQUEST_SERIAL, SystemClock.elapsedRealtimeNanos().toString())
-        } else {
-            activeMirrorName = null
-            setSystemProperty(PROP_CONFIG_REQUEST, propertyValue)
-        }
+        val sourceFile = propertyValue.takeIf { it.startsWith('/') }?.let(::File)
+        if (sourceFile != null && (!sourceFile.isFile || sourceFile.length() <= 0L)) return false
+
+        val requestName = sourceFile?.name?.takeIf { it.isNotBlank() } ?: STOCK_CONFIG_VALUE
+        val applied = setAndVerifySystemProperty(PROP_CONFIG_CURRENT, requestName) &&
+            setSystemProperty(PROP_CONFIG_REQUEST, nextTriggerSerial())
         if (applied) {
-            scheduleMirroredConfigCleanup(activeMirrorName)
+            scheduleMirroredConfigCleanup("active.json")
         }
         return applied
     }
@@ -639,7 +635,12 @@ object ThermalProfileController {
 
     private fun currentMirroredConfigName(): String? {
         val value = getSystemProperty(PROP_VENDOR_THERMAL_CONFIG).takeIf { it.isNotBlank() } ?: return null
-        return if (value.startsWith("$VENDOR_MIRROR_CONFIG_DIR/")) File(value).name.takeIf { it.isNotBlank() } else null
+        val configPath = value.substringAfter(',', value).trim()
+        return if (configPath.startsWith("$VENDOR_MIRROR_CONFIG_DIR/")) {
+            File(configPath).name.takeIf { it.isNotBlank() }
+        } else {
+            null
+        }
     }
 
     private fun cleanupMirroredConfigs(activeFileName: String?) {
@@ -668,6 +669,23 @@ object ThermalProfileController {
         systemProperties.getMethod("get", String::class.java, String::class.java).invoke(null, key, "") as? String ?: ""
     } catch (_: Throwable) {
         ""
+    }
+
+    private fun setAndVerifySystemProperty(key: String, value: String): Boolean {
+        if (!setSystemProperty(key, value)) return false
+        repeat(5) {
+            if (getSystemProperty(key) == value) return true
+            SystemClock.sleep(10L)
+        }
+        return getSystemProperty(key) == value
+    }
+
+    @Synchronized
+    private fun nextTriggerSerial(): String {
+        val now = System.currentTimeMillis()
+        val serial = if (now <= lastTriggerSerial) lastTriggerSerial + 1L else now
+        lastTriggerSerial = serial
+        return serial.toString()
     }
 }
 

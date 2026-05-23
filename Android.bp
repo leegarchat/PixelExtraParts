@@ -69,6 +69,14 @@ prebuilt_etc {
     system_ext_specific: true,
 }
 
+prebuilt_etc {
+    name: "ims_carrier_config_addon",
+    src: "example.addon.hook/ims_carrier_config/out/ims_carrier_config.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
 java_import {
     name: "apksig-jar",
     jars: ["common/lib/apksig.jar"],

@@ -3,10 +3,13 @@ package org.pixel.customparts.utils
 import android.content.Context
 import android.provider.Settings
 import org.pixel.customparts.SettingsKeys
+import org.pixel.customparts.activities.OverscrollManager
 import org.pixel.customparts.services.AutoHbmTileService
 import org.pixel.customparts.services.MainActivityTileService
+import org.pixel.customparts.services.OverscrollTileService
 import org.pixel.customparts.services.PixelPartsLogTileService
 import org.pixel.customparts.services.SaturationTileService
+import org.pixel.customparts.services.ThermalManagerTileService
 
 object PixelPartsTileRefresher {
     private const val PINE_SUFFIX = "_pine"
@@ -17,6 +20,8 @@ object PixelPartsTileRefresher {
         MainActivityTileService::class.java,
         SaturationTileService::class.java,
         AutoHbmTileService::class.java,
+        OverscrollTileService::class.java,
+        ThermalManagerTileService::class.java,
         PixelPartsLogTileService::class.java
     )
 
@@ -25,6 +30,9 @@ object PixelPartsTileRefresher {
             normalizeKey(SettingsKeys.SATURATION_ENABLED) to listOf(SaturationTileService::class.java),
             normalizeKey(SettingsKeys.AUTO_HBM_ENABLED) to listOf(AutoHbmTileService::class.java),
             normalizeKey(SettingsKeys.AUTO_HBM_ACTIVE) to listOf(AutoHbmTileService::class.java),
+            normalizeKey(OverscrollManager.KEY_ENABLED) to listOf(OverscrollTileService::class.java),
+            normalizeKey(SettingsKeys.THERMAL_TILE_PROFILE_QUEUE) to listOf(ThermalManagerTileService::class.java),
+            normalizeKey(SettingsKeys.THERMAL_TILE_PROFILE_QUEUE_INDEX) to listOf(ThermalManagerTileService::class.java),
             normalizeKey(SettingsKeys.LOG_SERVICE_ENABLED) to listOf(PixelPartsLogTileService::class.java)
         )
     }

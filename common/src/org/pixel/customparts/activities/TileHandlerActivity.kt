@@ -11,8 +11,10 @@ import android.util.Log
 import org.pixel.customparts.MainActivity
 import org.pixel.customparts.services.AutoHbmTileService
 import org.pixel.customparts.services.MainActivityTileService
+import org.pixel.customparts.services.OverscrollTileService
 import org.pixel.customparts.services.PixelPartsLogTileService
 import org.pixel.customparts.services.SaturationTileService
+import org.pixel.customparts.services.ThermalManagerTileService
 
 class TileHandlerActivity : Activity() {
     private val dynamicAddonTileRange = 1..40
@@ -58,6 +60,8 @@ class TileHandlerActivity : Activity() {
         val target = when (className) {
             SaturationTileService::class.java.name -> Intent(this, SaturationActivity::class.java)
             AutoHbmTileService::class.java.name -> Intent(this, AutoHbmActivity::class.java)
+            OverscrollTileService::class.java.name -> Intent(this, OverscrollActivity::class.java)
+            ThermalManagerTileService::class.java.name -> Intent(this, ThermalConfigManagerActivity::class.java)
             MainActivityTileService::class.java.name -> Intent(this, MainActivity::class.java)
             PixelPartsLogTileService::class.java.name -> Intent(this, SystemUISettingsActivity::class.java)
             else -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {

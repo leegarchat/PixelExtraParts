@@ -110,9 +110,13 @@ The tile handler opens `AddonPageActivity` with `includeTargetActivityEntries = 
 
 Dynamic tile clicks run setting changes on a background thread and use a `toggleInProgress` guard, matching the pattern used by the built-in Auto HBM and Saturation tiles. After writing the value, the tile asks `PixelPartsTileRefresher` to refresh every tile bound to the same setting.
 
+## Binding Notes
+
+When a generated tile row binds a slot, the tile label comes from the editable tile title. `summary_on` is stored from the setting `unit` field or `On`; `summary_off` is stored from the setting `description` field or `Off`.
+
 ## Design Tips
 
 - Keep tile labels short.
-- Use `summary_on` and `summary_off` through the generated UI defaults when possible.
+- Keep `unit` and `description` meaningful when a tile should show custom active/inactive summaries.
 - Prefer `toggle` for boolean settings and `carousel` only for small option sets.
 - Give every target a `pageId` so long press lands near the setting it controls.

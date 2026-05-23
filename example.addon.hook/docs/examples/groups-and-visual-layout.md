@@ -51,6 +51,8 @@
 }
 ```
 
+The full group header toggles expandable groups. Taps inside the expanded body are left to child controls and do not collapse the group.
+
 ## Visual Elements
 
 ```json

@@ -9,6 +9,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system_ext/etc/pixelparts/addons/ambient_extend_hook.jar \
     system_ext/etc/pixelparts/addons/gcam_photo_torch.jar \
     system_ext/etc/pixelparts/addons/icon_manager_settings.jar \
+    system_ext/etc/pixelparts/addons/ims_carrier_config.jar \
     system_ext/etc/pixelparts/addons/launcher_hooks.jar \
     system_ext/etc/pixelparts/addons/settings_homepage_item.jar \
     system_ext/etc/pixelparts/addons/systemui_hooks.jar \
@@ -24,6 +25,7 @@ PRODUCT_PACKAGES += \
     ambient_extend_hook_addon \
     gcam_photo_torch_addon \
     icon_manager_settings_addon \
+    ims_carrier_config_addon \
     launcher_hooks_addon \
     settings_homepage_item_addon \
     systemui_hooks_addon \

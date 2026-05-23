@@ -27,6 +27,8 @@ Generated settings are declared in `settings[]` arrays. A root `settings[]` arra
 | `iconType` | string | `app` or `file`. |
 | `iconShape` | string | `none`, `circle`, or `rounded`. |
 | `iconSize` | int | Icon size in dp, clamped to `8..64`. |
+| `settingsOn`, `settingsOff` | array/object/string | Extra Settings assignments applied when a boolean control changes state. |
+| `binderOn`, `binderOff` | array/object | Allow-listed framework API actions applied when a boolean control changes state. |
 
 ## Supported Types
 
@@ -195,6 +197,60 @@ Switches and toggles can run exact commands for each state:
 
 Use `showOutput: false` for silent actions. Accepted command aliases include `cmd`, `command`, `shell`, `cmdOn`, `commandOn`, `onCommand`, `cmdOff`, `commandOff`, and `offCommand`.
 
+## Settings Assignments And Binder Actions
+
+Switch, toggle and checkbox controls can write additional Settings keys when they turn on or off. This is useful when one UI preset should update several framework flags while the visible row stores its own state in `addon_file`.
+
+```json
+{
+  "key": "voice_stack_preset",
+  "title": "Voice stack preset",
+  "type": "switch",
+  "storage": "addon_file",
+  "settingsOn": [
+    { "provider": "secure", "key": "pixel_ims_volte", "type": "int", "value": 1 },
+    { "provider": "secure", "key": "pixel_ims_wfc", "type": "int", "value": 1 }
+  ],
+  "settingsOff": [
+    { "provider": "secure", "key": "pixel_ims_volte", "type": "int", "value": 0 },
+    { "provider": "secure", "key": "pixel_ims_wfc", "type": "int", "value": 0 }
+  ]
+}
+```
+
+Accepted assignment aliases include `settingsOn`, `settings_on`, `setOn`, `writeOn`, `trueSettings` and matching `settingsOff`, `setOff`, `writeOff`, `falseSettings` forms. Assignment value types are `bool`, `int`, `float`, and `string`.
+
+`binderOn` and `binderOff` run allow-listed framework actions after the setting value changes. The current action type is `carrier_config`, which calls `CarrierConfigManager.overrideConfig` for active or explicit subscription IDs.
+
+```json
+{
+  "key": "ims_volte_enabled",
+  "title": "VoLTE availability",
+  "type": "switch",
+  "storage": "addon_file",
+  "binderOn": [
+    {
+      "type": "carrier_config",
+      "subIds": "active",
+      "values": [
+        { "key": "carrier_volte_available_bool", "type": "bool", "value": true }
+      ]
+    }
+  ],
+  "binderOff": [
+    {
+      "type": "carrier_config",
+      "subIds": "active",
+      "values": [
+        { "key": "carrier_volte_available_bool", "type": "bool", "value": false }
+      ]
+    }
+  ]
+}
+```
+
+Carrier config values support `string`, `bool`, `int`, `long`, `double`, `int_array`, `long_array`, `string_array`, and `bool_array`. Use `{ "clear": true }` to clear the override bundle for the resolved subscription IDs.
+
 ## Dependencies
 
 ```json
@@ -263,5 +319,7 @@ Group modes:
 - `fullscreen`, `full_screen`, `full`: opens a full-screen group dialog.
 - `modal`, `card`, `floating`, `floating_card`: opens a dialog/card group.
 - `immersive_expand`, `inline_expand`: richer expandable surface.
+
+For expandable and immersive groups, the full header row toggles expansion. The expanded body is reserved for child controls and does not collapse the group when tapped.
 
 Group titles, descriptions, inline visual text, warning blocks, group dialogs, and normal setting rows support `title_size`/`description_size` and their camel-case or `*_seize` aliases.

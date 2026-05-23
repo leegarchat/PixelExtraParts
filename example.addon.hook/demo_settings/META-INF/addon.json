@@ -2,8 +2,8 @@
     "id": "demo_settings_showcase",
     "name": "Settings Showcase",
     "author": "PixelParts Demo",
-    "description": "Full demonstration of all supported setting types, icons, shapes, activities and visual elements",
-    "version": "1.0",
+    "description": "Full demonstration of supported controls, icons, groups, pages, QS tiles and action wiring",
+    "version": "1.1.0",
     "enabled": true,
     "icon": "META-INF/icon_demo.png",
     "background": "META-INF/bg_demo.png",
@@ -37,7 +37,7 @@
             "key": "demo_warning_top",
             "type": "warning",
             "title": "Demo Warning",
-            "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect.",
+            "description": "This is a demonstration addon. It does not hook any packages - it only showcases the settings UI generator. Demo values use Settings or addon-file storage and have no runtime effect.",
             "color": "#FF9800"
         }
     ],
@@ -46,6 +46,11 @@
             "id": "basic-controls",
             "title": "Basic Controls",
             "subtitle": "Toggles, sliders, text fields",
+            "icon": "Rounded.Tune",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#8BDDED",
+            "iconBackground": "#263A40",
             "group": "system",
             "priority": 100,
             "settings": [
@@ -129,6 +134,11 @@
             "id": "selectors",
             "title": "Selection Controls",
             "subtitle": "Dropdown, button select, color picker",
+            "icon": "Rounded.Palette",
+            "iconType": "app",
+            "iconShape": "rounded",
+            "iconColor": "#FFD18B",
+            "iconBackground": "#40321F",
             "group": "system",
             "priority": 90,
             "settings": [
@@ -230,6 +240,11 @@
             "id": "visual-elements",
             "title": "Visual Elements",
             "subtitle": "Warnings, dividers, spacers, images, text blocks",
+            "icon": "Rounded.ViewAgenda",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#A8E6CF",
+            "iconBackground": "#1D3A32",
             "group": "system",
             "priority": 80,
             "settings": [
@@ -287,6 +302,11 @@
             "id": "groups-nested",
             "title": "Groups & Nesting",
             "subtitle": "Expandable groups, exclusive toggles",
+            "icon": "Rounded.Settings",
+            "iconType": "app",
+            "iconShape": "rounded",
+            "iconColor": "#D7B8FF",
+            "iconBackground": "#332A45",
             "group": "system",
             "priority": 70,
             "settings": [
@@ -374,6 +394,11 @@
             "id": "icons-showcase",
             "title": "Icons Showcase",
             "subtitle": "All icon shapes and types",
+            "icon": "Rounded.Star",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#FFE082",
+            "iconBackground": "#3E3215",
             "group": "gesture",
             "priority": 60,
             "settings": [
@@ -464,6 +489,9 @@
             "id": "main/icons-showcase/material-gallery",
             "title": "Material Icons Gallery",
             "subtitle": "More icon examples",
+            "icon": "Rounded.Collections",
+            "iconType": "app",
+            "iconShape": "rounded",
             "settings": [
                 {
                     "key": "demo_icon_wifi",
@@ -560,6 +588,11 @@
             "id": "advanced-features",
             "title": "Advanced Features",
             "subtitle": "File storage, app picker, complex scenarios",
+            "icon": "Rounded.Build",
+            "iconType": "app",
+            "iconShape": "rounded",
+            "iconColor": "#FFAB91",
+            "iconBackground": "#44251D",
             "group": "network",
             "priority": 50,
             "settings": [
@@ -567,8 +600,34 @@
                     "key": "demo_warning_advanced",
                     "type": "warning",
                     "title": "Advanced Section",
-                    "description": "These features demonstrate file-based storage, app pickers, and complex multi-value scenarios.",
+                    "description": "These features demonstrate file-based storage, app pickers, multi-write actions and complex multi-value scenarios.",
                     "color": "#9C27B0"
+                },
+                {
+                    "key": "demo_multi_write_notice",
+                    "type": "info",
+                    "title": "Multi-write Toggle",
+                    "description": "The switch below stores its own state in addon data, then writes two extra Settings.Global demo keys through settingsOn/settingsOff."
+                },
+                {
+                    "key": "demo_multi_write_preset",
+                    "title": "Apply Demo Preset",
+                    "description": "Writes demo_multi_write_enabled and demo_multi_write_profile together when toggled.",
+                    "type": "switch",
+                    "storage": "addon_file",
+                    "default": false,
+                    "settingsOn": [
+                        { "provider": "global", "key": "demo_multi_write_enabled", "type": "int", "value": 1 },
+                        { "provider": "global", "key": "demo_multi_write_profile", "type": "string", "value": "enabled" }
+                    ],
+                    "settingsOff": [
+                        { "provider": "global", "key": "demo_multi_write_enabled", "type": "int", "value": 0 },
+                        { "provider": "global", "key": "demo_multi_write_profile", "type": "string", "value": "disabled" }
+                    ],
+                    "icon": "Rounded.Tune",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 18
                 },
                 {
                     "key": "demo_file_picker",
@@ -655,6 +714,9 @@
             "id": "main/advanced-features/storage-demo",
             "title": "Storage Types Demo",
             "subtitle": "Different storage backends",
+            "icon": "Rounded.Storage",
+            "iconType": "app",
+            "iconShape": "circle",
             "settings": [
                 {
                     "key": "demo_storage_global",
@@ -686,6 +748,11 @@
             "id": "tiles-demo",
             "title": "QS Tiles",
             "subtitle": "Dynamic quick settings tile binding",
+            "icon": "Rounded.Dashboard",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#90CAF9",
+            "iconBackground": "#1C3144",
             "group": "system",
             "priority": 45,
             "settings": [
@@ -693,28 +760,28 @@
                     "key": "demo_tile_warning",
                     "type": "warning",
                     "title": "Dynamic Tiles",
-                    "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page.",
+                    "description": "Bind quick settings tiles to addon keys. Configure one tile to toggle a boolean target or cycle a carousel target, then choose the long-press page.",
                     "color": "#2196F3"
                 },
                 {
-                    "key": "demo_tile_toggle",
-                    "title": "Demo Toggle Tile",
-                    "description": "Off",
-                    "type": "tile",
-                    "default": "toggle",
-                    "unit": "Active",
+                    "key": "demo_tile_feature_enabled",
+                    "title": "Tile Target Switch",
+                    "description": "A normal boolean setting that the dynamic tile can toggle.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
                     "icon": "Rounded.ToggleOn",
                     "iconType": "app",
                     "iconShape": "circle",
                     "iconSize": 20
                 },
                 {
-                    "key": "demo_tile_carousel",
-                    "title": "Demo Carousel Tile",
-                    "description": "Disabled",
-                    "type": "tile",
-                    "default": "carousel",
-                    "unit": "Running",
+                    "key": "demo_tile_power_mode",
+                    "title": "Tile Target Mode",
+                    "description": "A normal select setting that the dynamic tile can cycle.",
+                    "type": "select",
+                    "provider": "global",
+                    "default": "balanced",
                     "options": [
                         {
                             "value": "off",
@@ -737,13 +804,50 @@
                     "iconType": "app",
                     "iconShape": "rounded",
                     "iconSize": 20
+                },
+                {
+                    "key": "demo_tile_configurable",
+                    "title": "Configurable Demo Tile",
+                    "description": "Inactive",
+                    "type": "tile",
+                    "tileConfigurable": true,
+                    "unit": "Active",
+                    "targets": [
+                        {
+                            "key": "demo_tile_feature_enabled",
+                            "label": "Feature switch",
+                            "mode": "toggle",
+                            "pageId": "tiles-demo"
+                        },
+                        {
+                            "key": "demo_tile_power_mode",
+                            "label": "Power mode",
+                            "mode": "carousel",
+                            "values": ["off", "low", "balanced", "performance"],
+                            "labels": ["Disabled", "Low Power", "Balanced", "Performance"],
+                            "pageId": "tiles-demo"
+                        }
+                    ],
+                    "pages": [
+                        { "id": "tiles-demo", "label": "QS Tiles" },
+                        { "id": "advanced-features", "label": "Advanced Features" }
+                    ],
+                    "icon": "Rounded.Dashboard",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20
                 }
             ]
         },
         {
             "id": "immersive-groups",
             "title": "Immersive Groups",
-            "subtitle": "Flat inline groups without container",
+            "subtitle": "Inline, expandable and styled group surfaces",
+            "icon": "Rounded.Fullscreen",
+            "iconType": "app",
+            "iconShape": "rounded",
+            "iconColor": "#A5D6A7",
+            "iconBackground": "#203A24",
             "group": "system",
             "priority": 65,
             "settings": [
@@ -751,8 +855,11 @@
                     "key": "demo_immersive_group",
                     "type": "group",
                     "title": "Display Settings",
-                    "description": "These settings appear inline without a separate container",
+                    "description": "An immersive expandable group with a full-width clickable header and child controls in the body.",
+                    "mode": "immersive_expand",
+                    "defaultExpanded": true,
                     "accent": "#4CAF50",
+                    "surfaceAlpha": 0.14,
                     "settings": [
                         {
                             "key": "demo_imm_brightness",
@@ -811,8 +918,10 @@
                     "title": "Custom Background Group",
                     "description": "This expandable group has a custom background color",
                     "mode": "expand",
+                    "defaultExpanded": false,
                     "color": "#1A237E",
                     "accent": "#7C4DFF",
+                    "surfaceAlpha": 0.72,
                     "settings": [
                         {
                             "key": "demo_cg_option_a",
@@ -838,6 +947,11 @@
             "id": "file-options-demo",
             "title": "File-based Options",
             "subtitle": "Select options loaded from external JSON",
+            "icon": "Rounded.Storage",
+            "iconType": "app",
+            "iconShape": "rounded",
+            "iconColor": "#80CBC4",
+            "iconBackground": "#173A36",
             "group": "network",
             "priority": 40,
             "settings": [
@@ -880,6 +994,11 @@
             "id": "custom-group-demo",
             "title": "Custom Category",
             "subtitle": "This uses a custom group name",
+            "icon": "Rounded.Build",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#CE93D8",
+            "iconBackground": "#38213E",
             "group": "Tweaks",
             "priority": 200,
             "settings": [
@@ -915,6 +1034,11 @@
             "id": "app-selector-demo",
             "title": "App Selectors",
             "subtitle": "App list with showSelected parameter",
+            "icon": "Rounded.Apps",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#B39DDB",
+            "iconBackground": "#2F2744",
             "group": "system",
             "priority": 55,
             "settings": [
@@ -957,7 +1081,7 @@
                 {
                     "key": "demo_warning_top",
                     "title": "Demo Warning",
-                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                    "description": "This is a demonstration addon. It does not hook any packages - it only showcases the settings UI generator. Demo values use Settings or addon-file storage and have no runtime effect."
                 }
             ],
             "main": [
@@ -1322,17 +1446,17 @@
                         {
                             "key": "demo_tile_warning",
                             "title": "Dynamic Tiles",
-                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                            "description": "Bind quick settings tiles to addon keys. Configure one tile to toggle a boolean target or cycle a carousel target, then choose the long-press page."
                         },
                         {
-                            "key": "demo_tile_toggle",
-                            "title": "Demo Toggle Tile",
-                            "description": "Выключено"
+                            "key": "demo_tile_feature_enabled",
+                            "title": "Tile Target Switch",
+                            "description": "A normal boolean setting that the dynamic tile can toggle."
                         },
                         {
-                            "key": "demo_tile_carousel",
-                            "title": "Demo Carousel Tile",
-                            "description": "Disabled",
+                            "key": "demo_tile_power_mode",
+                            "title": "Tile Target Mode",
+                            "description": "A normal select setting that the dynamic tile can cycle.",
                             "options": [
                                 {
                                     "value": "off",
@@ -1351,19 +1475,32 @@
                                     "label": "Performance"
                                 }
                             ]
+                        },
+                        {
+                            "key": "demo_tile_configurable",
+                            "title": "Configurable Demo Tile",
+                            "description": "Inactive",
+                            "targets": [
+                                { "key": "demo_tile_feature_enabled", "label": "Feature switch" },
+                                { "key": "demo_tile_power_mode", "label": "Power mode", "labels": ["Disabled", "Low Power", "Balanced", "Performance"] }
+                            ],
+                            "pages": [
+                                { "id": "tiles-demo", "label": "QS Tiles" },
+                                { "id": "advanced-features", "label": "Advanced Features" }
+                            ]
                         }
                     ]
                 },
                 {
                     "id": "immersive-groups",
                     "title": "Immersive Groups",
-                    "subtitle": "Flat inline groups without container",
+                    "subtitle": "Inline, expandable and styled group surfaces",
                     "group": "system",
                     "settings": [
                         {
                             "key": "demo_immersive_group",
                             "title": "Display Settings",
-                            "description": "These settings appear inline without a separate container",
+                            "description": "An immersive expandable group with a full-width clickable header and child controls in the body.",
                             "settings": [
                                 {
                                     "key": "demo_imm_brightness",
@@ -1494,7 +1631,7 @@
                 {
                     "key": "demo_warning_top",
                     "title": "Demo Warning",
-                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                    "description": "This is a demonstration addon. It does not hook any packages - it only showcases the settings UI generator. Demo values use Settings or addon-file storage and have no runtime effect."
                 }
             ],
             "main": [
@@ -1859,17 +1996,17 @@
                         {
                             "key": "demo_tile_warning",
                             "title": "Dynamic Tiles",
-                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                            "description": "Bind quick settings tiles to addon keys. Configure one tile to toggle a boolean target or cycle a carousel target, then choose the long-press page."
                         },
                         {
-                            "key": "demo_tile_toggle",
-                            "title": "Demo Toggle Tile",
-                            "description": "Aus"
+                            "key": "demo_tile_feature_enabled",
+                            "title": "Tile Target Switch",
+                            "description": "A normal boolean setting that the dynamic tile can toggle."
                         },
                         {
-                            "key": "demo_tile_carousel",
-                            "title": "Demo Carousel Tile",
-                            "description": "Disabled",
+                            "key": "demo_tile_power_mode",
+                            "title": "Tile Target Mode",
+                            "description": "A normal select setting that the dynamic tile can cycle.",
                             "options": [
                                 {
                                     "value": "off",
@@ -1888,19 +2025,32 @@
                                     "label": "Performance"
                                 }
                             ]
+                        },
+                        {
+                            "key": "demo_tile_configurable",
+                            "title": "Configurable Demo Tile",
+                            "description": "Inactive",
+                            "targets": [
+                                { "key": "demo_tile_feature_enabled", "label": "Feature switch" },
+                                { "key": "demo_tile_power_mode", "label": "Power mode", "labels": ["Disabled", "Low Power", "Balanced", "Performance"] }
+                            ],
+                            "pages": [
+                                { "id": "tiles-demo", "label": "QS Tiles" },
+                                { "id": "advanced-features", "label": "Advanced Features" }
+                            ]
                         }
                     ]
                 },
                 {
                     "id": "immersive-groups",
                     "title": "Immersive Groups",
-                    "subtitle": "Flat inline groups without container",
+                    "subtitle": "Inline, expandable and styled group surfaces",
                     "group": "system",
                     "settings": [
                         {
                             "key": "demo_immersive_group",
                             "title": "Display Settings",
-                            "description": "These settings appear inline without a separate container",
+                            "description": "An immersive expandable group with a full-width clickable header and child controls in the body.",
                             "settings": [
                                 {
                                     "key": "demo_imm_brightness",
@@ -2031,7 +2181,7 @@
                 {
                     "key": "demo_warning_top",
                     "title": "Demo Warning",
-                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                    "description": "This is a demonstration addon. It does not hook any packages - it only showcases the settings UI generator. Demo values use Settings or addon-file storage and have no runtime effect."
                 }
             ],
             "main": [
@@ -2396,17 +2546,17 @@
                         {
                             "key": "demo_tile_warning",
                             "title": "Dynamic Tiles",
-                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                            "description": "Bind quick settings tiles to addon keys. Configure one tile to toggle a boolean target or cycle a carousel target, then choose the long-press page."
                         },
                         {
-                            "key": "demo_tile_toggle",
-                            "title": "Demo Toggle Tile",
-                            "description": "Désactivé"
+                            "key": "demo_tile_feature_enabled",
+                            "title": "Tile Target Switch",
+                            "description": "A normal boolean setting that the dynamic tile can toggle."
                         },
                         {
-                            "key": "demo_tile_carousel",
-                            "title": "Demo Carousel Tile",
-                            "description": "Disabled",
+                            "key": "demo_tile_power_mode",
+                            "title": "Tile Target Mode",
+                            "description": "A normal select setting that the dynamic tile can cycle.",
                             "options": [
                                 {
                                     "value": "off",
@@ -2425,19 +2575,32 @@
                                     "label": "Performance"
                                 }
                             ]
+                        },
+                        {
+                            "key": "demo_tile_configurable",
+                            "title": "Configurable Demo Tile",
+                            "description": "Inactive",
+                            "targets": [
+                                { "key": "demo_tile_feature_enabled", "label": "Feature switch" },
+                                { "key": "demo_tile_power_mode", "label": "Power mode", "labels": ["Disabled", "Low Power", "Balanced", "Performance"] }
+                            ],
+                            "pages": [
+                                { "id": "tiles-demo", "label": "QS Tiles" },
+                                { "id": "advanced-features", "label": "Advanced Features" }
+                            ]
                         }
                     ]
                 },
                 {
                     "id": "immersive-groups",
                     "title": "Immersive Groups",
-                    "subtitle": "Flat inline groups without container",
+                    "subtitle": "Inline, expandable and styled group surfaces",
                     "group": "system",
                     "settings": [
                         {
                             "key": "demo_immersive_group",
                             "title": "Display Settings",
-                            "description": "These settings appear inline without a separate container",
+                            "description": "An immersive expandable group with a full-width clickable header and child controls in the body.",
                             "settings": [
                                 {
                                     "key": "demo_imm_brightness",
@@ -2568,7 +2731,7 @@
                 {
                     "key": "demo_warning_top",
                     "title": "Demo Warning",
-                    "description": "This is a demonstration addon. It does not hook any packages — it only showcases the settings UI generator capabilities. All values are written to Settings.Global but have no runtime effect."
+                    "description": "This is a demonstration addon. It does not hook any packages - it only showcases the settings UI generator. Demo values use Settings or addon-file storage and have no runtime effect."
                 }
             ],
             "main": [
@@ -2933,17 +3096,17 @@
                         {
                             "key": "demo_tile_warning",
                             "title": "Dynamic Tiles",
-                            "description": "Bind quick settings tiles to addon keys. Tiles can toggle a boolean key or cycle through a carousel of values. Long-press opens the addon settings page."
+                            "description": "Bind quick settings tiles to addon keys. Configure one tile to toggle a boolean target or cycle a carousel target, then choose the long-press page."
                         },
                         {
-                            "key": "demo_tile_toggle",
-                            "title": "Demo Toggle Tile",
-                            "description": "Вимкнено"
+                            "key": "demo_tile_feature_enabled",
+                            "title": "Tile Target Switch",
+                            "description": "A normal boolean setting that the dynamic tile can toggle."
                         },
                         {
-                            "key": "demo_tile_carousel",
-                            "title": "Demo Carousel Tile",
-                            "description": "Disabled",
+                            "key": "demo_tile_power_mode",
+                            "title": "Tile Target Mode",
+                            "description": "A normal select setting that the dynamic tile can cycle.",
                             "options": [
                                 {
                                     "value": "off",
@@ -2962,19 +3125,32 @@
                                     "label": "Performance"
                                 }
                             ]
+                        },
+                        {
+                            "key": "demo_tile_configurable",
+                            "title": "Configurable Demo Tile",
+                            "description": "Inactive",
+                            "targets": [
+                                { "key": "demo_tile_feature_enabled", "label": "Feature switch" },
+                                { "key": "demo_tile_power_mode", "label": "Power mode", "labels": ["Disabled", "Low Power", "Balanced", "Performance"] }
+                            ],
+                            "pages": [
+                                { "id": "tiles-demo", "label": "QS Tiles" },
+                                { "id": "advanced-features", "label": "Advanced Features" }
+                            ]
                         }
                     ]
                 },
                 {
                     "id": "immersive-groups",
                     "title": "Immersive Groups",
-                    "subtitle": "Flat inline groups without container",
+                    "subtitle": "Inline, expandable and styled group surfaces",
                     "group": "system",
                     "settings": [
                         {
                             "key": "demo_immersive_group",
                             "title": "Display Settings",
-                            "description": "These settings appear inline without a separate container",
+                            "description": "An immersive expandable group with a full-width clickable header and child controls in the body.",
                             "settings": [
                                 {
                                     "key": "demo_imm_brightness",

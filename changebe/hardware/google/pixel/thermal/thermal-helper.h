@@ -19,7 +19,6 @@
 #include <aidl/android/hardware/thermal/IThermal.h>
 
 #include <array>
-#include <atomic>
 #include <chrono>
 #include <map>
 #include <mutex>
@@ -124,12 +123,15 @@ class ThermalHelper {
     virtual bool isPowerHalConnected() = 0;
     virtual bool isPowerHalExtConnected() = 0;
     virtual void dumpTraces(std::string_view target_sensor) = 0;
+    virtual void clearCurrentThrottling() {}
+    virtual std::string getLoadedConfigProperty() const { return {}; }
 };
 
 class ThermalHelperImpl : public ThermalHelper {
   public:
-    explicit ThermalHelperImpl(const NotificationCallback &cb);
-        ~ThermalHelperImpl() override;
+    explicit ThermalHelperImpl(const NotificationCallback &cb, bool start_watcher = true,
+                               bool fatal_on_error = true);
+    ~ThermalHelperImpl() override;
 
     bool fillCurrentTemperatures(bool filterType, bool filterCallback, TemperatureType type,
                                  std::vector<Temperature> *temperatures) override;
@@ -149,6 +151,7 @@ class ThermalHelperImpl : public ThermalHelper {
     void operator=(const ThermalHelperImpl &) = delete;
 
     bool isInitializedOk() const override { return is_initialized_; }
+    std::string getLoadedConfigProperty() const override { return loaded_config_property_; }
 
     // Read the temperature of a single sensor.
     SensorReadStatus readTemperature(std::string_view sensor_name, Temperature *out,
@@ -202,17 +205,10 @@ class ThermalHelperImpl : public ThermalHelper {
     bool isAidlPowerHalExist() override { return power_hal_service_.isAidlPowerHalExist(); }
     bool isPowerHalConnected() override { return power_hal_service_.isPowerHalConnected(); }
     bool isPowerHalExtConnected() override { return power_hal_service_.isPowerHalExtConnected(); }
+    void clearCurrentThrottling() override { clearAllThrottling(); }
+    bool startWatcher();
 
   private:
-        std::string getCurrentConfigPropertyValue() const;
-        std::string getConfigStamp(std::string_view config_value) const;
-        bool initializeThermalConfig(std::string_view config_value, bool thermal_throttling_disabled,
-                                                                 bool start_watcher);
-        bool reloadThermalConfig(std::string_view config_value);
-        void resetRuntimeState();
-        void startConfigWatcher();
-        void stopConfigWatcher();
-        void configWatcherLoop();
     bool initializeSensorMap(const std::unordered_map<std::string, std::string> &path_map);
     bool initializeThrottlingMap(const std::unordered_map<std::string, std::string> &cdev_map,
                                  const std::unordered_map<std::string, std::string> &powercap_map);
@@ -263,14 +259,9 @@ class ThermalHelperImpl : public ThermalHelper {
     ThermalFiles thermal_sensors_;
     ThermalFiles cooling_devices_;
     ThermalThrottling thermal_throttling_;
-    bool is_initialized_;
+    bool is_initialized_ = false;
+    std::string loaded_config_property_;
     const NotificationCallback cb_;
-    std::atomic_bool config_watcher_stopping_{false};
-    std::thread config_watcher_thread_;
-    std::mutex config_reload_mutex_;
-    std::mutex thermal_callback_mutex_;
-    std::string active_config_value_;
-    std::string active_config_stamp_;
     std::unordered_map<std::string, CdevInfo> cooling_device_info_map_;
     std::unordered_map<std::string, SensorInfo> sensor_info_map_;
     // The target ODPM railes which will be switched by the trigger sensor

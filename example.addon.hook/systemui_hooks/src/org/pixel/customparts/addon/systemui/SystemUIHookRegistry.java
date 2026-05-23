@@ -10,6 +10,7 @@ import org.pixel.customparts.addon.systemui.hooks.DozeTapShadeHook;
 import org.pixel.customparts.addon.systemui.hooks.KeyguardBatteryPowerHook;
 import org.pixel.customparts.addon.systemui.hooks.NotificationIconShapeHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeCompactMediaHook;
+import org.pixel.customparts.addon.systemui.hooks.ShadeDateCalendarHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeUnifiedSurfaceHook;
 import org.pixel.customparts.addon.systemui.hooks.SystemUIRestartHook;
 
@@ -35,6 +36,7 @@ public final class SystemUIHookRegistry {
         hooks.add(new DozeTapDozeHook());
         hooks.add(new DozeTapShadeHook());
         hooks.add(new KeyguardBatteryPowerHook());
+        hooks.add(new ShadeDateCalendarHook());
         hooks.add(new ShadeUnifiedSurfaceHook());
         hooks.add(new ShadeCompactMediaHook());
         hooks.add(new NotificationIconShapeHook());

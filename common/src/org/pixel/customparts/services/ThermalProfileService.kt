@@ -1,7 +1,9 @@
 package org.pixel.customparts.services
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -25,6 +27,12 @@ class ThermalProfileService : Service() {
     override fun onCreate() {
         super.onCreate()
         handler.post(updateRunnable)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        handler.removeCallbacks(updateRunnable)
+        handler.post(updateRunnable)
+        return START_STICKY
     }
 
     override fun onDestroy() {
@@ -70,9 +78,25 @@ class ThermalProfileService : Service() {
 
     @Suppress("DEPRECATION")
     private fun getTopPackageName(): String? {
+        getFocusedRootTaskPackageName()?.let { return it }
         return runCatching {
             val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             activityManager.getRunningTasks(1).firstOrNull()?.topActivity?.packageName
+        }.getOrNull()
+    }
+
+    @SuppressLint("PrivateApi")
+    private fun getFocusedRootTaskPackageName(): String? {
+        return runCatching {
+            val activityTaskManagerClass = Class.forName("android.app.ActivityTaskManager")
+            val service = activityTaskManagerClass.getMethod("getService").invoke(null)
+                ?: return@runCatching null
+            val rootTaskInfo = service.javaClass.methods
+                .firstOrNull { it.name == "getFocusedRootTaskInfo" && it.parameterTypes.isEmpty() }
+                ?.invoke(service)
+                ?: return@runCatching null
+            val topActivity = rootTaskInfo.javaClass.getField("topActivity").get(rootTaskInfo) as? ComponentName
+            topActivity?.packageName
         }.getOrNull()
     }
 

@@ -20,7 +20,7 @@ public interface IAddonHook {
 
 ## Lifecycle
 
-1. The manager scans addon JARs from system and user addon directories.
+1. The manager scans addon JARs from system and user addon directories and chooses one active copy per addon `id` by `version`.
 2. It reads `META-INF/addon.json` before loading code.
 3. It checks addon enable state and package scope.
 4. It loads `entryClass` from the JAR.
@@ -129,6 +129,8 @@ context.getContentResolver().registerContentObserver(
 ## Priority
 
 Higher priority addons run earlier.
+
+Priority only orders active addons. If duplicate JARs share the same addon `id`, the higher descriptor `version` wins before hook priority is considered; equal versions prefer `/data`.
 
 ```java
 @Override
