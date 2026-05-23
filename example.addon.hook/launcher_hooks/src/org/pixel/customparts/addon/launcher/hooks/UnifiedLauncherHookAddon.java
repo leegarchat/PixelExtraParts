@@ -586,24 +586,9 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
     }
 
     private void hookLauncherUnlockAnimation(ClassLoader classLoader) {
-        try {
-            Class<?> unlockControllerClass = XposedHelpers.findClass("k6.t", classLoader);
-            XposedHelpers.findAndHookMethod(unlockControllerClass, "b", boolean.class, new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) {
-                    try {
-                        Object launcher = XposedHelpers.getObjectField(param.thisObject, "f15810a");
-                        if (launcher instanceof Activity) {
-                            removeHiddenTopWidgetBlankScreen((Activity) launcher);
-                        }
-                    } catch (Throwable t) {
-                        logError("Failed to trim blank first screen before unlock animation", t);
-                    }
-                }
-            });
-        } catch (Throwable e) {
-            logError("Failed to hook Launcher unlock animation", e);
-        }
+        // Disabled: relies on obfuscated class/field names (k6.t#f15810a) that change
+        // between Launcher builds. The trim-blank-screen logic is handled elsewhere
+        // (ModelCallbacks binding hook above). Keeping this as no-op to avoid log spam.
     }
 
     // =========================================================================
@@ -888,7 +873,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                     @Override
                     public boolean onDoubleTap(MotionEvent e) {
                         if (isSettingEnabled(context, KEY_DT2S_ENABLED)) {
-                            android.util.Log.d("SleepLauncher", "DT2S Listener: onDoubleTap FIRED!");
                             performSleep(context);
                             return true;
                         }
@@ -918,7 +902,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                 });
                 
                 workspace.setTag(TAG_DT2S_LISTENER, true);
-                android.util.Log.d("SleepLauncher", "DT2S Proxy Listener attached to Workspace");
             }
         } catch (Throwable t) {
             logError("Failed to attach DT2S listener", t);
@@ -1357,8 +1340,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
     }
 
     private void performSleep(Context context) {
-        android.util.Log.d("SleepLauncher", "performSleep called.");
-
         try {
             Class<?> smClass = XposedHelpers.findClass("android.os.ServiceManager", null);
             Object binder = XposedHelpers.callStaticMethod(smClass, "getService", Context.POWER_SERVICE);
@@ -1370,7 +1351,7 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                 return; 
             }
         } catch (Throwable t) { 
-             android.util.Log.e("SleepLauncher", "IPowerManager failed", t);
+             logError("IPowerManager sleep failed", t);
         }
 
         try {
@@ -1380,7 +1361,7 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                 return;
             }
         } catch (Throwable t) { 
-             android.util.Log.e("SleepLauncher", "PowerManager failed", t);
+             logError("PowerManager sleep failed", t);
         }
 
         try {

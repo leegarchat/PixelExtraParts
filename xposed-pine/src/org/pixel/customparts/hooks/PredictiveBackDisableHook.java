@@ -93,7 +93,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                                     map.put(callback, PRIORITY_DEFAULT);
                                     // Remember to restore
                                     sPendingRestore.set(new Object[]{ callback, priority });
-                                    log("before: priority " + priority + " → " + PRIORITY_DEFAULT);
                                 }
                             } catch (Throwable t) {
                                 logError("before hook failed", t);
@@ -116,7 +115,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                                 // and other internal bookkeeping stays consistent
                                 if (map.containsKey(callback)) {
                                     map.put(callback, originalPriority);
-                                    log("after: restored priority → " + originalPriority);
                                 }
                             } catch (Throwable t) {
                                 logError("after hook failed", t);
@@ -144,8 +142,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                         sMapFieldResolved = true;
                         if (sMapField == null) {
                             logError("mAllCallbacks not found", null);
-                        } else {
-                            log("resolved mAllCallbacks field");
                         }
                     }
                 }

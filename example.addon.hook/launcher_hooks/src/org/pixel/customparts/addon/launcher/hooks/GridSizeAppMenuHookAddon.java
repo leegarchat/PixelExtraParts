@@ -149,7 +149,6 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
                     if (cols > 0) {
                         try {
                             XposedHelpers.setIntField(appsList, "mNumAppsPerRowAllApps", cols);
-                            log("AlphabeticalAppsList columns set to " + cols);
                         } catch (Throwable e) {
                             logError("Failed to update AlphabeticalAppsList columns", e);
                         }

@@ -289,25 +289,27 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
                     new XC_MethodHook() {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
-                            Context context = getFloatingIconContext(param.thisObject);
-                            String packageName = getFloatingIconPackageName(param.thisObject);
-                            ShapeConfig shapeConfig = getLauncherIconShapeConfig(context, packageName);
-                            if (shapeConfig.mode == ICON_SHAPE_DEFAULT
-                                    || !isFloatingIconPixelPartsIcon(context, packageName)) {
-                                return;
-                            }
+                            try {
+                                Context context = getFloatingIconContext(param.thisObject);
+                                String packageName = getFloatingIconPackageName(param.thisObject);
+                                ShapeConfig shapeConfig = getLauncherIconShapeConfig(context, packageName);
+                                if (shapeConfig.mode == ICON_SHAPE_DEFAULT
+                                        || !isFloatingIconPixelPartsIcon(context, packageName)) {
+                                    return;
+                                }
 
-                            Drawable drawable = (Drawable) param.args[0];
-                            Drawable singleLayer = resolveFloatingSingleLayerDrawable(
-                                    context,
-                                    drawable,
-                                    param.args[2],
-                                    shapeConfig.mode == ICON_SHAPE_REMOVE);
-                            if (singleLayer != null) {
-                                param.args[0] = singleLayer;
-                                param.args[2] = null;
-                                param.args[4] = false;
-                            }
+                                Drawable drawable = (Drawable) param.args[0];
+                                Drawable singleLayer = resolveFloatingSingleLayerDrawable(
+                                        context,
+                                        drawable,
+                                        param.args[2],
+                                        shapeConfig.mode == ICON_SHAPE_REMOVE);
+                                if (singleLayer != null) {
+                                    param.args[0] = singleLayer;
+                                    param.args[2] = null;
+                                    param.args[4] = false;
+                                }
+                            } catch (Throwable ignored) {}
                         }
                     });
             log("Hooked FloatingIconView.setIcon shape controls");

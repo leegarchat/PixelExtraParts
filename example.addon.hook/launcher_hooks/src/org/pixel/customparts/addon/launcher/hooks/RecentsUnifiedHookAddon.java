@@ -199,82 +199,96 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
         XposedHelpers.findAndHookMethod(recentsViewClass, "onAttachedToWindow", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
-                if (!(param.thisObject instanceof ViewGroup)) return;
-                final ViewGroup view = (ViewGroup) param.thisObject;
-                
-                recentsViewRef = new WeakReference<>(view);
+                try {
+                    if (!(param.thisObject instanceof ViewGroup)) return;
+                    final ViewGroup view = (ViewGroup) param.thisObject;
+                    
+                    recentsViewRef = new WeakReference<>(view);
 
-                if (!Settings.loaded) loadSettings(view.getContext());
+                    if (!Settings.loaded) loadSettings(view.getContext());
 
-                if (view.getTag(RecentsState.TAG_HOOK_INSTALLED) != null) return;
+                    if (view.getTag(RecentsState.TAG_HOOK_INSTALLED) != null) return;
 
-                final ViewTreeObserver.OnPreDrawListener listener = new ViewTreeObserver.OnPreDrawListener() {
-                    @Override
-                    public boolean onPreDraw() {
-                        return handlePreDraw(view);
-                    }
-                };
-
-                view.getViewTreeObserver().addOnPreDrawListener(listener);
-                view.setTag(RecentsState.TAG_PREDRAW_LISTENER, listener);
-                view.setTag(RecentsState.TAG_HOOK_INSTALLED, true);
-
-                view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-                    @Override
-                    public void onViewAttachedToWindow(View v) {}
-                    @Override
-                    public void onViewDetachedFromWindow(View v) {
-                        Object l = v.getTag(RecentsState.TAG_PREDRAW_LISTENER);
-                        if (l instanceof ViewTreeObserver.OnPreDrawListener) {
-                            ViewTreeObserver observer = v.getViewTreeObserver();
-                            if (observer.isAlive()) {
-                                observer.removeOnPreDrawListener((ViewTreeObserver.OnPreDrawListener) l);
+                    final ViewTreeObserver.OnPreDrawListener listener = new ViewTreeObserver.OnPreDrawListener() {
+                        @Override
+                        public boolean onPreDraw() {
+                            try {
+                                return handlePreDraw(view);
+                            } catch (Throwable t) {
+                                return true;
                             }
                         }
-                        v.setTag(RecentsState.TAG_HOOK_INSTALLED, null);
-                        v.setTag(RecentsState.TAG_PREDRAW_LISTENER, null);
-                        v.setTag(RecentsState.TAG_EFFECTS_APPLIED, null);
-                        v.removeOnAttachStateChangeListener(this);
-                        resetState();
-                    }
-                });
+                    };
+
+                    view.getViewTreeObserver().addOnPreDrawListener(listener);
+                    view.setTag(RecentsState.TAG_PREDRAW_LISTENER, listener);
+                    view.setTag(RecentsState.TAG_HOOK_INSTALLED, true);
+
+                    view.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                        @Override
+                        public void onViewAttachedToWindow(View v) {}
+                        @Override
+                        public void onViewDetachedFromWindow(View v) {
+                            try {
+                                Object l = v.getTag(RecentsState.TAG_PREDRAW_LISTENER);
+                                if (l instanceof ViewTreeObserver.OnPreDrawListener) {
+                                    ViewTreeObserver observer = v.getViewTreeObserver();
+                                    if (observer.isAlive()) {
+                                        observer.removeOnPreDrawListener((ViewTreeObserver.OnPreDrawListener) l);
+                                    }
+                                }
+                                v.setTag(RecentsState.TAG_HOOK_INSTALLED, null);
+                                v.setTag(RecentsState.TAG_PREDRAW_LISTENER, null);
+                                v.setTag(RecentsState.TAG_EFFECTS_APPLIED, null);
+                                v.removeOnAttachStateChangeListener(this);
+                                resetState();
+                            } catch (Throwable ignored) {}
+                        }
+                    });
+                } catch (Throwable t) {
+                    logError("onAttachedToWindow hook failed", t);
+                }
             }
         });
 
         XposedBridge.hookAllMethods(recentsViewClass, "onGestureAnimationStart", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
-                RecentsState.isGestureInProgress = true;
-                if (param.thisObject instanceof ViewGroup) {
-                    startEntryAnimation((ViewGroup) param.thisObject);
-                }
+                try {
+                    RecentsState.isGestureInProgress = true;
+                    if (param.thisObject instanceof ViewGroup) {
+                        startEntryAnimation((ViewGroup) param.thisObject);
+                    }
+                } catch (Throwable ignored) {}
             }
         });
 
         XposedBridge.hookAllMethods(recentsViewClass, "onGestureAnimationEnd", new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
-                 if (param.thisObject instanceof ViewGroup) {
-                     try {
+                try {
+                    if (param.thisObject instanceof ViewGroup) {
                         Object endTarget = XposedHelpers.getObjectField(param.thisObject, "mCurrentGestureEndTarget");
                         ((View)param.thisObject).setTag(RecentsState.TAG_PENDING_END_TARGET, endTarget != null ? endTarget.toString() : "");
-                     } catch (Throwable t) {}
-                 }
+                    }
+                } catch (Throwable ignored) {}
             }
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
-                RecentsState.isGestureInProgress = false;
-                ViewGroup view = (ViewGroup) param.thisObject;
-                
-                if (Settings.enabled && Settings.disableLiveTile) {
-                    disableLiveTile(view);
-                }
+                try {
+                    RecentsState.isGestureInProgress = false;
+                    ViewGroup view = (ViewGroup) param.thisObject;
+                    
+                    if (Settings.enabled && Settings.disableLiveTile) {
+                        disableLiveTile(view);
+                    }
 
-                String target = (String) view.getTag(RecentsState.TAG_PENDING_END_TARGET);
-                if (target != null && target.contains("RECENTS")) {
-                    RecentsState.isInRecentsMode = true;
-                    RecentsState.enteringRecentsUntil = 0L;
-                }
+                    String target = (String) view.getTag(RecentsState.TAG_PENDING_END_TARGET);
+                    if (target != null && target.contains("RECENTS")) {
+                        RecentsState.isInRecentsMode = true;
+                        RecentsState.enteringRecentsUntil = 0L;
+                    }
+                } catch (Throwable ignored) {}
             }
         });
 
@@ -294,7 +308,9 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
         XposedBridge.hookAllMethods(recentsViewClass, "onTaskLaunchAnimationEnd", new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) {
-                resetState();
+                try {
+                    resetState();
+                } catch (Throwable ignored) {}
             }
         });
 
@@ -302,12 +318,14 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
             new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) {
-                    ViewGroup view = (ViewGroup) param.thisObject;
-                    if (view.getVisibility() == View.VISIBLE && !RecentsState.isGestureInProgress 
-                        && !RecentsState.isInRecentsMode && RecentsState.carouselIntensity < 0.5f
-                        && view.getChildCount() > 0) {
-                        startEntryAnimation(view);
-                    }
+                    try {
+                        ViewGroup view = (ViewGroup) param.thisObject;
+                        if (view.getVisibility() == View.VISIBLE && !RecentsState.isGestureInProgress 
+                            && !RecentsState.isInRecentsMode && RecentsState.carouselIntensity < 0.5f
+                            && view.getChildCount() > 0) {
+                            startEntryAnimation(view);
+                        }
+                    } catch (Throwable ignored) {}
                 }
             });
     }
@@ -884,11 +902,11 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
                     try {
                         XposedHelpers.callMethod(view, "finishRecentsAnimation", false, false, null);
                         XposedHelpers.callMethod(view, "setEnableDrawingLiveTile", false);
-                    } catch (Exception e) {}
+                    } catch (Throwable ignored) {}
                 }
             };
             try { XposedHelpers.callMethod(view, "switchToScreenshot", r); } catch (Throwable t) { r.run(); }
-        } catch (Exception e) {}
+        } catch (Throwable ignored) {}
     }
 
     private void hookCommonScale(ClassLoader classLoader) {

@@ -39,14 +39,14 @@ public final class LauncherHookRegistry {
         for (BaseLauncherHook hook : hooks) {
             try {
                 if (!hook.isEnabled(context)) {
-                    Log.d(TAG, hook.getHookId() + " skipped: disabled");
                     continue;
                 }
                 hook.init(classLoader);
                 applied++;
                 Log.d(TAG, hook.getHookId() + " applied");
             } catch (Throwable throwable) {
-                Log.e(TAG, "Failed to init " + hook.getHookId(), throwable);
+                Log.e(TAG, "ISOLATED FAILURE in " + hook.getHookId()
+                        + " — hook disabled to protect Launcher stability", throwable);
             }
         }
         Log.d(TAG, "Nexus launcher addon hooks active: " + applied);
