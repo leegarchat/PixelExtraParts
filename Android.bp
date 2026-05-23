@@ -30,8 +30,56 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "settings_icon_style_override_addon",
+    src: "example.addon.hook/settings_icon_style_override/out/settings_icon_style_override.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
     name: "settings_homepage_item_addon",
     src: "example.addon.hook/settings_homepage_item/out/settings_homepage_item.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "gcam_photo_torch_addon",
+    src: "example.addon.hook/gcam_photo_torch/out/gcam_photo_torch.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "launcher_hooks_addon",
+    src: "example.addon.hook/launcher_hooks/out/launcher_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "systemui_hooks_addon",
+    src: "example.addon.hook/systemui_hooks/out/systemui_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "icon_manager_settings_addon",
+    src: "example.addon.hook/icon_manager_settings/out/icon_manager_settings.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
+    name: "ims_carrier_config_addon",
+    src: "example.addon.hook/ims_carrier_config/out/ims_carrier_config.jar",
     sub_dir: "pixelparts/addons",
     filename_from_src: true,
     system_ext_specific: true,

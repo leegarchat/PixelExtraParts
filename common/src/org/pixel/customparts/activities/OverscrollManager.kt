@@ -13,6 +13,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import org.pixel.customparts.AppConfig
+import org.pixel.customparts.utils.PixelPartsTileRefresher
 
 data class SavedProfile(val name: String, val jsonData: JSONObject)
 data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float, var ignore: Boolean) {
@@ -90,6 +91,7 @@ object OverscrollManager {
     
     suspend fun setMasterEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
         Settings.Global.putInt(context.contentResolver, KEY_ENABLED, if (enabled) 1 else 0)
+        PixelPartsTileRefresher.requestForSetting(context, KEY_ENABLED)
     }
 
     fun getSavedProfiles(context: Context): List<SavedProfile> {

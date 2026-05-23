@@ -1,0 +1,8 @@
+﻿[
+    {"name": "Default", "value": "default"},
+    {"name": "Power Saver", "value": "power_saver"},
+    {"name": "Balanced", "value": "balanced"},
+    {"name": "Performance", "value": "performance"},
+    {"name": "Gaming", "value": "gaming"},
+    {"name": "Night Owl", "value": "night_owl"}
+]

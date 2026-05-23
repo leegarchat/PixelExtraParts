@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" 
         android:protectionLevel="signatureOrSystem" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.DEVICE_POWER"/>
     <uses-permission android:name="android.permission.MONITOR_INPUT"/>
     <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
@@ -45,33 +44,6 @@
         </activity>
 
         <activity
-            android:name="org.pixel.customparts.activities.DoubleTapActivity"
-            android:label="@string/dt_category_title"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
-            android:exported="false" />
-
-        <activity
-            android:name="org.pixel.customparts.activities.LauncherActivity"
-            android:label="@string/launcher_settings_title"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
-            android:exported="false" />
-
-        <activity
-            android:name="org.pixel.customparts.activities.RecentsMenuActivity"
-            android:label="Recents Menu"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
-            android:name="org.pixel.customparts.activities.SearchAndFeedActivity"
-            android:label="Search &amp; Feed"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
-            android:name="org.pixel.customparts.activities.GridSettingsActivity"
-            android:label="Grid Settings"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
             android:name="org.pixel.customparts.activities.OverscrollActivity"
             android:label="@string/os_title_activity"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
@@ -87,24 +59,8 @@
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
             android:exported="false" />
         <activity
-            android:name="org.pixel.customparts.activities.ShadeSettingsActivity"
-            android:label="Shade Settings"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-
-        <activity
             android:name="org.pixel.customparts.activities.SystemUISettingsActivity"
             android:label="SystemUI Settings"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
-            android:name="org.pixel.customparts.activities.GestureBarSettingsActivity"
-            android:label="@string/gesture_bar_settings_title"
-            android:exported="false"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
-        <activity
-            android:name="org.pixel.customparts.activities.LockscreenSettingsActivity"
-            android:label="Lockscreen Settings"
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
@@ -118,6 +74,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity
+            android:name="org.pixel.customparts.ui.addons.AddonAppPickerActivity"
+            android:label="@string/addon_select_apps"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity
             android:name="org.pixel.customparts.activities.MagnifierSettingsActivity"
             android:label="@string/magnifier_section_title"
             android:exported="false"
@@ -128,16 +89,5 @@
             android:exported="false"
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
 
-        <receiver
-            android:name="org.pixel.customparts.services.BootCompletedReceiver"
-            android:enabled="true"
-            android:exported="true"
-            android:directBootAware="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

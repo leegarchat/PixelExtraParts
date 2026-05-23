@@ -103,6 +103,11 @@ public class GestureBarHook extends BaseHook {
     }
 
     @Override
+    public boolean isEnabled(Context context) {
+        return isSettingEnabled(context, KEY_ENABLED, false);
+    }
+
+    @Override
     protected void onInit(ClassLoader classLoader) {
         hookLauncher(classLoader);
     }

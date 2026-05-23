@@ -1,6 +1,7 @@
 <resources>
     <!-- General / Navigation -->
     <string name="os_title_activity">Scroll Physics</string>
+    <string name="overscroll_add_tile">Add Overscroll tile</string>
     <string name="os_title_playground">Playground</string>
     <string name="os_btn_back">Back</string>
     <string name="btn_back">Back</string>
@@ -240,6 +241,20 @@
 
     <string name="sysui_gesture_bar_title">Gesture Bar</string>
     <string name="sysui_gesture_bar_subtitle">Home handle size, color, and gesture area</string>
+    <string name="sysui_log_service_title">Background Logging</string>
+    <string name="sysui_log_service_enable_title">Log in background</string>
+    <string name="sysui_log_service_enable_summary">Keeps a Pixel Extra Parts service running and stores logs under /sdcard/PixelExtraPartsLogs/Date</string>
+    <string name="sysui_log_service_start">Start</string>
+    <string name="sysui_log_service_stop">Stop</string>
+    <string name="sysui_log_service_status_running">Process is running</string>
+    <string name="sysui_log_service_status_stopped">Process is stopped</string>
+    <string name="sysui_log_service_add_tile">Add Logging tile</string>
+    <string name="sysui_logcat_title">Log logcat</string>
+    <string name="sysui_logcat_summary">Writes main, system, and events logcat buffers for module debugging</string>
+    <string name="sysui_dmesg_title">Log dmesg</string>
+    <string name="sysui_dmesg_summary">Writes kernel messages when dmesg access is available on this build</string>
+    <string name="sysui_crash_log_title">Catch app crashes</string>
+    <string name="sysui_crash_log_summary">Writes the crash logcat buffer separately for launcher and SystemUI crash tests</string>
     <string name="notification_icon_overrides_title">Notification Icons</string>
     <string name="status_bar_app_icons_title">Status bar app icons</string>
     <string name="status_bar_app_icons_summary">Use source application icons in the unlocked status bar</string>
@@ -282,6 +297,7 @@
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Text Magnifier</string>
+    <string name="magnifier_add_tile">Add Text Magnifier tile</string>
     <string name="magnifier_enable_title">Custom zoom</string>
     <string name="magnifier_enable_summary">Override the default text magnifier zoom level</string>
     <string name="magnifier_zoom_title">Zoom level</string>
@@ -327,6 +343,7 @@
     <string name="sysui_shade_override_enable">Relative alpha multiplier</string>
 
     <string name="sysui_charging_info_title">Charging Info</string>
+    <string name="charging_info_add_tile">Add Charging Info tile</string>
     <string name="sysui_charging_info_enable">Enable Custom Charging Info</string>
     <string name="sysui_show_wattage">Show Wattage</string>
     <string name="sysui_show_voltage">Show Voltage</string>
@@ -517,50 +534,8 @@
     <string name="reboot_confirm_sysui_title">Restart SystemUI?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI will be restarted. Navigation bar, status bar and notifications will briefly disappear.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">IMS Configuration</string>
-    <string name="warning_info">These settings forcibly activate Carrier Config capabilities. By default, most of these features are hidden or disabled for uncertified regions.\n\nAirplane Mode toggle is required to apply changes.</string>
-    <string name="ims_footer_info">These settings forcibly activate Carrier Config capabilities. By default, most of these features are hidden or disabled for uncertified regions.\n\nAirplane Mode toggle is required to apply changes.</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Voice Services</string>
-    <string name="ims_sec_network">Network &amp; 5G</string>
-    <string name="ims_sec_advanced">Advanced Settings</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE (Voice over LTE)</string>
-    <string name="ims_desc_volte">Forcibly enables VoLTE support in carrier configuration.\n\nAllows making voice calls over 4G/LTE network without switching to 3G/2G. Ensures fast connection, HD sound quality, and simultaneous internet usage during calls. Fixes missing VoLTE toggle in settings.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">VoWiFi (Wi-Fi Calling)</string>
-    <string name="ims_desc_vowifi">Forcibly enables Wi-Fi Calling support.\n\nAllows phone to register in carrier IMS network via any available Wi-Fi. Indispensable in places with poor cellular reception (basements, thick walls) but internet access. Activates hidden "Wi-Fi Calling" menu.</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Video Calling (ViLTE)</string>
-    <string name="ims_desc_vt">Enables native video calling support via carrier.\n\nThis is built-in dialer video function (not via messengers, but standard IR.94 protocol). Works if carrier supports Video over LTE.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Backup Calling (Cross-SIM)</string>
-    <string name="ims_desc_cross_sim">Backup calling technology via another SIM.\n\nAllows using internet traffic of the second SIM to register IMS services for the first SIM. Useful when the main SIM lost network (e.g., roaming or dead zone) but the second SIM has internet access.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Voice over 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Voice calls in pure 5G networks (Standalone).\n\nThe most modern voice transmission standard. Ensures ultra-low latency and better quality than VoLTE. Works only in 5G SA networks and requires Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">Unlock 5G</string>
-    <string name="ims_desc_5g">Removes software 5G block from configuration side.\n\nMany carriers block 5G access for Pixel devices not in their "whitelist", even if hardware support exists. This switch forcibly adds NR NSA and SA bands to the allowed list.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Aggressive 5G Signal</string>
-    <string name="ims_desc_5g_thresh">Modifies signal level thresholds (RSRP) for network switching.\n\nLowers signal quality requirements for showing 5G icon and staying in 5G network. Helps if phone drops to 4G/LTE too eagerly even when 5G is available.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">UT Interface (XCAP)</string>
-    <string name="ims_desc_ut">Supplementary service management via IMS.\n\nAllows configuring call forwarding, call waiting, and caller ID via phone settings menu using IP channel instead of obsolete USSD codes. Fixes "Network or SIM card error" when trying to access call settings in LTE-only networks.</string>
-
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Launcher Settings</string>
+    <string name="launcher_settings_title">Misc</string>
     <string name="launcher_search_section">Search &amp; Navigation</string>
 
     <!-- Launcher Navigation Items -->
@@ -635,6 +610,7 @@
 
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Double Tap to Wake (DT2W)</string>
+    <string name="dt2w_add_tile">Add DT2W tile</string>
     
     <string name="dt2w_desc_xposed">Xposed hook for SystemUI.\n\nIntercepts sensor events in DozeTriggers class and emulates wake-up, as hardware support on Pixel is often disabled or limited.</string>
     <string name="dt2w_desc_native">Native System Integration.\n\nUses built-in firmware code to process touch events in Doze mode, ensuring wake-up without third-party hooks.</string>
@@ -684,11 +660,18 @@
 
     <!-- MAIN ACTIVITY -->
     <string name="main_title">Pixel Extra Parts</string>
+    <string name="main_add_tile">Add app tile</string>
     <string name="main_desc">Custom modules and tweaks</string>
+    <string name="main_search_hint">Search settings</string>
+    <string name="main_search_results_title">Search results</string>
+    <string name="main_search_no_results">No results for "%1$s"</string>
     
     <string name="main_header_gesture">Gestures &amp; Input</string>
     <string name="main_header_system">System</string>
     <string name="main_header_network">Network &amp; Connectivity</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Camera</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Test Things</string>
@@ -698,18 +681,26 @@
     <string name="main_root_desc">Application requires Superuser rights (Root) and active Xposed Framework.\n\nPlease install Magisk/KernelSU and grant permissions.</string>
 
     <string name="dt_desc_activity">Manage wake and sleep gestures</string>
-    <string name="launcher_title_activity">Launcher</string>
+    <string name="launcher_title_activity">Misc</string>
     <string name="os_desc_activity">Scroll elasticity and inertia settings</string>
     
     <string name="dt_title_activity">Double Tap</string>
     
-    <string name="launcher_desc_activity">Pixel Launcher Settings</string>
+    <string name="launcher_desc_activity">Misc settings</string>
     
     <string name="thermal_title_activity">Thermal Profiles</string>
     
     <string name="thermal_desc_activity">Throttling Management (Tensor)</string>
     <string name="thermal_manager_title">Thermals Manager</string>
     <string name="thermal_manager_desc_activity">Edit and apply JSON thermal configs</string>
+    <string name="thermal_manager_add_tile">Add Thermal Manager tile</string>
+    <string name="thermal_manager_tile_queue">Tile profile queue</string>
+    <string name="thermal_manager_tile_queue_add">Add profile</string>
+    <string name="thermal_manager_tile_queue_empty">Queue is empty</string>
+    <string name="thermal_manager_tile_queue_count">%1$d/%2$d selected</string>
+    <string name="thermal_manager_tile_queue_move_up">Move up</string>
+    <string name="thermal_manager_tile_queue_move_down">Move down</string>
+    <string name="thermal_manager_tile_queue_remove">Remove from queue</string>
     <string name="thermal_manager_editor_title">Config editor</string>
     <string name="thermal_manager_open_editor">Open config editor</string>
     <string name="thermal_manager_saved_configs">Saved configs</string>
@@ -928,10 +919,6 @@
     <string name="os_norm_mode_hybrid">Hybrid (Recommended)</string>
     <string name="os_norm_mode_stacktrace">Stack Trace Only</string>
 
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">IMS Config</string>
-
-
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Homepage Customization</string>
     <string name="grid_lbl_home_enable">Homepage Grid Customization</string>
@@ -1135,6 +1122,7 @@
 
     <!-- Activity Transition Settings -->
     <string name="anim_transition_title">Activity Transitions</string>
+    <string name="activity_transition_add_tile">Add Activity Transitions tile</string>
     <string name="anim_transition_subtitle">Custom animation themes and built-in transitions</string>
     <string name="anim_predictive_back_title">Disable Predictive Back</string>
     <string name="anim_predictive_back_desc">Removes the system swipe-back animation</string>
@@ -1204,6 +1192,8 @@
     <string name="addon_btn_cancel">Cancel</string>
     <string name="addon_btn_remove">Remove</string>
     <string name="addon_settings_title">Module Settings</string>
+    <string name="addon_settings_empty">No settings available for this page</string>
+    <string name="addon_no_inline_settings_hint">This module has no inline card settings. All settings are located in built-in activity pages:</string>
     <string name="addon_range_format">Range: %1$s — %2$s</string>
     <string name="addon_file_not_set">Not set</string>
     <string name="addon_file_saved">File saved</string>
@@ -1214,11 +1204,30 @@
     <string name="addon_confirm_count">Confirm (%d)</string>
     <string name="addon_search_apps">Search apps\u2026</string>
     <string name="addon_show_system">Show system</string>
+    <string name="addon_show_system_desc">Include system packages in the list</string>
     <string name="addon_hide_system">Hide system</string>
+    <string name="addon_launchable_only">Launchable only</string>
+    <string name="addon_launchable_only_desc">Show apps with launcher entries</string>
     <string name="addon_no_apps_match">No apps match \"%s\"</string>
     <string name="addon_no_apps_available">No apps available</string>
     <string name="addon_default_target_badge">Default target</string>
     <string name="addon_author_unknown">Unknown</string>
+    <string name="addon_color_pick">Pick</string>
+    <string name="addon_settings_import">Import</string>
+    <string name="addon_settings_export">Export</string>
+    <string name="addon_export_settings_title">Settings only</string>
+    <string name="addon_export_settings_desc">Export current key values as JSON</string>
+    <string name="addon_export_module_title">Module JAR</string>
+    <string name="addon_export_module_desc">Export the addon module file</string>
+    <string name="addon_update_check">Check updates</string>
+    <string name="addon_update_checking">Checking...</string>
+    <string name="addon_update_install">Update</string>
+    <string name="addon_update_installing">Updating...</string>
+    <string name="addon_update_available">Update available: %1$s</string>
+    <string name="addon_update_none">No update available</string>
+    <string name="addon_update_installed">Update installed</string>
+    <string name="addon_update_failed">Update failed</string>
+    <string name="addon_delete_data_update_confirm">Remove data update for \"%s\"?\n\nThe system addon will remain installed.</string>
 
     <!-- Addon Manager: Active Apps -->
     <string name="addon_active_apps_title">Active Apps</string>

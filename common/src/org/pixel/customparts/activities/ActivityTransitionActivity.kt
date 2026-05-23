@@ -69,13 +69,13 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
+import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.dynamicStringResource
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -292,10 +292,12 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
 
     fun applyOpen(mode: Int) {
         Settings.Global.putInt(context.contentResolver, SettingsKeys.ACTIVITY_OPEN_TRANSITION, mode)
+        PixelPartsTileRefresher.requestForSetting(context, SettingsKeys.ACTIVITY_OPEN_TRANSITION)
         currentOpenMode = mode
     }
     fun applyClose(mode: Int) {
         Settings.Global.putInt(context.contentResolver, SettingsKeys.ACTIVITY_CLOSE_TRANSITION, mode)
+        PixelPartsTileRefresher.requestForSetting(context, SettingsKeys.ACTIVITY_CLOSE_TRANSITION)
         currentCloseMode = mode
         // Auto-enable predictive back disable when close animation is set
         if (mode != MODE_DISABLED) {
@@ -472,7 +474,6 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
     // ── UI ──
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
                 title = { Text(dynamicStringResource(R.string.anim_transition_title), fontWeight = FontWeight.Bold) },

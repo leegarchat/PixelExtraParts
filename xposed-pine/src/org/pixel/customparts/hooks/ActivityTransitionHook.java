@@ -58,6 +58,8 @@ public class ActivityTransitionHook extends BaseHook {
 
     private static final String ACTION_REVIEW = "android.provider.action.REVIEW";
     private static final String ACTION_REVIEW_SECURE = "android.provider.action.REVIEW_SECURE";
+        private static final String EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION =
+            "org.pixel.customparts.extra.USE_SYSTEM_ACTIVITY_ANIMATION";
 
     // ── Mode constants ──────────────────────────────────────────────────
 
@@ -247,8 +249,13 @@ public class ActivityTransitionHook extends BaseHook {
 
     private boolean shouldSkipOpenTransition(Intent intent) {
         if (intent == null) return false;
+        if (intent.getBooleanExtra(EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION, false)) return true;
         String action = intent.getAction();
         return ACTION_REVIEW.equals(action) || ACTION_REVIEW_SECURE.equals(action);
+    }
+
+    private boolean shouldSkipCloseTransition(Activity activity) {
+        return activity != null && shouldSkipOpenTransition(activity.getIntent());
     }
 
     // ── init ────────────────────────────────────────────────────────────
@@ -656,6 +663,7 @@ public class ActivityTransitionHook extends BaseHook {
         protected void afterHookedMethod(MethodHookParam param) {
             try {
                 Activity activity = (Activity) param.thisObject;
+                if (shouldSkipCloseTransition(activity)) return;
                 int closeMode = getCloseMode(activity);
                 if (closeMode == MODE_DISABLED) return;
 

@@ -33,8 +33,11 @@ import android.graphics.Color as AndroidColor
 fun ColorPickerDialog(
     initialColor: Int,
     onColorSelected: (Int) -> Unit,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
+    showAlpha: Boolean = false,
+    title: String = "Pick a Color"
 ) {
+    var alpha by remember { mutableFloatStateOf(AndroidColor.alpha(initialColor) / 255f) }
     var currentColor by remember { mutableStateOf(Color(initialColor)) }
     
     
@@ -54,7 +57,7 @@ fun ColorPickerDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Pick a Color",
+                    text = title,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -67,7 +70,7 @@ fun ColorPickerDialog(
                         hsv[0] = h
                         hsv[1] = s
                         hsv[2] = v
-                        currentColor = Color.hsv(h, s, v)
+                        currentColor = Color.hsv(h, s, v, alpha)
                     }
                 )
 
@@ -79,9 +82,21 @@ fun ColorPickerDialog(
                     value = hsv[2],
                     onValueChange = {
                         hsv[2] = it
-                        currentColor = Color.hsv(hsv[0], hsv[1], it)
+                        currentColor = Color.hsv(hsv[0], hsv[1], it, alpha)
                     }
                 )
+
+                if (showAlpha) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Alpha", style = MaterialTheme.typography.bodyMedium)
+                    Slider(
+                        value = alpha,
+                        onValueChange = {
+                            alpha = it
+                            currentColor = Color.hsv(hsv[0], hsv[1], hsv[2], alpha)
+                        }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 

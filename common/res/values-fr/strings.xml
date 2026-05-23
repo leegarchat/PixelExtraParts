@@ -261,50 +261,8 @@
     <string name="reboot_confirm_sysui_title">Redémarrer SystemUI ?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI sera redémarré. La barre de navigation, la barre d\'état et les notifications disparaîtront brièvement.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">Configuration IMS</string>
-    <string name="warning_info">Ces paramètres forcent l\'activation des fonctions de configuration de l\'opérateur. Par défaut, la plupart de ces fonctions sont masquées ou désactivées pour les régions non certifiées.\n\nPour appliquer les modifications, le mode avion doit être activé puis désactivé.</string>
-    <string name="ims_footer_info">Ces paramètres forcent l\'activation des fonctions de configuration de l\'opérateur. Par défaut, la plupart de ces fonctions sont masquées ou désactivées pour les régions non certifiées.\n\nPour appliquer les modifications, le mode avion doit être activé puis désactivé.</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Services vocaux</string>
-    <string name="ims_sec_network">Réseau &amp; 5G</string>
-    <string name="ims_sec_advanced">Paramètres avancés</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE</string>
-    <string name="ims_desc_volte">Force le support VoLTE dans la configuration de l\'opérateur.\n\nPermet les appels vocaux via le réseau 4G/LTE sans basculer vers 3G/2G. Assure une connexion rapide, une qualité audio HD et l\'utilisation simultanée d\'Internet pendant l\'appel. Corrige le commutateur VoLTE manquant dans les paramètres.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">Appels Wi-Fi</string>
-    <string name="ims_desc_vowifi">Force le support des appels Wi-Fi (Wi-Fi Calling).\n\nPermet au téléphone de s\'enregistrer sur le réseau IMS de l\'opérateur via n\'importe quel Wi-Fi disponible. Indispensable dans les endroits avec un mauvais signal cellulaire (sous-sols, murs épais), mais avec Internet disponible. Active le menu caché « Appels Wi-Fi ».</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Appels vidéo</string>
-    <string name="ims_desc_vt">Active le support natif des appels vidéo via l\'opérateur.\n\nC\'est la fonction vidéo intégrée dans l\'application Téléphone (pas via une messagerie, mais via le protocole standard IR.94). Fonctionne si l\'opérateur supporte Video over LTE.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Appels de secours</string>
-    <string name="ims_desc_cross_sim">Technologie d\'appels de secours via une autre carte SIM.\n\nPermet d\'utiliser le trafic de données de la deuxième carte SIM pour l\'enregistrement IMS de la première. Utile lorsque la SIM principale a perdu le réseau (en roaming ou zone blanche) mais que la deuxième SIM a accès à Internet.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Appels 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Appels vocaux sur les réseaux 5G purs (Standalone).\n\nLa norme la plus moderne pour la transmission vocale. Assure une latence extrêmement faible et une meilleure qualité que VoLTE. Ne fonctionne que sur les réseaux 5G SA et nécessite Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">Débloquer la 5G</string>
-    <string name="ims_desc_5g">Supprime le verrouillage logiciel de la 5G dans la configuration.\n\nDe nombreux opérateurs bloquent l\'accès 5G pour les appareils Pixel qui ne figurent pas sur leur « liste blanche », même en présence du support matériel. Ce commutateur ajoute de force les bandes NR NSA et SA à la liste autorisée.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Signal 5G agressif</string>
-    <string name="ims_desc_5g_thresh">Modifie les seuils de signal pour le changement de réseau.\n\nAbaisse les exigences de qualité du signal pour l\'affichage de l\'icône 5G et le maintien du réseau 5G. Aide lorsque le téléphone bascule trop vite en 4G/LTE alors que la 5G est disponible.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">Interface UT</string>
-    <string name="ims_desc_ut">Gestion des services supplémentaires via IMS.\n\nPermet de configurer le renvoi d\'appel, l\'appel en attente et la présentation du numéro via le menu des paramètres du téléphone en utilisant le canal IP au lieu des anciens codes USSD. Corrige les erreurs de type « Erreur réseau ou carte SIM » lors de l\'accès aux paramètres d\'appel en mode LTE uniquement.</string>
-
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Paramètres du lanceur</string>
+    <string name="launcher_settings_title">Divers</string>
     <string name="launcher_search_section">Recherche &amp; Navigation</string>
 
     <!-- Launcher Navigation Items -->
@@ -420,6 +378,9 @@
     <string name="main_header_gesture">Gestes &amp; Saisie</string>
     <string name="main_header_system">Système</string>
     <string name="main_header_network">Réseau &amp; Connectivité</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Caméra</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Fonctionnalités de test</string>
@@ -429,12 +390,12 @@
     <string name="main_root_desc">L\'application nécessite des droits superutilisateur (Root) et un framework Xposed actif.\n\nVeuillez installer Magisk/KernelSU et accorder les permissions.</string>
 
     <string name="dt_desc_activity">Gestion des gestes de réveil et de veille</string>
-    <string name="launcher_title_activity">Lanceur</string>
+    <string name="launcher_title_activity">Divers</string>
     <string name="os_desc_activity">Paramètres d\'élasticité et d\'inertie du défilement</string>
     
     <string name="dt_title_activity">Double appui</string>
     
-    <string name="launcher_desc_activity">Paramètres du Pixel Launcher</string>
+    <string name="launcher_desc_activity">Paramètres divers</string>
     
     <string name="thermal_title_activity">Profils thermiques</string>
     
@@ -462,10 +423,6 @@
     <string name="os_norm_mode_behavior">Comportement uniquement</string>
     <string name="os_norm_mode_hybrid">Hybride (recommandé)</string>
     <string name="os_norm_mode_stacktrace">Trace de pile uniquement</string>
-
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">Config IMS</string>
-
 
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Personnalisation de l\'écran d\'accueil</string>

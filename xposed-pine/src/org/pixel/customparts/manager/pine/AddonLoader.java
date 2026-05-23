@@ -33,8 +33,9 @@ public class AddonLoader {
     private static final String SYSTEM_ADDON_DIR = "/system_ext/etc/pixelparts/addons";
     private static final String SYSTEM_ADDON_DATA_DIR = "/data/pixelparts/system_addons_data";
 
-    // Boot guard: crash-loop detection for critical processes
-    private static final String BOOT_GUARD_FILE = "/data/pixelparts/.boot_guard";
+    // Boot guard: crash-loop detection for critical processes (stored in Settings.Global)
+    private static final String BOOT_GUARD_COUNT_SETTING = "pixel_addon_boot_guard_count";
+    private static final String BOOT_GUARD_TIMESTAMP_SETTING = "pixel_addon_boot_guard_ts";
     private static final int BOOT_GUARD_THRESHOLD = 3;
     private static final long BOOT_GUARD_WINDOW_MS = 180_000L;        // 3 minutes
     private static final long BOOT_GUARD_CLEAR_DELAY_MS = 90_000L;    // 90 seconds
@@ -110,7 +111,7 @@ public class AddonLoader {
         List<AddonInfo> applicable = getApplicableAddons(context, packageName);
         if (applicable.isEmpty()) {
             // No addons to load — clear guard immediately, this boot is fine
-            if (guarded) clearBootGuard();
+            if (guarded) clearBootGuard(context);
             return;
         }
 
@@ -504,8 +505,51 @@ public class AddonLoader {
 
         AddonInfo info = new AddonInfo(id, entryClass, name, author, description,
                                        version, defaultTargets, jarFile.getAbsolutePath());
+        AddonInfo existing = loadedAddons.get(id);
+        if (existing != null && !shouldPreferAddon(info, existing)) {
+            Log.d(TAG, "Skipping older addon copy: " + id + " " + info.version + " at " + info.jarPath);
+            return;
+        }
         loadedAddons.put(id, info);
         Log.d(TAG, "Indexed addon: " + id + " -> " + defaultTargets);
+    }
+
+    private static boolean shouldPreferAddon(AddonInfo candidate, AddonInfo existing) {
+        int versionCompare = compareVersions(candidate.version, existing.version);
+        if (versionCompare != 0) {
+            return versionCompare > 0;
+        }
+        return !isSystemAddon(candidate) && isSystemAddon(existing);
+    }
+
+    private static int compareVersions(String left, String right) {
+        String[] leftParts = splitVersion(left);
+        String[] rightParts = splitVersion(right);
+        int count = Math.max(leftParts.length, rightParts.length);
+        for (int i = 0; i < count; i++) {
+            int leftPart = parseVersionPart(leftParts, i);
+            int rightPart = parseVersionPart(rightParts, i);
+            if (leftPart != rightPart) {
+                return leftPart < rightPart ? -1 : 1;
+            }
+        }
+        return 0;
+    }
+
+    private static String[] splitVersion(String version) {
+        if (version == null || version.trim().isEmpty()) {
+            return new String[0];
+        }
+        return version.trim().split("[.\\-_]");
+    }
+
+    private static int parseVersionPart(String[] parts, int index) {
+        if (index >= parts.length) return 0;
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (Throwable ignored) {
+            return 0;
+        }
     }
 
     /**
@@ -671,30 +715,23 @@ public class AddonLoader {
     }
 
     /**
-     * Read crash counter, decide if safe mode should be activated.
+     * Read crash counter from Settings.Global, decide if safe mode should be activated.
      * If not, increment counter for current boot attempt.
+     * Uses Settings.Global instead of filesystem to avoid EACCES in unprivileged processes.
      * @return true if safe mode was activated (caller must skip addon loading)
      */
     private static boolean checkAndUpdateBootGuard(Context context) {
-        File guardFile = new File(BOOT_GUARD_FILE);
         int count = 0;
         long lastTimestamp = 0;
 
-        if (guardFile.exists()) {
-            try {
-                byte[] bytes = new byte[(int) guardFile.length()];
-                java.io.FileInputStream fis = new java.io.FileInputStream(guardFile);
-                fis.read(bytes);
-                fis.close();
-                String content = new String(bytes, "UTF-8").trim();
-                String[] parts = content.split("\n");
-                if (parts.length >= 2) {
-                    count = Integer.parseInt(parts[0].trim());
-                    lastTimestamp = Long.parseLong(parts[1].trim());
-                }
-            } catch (Throwable t) {
-                Log.w(TAG, "Failed to read boot guard file", t);
+        try {
+            count = Settings.Global.getInt(context.getContentResolver(), BOOT_GUARD_COUNT_SETTING, 0);
+            String tsStr = Settings.Global.getString(context.getContentResolver(), BOOT_GUARD_TIMESTAMP_SETTING);
+            if (tsStr != null && !tsStr.isEmpty()) {
+                lastTimestamp = Long.parseLong(tsStr.trim());
             }
+        } catch (Throwable t) {
+            Log.d(TAG, "Failed to read boot guard settings: " + throwableSummary(t));
         }
 
         long now = System.currentTimeMillis();
@@ -710,8 +747,7 @@ public class AddonLoader {
             try {
                 Settings.Global.putInt(context.getContentResolver(), SAFE_MODE_SETTING, 1);
             } catch (Throwable ignored) {}
-            // Reset counter so exitSafeMode won't re-trigger immediately
-            clearBootGuard();
+            clearBootGuard(context);
             Log.e(TAG, "SAFE MODE ACTIVATED: " + count + " crashes detected within "
                     + BOOT_GUARD_WINDOW_MS / 1000 + "s window. All addons disabled.");
             return true;
@@ -720,12 +756,10 @@ public class AddonLoader {
         // Increment crash counter
         count++;
         try {
-            guardFile.getParentFile().mkdirs();
-            java.io.FileOutputStream fos = new java.io.FileOutputStream(guardFile);
-            fos.write((count + "\n" + now + "\n").getBytes("UTF-8"));
-            fos.close();
+            Settings.Global.putInt(context.getContentResolver(), BOOT_GUARD_COUNT_SETTING, count);
+            Settings.Global.putString(context.getContentResolver(), BOOT_GUARD_TIMESTAMP_SETTING, String.valueOf(now));
         } catch (Throwable t) {
-            Log.w(TAG, "Failed to write boot guard file", t);
+            Log.d(TAG, "Failed to write boot guard settings: " + throwableSummary(t));
         }
 
         if (count > 1) {
@@ -735,13 +769,22 @@ public class AddonLoader {
     }
 
     /**
-     * Clear the boot guard file — called when process survived long enough.
+     * Clear the boot guard counter — called when process survived long enough.
      */
-    private static void clearBootGuard() {
+    private static void clearBootGuard(Context context) {
         try {
-            File guardFile = new File(BOOT_GUARD_FILE);
-            if (guardFile.exists()) guardFile.delete();
+            Settings.Global.putInt(context.getContentResolver(), BOOT_GUARD_COUNT_SETTING, 0);
+            Settings.Global.putString(context.getContentResolver(), BOOT_GUARD_TIMESTAMP_SETTING, "0");
         } catch (Throwable ignored) {}
+    }
+
+    private static String throwableSummary(Throwable throwable) {
+        if (throwable == null) {
+            return "unknown";
+        }
+        String detail = throwable.getMessage();
+        String name = throwable.getClass().getSimpleName();
+        return detail == null || detail.isEmpty() ? name : name + ": " + detail;
     }
 
     /**
@@ -754,7 +797,7 @@ public class AddonLoader {
             public void run() {
                 try {
                     Thread.sleep(BOOT_GUARD_CLEAR_DELAY_MS);
-                    clearBootGuard();
+                    clearBootGuard(context);
                     safeMode = false;
                     try {
                         Settings.Global.putInt(context.getContentResolver(), SAFE_MODE_SETTING, 0);
@@ -770,12 +813,12 @@ public class AddonLoader {
 
     /**
      * Manually exit safe mode. Called from the UI when user confirms.
-     * Clears both the file marker and the global Settings flag.
+     * Clears both the counter and the global Settings flag.
      */
     public static void exitSafeMode(Context context) {
         safeMode = false;
         bootGuardClearScheduled = false;
-        clearBootGuard();
+        clearBootGuard(context);
         try {
             Settings.Global.putInt(context.getContentResolver(), SAFE_MODE_SETTING, 0);
         } catch (Throwable ignored) {}

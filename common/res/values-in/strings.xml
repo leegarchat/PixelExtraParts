@@ -261,50 +261,8 @@
     <string name="reboot_confirm_sysui_title">Restart SystemUI?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI akan di-restart. Bilah navigasi, bilah status, dan notifikasi akan menghilang sebentar.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">Konfigurasi IMS</string>
-    <string name="warning_info">Pengaturan ini memaksa aktivasi fungsi konfigurasi operator. Secara default, sebagian besar fungsi ini disembunyikan atau dinonaktifkan untuk wilayah yang tidak tersertifikasi.\n\nUntuk menerapkan perubahan, mode pesawat harus diaktifkan lalu dinonaktifkan.</string>
-    <string name="ims_footer_info">Pengaturan ini memaksa aktivasi fungsi konfigurasi operator. Secara default, sebagian besar fungsi ini disembunyikan atau dinonaktifkan untuk wilayah yang tidak tersertifikasi.\n\nUntuk menerapkan perubahan, mode pesawat harus diaktifkan lalu dinonaktifkan.</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Layanan Suara</string>
-    <string name="ims_sec_network">Jaringan &amp; 5G</string>
-    <string name="ims_sec_advanced">Pengaturan Lanjutan</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE</string>
-    <string name="ims_desc_volte">Memaksa dukungan VoLTE di konfigurasi operator.\n\nMemungkinkan panggilan suara melalui jaringan 4G/LTE tanpa beralih ke 3G/2G. Memastikan koneksi cepat, kualitas audio HD, dan penggunaan internet simultan selama panggilan. Memperbaiki tombol VoLTE yang hilang di pengaturan.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">Panggilan Wi-Fi</string>
-    <string name="ims_desc_vowifi">Memaksa dukungan Panggilan Wi-Fi (Wi-Fi Calling).\n\nMengizinkan telepon mendaftar di jaringan IMS operator melalui Wi-Fi yang tersedia. Sangat penting di lokasi dengan sinyal seluler lemah (basement, dinding tebal) tetapi internet tersedia. Mengaktifkan menu tersembunyi "Panggilan Wi-Fi".</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Panggilan Video</string>
-    <string name="ims_desc_vt">Mengaktifkan dukungan panggilan video native melalui operator.\n\nIni adalah fitur video yang terintegrasi dalam aplikasi Telepon (bukan melalui messenger, tetapi melalui protokol standar IR.94). Berfungsi jika operator mendukung Video over LTE.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Panggilan Cadangan</string>
-    <string name="ims_desc_cross_sim">Teknologi panggilan cadangan melalui kartu SIM lain.\n\nMengizinkan penggunaan lalu lintas data SIM kedua untuk registrasi IMS SIM pertama. Berguna ketika SIM utama kehilangan jaringan (roaming atau area mati) tetapi SIM kedua memiliki akses internet.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Panggilan 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Panggilan suara di jaringan 5G murni (Standalone).\n\nStandar paling modern untuk transmisi suara. Memastikan latensi sangat rendah dan kualitas lebih baik dari VoLTE. Hanya bekerja di jaringan 5G SA dan membutuhkan Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">Buka Kunci 5G</string>
-    <string name="ims_desc_5g">Menghapus pemblokiran 5G software di konfigurasi.\n\nBanyak operator memblokir akses 5G untuk perangkat Pixel yang tidak ada di "whitelist" mereka, meskipun ada dukungan hardware. Tombol ini memaksa menambahkan band NR NSA dan SA ke daftar yang diizinkan.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Sinyal 5G Agresif</string>
-    <string name="ims_desc_5g_thresh">Mengubah ambang batas sinyal untuk pergantian jaringan.\n\nMenurunkan persyaratan kualitas sinyal untuk menampilkan ikon 5G dan tetap di jaringan 5G. Membantu ketika telepon terlalu cepat kembali ke 4G/LTE padahal 5G tersedia.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">Antarmuka UT</string>
-    <string name="ims_desc_ut">Manajemen layanan tambahan melalui IMS.\n\nMemungkinkan pengaturan penerusan panggilan, panggilan tunggu, dan identifikasi pemanggil melalui menu pengaturan telepon menggunakan saluran IP alih-alih kode USSD lawas. Memperbaiki kesalahan seperti "Kesalahan jaringan atau kartu SIM" saat mencoba mengakses pengaturan panggilan di mode LTE-only.</string>
-
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Pengaturan Launcher</string>
+    <string name="launcher_settings_title">Lainnya</string>
     <string name="launcher_search_section">Pencarian &amp; Navigasi</string>
 
     <!-- Launcher Navigation Items -->
@@ -420,6 +378,9 @@
     <string name="main_header_gesture">Gestur &amp; Input</string>
     <string name="main_header_system">Sistem</string>
     <string name="main_header_network">Jaringan &amp; Konektivitas</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Kamera</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Fitur pengujian</string>
@@ -429,12 +390,12 @@
     <string name="main_root_desc">Aplikasi memerlukan hak superuser (Root) dan framework Xposed aktif.\n\nSilakan instal Magisk/KernelSU dan berikan izin.</string>
 
     <string name="dt_desc_activity">Manajemen gestur bangun dan tidur</string>
-    <string name="launcher_title_activity">Launcher</string>
+    <string name="launcher_title_activity">Lainnya</string>
     <string name="os_desc_activity">Pengaturan elastisitas dan inersia gulir</string>
     
     <string name="dt_title_activity">Ketuk Ganda</string>
     
-    <string name="launcher_desc_activity">Pengaturan Pixel Launcher</string>
+    <string name="launcher_desc_activity">Pengaturan lainnya</string>
     
     <string name="thermal_title_activity">Profil Termal</string>
     
@@ -462,10 +423,6 @@
     <string name="os_norm_mode_behavior">Hanya perilaku</string>
     <string name="os_norm_mode_hybrid">Hibrid (direkomendasikan)</string>
     <string name="os_norm_mode_stacktrace">Hanya stack trace</string>
-
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">Konfigurasi IMS</string>
-
 
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Kustomisasi layar utama</string>

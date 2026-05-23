@@ -2,6 +2,7 @@
 <resources>
     <!-- General / Navigation -->
     <string name="os_title_activity">Физика прокрутки</string>
+    <string name="overscroll_add_tile">Добавить плитку прокрутки</string>
     <string name="os_title_playground">Песочница</string>
     <string name="os_btn_back">Назад</string>
     <string name="btn_back">Назад</string>
@@ -241,6 +242,20 @@
 
     <string name="sysui_gesture_bar_title">Полоска жестов</string>
     <string name="sysui_gesture_bar_subtitle">Размер, цвет и область жеста Home</string>
+    <string name="sysui_log_service_title">Фоновое логирование</string>
+    <string name="sysui_log_service_enable_title">Логировать в фоне</string>
+    <string name="sysui_log_service_enable_summary">Запускает сервис Pixel Extra Parts и сохраняет логи в /sdcard/PixelExtraPartsLogs/Дата</string>
+    <string name="sysui_log_service_start">Старт</string>
+    <string name="sysui_log_service_stop">Прервать</string>
+    <string name="sysui_log_service_status_running">Процесс жив</string>
+    <string name="sysui_log_service_status_stopped">Процесс остановлен</string>
+    <string name="sysui_log_service_add_tile">Добавить плитку логов</string>
+    <string name="sysui_logcat_title">Лог logcat</string>
+    <string name="sysui_logcat_summary">Пишет main, system и events буферы logcat для отладки модулей</string>
+    <string name="sysui_dmesg_title">Лог dmesg</string>
+    <string name="sysui_dmesg_summary">Пишет сообщения ядра, если dmesg доступен на этой сборке</string>
+    <string name="sysui_crash_log_title">Ловить краши приложений</string>
+    <string name="sysui_crash_log_summary">Отдельно пишет crash buffer logcat для тестов крашей Launcher и SystemUI</string>
     <string name="notification_icon_overrides_title">Иконки уведомлений</string>
     <string name="status_bar_app_icons_title">Иконки приложений в status bar</string>
     <string name="status_bar_app_icons_summary">Показывать исходные иконки приложений в разблокированной строке состояния</string>
@@ -283,6 +298,7 @@
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Текстовая лупа</string>
+    <string name="magnifier_add_tile">Добавить плитку текстовой лупы</string>
     <string name="magnifier_enable_title">Кастомный зум</string>
     <string name="magnifier_enable_summary">Изменить уровень увеличения текстовой лупы</string>
     <string name="magnifier_zoom_title">Уровень увеличения</string>
@@ -328,6 +344,7 @@
     <string name="sysui_shade_override_enable">Относительный множитель прозрачности</string>
 
     <string name="sysui_charging_info_title">Информация о зарядке</string>
+    <string name="charging_info_add_tile">Добавить плитку информации о зарядке</string>
     <string name="sysui_charging_info_enable">Пользовательская информация о зарядке</string>
     <string name="sysui_show_wattage">Показать мощность (Вт)</string>
     <string name="sysui_show_voltage">Показать напряжение</string>
@@ -518,50 +535,8 @@
     <string name="reboot_confirm_sysui_title">Перезапустить SystemUI?</string>
     <string name="reboot_confirm_sysui_msg">SystemUI будет перезапущен. Панель навигации, строка состояния и уведомления ненадолго исчезнут.</string>
 
-    <!-- IMS MANAGER -->
-    <string name="ims_category_title">Конфигурация IMS</string>
-    <string name="warning_info">Эти настройки принудительно активируют возможности оператора (Carrier Config). По умолчанию большинство этих функций скрыто или отключено для несертифицированных регионов.\n\nДля применения изменений необходимо включить и выключить "Режим полета".</string>
-    <string name="ims_footer_info">Эти настройки принудительно активируют возможности оператора (Carrier Config). По умолчанию большинство этих функций скрыто или отключено для несертифицированных регионов.\n\nДля применения изменений необходимо включить и выключить "Режим полета".</string>
-
-    <!-- Section Headers -->
-    <string name="ims_sec_voice">Голосовые сервисы</string>
-    <string name="ims_sec_network">Сеть и 5G</string>
-    <string name="ims_sec_advanced">Расширенные настройки</string>
-
-    <!-- VoLTE -->
-    <string name="ims_lbl_volte">VoLTE</string>
-    <string name="ims_desc_volte">Принудительно включает поддержку VoLTE в конфигурации оператора.\n\nПозволяет совершать голосовые вызовы через сеть 4G/LTE без переключения в 3G/2G. Обеспечивает быстрое соединение, HD-качество звука и одновременную работу интернета во время разговора. Исправляет отсутствие переключателя VoLTE в настройках.</string>
-
-    <!-- VoWiFi -->
-    <string name="ims_lbl_vowifi">Звонки через Wi-Fi</string>
-    <string name="ims_desc_vowifi">Принудительно включает поддержку звонков через Wi-Fi.\n\nПозволяет телефону регистрироваться в IMS-сети оператора через любой доступный Wi-Fi. Незаменимо в местах с плохим приемом сотовой сети (подвалы, толстые стены), но наличием интернета. Активирует скрытое меню "Звонки по Wi-Fi".</string>
-
-    <!-- Video Calling (ViLTE) -->
-    <string name="ims_lbl_vt">Видеовызовы</string>
-    <string name="ims_desc_vt">Включает нативную поддержку видеозвонков через оператора.\n\nЭто встроенная в "звонилку" функция видеосвязи (не через мессенджеры, а через стандартный протокол IR.94). Работает, если оператор поддерживает Video over LTE.</string>
-
-    <!-- Cross-SIM -->
-    <string name="ims_lbl_cross_sim">Резервные вызовы</string>
-    <string name="ims_desc_cross_sim">Технология резервного вызова через другую SIM-карту.\n\nПозволяет использовать интернет-трафик второй SIM-карты для регистрации IMS-сервисов первой SIM-карты. Полезно, когда основная SIM-карта потеряла сеть (например, в роуминге или "слепой зоне"), а вторая SIM-карта имеет доступ к интернету.</string>
-
-    <!-- VoNR -->
-    <string name="ims_lbl_vonr">VoNR (Звонки через 5G)</string>
-    <string name="ims_desc_vonr">Voice over New Radio. Голосовые вызовы в чистых сетях 5G.\n\nСамый современный стандарт передачи голоса. Обеспечивает сверхнизкую задержку и лучшее качество, чем VoLTE. Работает только в сетях 5G SA и требует Android 14+.</string>
-
-    <!-- 5G Enable -->
-    <string name="ims_lbl_5g">Разблокировка 5G</string>
-    <string name="ims_desc_5g">Снимает программную блокировку 5G со стороны конфигурации.\n\nМногие операторы блокируют доступ к 5G для устройств Pixel, которых нет в их "белом списке", даже если аппаратная поддержка есть. Этот свитч принудительно добавляет диапазоны NR NSA и SA в список разрешенных.</string>
-
-    <!-- 5G Thresholds -->
-    <string name="ims_lbl_5g_thresh">Агрессивный сигнал 5G</string>
-    <string name="ims_desc_5g_thresh">Изменяет пороги уровня сигнала для переключения сетей.\n\nЗанижает требования к качеству сигнала для отображения значка 5G и удержания в сети 5G. Помогает, если телефон слишком охотно сваливается в 4G/LTE, даже когда 5G доступен.</string>
-
-    <!-- UT Interface -->
-    <string name="ims_lbl_ut">Интерфейс UT</string>
-    <string name="ims_desc_ut">Управление дополнительными услугами через IMS.\n\nПозволяет настраивать переадресацию, ожидание вызова и АОН через меню настроек телефона, используя IP-канал вместо устаревших USSD-кодов. Исправляет ошибки типа "Ошибка сети или SIM-карты" при попытке войти в настройки вызовов в сетях LTE-only.</string>
-
     <!-- LAUNCHER SETTINGS -->
-    <string name="launcher_settings_title">Настройки Лаунчера</string>
+    <string name="launcher_settings_title">Разное</string>
     <string name="launcher_search_section">Поиск и навигация</string>
 
     <!-- Launcher Navigation Items -->
@@ -636,6 +611,7 @@
 
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Пробуждение касанием</string>
+    <string name="dt2w_add_tile">Добавить плитку DT2W</string>
     
     <string name="dt2w_desc_xposed">Xposed-хук для SystemUI.\n\nПерехватывает события сенсора в классе DozeTriggers и эмулирует пробуждение, так как аппаратная поддержка на Pixel часто отключена или ограничена.</string>
     <string name="dt2w_desc_native">Нативная системная интеграция.\n\nИспользует встроенный в прошивку код для обработки сенсорных событий в режиме Doze, обеспечивая пробуждение без сторонних хуков.</string>
@@ -685,11 +661,18 @@
 
     <!-- MAIN ACTIVITY -->
     <string name="main_title">Pixel Extra Parts</string>
+    <string name="main_add_tile">Добавить плитку приложения</string>
     <string name="main_desc">Кастомные модули и твики</string>
+    <string name="main_search_hint">Поиск настроек</string>
+    <string name="main_search_results_title">Результаты поиска</string>
+    <string name="main_search_no_results">Ничего не найдено для "%1$s"</string>
     
     <string name="main_header_gesture">Жесты и ввод</string>
     <string name="main_header_system">Система</string>
     <string name="main_header_network">Сеть и связь</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Камера</string>
 
     <!-- Test things (debug section, hidden by default) -->
     <string name="test_things_title">Тестовые штуки</string>
@@ -699,18 +682,26 @@
     <string name="main_root_desc">Для работы приложения необходимы права суперпользователя (Root) и активный Xposed Framework.\n\nПожалуйста, установите Magisk/KernelSU и предоставьте права.</string>
 
     <string name="dt_desc_activity">Управление жестами пробуждения и сна</string>
-    <string name="launcher_title_activity">Лаунчер</string>
+    <string name="launcher_title_activity">Разное</string>
     <string name="os_desc_activity">Настройка упругости и инерции скролла</string>
     
     <string name="dt_title_activity">Двойной тап</string>
     
-    <string name="launcher_desc_activity">Настройки Pixel Launcher</string>
+    <string name="launcher_desc_activity">Разные настройки</string>
     
     <string name="thermal_title_activity">Термальные профили</string>
     
     <string name="thermal_desc_activity">Управление троттлингом</string>
     <string name="thermal_manager_title">Менеджер Thermals</string>
     <string name="thermal_manager_desc_activity">Редактор и применение JSON-конфигов нагрева</string>
+    <string name="thermal_manager_add_tile">Добавить плитку Thermal Manager</string>
+    <string name="thermal_manager_tile_queue">Очередь профилей плитки</string>
+    <string name="thermal_manager_tile_queue_add">Добавить профиль</string>
+    <string name="thermal_manager_tile_queue_empty">Очередь пуста</string>
+    <string name="thermal_manager_tile_queue_count">Выбрано: %1$d/%2$d</string>
+    <string name="thermal_manager_tile_queue_move_up">Переместить выше</string>
+    <string name="thermal_manager_tile_queue_move_down">Переместить ниже</string>
+    <string name="thermal_manager_tile_queue_remove">Удалить из очереди</string>
     <string name="thermal_manager_editor_title">Редактор конфига</string>
     <string name="thermal_manager_open_editor">Открыть редактор конфигов</string>
     <string name="thermal_manager_saved_configs">Сохранённые конфиги</string>
@@ -929,10 +920,6 @@
     <string name="os_norm_mode_hybrid">Гибрид (рекомендуется)</string>
     <string name="os_norm_mode_stacktrace">Только стек-трейс</string>
 
-    <string name="ims_desc_activity">VoLTE, VoWiFi, 5G</string>
-    <string name="ims_title_activity">IMS Конфиг</string>
-
-
     <!-- Grid Sizer / App Drawer Customization -->
     <string name="grid_group_homepage">Настройка главного экрана</string>
     <string name="grid_lbl_home_enable">Настройка сетки главного экрана</string>
@@ -1136,6 +1123,7 @@
 
     <!-- Activity Transition Settings -->
     <string name="anim_transition_title">Анимации переходов</string>
+    <string name="activity_transition_add_tile">Добавить плитку анимаций переходов</string>
     <string name="anim_transition_subtitle">Пользовательские темы и встроенные переходы</string>
     <string name="anim_predictive_back_title">Отключить предиктивный жест «назад»</string>
     <string name="anim_predictive_back_desc">Убирает системную анимацию свайпа назад</string>
@@ -1205,6 +1193,8 @@
     <string name="addon_btn_cancel">Отмена</string>
     <string name="addon_btn_remove">Удалить</string>
     <string name="addon_settings_title">Настройки модуля</string>
+    <string name="addon_settings_empty">На этой странице нет настроек</string>
+    <string name="addon_no_inline_settings_hint">Этот модуль не имеет встроенных настроек в карточке. Все настройки расположены во встроенных страницах активити:</string>
     <string name="addon_range_format">Диапазон: %1$s — %2$s</string>
     <string name="addon_file_not_set">Не указано</string>
     <string name="addon_file_saved">Файл сохранён</string>
@@ -1215,11 +1205,26 @@
     <string name="addon_confirm_count">Подтвердить (%d)</string>
     <string name="addon_search_apps">Поиск приложений\u2026</string>
     <string name="addon_show_system">Показать системные</string>
+    <string name="addon_show_system_desc">Включать системные пакеты в список</string>
     <string name="addon_hide_system">Скрыть системные</string>
+    <string name="addon_launchable_only">Только запускаемые</string>
+    <string name="addon_launchable_only_desc">Показывать приложения с иконкой в лаунчере</string>
     <string name="addon_no_apps_match">Нет приложений по запросу "%s"</string>
     <string name="addon_no_apps_available">Нет доступных приложений</string>
     <string name="addon_default_target_badge">Цель по умолчанию</string>
     <string name="addon_author_unknown">Неизвестный</string>
+    <string name="addon_color_pick">Выбрать</string>
+    <string name="addon_settings_import">Импорт</string>
+    <string name="addon_settings_export">Экспорт</string>
+    <string name="addon_update_check">Проверить обновления</string>
+    <string name="addon_update_checking">Проверка...</string>
+    <string name="addon_update_install">Обновить</string>
+    <string name="addon_update_installing">Обновление...</string>
+    <string name="addon_update_available">Доступно обновление: %1$s</string>
+    <string name="addon_update_none">Обновлений нет</string>
+    <string name="addon_update_installed">Обновление установлено</string>
+    <string name="addon_update_failed">Ошибка обновления</string>
+    <string name="addon_delete_data_update_confirm">Удалить обновление из data для "%s"?\n\nСистемный аддон останется установленным.</string>
 
     <!-- Addon Manager: Active Apps -->
     <string name="addon_active_apps_title">Активные приложения</string>

@@ -1,0 +1,75 @@
+{
+    "id": "settings_icon_style_override",
+    "entryClass": "org.pixel.customparts.addon.settings.SettingsIconStyleOverrideHook",
+    "name": "Settings Icon Style Override",
+    "author": "LeeGarChat",
+    "description": "Keeps Settings icon colors and uses the global adaptive icon mask for shape.",
+    "version": "2.0.0",
+    "targetPackages": [
+        "com.android.settings"
+    ],
+    "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/settings_icon_style_override.json",
+    "accent": "#67DDF7",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 45,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "main/icon-manager/settings-icon-style-override",
+            "title": "Settings icon style override",
+            "subtitle": "Use the global adaptive icon mask",
+            "icon": "Rounded.SettingsSuggest",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#67DDF7",
+            "iconBackground": "#203844",
+            "targetActivity": "AppIconsActivity",
+            "targetSlot": "advanced",
+            "priority": 1010,
+            "settings": [
+                {
+                    "key": "pixelparts_settings_icons_ignore_external_shape",
+                    "title": "Use global Settings icon shape",
+                    "description": "Keep Settings icon colors while replacing Evolver corner styles with the global adaptive icon mask.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "settings_icon_style_override_group",
+                    "categoryTitle": "Settings icon style",
+                    "categoryDescription": "Compatibility toggle for Settings homepage and menu icons."
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "Переопределение стиля иконок Settings",
+            "author": "LeeGarChat",
+            "description": "Сохраняет цвета иконок Settings и берёт форму из глобальной adaptive icon mask.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "main/icon-manager/settings-icon-style-override",
+                    "title": "Переопределение иконок Settings",
+                    "subtitle": "Глобальная adaptive icon mask для Settings",
+                    "settings": [
+                        {
+                            "key": "pixelparts_settings_icons_ignore_external_shape",
+                            "title": "Использовать глобальную форму Settings",
+                            "description": "Сохраняет цвета иконок Settings, но заменяет Evolver corner style на глобальную adaptive icon mask.",
+                            "category": "settings_icon_style_override_group",
+                            "categoryTitle": "Стиль иконок Settings",
+                            "categoryDescription": "Переключатель совместимости для главной страницы и меню Settings."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

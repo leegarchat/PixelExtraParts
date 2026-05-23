@@ -1,5 +1,6 @@
 package org.pixel.customparts.manager.xposed
 
+import android.content.Context
 import android.util.Log
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodReplacement
@@ -20,6 +21,7 @@ import org.pixel.customparts.hooks.systemui.KeyguardBatteryPowerHook
 import org.pixel.customparts.hooks.systemui.NotificationIconShapeHook
 import org.pixel.customparts.hooks.systemui.ShadeCompactMediaHook
 import org.pixel.customparts.hooks.systemui.ShadeUnifiedSurfaceHook
+import org.pixel.customparts.manager.pine.AddonLoader
 
 class XposedInit : IXposedHookLoadPackage {
 
@@ -29,6 +31,7 @@ class XposedInit : IXposedHookLoadPackage {
     private companion object {
         const val PACKAGE_SYSTEMUI = "com.android.systemui"
         const val PACKAGE_SELF = "org.pixel.customparts.xposed"
+        const val PACKAGE_NEXUS_LAUNCHER = "com.google.android.apps.nexuslauncher"
     }
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -43,20 +46,24 @@ class XposedInit : IXposedHookLoadPackage {
         }
 
         
-        if (lpparam.packageName == "com.google.android.apps.nexuslauncher" || 
+        if (lpparam.packageName == PACKAGE_NEXUS_LAUNCHER ||
             lpparam.packageName == "com.google.android.apps.pixel.launcher" ||
             lpparam.packageName == "com.android.launcher3") {
             
             environment.log(TAG, "MATCHED Launcher package: ${lpparam.packageName}")
             
-            val hooks: List<BaseHook> = listOf(
-                LauncherIconOverrideHook(),
-                GridSizeAppMenuHook(),
-                UnifiedLauncherHook(),
-                GestureBarHook(),
-                // OxygenRecentsIconStripHook(),
-                RecentsUnifiedHook()
-            ).sortedByDescending { it.priority }
+            val hooks: List<BaseHook> = if (lpparam.packageName == PACKAGE_NEXUS_LAUNCHER) {
+                emptyList()
+            } else {
+                listOf(
+                    LauncherIconOverrideHook(),
+                    GridSizeAppMenuHook(),
+                    UnifiedLauncherHook(),
+                    GestureBarHook(),
+                    // OxygenRecentsIconStripHook(),
+                    RecentsUnifiedHook()
+                )
+            }.sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)
         }
@@ -72,12 +79,13 @@ class XposedInit : IXposedHookLoadPackage {
                 ShadeUnifiedSurfaceHook(),
                 ShadeCompactMediaHook(),
                 NotificationIconShapeHook(),
-                AodNotificationIconColorHook(),
-                GestureBarHook()
+                AodNotificationIconColorHook()
             ).sortedByDescending { it.priority }
 
             applyHooks(hooks, lpparam.classLoader)
         }
+
+        loadAddonHooks(lpparam)
     }
 
     
@@ -108,14 +116,40 @@ class XposedInit : IXposedHookLoadPackage {
     }
 
     private fun applyHooks(hooks: List<BaseHook>, classLoader: ClassLoader) {
+        val context = currentApplicationContext()
         hooks.forEach { hook ->
             try {
                 hook.setup(environment)
+                if (context != null && !hook.isEnabled(context)) {
+                    environment.log(TAG, "Hook ${hook.hookId} skipped: disabled")
+                    return@forEach
+                }
                 hook.init(classLoader)
                 environment.log(TAG, "Hook ${hook.hookId} initialized")
             } catch (t: Throwable) {
                 environment.logError(TAG, "Failed to load ${hook.hookId}", t)
             }
+        }
+    }
+
+    private fun currentApplicationContext(): Context? {
+        return try {
+            val activityThreadClass = XposedHelpers.findClass("android.app.ActivityThread", null)
+            XposedHelpers.callStaticMethod(activityThreadClass, "currentApplication") as? Context
+        } catch (t: Throwable) {
+            null
+        }
+    }
+
+    private fun loadAddonHooks(lpparam: XC_LoadPackage.LoadPackageParam) {
+        val packageName = lpparam.packageName ?: return
+        val context = currentApplicationContext() ?: return
+        try {
+            if (AddonLoader.hasAddonsForPackage(context, packageName)) {
+                AddonLoader.loadAndRunAddons(context, lpparam.classLoader, packageName)
+            }
+        } catch (t: Throwable) {
+            environment.logError(TAG, "Addon loading failed for $packageName", t)
         }
     }
 

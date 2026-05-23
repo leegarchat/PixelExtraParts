@@ -22,10 +22,10 @@
 #include <android-base/properties.h>
 #include <android-base/stringprintf.h>
 #include <android-base/strings.h>
-#include <sys/system_properties.h>
-#include <time.h>
 #include <utils/Trace.h>
 
+#include <algorithm>
+#include <cctype>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -121,6 +121,32 @@ std::unordered_map<std::string, std::string> parsePowerCapPathMap(void) {
     return path_map;
 }
 
+std::string resolveThermalConfigPath(std::string config_value) {
+    config_value = ::android::base::Trim(config_value);
+    if (config_value.empty()) {
+        config_value = kConfigDefaultFileName.data();
+    }
+
+    const auto comma_pos = config_value.find(',');
+    if (comma_pos != std::string::npos) {
+        const std::string serial = ::android::base::Trim(config_value.substr(0, comma_pos));
+        const std::string target = ::android::base::Trim(config_value.substr(comma_pos + 1));
+        const bool numeric_serial =
+                !serial.empty() &&
+                std::all_of(serial.begin(), serial.end(), [](unsigned char ch) {
+                    return std::isdigit(ch) != 0;
+                });
+        if (numeric_serial && !target.empty()) {
+            config_value = target;
+        }
+    }
+
+    if (::android::base::StartsWith(config_value, "/")) {
+        return config_value;
+    }
+    return StringPrintf("/vendor/etc/%s", config_value.c_str());
+}
+
 }  // namespace
 
 // dump additional traces for a given sensor
@@ -168,169 +194,48 @@ void ThermalHelperImpl::maxCoolingRequestCheck(
     }
 }
 
-ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb)
+/*
+ * Populate the sensor_name_to_file_map_ map by walking through the file tree,
+ * reading the type file and assigning the temp file path to the map.  If we do
+ * not succeed, abort.
+ */
+ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb, bool start_watcher,
+                                     bool fatal_on_error)
     : thermal_watcher_(new ThermalWatcher(std::bind(&ThermalHelperImpl::thermalWatcherCallbackFunc,
                                                     this, std::placeholders::_1))),
       cb_(cb) {
+    const std::string config_property =
+            ::android::base::GetProperty(kConfigProperty.data(), kConfigDefaultFileName.data());
+    loaded_config_property_ = config_property;
+    std::string config_path = resolveThermalConfigPath(config_property);
+    LOG(INFO) << "Using thermal config: " << config_path << " from " << kConfigProperty.data()
+              << "=" << config_property;
     bool thermal_throttling_disabled =
             ::android::base::GetBoolProperty(kThermalDisabledProperty.data(), false);
-    const std::string requested_config = getCurrentConfigPropertyValue();
-    active_config_value_ = requested_config;
-
-    if (!initializeThermalConfig(requested_config, thermal_throttling_disabled,
-                                 !thermal_throttling_disabled)) {
-        if (thermal_throttling_disabled) {
-            sensor_info_map_.clear();
-            cooling_device_info_map_.clear();
-            return;
-        }
-
-        const std::string default_config(kConfigDefaultFileName);
-        if (requested_config != default_config &&
-            initializeThermalConfig(default_config, thermal_throttling_disabled, true)) {
-            LOG(ERROR) << "Requested thermal config " << requested_config
-                       << " is not available yet, using " << default_config
-                       << " until the requested config can be loaded";
-            active_config_value_ = default_config;
-            startConfigWatcher();
-            return;
-        }
-
-        LOG(FATAL) << "ThermalHAL could not be initialized properly.";
-    }
-
-    if (!thermal_throttling_disabled) {
-        startConfigWatcher();
-    }
-}
-
-ThermalHelperImpl::~ThermalHelperImpl() {
-    stopConfigWatcher();
-}
-
-std::string ThermalHelperImpl::getCurrentConfigPropertyValue() const {
-    return ::android::base::GetProperty(kConfigProperty.data(), kConfigDefaultFileName.data());
-}
-
-void ThermalHelperImpl::resetRuntimeState() {
-    is_initialized_ = false;
-    log_status_ = LogStatus();
-    power_files_.clear();
-    thermal_sensors_.clear();
-    cooling_devices_.clear();
-    thermal_throttling_.clear();
-    thermal_stats_helper_.clear();
-    thermal_predictions_helper_.clear();
-    power_rail_switch_map_.clear();
-    supported_powerhint_map_.clear();
-    cooling_device_info_map_.clear();
-    sensor_info_map_.clear();
-
-    std::unique_lock<std::shared_mutex> _lock(sensor_status_map_mutex_);
-    sensor_status_map_.clear();
-}
-
-void ThermalHelperImpl::startConfigWatcher() {
-    if (config_watcher_thread_.joinable()) {
-        return;
-    }
-
-    config_watcher_stopping_.store(false);
-    config_watcher_thread_ = std::thread(&ThermalHelperImpl::configWatcherLoop, this);
-}
-
-void ThermalHelperImpl::stopConfigWatcher() {
-    config_watcher_stopping_.store(true);
-    if (config_watcher_thread_.joinable()) {
-        config_watcher_thread_.join();
-    }
-}
-
-void ThermalHelperImpl::configWatcherLoop() {
-    uint32_t serial = __system_property_area_serial();
-
-    while (!config_watcher_stopping_.load()) {
-        uint32_t new_serial = 0;
-        timespec timeout;
-        timeout.tv_sec = 1;
-        timeout.tv_nsec = 0;
-
-        if (__system_property_wait(nullptr, serial, &new_serial, &timeout)) {
-            serial = new_serial;
-        } else {
-            serial = __system_property_area_serial();
-        }
-
-        const std::string config_value = getCurrentConfigPropertyValue();
-        {
-            std::lock_guard<std::mutex> lock(config_reload_mutex_);
-            if (config_value == active_config_value_) {
-                continue;
-            }
-        }
-
-        reloadThermalConfig(config_value);
-    }
-}
-
-bool ThermalHelperImpl::reloadThermalConfig(std::string_view config_value) {
-    std::lock_guard<std::mutex> reload_lock(config_reload_mutex_);
-    if (config_value == active_config_value_) {
-        return true;
-    }
-
-    const std::string previous_config = active_config_value_;
-    const bool thermal_throttling_disabled =
-            ::android::base::GetBoolProperty(kThermalDisabledProperty.data(), false);
-
-    LOG(INFO) << "Reload thermal config from " << previous_config << " to " << config_value;
-
-    std::lock_guard<std::mutex> callback_lock(thermal_callback_mutex_);
-    clearAllThrottling();
-
-    if (!initializeThermalConfig(config_value, thermal_throttling_disabled, false)) {
-        LOG(ERROR) << "Failed to reload thermal config " << config_value << ", restoring "
-                   << previous_config;
-        if (!previous_config.empty() && previous_config != config_value &&
-            initializeThermalConfig(previous_config, thermal_throttling_disabled, false)) {
-            return false;
-        }
-
-        const std::string default_config(kConfigDefaultFileName);
-        if (previous_config != default_config &&
-            initializeThermalConfig(default_config, thermal_throttling_disabled, false)) {
-            LOG(ERROR) << "Previous thermal config " << previous_config
-                       << " is not available, falling back to " << default_config;
-            active_config_value_ = default_config;
-            thermal_watcher_->wake();
-            return false;
-        }
-
-        LOG(ERROR) << "Failed to restore any thermal config after reload failure";
-        return false;
-    }
-
-    active_config_value_ = std::string(config_value);
-    thermal_watcher_->wake();
-    return true;
-}
-
-bool ThermalHelperImpl::initializeThermalConfig(std::string_view config_value,
-                                                bool thermal_throttling_disabled,
-                                                bool start_watcher) {
-    const std::string config_path = ResolveThermalConfigPath(config_value);
     bool ret = true;
     Json::Value config;
     std::unordered_set<std::string> loaded_config_paths;
     if (!ParseThermalConfig(config_path, &config, &loaded_config_paths)) {
         LOG(ERROR) << "Failed to read JSON config";
-        return false;
+        const std::string default_config_property(kConfigDefaultFileName.data());
+        const std::string default_config_path = resolveThermalConfigPath(default_config_property);
+        if (config_path != default_config_path) {
+            LOG(WARNING) << "Falling back to default thermal config while waiting for "
+                         << config_path;
+            config = Json::Value();
+            loaded_config_paths.clear();
+            config_path = default_config_path;
+            loaded_config_property_ = default_config_property;
+            if (!ParseThermalConfig(config_path, &config, &loaded_config_paths)) {
+                LOG(ERROR) << "Failed to read fallback JSON config";
+                ret = false;
+            }
+        } else {
+            ret = false;
+        }
     }
 
-    resetRuntimeState();
-
     const std::string &comment = config["Comment"].asString();
-    LOG(INFO) << "Thermal config: " << config_path;
     LOG(INFO) << "Comment: " << comment;
 
     if (!ParseCoolingDevice(config, &cooling_device_info_map_)) {
@@ -368,9 +273,7 @@ bool ThermalHelperImpl::initializeThermalConfig(std::string_view config_value,
     // Check if the trigger sensor of power rails is valid
     for (const auto &[sensor, _] : power_rail_switch_map_) {
         if (!sensor_info_map_.contains(sensor)) {
-            LOG(ERROR) << "Power Rails's trigger sensor " << sensor << " is invalid";
-            ret = false;
-            break;
+            LOG(FATAL) << "Power Rails's trigger sensor " << sensor << " is invalid";
         }
     }
 
@@ -382,8 +285,7 @@ bool ThermalHelperImpl::initializeThermalConfig(std::string_view config_value,
     if (ret) {
         if (!thermal_stats_helper_.initializeStats(config, sensor_info_map_,
                                                    cooling_device_info_map_, this)) {
-            LOG(ERROR) << "Failed to initialize thermal stats";
-            ret = false;
+            LOG(FATAL) << "Failed to initialize thermal stats";
         }
     }
 
@@ -551,14 +453,20 @@ bool ThermalHelperImpl::initializeThermalConfig(std::string_view config_value,
         if (ret) {
             clearAllThrottling();
             is_initialized_ = ret;
-            return ret;
+            return;
         } else {
             sensor_info_map_.clear();
             cooling_device_info_map_.clear();
-            return false;
+            return;
         }
     } else if (!ret) {
-        return false;
+        if (fatal_on_error) {
+            LOG(FATAL) << "ThermalHAL could not be initialized properly.";
+        }
+        sensor_info_map_.clear();
+        cooling_device_info_map_.clear();
+        is_initialized_ = false;
+        return;
     }
     is_initialized_ = ret;
 
@@ -568,24 +476,31 @@ bool ThermalHelperImpl::initializeThermalConfig(std::string_view config_value,
     std::set<std::string> monitored_sensors;
     initializeTrip(tz_map, &monitored_sensors, thermal_genl_enabled);
 
-    if (start_watcher) {
-        if (thermal_genl_enabled) {
-            thermal_watcher_->registerFilesToWatchNl(monitored_sensors);
-        } else {
-            thermal_watcher_->registerFilesToWatch(monitored_sensors);
-        }
-
-        // Need start watching after status map initialized
-        is_initialized_ = thermal_watcher_->startWatchingDeviceFiles();
-        if (!is_initialized_) {
-            LOG(ERROR) << "ThermalHAL could not start watching thread properly.";
-            return false;
-        }
+    if (thermal_genl_enabled) {
+        thermal_watcher_->registerFilesToWatchNl(monitored_sensors);
     } else {
-        thermal_watcher_->updateMonitoredSensors(monitored_sensors);
-        thermal_watcher_->wake();
+        thermal_watcher_->registerFilesToWatch(monitored_sensors);
     }
 
+    if (start_watcher && !startWatcher()) {
+        LOG(FATAL) << "ThermalHAL could not start watching thread properly.";
+    }
+}
+
+ThermalHelperImpl::~ThermalHelperImpl() {
+    if (thermal_watcher_ != nullptr && thermal_watcher_->isRunning()) {
+        thermal_watcher_->requestExit();
+        thermal_watcher_->wake();
+        thermal_watcher_->requestExitAndWait();
+    }
+}
+
+bool ThermalHelperImpl::startWatcher() {
+    if (!is_initialized_) {
+        return false;
+    }
+    // Need start watching after status map initialized.
+    is_initialized_ = thermal_watcher_->startWatchingDeviceFiles();
     return is_initialized_;
 }
 
@@ -1777,7 +1692,6 @@ SensorReadStatus ThermalHelperImpl::readThermalSensor(
 // read from uevent.
 std::chrono::milliseconds ThermalHelperImpl::thermalWatcherCallbackFunc(
         const std::unordered_map<std::string, float> &uevent_sensor_map) {
-    std::lock_guard<std::mutex> callback_lock(thermal_callback_mutex_);
     std::vector<Temperature> temps;
     std::vector<std::string> cooling_devices_to_update;
     boot_clock::time_point now = boot_clock::now();

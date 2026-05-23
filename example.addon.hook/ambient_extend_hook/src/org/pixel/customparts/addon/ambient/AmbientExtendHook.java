@@ -477,7 +477,16 @@ public class AmbientExtendHook implements IAddonHook {
     }
 
     private void logError(String message, Throwable throwable) {
-        Log.e(TAG, message, throwable);
+        Log.w(TAG, message + ": " + throwableSummary(throwable));
+    }
+
+    private String throwableSummary(Throwable throwable) {
+        if (throwable == null) {
+            return "unknown";
+        }
+        String detail = throwable.getMessage();
+        String name = throwable.getClass().getSimpleName();
+        return detail == null || detail.isEmpty() ? name : name + ": " + detail;
     }
 
     private static final class Config {

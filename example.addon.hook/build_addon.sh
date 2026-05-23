@@ -202,83 +202,104 @@ echo "=== Building addon: $ADDON_NAME ==="
 echo "  Checking environment..."
 check_environment
 
-require_dir "$SRC_DIR" "Expected a project structure with Java sources."
 require_dir "$META_DIR" "Expected a directory with META-INF/addon.json."
 require_file "$META_DIR/addon.json" "Check the addon manifest."
-require_file "$CORE_SRC" "The file should be in prebuild/IAddonHook.java."
 
-if [[ ! -f "$PINE_XPOSED_JAR" ]]; then
-    echo "  Warning: $PINE_XPOSED_JAR not found (compilation may fail if using Pine/Xposed API)."
-fi
-if [[ ! -f "$PINE_CORE_JAR" ]]; then
-    echo "  Warning: $PINE_CORE_JAR not found (compilation may fail if using Pine Core classes)."
-fi
-if [[ ! -f "$XPOSED_API_JAR" ]]; then
-    echo "  Warning: $XPOSED_API_JAR not found (compilation may fail if using Xposed API)."
+# Detect settings-only addon (no Java sources)
+SETTINGS_ONLY=false
+if [[ ! -d "$SRC_DIR" ]] || [[ -z "$(find "$SRC_DIR" -name '*.java' 2>/dev/null)" ]]; then
+    SETTINGS_ONLY=true
+    echo "  Mode: settings-only (no Java sources, manifest-only JAR)"
+else
+    require_file "$CORE_SRC" "The file should be in prebuild/IAddonHook.java."
 fi
 
-if [[ ! -f "$D8_JAR" ]]; then
-    echo "Error: d8.jar not found. Place it in prebuild/sdk/d8.jar or set D8_JAR=/path/to/d8.jar"
-    exit 1
-fi
+if [[ "$SETTINGS_ONLY" == "false" ]]; then
+    if [[ ! -f "$PINE_XPOSED_JAR" ]]; then
+        echo "  Warning: $PINE_XPOSED_JAR not found (compilation may fail if using Pine/Xposed API)."
+    fi
+    if [[ ! -f "$PINE_CORE_JAR" ]]; then
+        echo "  Warning: $PINE_CORE_JAR not found (compilation may fail if using Pine Core classes)."
+    fi
+    if [[ ! -f "$XPOSED_API_JAR" ]]; then
+        echo "  Warning: $XPOSED_API_JAR not found (compilation may fail if using Xposed API)."
+    fi
 
-if [[ ! -f "$ANDROID_JAR" ]]; then
-    echo "Error: android.jar not found. Place it in prebuild/android.jar or set ANDROID_JAR=/path/to/android.jar"
-    exit 1
-fi
+    if [[ ! -f "$D8_JAR" ]]; then
+        echo "Error: d8.jar not found. Place it in prebuild/sdk/d8.jar or set D8_JAR=/path/to/d8.jar"
+        exit 1
+    fi
 
-echo "  Using android.jar: $ANDROID_JAR"
-echo "  Using d8: $D8_JAR"
+    if [[ ! -f "$ANDROID_JAR" ]]; then
+        echo "Error: android.jar not found. Place it in prebuild/android.jar or set ANDROID_JAR=/path/to/android.jar"
+        exit 1
+    fi
+
+    echo "  Using android.jar: $ANDROID_JAR"
+    echo "  Using d8: $D8_JAR"
+fi
 
 rm -rf "$BUILD_DIR" "$OUT_DIR"
-mkdir -p "$BUILD_DIR/stubs" "$BUILD_DIR/classes" "$BUILD_DIR/dex" "$OUT_DIR"
+mkdir -p "$BUILD_DIR/dex" "$OUT_DIR"
 
-echo "  [1/4] Compiling IAddonHook..."
-# Keep bytecode within Java 11 (for min-api 26) and pass -parameters,
-# to avoid an old d8 bug on some synthetic parameters.
-javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 --release 11 -parameters \
-    -classpath "$ANDROID_JAR" \
-    -d "$BUILD_DIR/stubs" \
-    "$CORE_SRC"
+if [[ "$SETTINGS_ONLY" == "true" ]]; then
+    # Settings-only addon: package META-INF only, no classes.dex
+    echo "  [1/1] Packaging settings-only JAR..."
+    cd "$BUILD_DIR/dex"
+    mkdir -p META-INF
+    cp -r "$META_DIR/"* META-INF/
+    jar -J-Dfile.encoding=UTF-8 cf "$OUT_DIR/$ADDON_NAME.jar" META-INF/
+else
+    mkdir -p "$BUILD_DIR/stubs" "$BUILD_DIR/classes"
 
-echo "  [2/4] Compiling addon sources..."
-ADDON_CP="$ANDROID_JAR:$BUILD_DIR/stubs"
-[[ -f "$PINE_XPOSED_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_XPOSED_JAR"
-[[ -f "$PINE_CORE_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_CORE_JAR"
-[[ -f "$XPOSED_API_JAR" ]] && ADDON_CP="$ADDON_CP:$XPOSED_API_JAR"
+    echo "  [1/4] Compiling IAddonHook..."
+    # Keep bytecode within Java 11 (for min-api 26) and pass -parameters,
+    # to avoid an old d8 bug on some synthetic parameters.
+    javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 --release 11 -parameters \
+        -classpath "$ANDROID_JAR" \
+        -d "$BUILD_DIR/stubs" \
+        "$CORE_SRC"
 
-find "$SRC_DIR" -name "*.java" > "$BUILD_DIR/sources.txt"
+    echo "  [2/4] Compiling addon sources..."
+    ADDON_CP="$ANDROID_JAR:$BUILD_DIR/stubs"
+    [[ -f "$PINE_XPOSED_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_XPOSED_JAR"
+    [[ -f "$PINE_CORE_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_CORE_JAR"
+    [[ -f "$XPOSED_API_JAR" ]] && ADDON_CP="$ADDON_CP:$XPOSED_API_JAR"
 
-javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 --release 11 -parameters \
-    -classpath "$ADDON_CP" \
-    -d "$BUILD_DIR/classes" \
-    @"$BUILD_DIR/sources.txt"
+    find "$SRC_DIR" -name "*.java" > "$BUILD_DIR/sources.txt"
 
-echo "  [3/4] Converting to DEX..."
+    javac -J-Dfile.encoding=UTF-8 -encoding UTF-8 --release 11 -parameters \
+        -classpath "$ADDON_CP" \
+        -d "$BUILD_DIR/classes" \
+        @"$BUILD_DIR/sources.txt"
 
-# d8 needs --lib android.jar for correct type resolution.
-D8_CP_ARGS=()
-[[ -f "$PINE_XPOSED_JAR" ]] && D8_CP_ARGS+=(--classpath "$PINE_XPOSED_JAR")
-[[ -f "$PINE_CORE_JAR" ]]   && D8_CP_ARGS+=(--classpath "$PINE_CORE_JAR")
-[[ -f "$XPOSED_API_JAR" ]]  && D8_CP_ARGS+=(--classpath "$XPOSED_API_JAR")
+    echo "  [3/4] Converting to DEX..."
 
-# Feed d8 with a single jar, it's more stable for inner classes.
-CLASSES_JAR="$BUILD_DIR/classes_tmp.jar"
-(cd "$BUILD_DIR/classes" && jar -J-Dfile.encoding=UTF-8 cf "$CLASSES_JAR" .)
+    # d8 needs --lib android.jar for correct type resolution.
+    D8_CP_ARGS=()
+    [[ -f "$PINE_XPOSED_JAR" ]] && D8_CP_ARGS+=(--classpath "$PINE_XPOSED_JAR")
+    [[ -f "$PINE_CORE_JAR" ]]   && D8_CP_ARGS+=(--classpath "$PINE_CORE_JAR")
+    [[ -f "$XPOSED_API_JAR" ]]  && D8_CP_ARGS+=(--classpath "$XPOSED_API_JAR")
 
-java -Dfile.encoding=UTF-8 -cp "$D8_JAR" com.android.tools.r8.D8 \
-    --lib "$ANDROID_JAR" \
-    "${D8_CP_ARGS[@]}" \
-    --output "$BUILD_DIR/dex" \
-    --min-api 26 \
-    "$CLASSES_JAR"
-echo "  [4/4] Packaging JAR..."
-cd "$BUILD_DIR/dex"
+    # Feed d8 with a single jar, it's more stable for inner classes.
+    CLASSES_JAR="$BUILD_DIR/classes_tmp.jar"
+    (cd "$BUILD_DIR/classes" && jar -J-Dfile.encoding=UTF-8 cf "$CLASSES_JAR" .)
 
-mkdir -p META-INF
-cp "$META_DIR/"* META-INF/
+    java -Dfile.encoding=UTF-8 -cp "$D8_JAR" com.android.tools.r8.D8 \
+        --lib "$ANDROID_JAR" \
+        "${D8_CP_ARGS[@]}" \
+        --output "$BUILD_DIR/dex" \
+        --min-api 26 \
+        "$CLASSES_JAR"
 
-jar -J-Dfile.encoding=UTF-8 cf "$OUT_DIR/$ADDON_NAME.jar" classes.dex META-INF/
+    echo "  [4/4] Packaging JAR..."
+    cd "$BUILD_DIR/dex"
+
+    mkdir -p META-INF
+    cp -r "$META_DIR/"* META-INF/
+
+    jar -J-Dfile.encoding=UTF-8 cf "$OUT_DIR/$ADDON_NAME.jar" classes.dex META-INF/
+fi
 
 echo "  Cleaning up build directory..."
 rm -rf "$BUILD_DIR"

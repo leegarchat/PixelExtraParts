@@ -18,15 +18,13 @@ on boot
 on init
     setprop persist.sys.pixelparts.thermal_available true
 
-on property:sys.pixelparts.thermal_config_request=*
-    setprop persist.sys.pixelparts.thermal_config ${sys.pixelparts.thermal_config_request}
-    setprop vendor.thermal.config ${sys.pixelparts.thermal_config_request}
+on property:persist.sys.pixelparts.thermal_config_request=* && property:persist.sys.pixelparts.thermal_config=*
+    copy /data/pixelparts/ThermalConfigs/${persist.sys.pixelparts.thermal_config} /data/vendor/pixelparts/ThermalConfigs/active.json
+    chown system system /data/vendor/pixelparts/ThermalConfigs/active.json
+    chmod 0644 /data/vendor/pixelparts/ThermalConfigs/active.json
+    restorecon /data/vendor/pixelparts/ThermalConfigs/active.json
+    setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config_request},/data/vendor/pixelparts/ThermalConfigs/active.json
 
-on property:sys.pixelparts.thermal_config_file_request=*
-    copy /data/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request} /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
-    chown system system /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
-    chmod 0644 /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
-    restorecon /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
-    setprop persist.sys.pixelparts.thermal_config ${sys.pixelparts.thermal_config_file_request}
-    setprop vendor.thermal.config /data/vendor/pixelparts/ThermalConfigs/${sys.pixelparts.thermal_config_file_request}
+on property:persist.sys.pixelparts.thermal_config_request=* && property:persist.sys.pixelparts.thermal_config=thermal_info_config.json
+    setprop vendor.thermal.config thermal_info_config.json
 # End PixelExtraParts thermal config switch

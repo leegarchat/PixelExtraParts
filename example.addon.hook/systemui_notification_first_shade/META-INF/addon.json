@@ -1,0 +1,60 @@
+{
+    "id": "systemui_notification_first_shade",
+    "name": "Notification-first shade",
+    "author": "PixelExtraParts",
+    "description": "Controls collapsed shade QQS row count while keeping expanded QS stock.",
+    "version": "1.1.0",
+    "entryClass": "org.pixel.customparts.addon.systemuishade.NotificationFirstShadeEntry",
+    "enabled": true,
+    "targetPackages": [
+        "com.android.systemui"
+    ],
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 50,
+    "backgroundGradientSteps": [
+        0,
+        38,
+        78,
+        100
+    ],
+    "backgroundBlur": true,
+    "backgroundBlurRadius": 8,
+    "backgroundScope": "header",
+    "main": [],
+    "settings": [
+                {
+                    "key": "systemui_notification_first_shade_group",
+                    "type": "group",
+                    "title": "Notification-first shade",
+                    "description": "Control how many QQS rows appear in the collapsed shade. Expanded QS keeps its stock layout.",
+                    "mode": "inline",
+                    "icon": "Rounded.Notifications",
+                    "iconType": "app",
+                    "iconShape": "circle",
+                    "iconSize": 20,
+                    "settings": [
+                        {
+                            "key": "systemui_notification_first_shade_pine",
+                            "title": "Enable shade QQS row override",
+                            "description": "Override only the collapsed shade QQS rows; expanded QS is not changed.",
+                            "type": "switch",
+                            "provider": "global",
+                            "default": false
+                        },
+                        {
+                            "key": "systemui_notification_first_shade_rows_pine",
+                            "title": "Shade QQS rows",
+                            "description": "Number of QQS rows shown in the collapsed notification shade.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 0,
+                            "min": 0,
+                            "max": 4,
+                            "step": 1,
+                            "unit": "rows"
+                        }
+                    ]
+                }
+    ]
+    
+}

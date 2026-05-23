@@ -93,7 +93,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                                     map.put(callback, PRIORITY_DEFAULT);
                                     // Remember to restore
                                     sPendingRestore.set(new Object[]{ callback, priority });
-                                    log("before: priority " + priority + " → " + PRIORITY_DEFAULT);
                                 }
                             } catch (Throwable t) {
                                 logError("before hook failed", t);
@@ -116,7 +115,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                                 // and other internal bookkeeping stays consistent
                                 if (map.containsKey(callback)) {
                                     map.put(callback, originalPriority);
-                                    log("after: restored priority → " + originalPriority);
                                 }
                             } catch (Throwable t) {
                                 logError("after hook failed", t);
@@ -144,8 +142,6 @@ public class PredictiveBackDisableHook extends BaseHook {
                         sMapFieldResolved = true;
                         if (sMapField == null) {
                             logError("mAllCallbacks not found", null);
-                        } else {
-                            log("resolved mAllCallbacks field");
                         }
                     }
                 }
@@ -173,17 +169,11 @@ public class PredictiveBackDisableHook extends BaseHook {
 
     // ── settings ────────────────────────────────────────────────────────
 
-    private static volatile int sLogCount;
-
     private boolean isCurrentlyEnabled() {
         try {
             Context ctx = currentApplication();
             if (ctx == null) return false;
-            boolean val = isSettingEnabled(ctx, KEY, false);
-            if (sLogCount++ < 5) {
-                log("enabled=" + val);
-            }
-            return val;
+            return isSettingEnabled(ctx, KEY, false);
         } catch (Throwable t) {
             return false;
         }

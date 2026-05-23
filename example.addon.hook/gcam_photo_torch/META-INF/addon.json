@@ -1,0 +1,167 @@
+{
+    "id": "gcam_photo_torch",
+    "entryClass": "org.pixel.customparts.addon.gcam.GcamPhotoTorchHook",
+    "name": "GCam Photo Torch",
+    "author": "LeeGarChat",
+    "description": "Adds a persistent Torch choice to Google Camera photo flash controls.",
+    "version": "2.0.0",
+    "targetPackages": [
+        "com.google.android.GoogleCamera"
+    ],
+    "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/gcam_photo_torch.json",
+    "accent": "#FFD18B",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 60,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "gcam-photo-torch",
+            "title": "GCam Photo Torch",
+            "subtitle": "Torch mode inside Google Camera photo flash controls.",
+            "icon": "Rounded.PhotoCamera",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#FFD18B",
+            "iconBackground": "#3E3424",
+            "group": "camera",
+            "priority": 70,
+            "settings": [
+                {
+                    "key": "gcam_photo_torch_enabled",
+                    "title": "Enable Torch",
+                    "description": "Show the Torch option in Google Camera's photo flash selector.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "gcam_photo_torch_main_group",
+                    "categoryTitle": "Photo flash controls",
+                    "categoryDescription": "Enable or hide the added persistent Torch entry."
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "name": "GCam Photo Torch",
+            "author": "LeeGarChat",
+            "description": "Добавляет постоянный режим фонаря в управление фотоспышкой Google Camera.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "gcam-photo-torch",
+                    "title": "GCam Photo Torch",
+                    "subtitle": "Постоянный фонарь в управлении фотоспышкой Google Camera.",
+                    "group": "camera",
+                    "settings": [
+                        {
+                            "key": "gcam_photo_torch_overview",
+                            "title": "Расширение меню вспышки",
+                            "description": "Оставляет фонарь доступным в режиме фото, не меняя поведение видеовспышки."
+                        },
+                        {
+                            "key": "gcam_photo_torch_enabled",
+                            "title": "Включить фонарь",
+                            "description": "Показывает режим фонаря в селекторе фотоспышки Google Camera.",
+                            "category": "gcam_photo_torch_main_group",
+                            "categoryTitle": "Управление фотовспышкой",
+                            "categoryDescription": "Показывает или скрывает добавленный постоянный пункт фонаря."
+                        }
+                    ]
+                }
+            ]
+        },
+        "de": {
+            "name": "GCam Foto-Taschenlampe",
+            "author": "LeeGarChat",
+            "description": "Fügt den Foto-Blitzoptionen der Google Kamera einen dauerhaft aktiven Taschenlampenmodus hinzu.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "gcam-photo-torch",
+                    "title": "GCam Foto-Taschenlampe",
+                    "subtitle": "Torch mode inside Google Camera photo flash controls.",
+                    "group": "camera",
+                    "settings": [
+                        {
+                            "key": "gcam_photo_torch_overview",
+                            "title": "Flash menu extension",
+                            "description": "Keeps the camera torch available from photo mode without changing video flash behavior."
+                        },
+                        {
+                            "key": "gcam_photo_torch_enabled",
+                            "title": "Enable Torch",
+                            "description": "Show the Torch option in Google Camera's photo flash selector.",
+                            "category": "gcam_photo_torch_main_group",
+                            "categoryTitle": "Photo flash controls",
+                            "categoryDescription": "Enable or hide the added persistent Torch entry."
+                        }
+                    ]
+                }
+            ]
+        },
+        "fr": {
+            "name": "Torche photo GCam",
+            "author": "LeeGarChat",
+            "description": "Ajoute une option torche permanente aux contrôles du flash photo de Google Camera.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "gcam-photo-torch",
+                    "title": "Torche photo GCam",
+                    "subtitle": "Mode torche dans les controles du flash photo Google Camera.",
+                    "group": "camera",
+                    "settings": [
+                        {
+                            "key": "gcam_photo_torch_overview",
+                            "title": "Extension du menu flash",
+                            "description": "Garde la torche disponible en mode photo sans changer le flash video."
+                        },
+                        {
+                            "key": "gcam_photo_torch_enabled",
+                            "title": "Enable Torch",
+                            "description": "Affiche Torch dans le selecteur de flash photo Google Camera.",
+                            "category": "gcam_photo_torch_main_group",
+                            "categoryTitle": "Controles du flash photo",
+                            "categoryDescription": "Active ou masque l'entree Torch persistante."
+                        }
+                    ]
+                }
+            ]
+        },
+        "uk": {
+            "name": "Фото-ліхтар GCam",
+            "author": "LeeGarChat",
+            "description": "Додає постійний режим ліхтаря до керування фотоспалахом Google Camera.",
+            "settings": [],
+            "main": [
+                {
+                    "id": "gcam-photo-torch",
+                    "title": "Фото-ліхтар GCam",
+                    "subtitle": "Режим Torch у керуванні фотоспалахом Google Camera.",
+                    "group": "camera",
+                    "settings": [
+                        {
+                            "key": "gcam_photo_torch_overview",
+                            "title": "Розширення меню спалаху",
+                            "description": "Залишає ліхтар доступним у режимі фото, не змінюючи відеоспалах."
+                        },
+                        {
+                            "key": "gcam_photo_torch_enabled",
+                            "title": "Enable Torch",
+                            "description": "Показує Torch у селекторі фотоспалаху Google Camera.",
+                            "category": "gcam_photo_torch_main_group",
+                            "categoryTitle": "Керування фотоспалахом",
+                            "categoryDescription": "Показує або ховає доданий постійний пункт Torch."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

@@ -53,6 +53,7 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.RemoteStringsManager
 
@@ -425,7 +426,6 @@ object ThermalManager {
 
     private const val PROP_BATTERY = "persist.sys.pixelparts.battery"
     private const val PROP_SOC = "persist.sys.pixelparts.soc"
-    private const val PROP_CONFIG_TARGET = "sys.pixelparts.thermal_config_request"
 
     private const val MODE_STOCK = 0
     private const val MODE_SOFT = 1
@@ -517,28 +517,36 @@ object ThermalManager {
         setSystemProperty(PROP_BATTERY, batteryMode)
         setSystemProperty(PROP_SOC, socMode)
 
-        val socAddName = if (socMode != "stock") "_soc_$socMode" else ""
-        val batteryAddName = if (batteryMode != "stock") "_battery_$batteryMode" else ""
-        val configFileName = "thermal_info_config$socAddName$batteryAddName.json"
+        val configFileName = buildConfigFileName(batteryMode, socMode)
+        if (!ThermalProfileController.applyConfig(context, configFileName)) {
+            Log.w(TAG, "Failed to apply thermal config $configFileName")
+        }
+    }
 
-        setSystemProperty(PROP_CONFIG_TARGET, configFileName)
+    private fun buildConfigFileName(batteryMode: String, socMode: String): String {
+        val parts = mutableListOf<String>()
+        if (batteryMode != "stock") parts += "battery_$batteryMode"
+        if (socMode != "stock") parts += "soc_$socMode"
+        return if (parts.isEmpty()) "thermal_info_config.json" else parts.joinToString("_") + ".json"
     }
 
     @SuppressLint("PrivateApi")
-    private fun setSystemProperty(key: String, value: String) {
+    private fun setSystemProperty(key: String, value: String): Boolean {
         try {
             val c = Class.forName("android.os.SystemProperties")
             val set = c.getMethod("set", String::class.java, String::class.java)
             set.invoke(null, key, value)
-            return
+            return true
         } catch (e: Exception) {
             Log.w(TAG, "Reflection set failed ($key), trying root...", e)
         }
 
         try {
-            Runtime.getRuntime().exec(arrayOf("su", "-c", "setprop $key $value")).waitFor()
+            return Runtime.getRuntime().exec(arrayOf("su", "-c", "setprop $key $value")).waitFor() == 0
         } catch (e: Exception) {
             Log.e(TAG, "Root set failed for $key", e)
         }
+        return false
     }
+
 }

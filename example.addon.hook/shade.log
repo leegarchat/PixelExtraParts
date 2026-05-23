@@ -1,0 +1,78 @@
+05-21 22:47:46.970  4668  4668 D nativeloader: Load /system/lib64/libpine.so using ns default for caller /system/framework/PineInject.jar in same partition (is_bridged=0): ok
+05-21 22:47:46.981  4668  4668 D AddonLoader: Indexed addon: launcher_hooks -> [com.google.android.apps.nexuslauncher]
+05-21 22:47:46.985  4668  4668 D AddonLoader: Indexed addon: gcam_photo_torch -> [com.google.android.GoogleCamera]
+05-21 22:47:46.986  4668  4668 D AddonLoader: Indexed addon: ambient_extend_hook -> [com.android.systemui]
+05-21 22:47:46.989  4668  4668 D AddonLoader: Indexed addon: systemui_hooks -> [com.android.systemui]
+05-21 22:47:46.991  4668  4668 D AddonLoader: Indexed addon: settings_homepage_item -> [com.android.settings]
+05-21 22:47:46.994  4668  4668 D AddonLoader: Indexed addon: systemui_hooks -> [com.android.systemui]
+05-21 22:47:46.994  4668  4668 D AddonLoader: Indexed addon: settings_icon_style_override -> [com.android.settings]
+05-21 22:47:46.995  4668  4668 D AddonLoader: Indexed addon: systemui_notification_first_shade -> [com.android.systemui]
+05-21 22:47:46.995  4668  4668 D AddonLoader: Indexed addon: ambient_extend_hook -> [com.android.systemui]
+05-21 22:47:47.001  4668  4668 D AddonLoader: Addon scan complete. 7 addon(s) indexed.
+05-21 22:47:47.040  4668  4668 D PineInject: [ActivityTransitionHook] startActivity: hooked 2 methods
+05-21 22:47:47.041  4668  4668 D PineInject: [ActivityTransitionHook] startActivityForResult: hooked 3 methods
+05-21 22:47:47.041  4668  4668 D PineInject: [ActivityTransitionHook] finish: hooked 2 methods
+05-21 22:47:47.041  4668  4668 D PineInject: [ActivityTransitionHook] finishAndRemoveTask: hooked 1 methods
+05-21 22:47:47.042  4668  4668 D PineInject: [ActivityTransitionHook] finishAfterTransition: hooked 1 methods
+05-21 22:47:47.042  4668  4668 D PineInject: [ActivityTransitionHook] initialized (data-driven, 30 built-in modes)
+05-21 22:47:47.042  4668  4668 D PineInject: [HookEntry] Hook ActivityTransitionHook applied (global)
+05-21 22:47:47.043  4668  4668 D PineInject: [PredictiveBackDisableHook] setTopOnBackInvokedCallback: hooked 1 method(s)
+05-21 22:47:47.043  4668  4668 D PineInject: [PredictiveBackDisableHook] initialized
+05-21 22:47:47.043  4668  4668 D PineInject: [HookEntry] Hook PredictiveBackDisableHook applied (global)
+05-21 22:47:47.050  4668  4668 D PineInject: [EdgeEffectHook] EdgeEffect hook initialized (suffix=_pine, global=true)
+05-21 22:47:47.050  4668  4668 D PineInject: [HookEntry] Hook EdgeEffectHook applied (global)
+05-21 22:47:47.050  4668  4668 D PineInject: [MagnifierHook] Magnifier hook installed
+05-21 22:47:47.050  4668  4668 D PineInject: [HookEntry] Hook MagnifierHook applied (global)
+05-21 22:47:47.050  4668  4668 D PineInject: [HookEntry] Init complete for global: 4 hooks active
+05-21 22:47:47.050  4668  4668 D PineInject: [HookEntry] MATCHED SYSTEMUI PACKAGE: built-in hooks are provided by addons
+05-21 22:47:47.051  4668  4668 W AddonLoader: Failed to write boot guard file
+05-21 22:47:47.051  4668  4668 W AddonLoader: java.io.FileNotFoundException: /data/pixelparts/.boot_guard: open failed: EACCES (Permission denied)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.IoBridge.open(IoBridge.java:574)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at java.io.FileOutputStream.<init>(FileOutputStream.java:259)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at java.io.FileOutputStream.<init>(FileOutputStream.java:208)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at org.pixel.customparts.manager.pine.AddonLoader.checkAndUpdateBootGuard(AddonLoader.java:767)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at org.pixel.customparts.manager.pine.AddonLoader.loadAndRunAddons(AddonLoader.java:104)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at org.pixel.customparts.manager.pine.HookEntry.init(HookEntry.java:92)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at org.pixel.customparts.pineinject.ModEntry.init(ModEntry.java:36)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at java.lang.reflect.Method.invoke(Native Method)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.app.ActivityThread.handleBindApplication(ActivityThread.java:8218)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.app.ActivityThread.-$$Nest$mhandleBindApplication(Unknown Source:0)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2726)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.os.Handler.dispatchMessage(Handler.java:132)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.os.Looper.dispatchMessage(Looper.java:333)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.os.Looper.loopOnce(Looper.java:263)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.os.Looper.loop(Looper.java:367)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.app.ActivityThread.main(ActivityThread.java:9389)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at java.lang.reflect.Method.invoke(Native Method)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:569)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:929)
+05-21 22:47:47.051  4668  4668 W AddonLoader: Caused by: android.system.ErrnoException: open failed: EACCES (Permission denied)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.Linux.open(Native Method)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.ForwardingOs.open(ForwardingOs.java:574)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.BlockGuardOs.open(BlockGuardOs.java:274)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.ForwardingOs.open(ForwardingOs.java:574)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at android.app.AndroidForwardingOs.open(AndroidForwardingOs.java:120)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   at libcore.io.IoBridge.open(IoBridge.java:560)
+05-21 22:47:47.051  4668  4668 W AddonLoader:   ... 18 more
+05-21 22:47:47.057  4668  4668 D AddonLoader: DEX loaded for addon: systemui_hooks
+05-21 22:47:47.058  4668  4668 D AddonLoader: DEX loaded for addon: systemui_notification_first_shade
+05-21 22:47:47.062  4668  4668 D AddonLoader: DEX loaded for addon: ambient_extend_hook
+05-21 22:47:47.068  4668  4668 D NotifFirstShadeHook: QQS rows resource hook installed
+05-21 22:47:47.068  4668  4668 D NotifFirstShadeHook: QQS row interactor hook installed
+05-21 22:47:47.068  4668  4668 D NotifFirstShadeHook: QuickQuickSettingsViewModel row hooks installed: rows=0, tileFallback=1
+05-21 22:47:47.070  4668  4668 D NotifFirstShadeHook: QuickQSPanel legacy row hooks installed
+05-21 22:47:47.070  4668  4668 D NotifFirstShadeHook: SingleShadeMeasurePolicy not found, using stock notification positioning
+05-21 22:47:47.070  4668  4668 D NotifFirstShadeHook: notification-first shade hooks installed
+05-21 22:47:47.103  4668  4668 D AodNotificationIconColorHook: StatusBarIconView.setIconStyle hook unavailable: NoSuchMethodException: com.android.systemui.statusbar.StatusBarIconView.setIconStyle [boolean]
+05-21 22:47:47.103  4668  4668 D AodNotificationIconColorHook: Hooked notification app icon colors: iconStyleHooks=1 drawableHooks=1 updateColorHooks=1 darkChangedHooks=1
+05-21 22:47:47.103  4668  4668 D SystemUIHookRegistry: AodNotificationIconColorHook applied
+05-21 22:47:47.105  4668  4668 D AddonLoader: 3 addon(s) applied for com.android.systemui
+05-21 22:47:48.471  4668  4668 D NotifFirstShadeHook: QQS rows resource override=0 resource=quick_qs_paginated_grid_num_rows
+05-21 22:47:48.597  4668  4668 D PineInject: [PredictiveBackDisableHook] enabled=true
+05-21 22:47:48.597  4668  4668 D PineInject: [PredictiveBackDisableHook] resolved mAllCallbacks field
+05-21 22:47:49.803 16715 16715 D PineInject: [PredictiveBackDisableHook] before: priority -1 → 50
+05-21 22:47:49.803 16715 16715 D PineInject: [PredictiveBackDisableHook] after: restored priority → -1
+05-21 22:47:52.899  4668  4668 D PineInject: [PredictiveBackDisableHook] enabled=true
+05-21 22:47:54.495  4668  4668 D PineInject: [PredictiveBackDisableHook] enabled=true
+05-21 22:47:56.185  4668  4668 D PineInject: [PredictiveBackDisableHook] enabled=true
+05-21 22:47:56.617  4668  4668 D PineInject: [PredictiveBackDisableHook] enabled=true

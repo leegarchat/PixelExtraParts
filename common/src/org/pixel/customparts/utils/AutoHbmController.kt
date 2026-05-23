@@ -267,7 +267,28 @@ object AutoHbmController {
         return success
     }
 
-    fun restoreOriginalBrightness(context: Context): Boolean {
+    fun maintainHighBrightness(context: Context): Boolean {
+        val maxBrightness = readMaxBrightness() ?: return false
+        val currentBrightness = readBrightness() ?: return false
+        if (currentBrightness == maxBrightness) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+            return true
+        }
+
+        val success = writeBrightness(maxBrightness)
+        if (success) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+        }
+        return success
+    }
+
+    fun restoreOriginalBrightness(
+        context: Context,
+        smoothRamp: Boolean = false,
+        rampTimeMs: Int = getRampTimeMs(context),
+        shouldContinue: () -> Boolean = { true }
+    ): Boolean {
         val originalBrightness = SettingsCompat.getInt(
             context,
             SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS,
@@ -275,7 +296,12 @@ object AutoHbmController {
         )
 
         val success = if (originalBrightness >= 0) {
-            writeBrightness(originalBrightness)
+            val currentBrightness = readBrightness()
+            if (smoothRamp && rampTimeMs > 0 && currentBrightness != null && currentBrightness != originalBrightness) {
+                rampBrightness(currentBrightness, originalBrightness, rampTimeMs, shouldContinue)
+            } else {
+                writeBrightness(originalBrightness)
+            }
         } else {
             true
         }
@@ -392,7 +418,7 @@ object AutoHbmController {
     private fun writeBrightness(value: Int): Boolean {
         return runCatching { File(BRIGHTNESS_PATH).writeText(value.toString()) }
             .onFailure { Log.e(TAG, "Unable to write $BRIGHTNESS_PATH", it) }
-            .isSuccess && readBrightness() == value
+            .isSuccess
     }
 
     private fun rampBrightness(
