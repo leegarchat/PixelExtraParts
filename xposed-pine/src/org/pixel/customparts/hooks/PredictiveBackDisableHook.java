@@ -173,17 +173,11 @@ public class PredictiveBackDisableHook extends BaseHook {
 
     // ── settings ────────────────────────────────────────────────────────
 
-    private static volatile int sLogCount;
-
     private boolean isCurrentlyEnabled() {
         try {
             Context ctx = currentApplication();
             if (ctx == null) return false;
-            boolean val = isSettingEnabled(ctx, KEY, false);
-            if (sLogCount++ < 5) {
-                log("enabled=" + val);
-            }
-            return val;
+            return isSettingEnabled(ctx, KEY, false);
         } catch (Throwable t) {
             return false;
         }

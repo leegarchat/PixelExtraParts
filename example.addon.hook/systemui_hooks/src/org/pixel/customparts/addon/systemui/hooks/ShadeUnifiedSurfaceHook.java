@@ -569,10 +569,11 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private void hookNotificationGroupHeaderBackground(ClassLoader classLoader) {
         try {
-            final Class<?> containerClass = XposedHelpers.findClass(
+            Class<?> containerClass = XposedHelpers.findClassIfExists(
                     "com.android.systemui.statusbar.notification.stack.NotificationChildrenContainer", 
                     classLoader
             );
+            if (containerClass == null) return;
 
             Set<XC_MethodHook.Unhook> hooks = XposedBridge.hookAllMethods(
                     containerClass, 
@@ -601,9 +602,11 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                     }
             );
             
-            log("NotificationChildrenContainer#recreateNotificationHeader hook installed (methods=" + hooks.size() + ")");
-        } catch (Throwable t) {
-            logError("Failed to hook NotificationChildrenContainer#recreateNotificationHeader", t);
+            // Only log if actually hooked; method removed in Android 16+
+            if (hooks.size() > 0) {
+                log("NotificationChildrenContainer#recreateNotificationHeader hook installed");
+            }
+        } catch (Throwable ignored) {
         }
     }
 

@@ -165,10 +165,8 @@ public class DozeTapDozeHook extends BaseSystemUIHook {
             int reason = XposedHelpers.getIntField(sensor, "mPulseReason");
             if (reason != dozeTapReason) return false;
             XposedHelpers.setBooleanField(sensor, "mImmediatelyReRegister", true);
-            log("DozeTapDozeHook: native tap sensor re-register enabled");
             return true;
         } catch (Throwable t) {
-            log("DozeTapDozeHook: native re-register enable failed: " + t.getMessage());
             return false;
         }
     }
@@ -182,17 +180,32 @@ public class DozeTapDozeHook extends BaseSystemUIHook {
         } catch (Throwable ignored) {
         }
 
+        // Try DozeMachine.wakeUp — signature varies across Android versions
         try {
             Object machine = XposedHelpers.getObjectField(dozeTriggers, "mMachine");
             if (machine != null) {
-                XposedHelpers.callMethod(machine, "wakeUp", reason);
-                log("DozeTapDozeHook: double tap woke via DozeMachine");
-                return;
+                boolean woke = false;
+                // Android 16+: wakeUp() may take no args or different signature
+                for (Method m : machine.getClass().getDeclaredMethods()) {
+                    if (!"wakeUp".equals(m.getName())) continue;
+                    m.setAccessible(true);
+                    Class<?>[] params = m.getParameterTypes();
+                    if (params.length == 0) {
+                        m.invoke(machine);
+                        woke = true;
+                        break;
+                    } else if (params.length == 1 && (params[0] == int.class || params[0] == Integer.class)) {
+                        m.invoke(machine, reason);
+                        woke = true;
+                        break;
+                    }
+                }
+                if (woke) return;
             }
-        } catch (Throwable t) {
-            log("DozeTapDozeHook: DozeMachine wake failed: " + t.getMessage());
+        } catch (Throwable ignored) {
         }
 
+        // Fallback: PowerManager.wakeUp
         try {
             Context context = (Context) XposedHelpers.getObjectField(dozeTriggers, "mContext");
             if (context == null) return;
@@ -202,7 +215,6 @@ public class DozeTapDozeHook extends BaseSystemUIHook {
                     "wakeUp", long.class, int.class, String.class);
                 wakeUp.invoke(powerManager, SystemClock.uptimeMillis(),
                     WAKE_REASON_TAP, "PixelPartsDozeDoubleTap");
-                log("DozeTapDozeHook: double tap woke via PowerManager fallback");
             }
         } catch (Throwable t) {
             logError("DozeTapDozeHook: PowerManager wake fallback failed", t);
