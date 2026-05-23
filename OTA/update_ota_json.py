@@ -52,7 +52,7 @@ VARIANT_RULES = {
     ),
 }
 SOURCE_RULES = (
-    # SourceRule(order=0, websource="SourceForge", use_sourceforge=True),
+    SourceRule(order=0, websource="SourceForge", use_sourceforge=True),
     SourceRule(order=1, websource="leegarchat.mooo.com"),
 )
 REQUIRED_SOURCE_KEYS = (
