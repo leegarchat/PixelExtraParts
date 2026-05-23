@@ -4,12 +4,12 @@
     "name": "Ambient Extend",
     "author": "LeeGarChat",
     "description": "AOD timeout, ambient Smart Pixels, and extra Doze dimming for SystemUI.",
-    "version": "1.4.1",
+    "version": "2.0.0",
     "targetPackages": [
         "com.android.systemui"
     ],
     "enabled": true,
-    "updateUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/testing/OTA/addons/ambient.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/ambient_extend_hook.json",
     "accent": "#64D8FF",
     "backgroundMode": "gradient",
     "backgroundAlpha": 70,

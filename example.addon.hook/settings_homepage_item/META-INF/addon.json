@@ -4,11 +4,12 @@
     "name": "Settings Homepage Item",
     "author": "LeeGarChat",
     "description": "Injects Pixel Extra Parts into a separate top-level Settings homepage area without modifying the Settings package.",
-    "version": "1.2",
+    "version": "2.0.0",
     "targetPackages": [
         "com.android.settings"
     ],
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/settings_homepage_item.json",
     "accent": "#7EE3B4",
     "backgroundMode": "gradient",
     "backgroundAlpha": 45,

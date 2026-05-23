@@ -1,10 +1,11 @@
 {
     "id": "icon_manager_settings",
     "name": "Icon Manager Settings UI",
-    "author": "PixelExtraParts",
+    "author": "LeeGarChat",
     "description": "Settings-only addon UI for Icon Manager advanced controls.",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/icon_manager_settings.json",
     "backgroundMode": "gradient",
     "backgroundAlpha": 48,
     "backgroundGradientSteps": [
@@ -320,7 +321,7 @@
     "locales": {
         "ru": {
             "name": "Настройки Icon Manager",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Addon только с UI настроек для расширенных возможностей Icon Manager.",
             "settings": [],
             "main": [
@@ -476,7 +477,7 @@
         },
         "de": {
             "name": "Icon-Manager-Einstellungen",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Reines Einstellungs-Addon für erweiterte Icon-Manager-Optionen.",
             "settings": [],
             "main": [
@@ -632,7 +633,7 @@
         },
         "fr": {
             "name": "Paramètres du gestionnaire d'icônes",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Addon de paramètres pour les contrôles avancés du gestionnaire d'icônes.",
             "settings": [],
             "main": [
@@ -788,7 +789,7 @@
         },
         "uk": {
             "name": "Налаштування менеджера іконок",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Addon лише з UI налаштувань для розширених опцій Icon Manager.",
             "settings": [],
             "main": [

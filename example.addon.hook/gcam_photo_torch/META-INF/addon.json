@@ -4,11 +4,12 @@
     "name": "GCam Photo Torch",
     "author": "LeeGarChat",
     "description": "Adds a persistent Torch choice to Google Camera photo flash controls.",
-    "version": "1.2",
+    "version": "2.0.0",
     "targetPackages": [
         "com.google.android.GoogleCamera"
     ],
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/gcam_photo_torch.json",
     "accent": "#FFD18B",
     "backgroundMode": "gradient",
     "backgroundAlpha": 60,

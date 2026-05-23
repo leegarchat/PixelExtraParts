@@ -13,6 +13,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system_ext/etc/pixelparts/addons/launcher_hooks.jar \
     system_ext/etc/pixelparts/addons/settings_homepage_item.jar \
     system_ext/etc/pixelparts/addons/systemui_hooks.jar \
+	system_ext/etc/pixelparts/addons/settings_icon_style_override_addon.jar \
     system/framework/PineInject.jar \
     system/lib64/libpine.so \
     system/lib64/libaapt2.so \
@@ -25,6 +26,7 @@ PRODUCT_PACKAGES += \
     ambient_extend_hook_addon \
     gcam_photo_torch_addon \
     icon_manager_settings_addon \
+	settings_icon_style_override_addon \
     ims_carrier_config_addon \
     launcher_hooks_addon \
     settings_homepage_item_addon \

@@ -1,11 +1,12 @@
 {
     "id": "systemui_hooks",
     "name": "SystemUI Hooks",
-    "author": "PixelExtraParts",
+    "author": "LeeGarChat",
     "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/systemui_hooks.json",
     "targetPackages": [
         "com.android.systemui"
     ],
@@ -618,7 +619,7 @@
     "locales": {
         "ru": {
             "name": "Хуки SystemUI",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Pine-хуки SystemUI и сгенерированные настройки для PixelExtraParts.",
             "settings": [],
             "main": [
@@ -886,7 +887,7 @@
         },
         "de": {
             "name": "SystemUI-Hooks",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Pine-SystemUI-Hooks und generierte Einstellungen für PixelExtraParts.",
             "settings": [],
             "main": [
@@ -1154,7 +1155,7 @@
         },
         "fr": {
             "name": "Hooks SystemUI",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Hooks Pine SystemUI et paramètres générés pour PixelExtraParts.",
             "settings": [],
             "main": [
@@ -1422,7 +1423,7 @@
         },
         "uk": {
             "name": "Хуки SystemUI",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Pine-хуки SystemUI та згенеровані налаштування для PixelExtraParts.",
             "settings": [],
             "main": [

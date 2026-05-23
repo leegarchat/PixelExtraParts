@@ -2,13 +2,14 @@
     "id": "launcher_hooks",
     "entryClass": "org.pixel.customparts.addon.launcher.LauncherHooksEntry",
     "name": "Pixel Launcher Settings",
-    "author": "PixelExtraParts",
+    "author": "LeeGarChat",
     "description": "Nexus Launcher layout, drawer, icons and recents customization moved to an addon.",
-    "version": "1.0.3",
+    "version": "2.0.0",
     "targetPackages": [
         "com.google.android.apps.nexuslauncher"
     ],
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/launcher_hooks.json",
     "backgroundMode": "gradient",
     "backgroundAlpha": 52,
     "backgroundGradientSteps": [
@@ -1293,7 +1294,7 @@
     "locales": {
         "ru": {
             "name": "Настройки Pixel Launcher",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Настройки макета Nexus Launcher, меню приложений, иконок и недавних перенесены в addon.",
             "settings": [],
             "main": [
@@ -1943,7 +1944,7 @@
         },
         "de": {
             "name": "Pixel Launcher-Einstellungen",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Anpassungen für Nexus-Launcher-Layout, App-Drawer, Icons und Recents als Addon.",
             "settings": [],
             "main": [
@@ -2593,7 +2594,7 @@
         },
         "fr": {
             "name": "Paramètres Pixel Launcher",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Personnalisation du layout Nexus Launcher, du tiroir, des icônes et des récents déplacée dans un addon.",
             "settings": [],
             "main": [
@@ -3243,7 +3244,7 @@
         },
         "uk": {
             "name": "Налаштування Pixel Launcher",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Налаштування макета Nexus Launcher, меню додатків, іконок і Recents перенесено в addon.",
             "settings": [],
             "main": [

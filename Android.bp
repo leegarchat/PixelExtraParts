@@ -30,6 +30,14 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "settings_icon_style_override_addon",
+    src: "example.addon.hook/settings_icon_style_override/out/settings_icon_style_override.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
     name: "settings_homepage_item_addon",
     src: "example.addon.hook/settings_homepage_item/out/settings_homepage_item.jar",
     sub_dir: "pixelparts/addons",

@@ -2,13 +2,14 @@
     "id": "settings_icon_style_override",
     "entryClass": "org.pixel.customparts.addon.settings.SettingsIconStyleOverrideHook",
     "name": "Settings Icon Style Override",
-    "author": "PixelExtraParts",
+    "author": "LeeGarChat",
     "description": "Keeps Settings icon colors and uses the global adaptive icon mask for shape.",
-    "version": "1.0",
+    "version": "2.0.0",
     "targetPackages": [
         "com.android.settings"
     ],
     "enabled": true,
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/settings_icon_style_override.json",
     "accent": "#67DDF7",
     "backgroundMode": "gradient",
     "backgroundAlpha": 45,
@@ -49,7 +50,7 @@
     "locales": {
         "ru": {
             "name": "Переопределение стиля иконок Settings",
-            "author": "PixelExtraParts",
+            "author": "LeeGarChat",
             "description": "Сохраняет цвета иконок Settings и берёт форму из глобальной adaptive icon mask.",
             "settings": [],
             "main": [
