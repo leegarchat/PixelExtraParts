@@ -14,9 +14,6 @@ public class DozeTapShadeHook extends BaseSystemUIHook {
 
     private static final int WAKE_REASON_TAP = 15;
 
-    private boolean loggedHook = false;
-    private int tapLogCount = 0;
-
     @Override
     public String getHookId() {
         return "DozeTapShadeHook";
@@ -48,46 +45,18 @@ public class DozeTapShadeHook extends BaseSystemUIHook {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) {
                     try {
-                        if (!loggedHook) {
-                            loggedHook = true;
-                            log("DozeTapShadeHook: onSingleTapUp hooked (all overloads)");
-                        }
-                        
-                        if (tapLogCount < 10) {
-                            tapLogCount++;
-                            log("DozeTapShadeHook: onSingleTapUp invoked (#" + tapLogCount + ")");
-                        }
-
                         Object controller = XposedHelpers.getObjectField(param.thisObject, "statusBarStateController");
                         Boolean isDozingObj = (Boolean) XposedHelpers.callMethod(controller, "isDozing");
                         boolean isDozing = isDozingObj != null && isDozingObj;
 
-                        if (tapLogCount <= 10) {
-                            log("DozeTapShadeHook: isDozing=" + isDozing);
-                        }
-
-                        if (!isDozing) {
-                            return;
-                        }
+                        if (!isDozing) return;
 
                         Context context = resolveAppContext(param.thisObject.getClass().getClassLoader());
-                        if (context == null) {
-                            if (tapLogCount <= 10) {
-                                log("DozeTapShadeHook: app context not available");
-                            }
-                            return;
-                        }
+                        if (context == null) return;
 
-                        boolean enabled = isSettingEnabled(context, DozeTapManager.KEY_HOOK);
-                        if (tapLogCount <= 10) {
-                            log("DozeTapShadeHook: enabled=" + enabled);
-                        }
-                        if (!enabled) {
-                            return;
-                        }
+                        if (!isSettingEnabled(context, DozeTapManager.KEY_HOOK)) return;
 
                         int timeout = getIntSetting(context, DozeTapManager.KEY_TIMEOUT, DozeTapManager.DEFAULT_TIMEOUT);
-                        DozeTapManager.TapResult tapResult = DozeTapManager.TapResult.IGNORED;
                         Runnable wakeAction = new Runnable() {
                             @Override
                             public void run() {
@@ -95,52 +64,35 @@ public class DozeTapShadeHook extends BaseSystemUIHook {
                             }
                         };
 
+                        DozeTapManager.TapResult tapResult = DozeTapManager.TapResult.IGNORED;
+
                         if (param.args.length == 1 && param.args[0] instanceof MotionEvent) {
                             MotionEvent event = (MotionEvent) param.args[0];
                             tapResult = DozeTapManager.processTap(
-                                context,
-                                event.getX(),
-                                event.getY(),
-                                true,
-                                timeout,
-                                null,
-                                wakeAction
+                                context, event.getX(), event.getY(),
+                                true, timeout, null, wakeAction
                             );
                         } else if (param.args.length >= 2 && param.args[0] instanceof Float && param.args[1] instanceof Float) {
                             tapResult = DozeTapManager.processTap(
-                                context,
-                                (Float) param.args[0],
-                                (Float) param.args[1],
-                                true,
-                                timeout,
-                                null,
-                                wakeAction
+                                context, (Float) param.args[0], (Float) param.args[1],
+                                true, timeout, null, wakeAction
                             );
                         } else {
-                            if (tapLogCount <= 10) {
-                                log("DozeTapShadeHook: unsupported args size=" + param.args.length);
-                            }
                             return;
                         }
 
-                        if (tapLogCount <= 10) {
-                            log("DozeTapShadeHook: tapResult=" + tapResult);
-                        }
-                        
                         if (tapResult != DozeTapManager.TapResult.IGNORED) {
-                            log("DozeTapShadeHook: Pulsing tap consumed");
                             param.setResult(true);
                         }
-
                     } catch (Throwable t) {
-                        log("DozeTapShadeHook: Error in PulsingGestureListener: " + t.getMessage());
+                        logError("Error in PulsingGestureListener hook", t);
                     }
                 }
             });
 
             log("DozeTapShadeHook: Hook applied successfully");
         } catch (Throwable e) {
-            log("DozeTapShadeHook: Failed to apply hook: " + e.getMessage());
+            logError("DozeTapShadeHook: Failed to apply hook", e);
         }
     }
 

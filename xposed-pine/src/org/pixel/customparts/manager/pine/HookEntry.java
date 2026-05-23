@@ -3,9 +3,7 @@ package org.pixel.customparts.manager.pine;
 import android.content.Context;
 import org.pixel.customparts.core.BaseHook;
 import org.pixel.customparts.core.IHookEnvironment;
-// Импорты твоих хуков
 import org.pixel.customparts.hooks.*;
-import org.pixel.customparts.hooks.recents.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,20 +111,8 @@ public class HookEntry {
     }
 
     private static void initLauncherHooks(Context context, ClassLoader classLoader, String packageName) {
-        List<BaseHook> hooks = new ArrayList<>();
-
-        // if (!PACKAGE_NEXUS_LAUNCHER.equals(packageName)) {
-        //     hooks.add(new LauncherIconOverrideHook());
-        //     hooks.add(new GridSizeAppMenuHook());
-        //     hooks.add(new UnifiedLauncherHook());
-        //     hooks.add(new RecentsUnifiedHook());
-        // }
-        // if (!PACKAGE_NEXUS_LAUNCHER.equals(packageName)) {
-        //     hooks.add(new GestureBarHook());
-        // }
-        // hooks.add(new OxygenRecentsIconStripHook());
-
-        applyHooks(hooks, context, classLoader, "launcher");
+        // Built-in launcher hooks are now provided by addon JARs.
+        // This method is retained as a no-op entry point for future built-in hooks.
     }
 
     private static void applyHooks(List<BaseHook> hooks, Context context, ClassLoader classLoader, String group) {

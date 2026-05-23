@@ -1,7 +1,6 @@
 package org.pixel.customparts.addon.systemui.hooks;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.ColorDrawable;
@@ -72,9 +71,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // Lock-screen state: skip tint on KEYGUARD / BOUNCER / AOD
     private static volatile boolean sIsKeyguardState;
 
-    private static final long DEBUG_LOG_THROTTLE_MS = 1500;
-    private static volatile long sLastDebugLogUptime;
-
     // Reflection caches for hot paths
     private static volatile Method sGetContextMethod;
     private static volatile Field sScrimNameField;
@@ -135,7 +131,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
                         if (intensityPercent > 0 && intensityPercent < disableScaleThreshold) {
                             param.args[scaleIndex] = 1.0f; 
-                            debugOnce("BlurUtils scale: forced 1.0 (intensity=" + intensityPercent + "%)");
                         } else if (intensityPercent > 0) {
                             int zoomIntensity = sCfgZoomIntensity;
                             
@@ -149,8 +144,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                 float newScale = 1.0f - newDelta;
                                 
                                 param.args[scaleIndex] = newScale;
-                                
-                                debugOnce("BlurUtils scale: adjusted to " + newScale + " (original=" + originalScale + ", intensity=" + zoomIntensity + "%)");
                             }
                         }
                     } catch (Throwable t) {
@@ -176,13 +169,11 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                     try {
                         if (param.args != null && param.args.length > 0 && param.args[0] != null) {
                             String stateName = param.args[0].toString();
-                            boolean keyguard = stateName.contains("KEYGUARD")
+                            sIsKeyguardState = stateName.contains("KEYGUARD")
                                     || stateName.contains("BOUNCER")
                                     || stateName.contains("PULSING")
                                     || stateName.contains("DREAMING")
                                     || stateName.contains("AOD");
-                            sIsKeyguardState = keyguard;
-                            debugOnce("ScrimState -> " + stateName + " (lockscreen=" + keyguard + ")");
                         }
                     } catch (Throwable t) {
                         logError("Failed in ScrimController state track", t);
@@ -276,11 +267,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                     if ("notifications_scrim".equals(name) && sNotifTintOverrideActive) {
                         int newColor = (sysAlpha << 24) | (sCfgNotifScrimTint & 0x00FFFFFF);
                         param.args[colorArgIndex] = newColor;
-                        debugOnce("setTint arg swap: notif 0x" + Integer.toHexString(original) + " -> 0x" + Integer.toHexString(newColor));
                     } else if (name != null && (name.contains("behind") || "back_scrim".equals(name)) && sMainTintOverrideActive) {
                         int newColor = (sysAlpha << 24) | (sCfgMainScrimTint & 0x00FFFFFF);
                         param.args[colorArgIndex] = newColor;
-                        debugOnce("setTint arg swap: " + name + " 0x" + Integer.toHexString(original) + " -> 0x" + Integer.toHexString(newColor));
                     }
                 } catch (Throwable t) {
                     logError("Failed in ScrimView setTint recolor", t);
@@ -321,45 +310,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     private void hookBackgroundBlurRadiusIfPresent(ClassLoader classLoader) {
-        try {
-            Class<?> vri = XposedHelpers.findClassIfExists("android.view.ViewRootImpl", null);
-            if (vri != null) {
-                Set<XC_MethodHook.Unhook> unhooks = XposedBridge.hookAllMethods(
-                        vri, "setBackgroundBlurRadius", new XC_MethodHook() {
-                            @Override
-                            protected void beforeHookedMethod(MethodHookParam param) {
-                                try {
-                                    if (param.args == null || param.args.length < 1) return;
-                                    if (!(param.args[0] instanceof Integer)) return;
-
-                                    ensureConfigLoaded(getCurrentApplication());
-                                    if (!sConfigLoaded || !sBlurRadiusScalingActive) return;
-
-                                    int intensityPercent = sCfgBlurIntensity;
-
-                                    int base = (Integer) param.args[0];
-                                    if (intensityPercent <= 0) {
-                                        param.args[0] = 0;
-                                        debugOnce("Background blur: forced radius=0 (intensity=0)");
-                                        return;
-                                    }
-                                    int scaled = Math.round(base * (intensityPercent / 100f));
-                                    if (scaled < 0) scaled = 0;
-
-                                    param.args[0] = scaled;
-                                    debugOnce("Background blur: radius=" + scaled
-                                            + " (base=" + base + ", intensity="
-                                            + intensityPercent + "%)");
-                                } catch (Throwable t) {
-                                    logError("Failed in ViewRootImpl#setBackgroundBlurRadius override", t);
-                                }
-                            }
-                        }
-                );
-                log("ViewRootImpl#setBackgroundBlurRadius scaler installed (" + unhooks.size() + " methods hooked)");
-            }
-        } catch (Throwable t) { }
-
+        // SurfaceControl.Transaction#setBackgroundBlurRadius — primary blur radius path on Android 14+
         try {
             Class<?> txn = XposedHelpers.findClassIfExists("android.view.SurfaceControl$Transaction", null);
             if (txn != null) {
@@ -380,16 +331,12 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                     int base = (Integer) radiusObj;
                                     if (intensityPercent <= 0) {
                                         param.args[param.args.length - 1] = 0;
-                                        debugOnce("SurfaceControl blur: forced radius=0 (intensity=0)");
                                         return;
                                     }
                                     int scaled = Math.round(base * (intensityPercent / 100f));
                                     if (scaled < 0) scaled = 0;
 
                                     param.args[param.args.length - 1] = scaled;
-                                    debugOnce("SurfaceControl blur: radius=" + scaled
-                                            + " (base=" + base + ", intensity="
-                                            + intensityPercent + "%)");
                                 } catch (Throwable t) {
                                     logError("Failed in SurfaceControl.Transaction#setBackgroundBlurRadius override", t);
                                 }
@@ -398,14 +345,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                 );
                 log("SurfaceControl.Transaction#setBackgroundBlurRadius scaler installed (" + unhooks.size() + " methods hooked)");
             }
-        } catch (Throwable t) { }
-    }
-
-    private void debugOnce(String msg) {
-        long now = android.os.SystemClock.uptimeMillis();
-        if (now - sLastDebugLogUptime < DEBUG_LOG_THROTTLE_MS) return;
-        sLastDebugLogUptime = now;
-        log(msg);
+        } catch (Throwable t) {
+            logError("Failed to hook SurfaceControl blur radius", t);
+        }
     }
 
     private void ensureConfigLoaded(Context context) {

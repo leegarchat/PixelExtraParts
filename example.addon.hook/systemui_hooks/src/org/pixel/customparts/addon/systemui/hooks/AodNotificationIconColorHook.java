@@ -77,6 +77,9 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
                     }
                 }
             });
+        } catch (NoSuchMethodException ignored) {
+            // setIconStyle(boolean) removed in Android 16+; icon mode is handled via IconManager hooks
+            return 0;
         } catch (Throwable t) {
             logHookWarning("StatusBarIconView.setIconStyle hook unavailable", t);
             return 0;

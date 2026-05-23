@@ -234,25 +234,25 @@ public class DozeTapDozeHook extends BaseSystemUIHook {
     private void checkAndResetSensor(Object sensor) {
         try {
             int reason = XposedHelpers.getIntField(sensor, "mPulseReason");
-            if (reason == dozeTapReason) {
-                Method method = sensor.getClass().getDeclaredMethod("setListening", boolean.class);
-                method.setAccessible(true);
-                method.invoke(sensor, false);
-                method.invoke(sensor, true);
-                log("DozeTapDozeHook: Sensor re-registered OK");
-            }
-        } catch (Throwable e) {
-            log("DozeTapDozeHook: checkAndResetSensor failed: " + e.getMessage());
+            if (reason != dozeTapReason) return;
+
+            // Android 16+: setListening(boolean) was removed; use mRequested + updateListening
             try {
-                // Fallback method
                 XposedHelpers.setBooleanField(sensor, "mRequested", false);
                 XposedHelpers.callMethod(sensor, "updateListening");
                 XposedHelpers.setBooleanField(sensor, "mRequested", true);
                 XposedHelpers.callMethod(sensor, "updateListening");
-                log("DozeTapDozeHook: Sensor re-registered via fallback OK");
             } catch (Throwable e2) {
-                log("DozeTapDozeHook: Fallback re-register also failed: " + e2.getMessage());
+                // Last resort: try setListening if available on older API
+                try {
+                    Method method = sensor.getClass().getDeclaredMethod("setListening", boolean.class);
+                    method.setAccessible(true);
+                    method.invoke(sensor, false);
+                    method.invoke(sensor, true);
+                } catch (Throwable ignored) {}
             }
+        } catch (Throwable e) {
+            logError("DozeTapDozeHook: checkAndResetSensor failed", e);
         }
     }
 }

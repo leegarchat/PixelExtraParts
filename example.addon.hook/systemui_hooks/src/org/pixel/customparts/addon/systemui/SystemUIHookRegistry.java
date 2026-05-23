@@ -54,14 +54,15 @@ public final class SystemUIHookRegistry {
         for (BaseSystemUIHook hook : hooks) {
             try {
                 if (!hook.isEnabled(context)) {
-                    Log.d(TAG, hook.getHookId() + " skipped: disabled");
                     continue;
                 }
                 hook.init(hostClassLoader);
                 applied++;
                 Log.d(TAG, hook.getHookId() + " applied");
             } catch (Throwable throwable) {
-                Log.e(TAG, "Failed to init " + hook.getHookId(), throwable);
+                // Anti-crash: isolate hook failures so one broken hook doesn't take down SystemUI
+                Log.e(TAG, "ISOLATED FAILURE in " + hook.getHookId()
+                        + " — hook disabled to protect SystemUI stability", throwable);
             }
         }
         Log.d(TAG, "SystemUI addon hooks active: " + applied);
