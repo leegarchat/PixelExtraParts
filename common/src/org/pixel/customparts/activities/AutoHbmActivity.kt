@@ -139,10 +139,18 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     DisposableEffect(Unit) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         val lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
+        // When service is running, broadcast is the authoritative lux source.
+        // Local sensor is only used when service is not broadcasting (AutoHBM disabled).
+        var lastBroadcastTime = 0L
+
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_LIGHT) {
-                    currentLux = event.values.firstOrNull() ?: currentLux
+                    // Only update from local sensor if no recent broadcast (service not active)
+                    val now = android.os.SystemClock.uptimeMillis()
+                    if (now - lastBroadcastTime > 1000L) {
+                        currentLux = event.values.firstOrNull() ?: currentLux
+                    }
                 }
             }
 
@@ -155,6 +163,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
+                lastBroadcastTime = android.os.SystemClock.uptimeMillis()
                 currentLux = intent.getFloatExtra(AutoHbmController.EXTRA_LUX, currentLux)
                 hbmActive = intent.getBooleanExtra(AutoHbmController.EXTRA_ACTIVE, AutoHbmController.isHbmActive(context))
                 brightness = intent.getIntExtra(AutoHbmController.EXTRA_BRIGHTNESS, brightness)
