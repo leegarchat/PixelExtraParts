@@ -209,6 +209,28 @@
 
     <string name="auto_hbm_title">HBM</string>
     <string name="auto_hbm_summary">Поднимает яркость панели при сильном освещении</string>
+    <string name="auto_hbm_permanent_title">Постоянный HBM</string>
+    <string name="auto_hbm_permanent_summary">Поддерживать максимальную яркость всегда включённой</string>
+    <string name="auto_hbm_permanent_unsupported">Не поддерживается на этом устройстве</string>
+    <string name="auto_hbm_brightness_lock_title">Блокировка яркости</string>
+    <string name="auto_hbm_brightness_lock_summary">Блокировать максимальную яркость для предотвращения затемнения системой</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Настройки Auto HBM отключены в постоянном режиме</string>
+
+    <string name="dtw_title">Двойной тап для пробуждения</string>
+    <string name="dtw_summary">Пробуждение экрана двойным тапом</string>
+    <string name="dtw_enable_title">Включить DT2W</string>
+    <string name="dtw_enable_summary">Включить двойной тап для пробуждения при выключенном экране</string>
+    <string name="dtw_tap_count_title">Количество тапов</string>
+    <string name="dtw_tap_count_summary">Количество тапов для пробуждения (1-3)</string>
+    <string name="dtw_timeout_title">Таймаут тапа</string>
+    <string name="dtw_timeout_summary">Максимальный интервал между тапами</string>
+    <string name="dtw_proximity_check_title">Проверка приближения</string>
+    <string name="dtw_proximity_check_summary">Проверять датчик приближения для предотвращения пробуждения в кармане</string>
+    <string name="dtw_coordinate_check_title">Проверка координат</string>
+    <string name="dtw_coordinate_check_summary">Проверять совпадение координат тапов в пределах порога</string>
+    <string name="dtw_max_distance_title">Максимальное расстояние</string>
+    <string name="dtw_max_distance_summary">Максимальное расстояние между тапами в dp</string>
+    <string name="dtw_unsupported">Устройство не поддерживает датчик одиночного касания</string>
     <string name="auto_hbm_enable_title">Включить автоматический HBM</string>
     <string name="auto_hbm_mode_title">Режим HBM</string>
     <string name="auto_hbm_mode_auto">Автоматический (по датчику)</string>
