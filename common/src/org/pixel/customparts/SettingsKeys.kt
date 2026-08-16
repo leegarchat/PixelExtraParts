@@ -414,4 +414,12 @@ object SettingsKeys {
     /** Disable predictive back gesture animation (0 = default, 1 = disable). */
     val DISABLE_PREDICTIVE_BACK_ANIM: String
         get() = "disable_predictive_back_anim" + suffix
+
+    // Double Tap to Wake (DTW) — privileged system_app sensor-based implementation
+    const val DTW_ENABLED = "pixelparts_dtw_enabled"
+    const val DTW_TAP_COUNT = "pixelparts_dtw_tap_count"          // 1..3
+    const val DTW_TAP_TIMEOUT_MS = "pixelparts_dtw_tap_timeout_ms"  // 100..2000
+    const val DTW_PROXIMITY_CHECK = "pixelparts_dtw_proximity_check" // bool
+    const val DTW_COORDINATE_CHECK = "pixelparts_dtw_coordinate_check" // bool
+    const val DTW_MAX_DISTANCE_DP = "pixelparts_dtw_max_distance_dp" // 10..1000
 }
