@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.ContextCompat
 import org.pixel.customparts.utils.AutoHbmController
@@ -29,6 +30,7 @@ class AutoHbmService : Service(), SensorEventListener {
     private var evaluatorHandler: Handler? = null
     private var evaluatorRunnable: Runnable? = null
     private var evaluatorRunning = false
+    private var isRamping = false
 
     @Volatile private var lastLux = 0f
     // Incremented on each state transition to cancel in-progress ramps
@@ -69,7 +71,7 @@ class AutoHbmService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (!AutoHbmController.isEnabled(this) || !AutoHbmController.isSupported()) {
-            postToEvaluator { deactivateHighBrightness() }
+            postToEvaluator { deactivateHighBrightnessImmediate() }
             stopSelf()
             return START_NOT_STICKY
         }
@@ -126,9 +128,8 @@ class AutoHbmService : Service(), SensorEventListener {
             // Pre-disable auto-brightness so the system doesn't fight us during that window.
             postToEvaluator {
                 AutoHbmController.disableAutoBrightnessIfNeeded(this@AutoHbmService)
-                // Set aboveThresholdAt to now so enableDelay is already satisfied
-                // (user already had HBM active, no need to wait again)
-                aboveThresholdAt = System.currentTimeMillis()
+                val enableDelayMs = AutoHbmController.getEnableTime(this@AutoHbmService) * 1000L
+                aboveThresholdAt = SystemClock.elapsedRealtime() - enableDelayMs
             }
         }
     }
@@ -155,7 +156,7 @@ class AutoHbmService : Service(), SensorEventListener {
             return
         }
 
-        val now = System.currentTimeMillis()
+        val now = SystemClock.elapsedRealtime()
         val lux = lastLux
         val threshold = AutoHbmController.getThreshold(this)
         val deactivateThreshold = (threshold * HYSTERESIS_FACTOR).toInt()
@@ -164,15 +165,31 @@ class AutoHbmService : Service(), SensorEventListener {
         val maxActiveMs = AutoHbmController.getMaxActiveTime(this) * 1000L
         val cooldownMs = AutoHbmController.getCooldownTime(this) * 1000L
         val temperatureCelsius = AutoHbmController.readSocTemperatureC()
-        val thermalBlocked = temperatureCelsius != null && temperatureCelsius >= AutoHbmController.getTemperatureLimit(this)
-        val cooldownActive = cooldownUntil > now
+        val tempLimit = AutoHbmController.getTemperatureLimit(this)
         val hbmCurrentlyActive = AutoHbmController.isHbmActive(this)
+        val effectiveTempLimit = if (hbmCurrentlyActive) tempLimit.toFloat() else (tempLimit - THERMAL_RECOVERY_DELTA_C)
+        val thermalBlocked = temperatureCelsius != null && temperatureCelsius >= effectiveTempLimit
+        val cooldownActive = cooldownUntil > now
+
+        if (isRamping) {
+            if (thermalBlocked) {
+                deactivateHighBrightnessImmediate()
+                cooldownUntil = now + cooldownMs
+                aboveThresholdAt = 0L
+                belowThresholdAt = 0L
+            }
+            AutoHbmController.publishState(this, lux, temperatureCelsius)
+            return
+        }
 
         if (thermalBlocked || cooldownActive) {
             aboveThresholdAt = 0L
             belowThresholdAt = 0L
             if (hbmCurrentlyActive) {
-                cancelRampAndDeactivate()
+                cancelRampAndDeactivateAsync()
+                if (thermalBlocked) {
+                    cooldownUntil = now + cooldownMs
+                }
             } else {
                 AutoHbmController.restoreAutoBrightnessIfNeeded(this)
             }
@@ -194,8 +211,12 @@ class AutoHbmService : Service(), SensorEventListener {
 
             if (!hbmCurrentlyActive && now - aboveThresholdAt >= enableDelayMs) {
                 val gen = ++rampGeneration
-                if (AutoHbmController.activateHighBrightness(
+                val handler = evaluatorHandler
+                if (handler != null) {
+                    isRamping = true
+                    AutoHbmController.activateHighBrightnessAsync(
                         context = this,
+                        handler = handler,
                         smoothRamp = AutoHbmController.isSmoothRampEnabled(this),
                         rampTimeMs = AutoHbmController.getRampTimeMs(this),
                         shouldContinue = {
@@ -204,13 +225,20 @@ class AutoHbmService : Service(), SensorEventListener {
                                 AutoHbmController.isEnabled(this) &&
                                 isInteractive() &&
                                 lastLux >= deactivateThreshold
+                        },
+                        onComplete = { success ->
+                            if (rampGeneration == gen) {
+                                isRamping = false
+                                if (success) {
+                                    activatedAt = SystemClock.elapsedRealtime()
+                                } else {
+                                    Log.w(TAG, "Failed to activate high brightness asynchronously")
+                                    deactivateHighBrightnessImmediate()
+                                }
+                                AutoHbmController.publishState(this, lastLux)
+                            }
                         }
                     )
-                ) {
-                    activatedAt = System.currentTimeMillis()
-                } else if (rampGeneration == gen) {
-                    Log.w(TAG, "Failed to activate high brightness")
-                    deactivateHighBrightnessImmediate()
                 }
             }
 
@@ -219,9 +247,9 @@ class AutoHbmService : Service(), SensorEventListener {
                     Log.w(TAG, "Failed to maintain high brightness")
                 }
                 if (activatedAt == 0L) activatedAt = now
-                if (System.currentTimeMillis() - activatedAt >= maxActiveMs) {
-                    cancelRampAndDeactivate()
-                    cooldownUntil = System.currentTimeMillis() + cooldownMs
+                if (now - activatedAt >= maxActiveMs) {
+                    cancelRampAndDeactivateAsync()
+                    cooldownUntil = now + cooldownMs
                     aboveThresholdAt = 0L
                     belowThresholdAt = 0L
                 }
@@ -232,7 +260,7 @@ class AutoHbmService : Service(), SensorEventListener {
             if (hbmCurrentlyActive) {
                 if (belowThresholdAt == 0L) belowThresholdAt = now
                 if (now - belowThresholdAt >= disableDelayMs) {
-                    cancelRampAndDeactivate()
+                    cancelRampAndDeactivateAsync()
                     belowThresholdAt = 0L
                 }
             } else {
@@ -249,22 +277,31 @@ class AutoHbmService : Service(), SensorEventListener {
     // =====================================================================
 
     /**
-     * Cancel any in-progress ramp and deactivate with smooth ramp.
+     * Cancel any in-progress ramp and deactivate with smooth ramp asynchronously.
      */
-    private fun cancelRampAndDeactivate() {
+    private fun cancelRampAndDeactivateAsync() {
+        val handler = evaluatorHandler ?: return
         val gen = ++rampGeneration
-        if (!AutoHbmController.restoreOriginalBrightness(
-                context = this,
-                smoothRamp = AutoHbmController.isSmoothRampEnabled(this),
-                rampTimeMs = AutoHbmController.getRampTimeMs(this),
-                shouldContinue = { rampGeneration == gen && evaluatorRunning }
-            )
-        ) {
-            // If ramp was cancelled, force immediate restore
-            AutoHbmController.restoreOriginalBrightness(context = this, smoothRamp = false)
-        }
-        AutoHbmController.restoreAutoBrightnessIfNeeded(this)
-        activatedAt = 0L
+        isRamping = true
+
+        AutoHbmController.restoreOriginalBrightnessAsync(
+            context = this,
+            handler = handler,
+            smoothRamp = AutoHbmController.isSmoothRampEnabled(this),
+            rampTimeMs = AutoHbmController.getRampTimeMs(this),
+            shouldContinue = { rampGeneration == gen && evaluatorRunning },
+            onComplete = { success ->
+                if (rampGeneration == gen) {
+                    isRamping = false
+                    if (!success) {
+                        AutoHbmController.restoreOriginalBrightnessImmediate(this)
+                    }
+                    AutoHbmController.restoreAutoBrightnessIfNeeded(this)
+                    activatedAt = 0L
+                    AutoHbmController.publishState(this, lastLux)
+                }
+            }
+        )
     }
 
     /**
@@ -272,16 +309,10 @@ class AutoHbmService : Service(), SensorEventListener {
      */
     private fun deactivateHighBrightnessImmediate() {
         rampGeneration++
-        AutoHbmController.restoreOriginalBrightness(context = this, smoothRamp = false)
+        isRamping = false
+        AutoHbmController.restoreOriginalBrightnessImmediate(this)
         AutoHbmController.restoreAutoBrightnessIfNeeded(this)
         activatedAt = 0L
-    }
-
-    /**
-     * Legacy wrapper — kept for compatibility with paths that may still call it.
-     */
-    private fun deactivateHighBrightness() {
-        cancelRampAndDeactivate()
     }
 
     // =====================================================================
@@ -292,7 +323,7 @@ class AutoHbmService : Service(), SensorEventListener {
         val manager = sensorManager ?: return
         val sensor = lightSensor ?: return
         if (!listening) {
-            listening = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL)
+            listening = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL, evaluatorHandler)
         }
         if (listening) {
             startEvaluatorLoop()
@@ -307,6 +338,7 @@ class AutoHbmService : Service(), SensorEventListener {
         stopEvaluatorLoop()
         belowThresholdAt = 0L
         cooldownUntil = 0L
+        isRamping = false
     }
 
     private fun startEvaluatorLoop() {
@@ -354,6 +386,7 @@ class AutoHbmService : Service(), SensorEventListener {
 
     companion object {
         private const val TAG = "AutoHbmService"
+        private const val THERMAL_RECOVERY_DELTA_C = 2.0f
         // Hysteresis: deactivate at 85% of activation threshold to prevent flicker
         private const val HYSTERESIS_FACTOR = 0.85f
     }

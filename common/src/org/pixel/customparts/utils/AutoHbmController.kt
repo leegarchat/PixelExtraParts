@@ -2,8 +2,12 @@ package org.pixel.customparts.utils
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Interpolator
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.services.AutoHbmService
 import java.io.File
@@ -46,6 +50,8 @@ object AutoHbmController {
     private const val NO_ORIGINAL_BRIGHTNESS = -1
     private const val NO_AUTO_BRIGHTNESS_STATE = -1
     private const val NO_TEMPERATURE = -1f
+    private const val FRAME_INTERVAL_MS = 16L
+    private val rampInterpolator: Interpolator = AccelerateDecelerateInterpolator()
     private const val THERMAL_ROOT = "/sys/class/thermal"
     private const val BATTERY_TEMP_PATH = "/sys/class/power_supply/battery/temp"
     private val SOC_THERMAL_KEYWORDS = listOf(
@@ -236,35 +242,49 @@ object AutoHbmController {
         if (isEnabled(context) && isSupported()) {
             context.startService(Intent(context, AutoHbmService::class.java))
         } else {
-            restoreOriginalBrightness(context)
+            restoreOriginalBrightnessImmediate(context)
             restoreAutoBrightnessIfNeeded(context)
             context.stopService(Intent(context, AutoHbmService::class.java))
         }
     }
 
-    fun activateHighBrightness(
+    fun activateHighBrightnessAsync(
         context: Context,
+        handler: Handler,
         smoothRamp: Boolean = isSmoothRampEnabled(context),
         rampTimeMs: Int = getRampTimeMs(context),
-        shouldContinue: () -> Boolean = { true }
-    ): Boolean {
-        val maxBrightness = readMaxBrightness() ?: return false
-        val currentBrightness = readBrightness() ?: return false
+        shouldContinue: () -> Boolean = { true },
+        onComplete: (success: Boolean) -> Unit
+    ) {
+        val maxBrightness = readMaxBrightness() ?: run { onComplete(false); return }
+        val currentBrightness = readBrightness() ?: run { onComplete(false); return }
 
         if (!isHbmActive(context)) {
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, currentBrightness)
         }
 
-        val success = if (smoothRamp && rampTimeMs > 0 && currentBrightness != maxBrightness) {
-            rampBrightness(currentBrightness, maxBrightness, rampTimeMs, shouldContinue)
+        if (smoothRamp && rampTimeMs > 0 && currentBrightness != maxBrightness) {
+            rampBrightnessAsync(
+                handler = handler,
+                from = currentBrightness,
+                to = maxBrightness,
+                durationMs = rampTimeMs,
+                shouldContinue = shouldContinue
+            ) { success ->
+                if (success) {
+                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+                }
+                onComplete(success)
+            }
         } else {
-            writeBrightness(maxBrightness)
+            val success = writeBrightness(maxBrightness)
+            if (success) {
+                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+            }
+            onComplete(success)
         }
-        if (success) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
-        }
-        return success
     }
 
     fun maintainHighBrightness(context: Context): Boolean {
@@ -283,33 +303,65 @@ object AutoHbmController {
         return success
     }
 
-    fun restoreOriginalBrightness(
+    fun restoreOriginalBrightnessAsync(
         context: Context,
-        smoothRamp: Boolean = false,
+        handler: Handler,
+        smoothRamp: Boolean = isSmoothRampEnabled(context),
         rampTimeMs: Int = getRampTimeMs(context),
-        shouldContinue: () -> Boolean = { true }
-    ): Boolean {
+        shouldContinue: () -> Boolean = { true },
+        onComplete: (success: Boolean) -> Unit
+    ) {
         val originalBrightness = SettingsCompat.getInt(
             context,
             SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS,
             NO_ORIGINAL_BRIGHTNESS
         )
 
-        val success = if (originalBrightness >= 0) {
-            val currentBrightness = readBrightness()
-            if (smoothRamp && rampTimeMs > 0 && currentBrightness != null && currentBrightness != originalBrightness) {
-                rampBrightness(currentBrightness, originalBrightness, rampTimeMs, shouldContinue)
-            } else {
-                writeBrightness(originalBrightness)
-            }
-        } else {
-            true
+        if (originalBrightness < 0) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
+            onComplete(true)
+            return
         }
 
+        val currentBrightness = readBrightness() ?: originalBrightness
+        if (smoothRamp && rampTimeMs > 0 && currentBrightness != originalBrightness) {
+            rampBrightnessAsync(
+                handler = handler,
+                from = currentBrightness,
+                to = originalBrightness,
+                durationMs = rampTimeMs,
+                shouldContinue = shouldContinue
+            ) { success ->
+                if (success) {
+                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
+                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
+                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, originalBrightness)
+                }
+                onComplete(success)
+            }
+        } else {
+            val success = writeBrightness(originalBrightness)
+            if (success) {
+                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
+                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
+                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, originalBrightness)
+            }
+            onComplete(success)
+        }
+    }
+
+    fun restoreOriginalBrightnessImmediate(context: Context): Boolean {
+        val originalBrightness = SettingsCompat.getInt(
+            context,
+            SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS,
+            NO_ORIGINAL_BRIGHTNESS
+        )
+        val target = if (originalBrightness >= 0) originalBrightness else (readBrightness() ?: return false)
+        val success = writeBrightness(target)
         if (success) {
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
-            readBrightness()?.let { SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, it) }
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, target)
         }
         return success
     }
@@ -421,27 +473,46 @@ object AutoHbmController {
             .isSuccess
     }
 
-    private fun rampBrightness(
+    fun rampBrightnessAsync(
+        handler: Handler,
         from: Int,
         to: Int,
         durationMs: Int,
-        shouldContinue: () -> Boolean
-    ): Boolean {
-        val clampedDuration = durationMs.coerceIn(MIN_RAMP_TIME_MS, MAX_RAMP_TIME_MS)
-        val steps = (clampedDuration / 50).coerceIn(1, 100)
-        val stepDelayMs = max(1, clampedDuration / steps).toLong()
+        shouldContinue: () -> Boolean,
+        onComplete: (success: Boolean) -> Unit
+    ) {
+        val clampedDuration = durationMs.coerceIn(MIN_RAMP_TIME_MS, MAX_RAMP_TIME_MS).toLong()
+        val startTime = SystemClock.elapsedRealtime()
         val upperBound = max(from, to).coerceAtLeast(1)
 
-        for (step in 1..steps) {
-            if (!shouldContinue()) return false
-            val progress = step.toFloat() / steps.toFloat()
-            val brightness = (from + ((to - from) * progress)).roundToInt().coerceIn(0, upperBound)
-            if (!writeBrightness(brightness)) return false
-            if (step < steps) {
-                runCatching { Thread.sleep(stepDelayMs) }
+        val frameRunnable = object : Runnable {
+            override fun run() {
+                if (!shouldContinue()) {
+                    onComplete(false)
+                    return
+                }
+
+                val elapsed = SystemClock.elapsedRealtime() - startTime
+                val fraction = (elapsed.toFloat() / clampedDuration).coerceIn(0f, 1f)
+                val interpolatedFraction = rampInterpolator.getInterpolation(fraction)
+                val currentBrightness = (from + ((to - from) * interpolatedFraction))
+                    .roundToInt()
+                    .coerceIn(0, upperBound)
+
+                if (!writeBrightness(currentBrightness)) {
+                    onComplete(false)
+                    return
+                }
+
+                if (fraction < 1f) {
+                    handler.postDelayed(this, FRAME_INTERVAL_MS)
+                } else {
+                    val finalSuccess = writeBrightness(to)
+                    onComplete(finalSuccess && shouldContinue())
+                }
             }
         }
-        return writeBrightness(to)
+        handler.post(frameRunnable)
     }
 
     private fun getScreenBrightnessMode(context: Context): Int? {
