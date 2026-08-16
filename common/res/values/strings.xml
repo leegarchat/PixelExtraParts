@@ -206,9 +206,17 @@
     <string name="tile_already_added">Tile is already added</string>
     <string name="tile_request_unavailable">Tile request is unavailable on this build</string>
 
-    <string name="auto_hbm_title">Auto HBM</string>
-    <string name="auto_hbm_summary">Automatically raise panel brightness in strong light</string>
-    <string name="auto_hbm_enable_title">Use automatic HBM</string>
+    <string name="auto_hbm_title">HBM</string>
+    <string name="auto_hbm_summary">Raise panel brightness in strong light</string>
+    <string name="auto_hbm_enable_title">Enable automatic HBM</string>
+    <string name="auto_hbm_mode_title">HBM mode</string>
+    <string name="auto_hbm_mode_auto">Automatic (sensor-based)</string>
+    <string name="auto_hbm_mode_permanent">Permanent maximum</string>
+    <string name="auto_hbm_permanent_title">Permanent HBM</string>
+    <string name="auto_hbm_permanent_summary">Always keep maximum screen brightness until disabled. Ignores auto-threshold settings below.</string>
+    <string name="auto_hbm_brightness_lock_title">Lock brightness</string>
+    <string name="auto_hbm_brightness_lock_summary">Lock screen brightness at maximum so the system cannot lower it. Other apps (e.g. MX Player) may still override temporarily.</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Auto settings are disabled in permanent mode</string>
     <string name="auto_hbm_current_lux_title">Current light level</string>
     <string name="auto_hbm_threshold_title">Light threshold</string>
     <string name="auto_hbm_enable_time_title">Enable delay</string>

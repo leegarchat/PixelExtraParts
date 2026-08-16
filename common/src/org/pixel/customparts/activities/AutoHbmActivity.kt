@@ -80,6 +80,7 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoHbmController
+import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
@@ -117,6 +118,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var enabled by remember { mutableStateOf(AutoHbmController.isEnabled(context)) }
+    var hbmMode by remember { mutableIntStateOf(if (AutoHbmController.isPermanentMode(context)) SettingsKeys.HBM_MODE_PERMANENT else SettingsKeys.HBM_MODE_AUTO) }
+    var brightnessLockEnabled by remember { mutableStateOf(AutoHbmController.isBrightnessLockEnabled(context)) }
     var threshold by remember { mutableIntStateOf(AutoHbmController.getThreshold(context)) }
     var enableTime by remember { mutableIntStateOf(AutoHbmController.getEnableTime(context)) }
     var disableTime by remember { mutableIntStateOf(AutoHbmController.getDisableTime(context)) }
@@ -257,12 +260,45 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        GenericSwitchRow(
+                            title = dynamicStringResource(R.string.auto_hbm_permanent_title),
+                            summary = dynamicStringResource(R.string.auto_hbm_permanent_summary),
+                            checked = hbmMode == SettingsKeys.HBM_MODE_PERMANENT,
+                            enabled = enabled && supported,
+                            onCheckedChange = {
+                                hbmMode = if (it) SettingsKeys.HBM_MODE_PERMANENT else SettingsKeys.HBM_MODE_AUTO
+                                AutoHbmController.setHbmMode(context, hbmMode)
+                            }
+                        )
+
+                        GenericSwitchRow(
+                            title = dynamicStringResource(R.string.auto_hbm_brightness_lock_title),
+                            summary = dynamicStringResource(R.string.auto_hbm_brightness_lock_summary),
+                            checked = brightnessLockEnabled,
+                            enabled = enabled && supported,
+                            onCheckedChange = {
+                                brightnessLockEnabled = it
+                                AutoHbmController.setBrightnessLock(context, it)
+                            }
+                        )
+
+                        if (hbmMode == SettingsKeys.HBM_MODE_PERMANENT) {
+                            Text(
+                                text = dynamicStringResource(R.string.auto_hbm_auto_disabled_in_permanent),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                            )
+                        }
+
+                        val autoSettingsEnabled = enabled && supported && hbmMode == SettingsKeys.HBM_MODE_AUTO
+
                         SliderSetting(
                             title = dynamicStringResource(R.string.auto_hbm_threshold_title),
                             value = threshold,
                             range = AutoHbmController.MIN_THRESHOLD_LUX..AutoHbmController.MAX_THRESHOLD_LUX,
                             unit = "lx",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$threshold lx",
                             onValueChange = {
                                 threshold = it
@@ -279,7 +315,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = enableTime,
                             range = AutoHbmController.MIN_TIME_SECONDS..AutoHbmController.MAX_TIME_SECONDS,
                             unit = "s",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$enableTime s",
                             onValueChange = {
                                 enableTime = it
@@ -296,7 +332,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = disableTime,
                             range = AutoHbmController.MIN_TIME_SECONDS..AutoHbmController.MAX_TIME_SECONDS,
                             unit = "s",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$disableTime s",
                             onValueChange = {
                                 disableTime = it
@@ -312,7 +348,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             title = dynamicStringResource(R.string.auto_hbm_smooth_ramp_title),
                             summary = dynamicStringResource(R.string.auto_hbm_smooth_ramp_summary),
                             checked = smoothRampEnabled,
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             onCheckedChange = {
                                 smoothRampEnabled = it
                                 AutoHbmController.setSmoothRampEnabled(context, it)
@@ -325,7 +361,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 value = rampTimeMs,
                                 range = AutoHbmController.MIN_RAMP_TIME_MS..AutoHbmController.MAX_RAMP_TIME_MS,
                                 unit = "ms",
-                                enabled = enabled && supported,
+                                enabled = autoSettingsEnabled,
                                 valueText = "$rampTimeMs ms",
                                 onValueChange = {
                                     rampTimeMs = it
@@ -343,7 +379,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = maxActiveTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$maxActiveTime s",
                             onValueChange = {
                                 maxActiveTime = it
@@ -360,7 +396,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = cooldownTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$cooldownTime s",
                             onValueChange = {
                                 cooldownTime = it
@@ -377,7 +413,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = checkIntervalMs,
                             range = AutoHbmController.MIN_CHECK_INTERVAL_MS..AutoHbmController.MAX_CHECK_INTERVAL_MS,
                             unit = "ms",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$checkIntervalMs ms",
                             onValueChange = {
                                 checkIntervalMs = it
@@ -394,7 +430,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = temperatureLimit,
                             range = AutoHbmController.MIN_TEMPERATURE_LIMIT_C..AutoHbmController.MAX_TEMPERATURE_LIMIT_C,
                             unit = "°C",
-                            enabled = enabled && supported,
+                            enabled = autoSettingsEnabled,
                             valueText = "$temperatureLimit°C",
                             onValueChange = {
                                 temperatureLimit = it

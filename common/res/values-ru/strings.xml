@@ -207,9 +207,17 @@
     <string name="tile_already_added">Плитка уже добавлена</string>
     <string name="tile_request_unavailable">Добавление плитки недоступно в этой сборке</string>
 
-    <string name="auto_hbm_title">Auto HBM</string>
-    <string name="auto_hbm_summary">Автоматически поднимает яркость панели при сильном освещении</string>
-    <string name="auto_hbm_enable_title">Использовать Auto HBM</string>
+    <string name="auto_hbm_title">HBM</string>
+    <string name="auto_hbm_summary">Поднимает яркость панели при сильном освещении</string>
+    <string name="auto_hbm_enable_title">Включить автоматический HBM</string>
+    <string name="auto_hbm_mode_title">Режим HBM</string>
+    <string name="auto_hbm_mode_auto">Автоматический (по датчику)</string>
+    <string name="auto_hbm_mode_permanent">Постоянный максимум</string>
+    <string name="auto_hbm_permanent_title">Постоянный HBM</string>
+    <string name="auto_hbm_permanent_summary">Всегда поддерживать максимальную яркость экрана, пока не выключен. Настройки ниже игнорируются.</string>
+    <string name="auto_hbm_brightness_lock_title">Блокировка яркости</string>
+    <string name="auto_hbm_brightness_lock_summary">Зафиксировать яркость на максимум, чтобы система не могла её опустить. Другие приложения (например, MX Player) могут временно переопределять.</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Настройки авто режима отключены в постоянном режиме</string>
     <string name="auto_hbm_current_lux_title">Текущий уровень света</string>
     <string name="auto_hbm_threshold_title">Порог освещения</string>
     <string name="auto_hbm_enable_time_title">Задержка включения</string>

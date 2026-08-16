@@ -233,6 +233,40 @@ object AutoHbmController {
         return readSystemProperty("ro.soc.model") ?: "SoC"
     }
 
+    fun isPermanentMode(context: Context): Boolean {
+        return SettingsCompat.getInt(context, SettingsKeys.AUTO_HBM_MODE, SettingsKeys.HBM_MODE_AUTO) == SettingsKeys.HBM_MODE_PERMANENT
+    }
+
+    fun setHbmMode(context: Context, mode: Int) {
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_MODE, mode)
+        syncService(context)
+    }
+
+    fun isBrightnessLockEnabled(context: Context): Boolean {
+        return SettingsCompat.isEnabled(context, SettingsKeys.AUTO_HBM_BRIGHTNESS_LOCK, false)
+    }
+
+    fun setBrightnessLock(context: Context, enabled: Boolean) {
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_BRIGHTNESS_LOCK, if (enabled) 1 else 0)
+        syncService(context)
+    }
+
+    fun isBrightnessLocked(context: Context): Boolean {
+        val maxBrightness = readMaxBrightness() ?: 0
+        val currentBrightness = readBrightness() ?: 0
+        return isBrightnessLockEnabled(context) && currentBrightness >= maxBrightness
+    }
+
+    fun forceMaxBrightness(context: Context): Boolean {
+        val maxBrightness = readMaxBrightness() ?: return false
+        val success = writeBrightness(maxBrightness)
+        if (success) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+        }
+        return success
+    }
+
     fun setEnabled(context: Context, enabled: Boolean) {
         SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ENABLED, if (enabled) 1 else 0)
         syncService(context)

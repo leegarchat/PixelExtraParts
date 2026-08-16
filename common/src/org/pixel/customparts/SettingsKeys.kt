@@ -23,6 +23,12 @@ object SettingsKeys {
     const val AUTO_HBM_TEMPERATURE_LIMIT = "pixelparts_auto_hbm_temperature_limit"
     const val AUTO_HBM_AUTO_BRIGHTNESS_WAS_ENABLED = "pixelparts_auto_hbm_auto_brightness_was_enabled"
     const val AUTO_HBM_LAST_TEMPERATURE = "pixelparts_auto_hbm_last_temperature"
+    const val AUTO_HBM_MODE = "pixelparts_auto_hbm_mode"
+    const val AUTO_HBM_PERMANENT = "pixelparts_auto_hbm_permanent"
+    const val AUTO_HBM_BRIGHTNESS_LOCK = "pixelparts_auto_hbm_brightness_lock"
+
+    const val HBM_MODE_AUTO = 0
+    const val HBM_MODE_PERMANENT = 1
 
     const val THERMAL_TILE_PROFILE_QUEUE = "pixelparts_thermal_tile_profile_queue"
     const val THERMAL_TILE_PROFILE_QUEUE_INDEX = "pixelparts_thermal_tile_profile_queue_index"

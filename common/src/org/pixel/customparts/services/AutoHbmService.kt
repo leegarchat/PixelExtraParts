@@ -150,7 +150,7 @@ class AutoHbmService : Service(), SensorEventListener {
     // =====================================================================
 
     private fun evaluateState() {
-        if (!AutoHbmController.isEnabled(this) || !AutoHbmController.isSupported() || !isInteractive()) {
+        if (!AutoHbmController.isEnabled(this) || !AutoHbmController.isSupported()) {
             deactivateHighBrightnessImmediate()
             AutoHbmController.publishState(this, lastLux)
             return
@@ -170,6 +170,93 @@ class AutoHbmService : Service(), SensorEventListener {
         val effectiveTempLimit = if (hbmCurrentlyActive) tempLimit.toFloat() else (tempLimit - THERMAL_RECOVERY_DELTA_C)
         val thermalBlocked = temperatureCelsius != null && temperatureCelsius >= effectiveTempLimit
         val cooldownActive = cooldownUntil > now
+
+        // Permanent HBM mode — keep max brightness, ignore auto settings
+        if (AutoHbmController.isPermanentMode(this)) {
+            if (!isInteractive()) {
+                if (hbmCurrentlyActive) {
+                    deactivateHighBrightnessImmediate()
+                }
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            if (isRamping && thermalBlocked) {
+                deactivateHighBrightnessImmediate()
+                cooldownUntil = now + cooldownMs
+                aboveThresholdAt = 0L
+                belowThresholdAt = 0L
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            if (thermalBlocked) {
+                if (hbmCurrentlyActive) {
+                    deactivateHighBrightnessImmediate()
+                    cooldownUntil = now + cooldownMs
+                }
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            if (cooldownActive) {
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            if (cooldownUntil != 0L) {
+                cooldownUntil = 0L
+            }
+
+            val brightnessLockEnabled = AutoHbmController.isBrightnessLockEnabled(this)
+            if (brightnessLockEnabled) {
+                AutoHbmController.disableAutoBrightnessIfNeeded(this)
+                AutoHbmController.forceMaxBrightness(this)
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            val maxBrightness = AutoHbmController.readMaxBrightness()
+            if (maxBrightness == null) {
+                deactivateHighBrightnessImmediate()
+                AutoHbmController.publishState(this, lux, temperatureCelsius)
+                return
+            }
+
+            if (!isRamping && !hbmCurrentlyActive) {
+                val gen = ++rampGeneration
+                val handler = evaluatorHandler
+                if (handler != null) {
+                    isRamping = true
+                    AutoHbmController.activateHighBrightnessAsync(
+                        context = this,
+                        handler = handler,
+                        smoothRamp = AutoHbmController.isSmoothRampEnabled(this),
+                        rampTimeMs = AutoHbmController.getRampTimeMs(this),
+                        shouldContinue = { rampGeneration == gen && evaluatorRunning && isInteractive() },
+                        onComplete = { success ->
+                            if (rampGeneration == gen) {
+                                isRamping = false
+                                if (success) {
+                                    activatedAt = SystemClock.elapsedRealtime()
+                                } else {
+                                    Log.w(TAG, "Failed to activate permanent HBM")
+                                    deactivateHighBrightnessImmediate()
+                                }
+                                AutoHbmController.publishState(this, lastLux)
+                            }
+                        }
+                    )
+                }
+            }
+
+            if (hbmCurrentlyActive) {
+                AutoHbmController.maintainHighBrightness(this)
+            }
+
+            AutoHbmController.publishState(this, lux, temperatureCelsius)
+            return
+        }
 
         if (isRamping) {
             if (thermalBlocked) {
