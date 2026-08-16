@@ -239,6 +239,10 @@
     <string name="auto_hbm_tile_monitoring">Monitoring</string>
     <string name="auto_hbm_tile_active">Max brightness</string>
     <string name="auto_hbm_tile_unsupported">Unsupported</string>
+    <string name="permanent_hbm_title">Permanent HBM</string>
+    <string name="permanent_hbm_tile_on">Active</string>
+    <string name="permanent_hbm_tile_off">Off</string>
+    <string name="permanent_hbm_tile_unsupported">Unsupported</string>
 
     <string name="sysui_settings_title">SystemUI Settings</string>
     <string name="sysui_lockscreen_title">Lockscreen Settings</string>

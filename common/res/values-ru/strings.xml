@@ -240,6 +240,10 @@
     <string name="auto_hbm_tile_monitoring">Мониторинг</string>
     <string name="auto_hbm_tile_active">Макс. яркость</string>
     <string name="auto_hbm_tile_unsupported">Не поддерживается</string>
+    <string name="permanent_hbm_title">Постоянный HBM</string>
+    <string name="permanent_hbm_tile_on">Активен</string>
+    <string name="permanent_hbm_tile_off">Выкл.</string>
+    <string name="permanent_hbm_tile_unsupported">Не поддерживается</string>
 
     <string name="sysui_settings_title">Настройки SystemUI</string>
     <string name="sysui_lockscreen_title">Настройки экрана блокировки</string>

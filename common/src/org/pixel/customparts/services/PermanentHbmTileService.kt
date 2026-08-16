@@ -8,7 +8,7 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.utils.AutoHbmController
 
-class AutoHbmTileService : TileService() {
+class PermanentHbmTileService : TileService() {
     private val toggleInProgress = AtomicBoolean(false)
 
     override fun onStartListening() {
@@ -29,49 +29,45 @@ class AutoHbmTileService : TileService() {
             runCatching {
                 if (!AutoHbmController.isSupported()) return@runCatching
 
-                val currentlyEnabled = AutoHbmController.isEnabled(this) && !AutoHbmController.isPermanentMode(this)
-                if (currentlyEnabled) {
-                    // Disabling auto HBM
+                val currentlyActive = AutoHbmController.isPermanentMode(this)
+                if (currentlyActive) {
+                    // Disable permanent mode, also disable HBM entirely
                     AutoHbmController.setEnabled(this, false)
-                } else {
-                    // Enabling auto HBM - disable permanent mode if active
                     AutoHbmController.setHbmMode(this, SettingsKeys.HBM_MODE_AUTO)
+                } else {
+                    // Enable permanent mode
                     AutoHbmController.setEnabled(this, true)
+                    AutoHbmController.setHbmMode(this, SettingsKeys.HBM_MODE_PERMANENT)
                 }
             }.onFailure {
-                Log.e(TAG, "Failed to toggle Auto HBM tile", it)
+                Log.e(TAG, "Failed to toggle Permanent HBM tile", it)
             }
 
             mainExecutor.execute {
                 toggleInProgress.set(false)
                 updateTile()
             }
-        }, "PixelParts-AutoHbmTileToggle").start()
+        }, "PixelParts-PermanentHbmTileToggle").start()
     }
 
     private fun updateTile() {
         val tile = qsTile ?: return
         val supported = AutoHbmController.isSupported()
-        val enabled = AutoHbmController.isEnabled(this) && !AutoHbmController.isPermanentMode(this)
+        val active = AutoHbmController.isPermanentMode(this)
 
-        tile.label = getString(R.string.auto_hbm_title)
+        tile.label = getString(R.string.permanent_hbm_title)
         tile.subtitle = getString(
             when {
-                !supported -> R.string.auto_hbm_tile_unsupported
-                enabled && AutoHbmController.isHbmActive(this) -> R.string.auto_hbm_tile_active
-                enabled -> R.string.auto_hbm_tile_monitoring
-                else -> R.string.auto_hbm_tile_off
+                !supported -> R.string.permanent_hbm_tile_unsupported
+                active -> R.string.permanent_hbm_tile_on
+                else -> R.string.permanent_hbm_tile_off
             }
         )
-        tile.state = when {
-            !supported -> Tile.STATE_UNAVAILABLE
-            enabled -> Tile.STATE_ACTIVE
-            else -> Tile.STATE_INACTIVE
-        }
+        tile.state = if (!supported) Tile.STATE_UNAVAILABLE else if (active) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         tile.updateTile()
     }
 
     companion object {
-        private const val TAG = "AutoHbmTileService"
+        private const val TAG = "PermanentHbmTileService"
     }
 }
