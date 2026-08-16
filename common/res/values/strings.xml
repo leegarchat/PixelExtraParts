@@ -208,6 +208,28 @@
 
     <string name="auto_hbm_title">HBM</string>
     <string name="auto_hbm_summary">Raise panel brightness in strong light</string>
+    <string name="auto_hbm_permanent_title">Permanent HBM</string>
+    <string name="auto_hbm_permanent_summary">Keep maximum brightness always on</string>
+    <string name="auto_hbm_permanent_unsupported">Not supported on this device</string>
+    <string name="auto_hbm_brightness_lock_title">Lock brightness</string>
+    <string name="auto_hbm_brightness_lock_summary">Lock max brightness to prevent system dimming</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Auto HBM settings disabled in permanent mode</string>
+
+    <string name="dtw_title">Double Tap to Wake</string>
+    <string name="dtw_summary">Wake screen with a double tap gesture</string>
+    <string name="dtw_enable_title">Enable DT2W</string>
+    <string name="dtw_enable_summary">Enable double tap to wake on screen off</string>
+    <string name="dtw_tap_count_title">Tap count</string>
+    <string name="dtw_tap_count_summary">Number of taps to wake (1-3)</string>
+    <string name="dtw_timeout_title">Tap timeout</string>
+    <string name="dtw_timeout_summary">Max interval between taps</string>
+    <string name="dtw_proximity_check_title">Proximity check</string>
+    <string name="dtw_proximity_check_summary">Check proximity sensor to prevent pocket wake</string>
+    <string name="dtw_coordinate_check_title">Coordinate check</string>
+    <string name="dtw_coordinate_check_summary">Check tap coordinates match within threshold</string>
+    <string name="dtw_max_distance_title">Max distance</string>
+    <string name="dtw_max_distance_summary">Max distance between taps in dp</string>
+    <string name="dtw_unsupported">Device does not support single touch sensor</string>
     <string name="auto_hbm_enable_title">Enable automatic HBM</string>
     <string name="auto_hbm_mode_title">HBM mode</string>
     <string name="auto_hbm_mode_auto">Automatic (sensor-based)</string>
