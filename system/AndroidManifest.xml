@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.DEVICE_POWER"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS"/>
     <uses-permission android:name="android.permission.MONITOR_INPUT"/>
     <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
     <uses-permission android:name="android.permission.REAL_GET_TASKS"/>
@@ -248,6 +250,26 @@
                 android:name="com.android.settings.summary"
                 android:resource="@string/auto_hbm_summary" />
         </activity>
+
+        <activity
+            android:name=".activities.DtwSettingsActivity"
+            android:label="@string/dtw_title"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+            </intent-filter>
+            <meta-data
+                android:name="com.android.settings.category"
+                android:value="com.android.settings.category.ia.display" />
+            <meta-data
+                android:name="com.android.settings.order"
+                android:value="902" />
+            <meta-data
+                android:name="com.android.settings.summary"
+                android:resource="@string/dtw_summary" />
+        </activity>
+
         <activity
             android:name=".activities.TileHandlerActivity"
             android:exported="true"
@@ -344,6 +366,10 @@
 
         <service
             android:name=".services.AutoHbmService"
+            android:exported="false" />
+
+        <service
+            android:name=".services.DtwSensorService"
             android:exported="false" />
 
         <service
