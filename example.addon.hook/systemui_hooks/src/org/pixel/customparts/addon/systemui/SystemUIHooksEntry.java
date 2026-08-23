@@ -40,7 +40,7 @@ public class SystemUIHooksEntry implements IAddonHook {
 
     @Override
     public String getVersion() {
-        return "1.0";
+        return "2.1.0";
     }
 
     @Override

@@ -3,7 +3,7 @@
     "name": "SystemUI Hooks",
     "author": "LeeGarChat",
     "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
     "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/systemui_hooks.json",
@@ -35,42 +35,6 @@
             "targetActivity": "SystemUISettingsActivity",
             "priority": 500,
             "settings": [
-                {
-                    "key": "systemui_lockscreen_dt2w_group",
-                    "type": "group",
-                    "title": "Double tap to wake",
-                    "description": "Wake-from-doze settings.",
-                    "mode": "inline",
-                    "icon": "Rounded.TouchApp",
-                    "iconType": "app",
-                    "iconShape": "circle",
-                    "iconSize": 20,
-                    "settings": [
-                        {
-                            "key": "doze_double_tap_hook_pine",
-                            "title": "Enable double tap",
-                            "description": "SystemUI will handle the second tap on the lock screen.",
-                            "type": "switch",
-                            "provider": "global",
-                            "default": false
-                        },
-                        {
-                            "key": "doze_double_tap_timeout_pine",
-                            "title": "Second tap timeout",
-                            "description": "Wait window for the second tap.",
-                            "type": "int",
-                            "provider": "global",
-                            "default": 400,
-                            "min": 300,
-                            "max": 1000,
-                            "step": 50,
-                            "unit": "ms",
-                            "enabledIfAll": [
-                                "doze_double_tap_hook_pine"
-                            ]
-                        }
-                    ]
-                },
                 {
                     "key": "systemui_battery_divider",
                     "type": "dashed_line",
@@ -230,22 +194,6 @@
                     "iconShape": "circle",
                     "iconSize": 20,
                     "settings": [
-                        {
-                            "key": "systemui_dt2w_tile",
-                            "title": "Double-tap tile",
-                            "description": "Toggles lock screen double tap to wake from QS.",
-                            "type": "tile",
-                            "unit": "On",
-                            "tileConfigurable": true,
-                            "targets": [
-                                {
-                                    "key": "doze_double_tap_hook_pine",
-                                    "label": "Double tap",
-                                    "mode": "toggle",
-                                    "pageId": "lockscreen"
-                                }
-                            ]
-                        },
                         {
                             "key": "systemui_charging_info_tile",
                             "title": "Charging info tile",
@@ -634,23 +582,6 @@
                             "description": "Настрой жесты пробуждения, зарядную информацию и динамические QS плитки SystemUI."
                         },
                         {
-                            "key": "systemui_lockscreen_dt2w_group",
-                            "title": "Двойной тап для пробуждения",
-                            "description": "Настройки пробуждения экрана из doze.",
-                            "settings": [
-                                {
-                                    "key": "doze_double_tap_hook_pine",
-                                    "title": "Включить двойной тап",
-                                    "description": "SystemUI будет обрабатывать второе касание по экрану блокировки."
-                                },
-                                {
-                                    "key": "doze_double_tap_timeout_pine",
-                                    "title": "Таймаут второго тапа",
-                                    "description": "Окно ожидания второго касания."
-                                }
-                            ]
-                        },
-                        {
                             "key": "systemui_battery_divider"
                         },
                         {
@@ -712,17 +643,6 @@
                             "title": "Быстрые плитки",
                             "description": "Динамические QS tiles для функций экрана блокировки.",
                             "settings": [
-                                {
-                                    "key": "systemui_dt2w_tile",
-                                    "title": "Плитка двойного тапа",
-                                    "description": "Выключено",
-                                    "targets": [
-                                        {
-                                            "key": "doze_double_tap_hook_pine",
-                                            "label": "Двойной тап"
-                                        }
-                                    ]
-                                },
                                 {
                                     "key": "systemui_charging_info_tile",
                                     "title": "Плитка зарядной информации",
@@ -902,23 +822,6 @@
                             "description": "Passe Weckgesten, Ladeinformationen und dynamische QS-Kacheln von SystemUI an."
                         },
                         {
-                            "key": "systemui_lockscreen_dt2w_group",
-                            "title": "Double tap to wake",
-                            "description": "Wake-from-doze settings.",
-                            "settings": [
-                                {
-                                    "key": "doze_double_tap_hook_pine",
-                                    "title": "Enable double tap",
-                                    "description": "SystemUI will handle the second tap on the lock screen."
-                                },
-                                {
-                                    "key": "doze_double_tap_timeout_pine",
-                                    "title": "Second tap timeout",
-                                    "description": "Wait window for the second tap."
-                                }
-                            ]
-                        },
-                        {
                             "key": "systemui_battery_divider"
                         },
                         {
@@ -980,17 +883,6 @@
                             "title": "Schnelleinstellungen-Kacheln",
                             "description": "Dynamic QS tiles for lock screen features.",
                             "settings": [
-                                {
-                                    "key": "systemui_dt2w_tile",
-                                    "title": "Double-tap tile",
-                                    "description": "Aus",
-                                    "targets": [
-                                        {
-                                            "key": "doze_double_tap_hook_pine",
-                                            "label": "Double tap"
-                                        }
-                                    ]
-                                },
                                 {
                                     "key": "systemui_charging_info_tile",
                                     "title": "Charging info tile",
@@ -1170,23 +1062,6 @@
                             "description": "Ajuste les gestes de reveil, les infos de charge et les tuiles QS dynamiques SystemUI."
                         },
                         {
-                            "key": "systemui_lockscreen_dt2w_group",
-                            "title": "Double tap to wake",
-                            "description": "Wake-from-doze settings.",
-                            "settings": [
-                                {
-                                    "key": "doze_double_tap_hook_pine",
-                                    "title": "Enable double tap",
-                                    "description": "SystemUI will handle the second tap on the lock screen."
-                                },
-                                {
-                                    "key": "doze_double_tap_timeout_pine",
-                                    "title": "Second tap timeout",
-                                    "description": "Wait window for the second tap."
-                                }
-                            ]
-                        },
-                        {
                             "key": "systemui_battery_divider"
                         },
                         {
@@ -1248,17 +1123,6 @@
                             "title": "Tuiles QS",
                             "description": "Dynamic QS tiles for lock screen features.",
                             "settings": [
-                                {
-                                    "key": "systemui_dt2w_tile",
-                                    "title": "Double-tap tile",
-                                    "description": "Désactivé",
-                                    "targets": [
-                                        {
-                                            "key": "doze_double_tap_hook_pine",
-                                            "label": "Double tap"
-                                        }
-                                    ]
-                                },
                                 {
                                     "key": "systemui_charging_info_tile",
                                     "title": "Charging info tile",
@@ -1438,23 +1302,6 @@
                             "description": "Налаштуй жести пробудження, зарядну інформацію та динамічні QS плитки SystemUI."
                         },
                         {
-                            "key": "systemui_lockscreen_dt2w_group",
-                            "title": "Double tap to wake",
-                            "description": "Wake-from-doze settings.",
-                            "settings": [
-                                {
-                                    "key": "doze_double_tap_hook_pine",
-                                    "title": "Enable double tap",
-                                    "description": "SystemUI will handle the second tap on the lock screen."
-                                },
-                                {
-                                    "key": "doze_double_tap_timeout_pine",
-                                    "title": "Second tap timeout",
-                                    "description": "Wait window for the second tap."
-                                }
-                            ]
-                        },
-                        {
                             "key": "systemui_battery_divider"
                         },
                         {
@@ -1516,17 +1363,6 @@
                             "title": "Плитки швидких налаштувань",
                             "description": "Dynamic QS tiles for lock screen features.",
                             "settings": [
-                                {
-                                    "key": "systemui_dt2w_tile",
-                                    "title": "Double-tap tile",
-                                    "description": "Вимкнено",
-                                    "targets": [
-                                        {
-                                            "key": "doze_double_tap_hook_pine",
-                                            "label": "Double tap"
-                                        }
-                                    ]
-                                },
                                 {
                                     "key": "systemui_charging_info_tile",
                                     "title": "Charging info tile",

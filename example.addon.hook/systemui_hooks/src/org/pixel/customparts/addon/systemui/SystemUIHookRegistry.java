@@ -5,8 +5,6 @@ import android.util.Log;
 
 import org.pixel.customparts.addon.systemui.hooks.AodNotificationIconColorHook;
 import org.pixel.customparts.addon.systemui.hooks.BaseSystemUIHook;
-import org.pixel.customparts.addon.systemui.hooks.DozeTapDozeHook;
-import org.pixel.customparts.addon.systemui.hooks.DozeTapShadeHook;
 import org.pixel.customparts.addon.systemui.hooks.KeyguardBatteryPowerHook;
 import org.pixel.customparts.addon.systemui.hooks.NotificationIconShapeHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeCompactMediaHook;
@@ -33,8 +31,6 @@ public final class SystemUIHookRegistry {
         }
 
         List<BaseSystemUIHook> hooks = new ArrayList<>();
-        hooks.add(new DozeTapDozeHook());
-        hooks.add(new DozeTapShadeHook());
         hooks.add(new KeyguardBatteryPowerHook());
         hooks.add(new ShadeDateCalendarHook());
         hooks.add(new ShadeUnifiedSurfaceHook());
