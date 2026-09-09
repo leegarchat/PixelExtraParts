@@ -144,9 +144,9 @@
     <string name="icon_shape_presets_section">Пресеты</string>
     <string name="icon_shape_custom_section">Своя форма</string>
     <string name="icon_shape_custom_name">Название формы</string>
-    <string name="icon_shape_custom_apply">Собрать и применить</string>
+    <string name="icon_shape_custom_apply">Собрать</string>
     <string name="icon_shape_import">Импорт</string>
-    <string name="icon_shape_import_apply">Применить импорт</string>
+    <string name="icon_shape_import_apply">Собрать импорт</string>
     <string name="icon_shape_launcher_section">Лаунчер</string>
     <string name="icon_shape_workspace_match_all_apps_title">Home как All Apps</string>
     <string name="icon_shape_workspace_match_all_apps_summary">Форма меню на рабочем столе</string>
@@ -189,6 +189,14 @@
     <string name="icon_shape_import_success">XML/SVG маска импортирована</string>
     <string name="icon_shape_delete_success">Своя форма удалена</string>
     <string name="icon_shape_delete_failed">Не удалось удалить свою форму</string>
+    <string name="icon_shape_compile_dialog_compiling">Сборка формы значков</string>
+    <string name="icon_shape_compile_dialog_installing">Установка формы значков</string>
+    <string name="icon_shape_compile_dialog_success">Форма собрана</string>
+    <string name="icon_shape_compile_dialog_error">Не удалось собрать форму</string>
+    <string name="icon_shape_compile_dialog_cancelled">Сборка формы отменена</string>
+    <string name="icon_shape_compile_dialog_progress">Готово: %1$d%%</string>
+    <string name="icon_shape_compile_dialog_cancel">Отмена</string>
+    <string name="icon_shape_compile_dialog_ok">ОК</string>
 
     <string name="saturation_title">Насыщенность</string>
     <string name="saturation_summary">Управление насыщенностью цветов дисплея</string>
@@ -207,14 +215,17 @@
     <string name="tile_already_added">Плитка уже добавлена</string>
     <string name="tile_request_unavailable">Добавление плитки недоступно в этой сборке</string>
 
-    <string name="auto_hbm_title">HBM</string>
+    <string name="auto_hbm_title">AutoHBM</string>
     <string name="auto_hbm_summary">Поднимает яркость панели при сильном освещении</string>
-    <string name="auto_hbm_permanent_title">Постоянный HBM</string>
-    <string name="auto_hbm_permanent_summary">Поддерживать максимальную яркость всегда включённой</string>
+    <string name="auto_hbm_notification_auto_title">Включен AutoHBM</string>
+    <string name="auto_hbm_notification_permanent_title">Включен HBM</string>
+    <string name="auto_hbm_notification_auto_summary">Автоматический HBM-сервис включен.</string>
+    <string name="auto_hbm_notification_permanent_summary">Сервис постоянного HBM включен.</string>
+    <string name="auto_hbm_notification_disable">Выключить</string>
+    <string name="auto_hbm_notification_live">Люкс %1$d · пик %2$d · блокировка %3$s</string>
+    <string name="auto_hbm_notification_lock_on">Блокировка вкл</string>
+    <string name="auto_hbm_notification_lock_off">Блокировка выкл</string>
     <string name="auto_hbm_permanent_unsupported">Не поддерживается на этом устройстве</string>
-    <string name="auto_hbm_brightness_lock_title">Блокировка яркости</string>
-    <string name="auto_hbm_brightness_lock_summary">Блокировать максимальную яркость для предотвращения затемнения системой</string>
-    <string name="auto_hbm_auto_disabled_in_permanent">Настройки Auto HBM отключены в постоянном режиме</string>
 
     <string name="dtw_title">Двойной тап для пробуждения</string>
     <string name="dtw_summary">Пробуждение экрана двойным тапом</string>
@@ -224,22 +235,59 @@
     <string name="dtw_tap_count_summary">Количество тапов для пробуждения (1-3)</string>
     <string name="dtw_timeout_title">Таймаут тапа</string>
     <string name="dtw_timeout_summary">Максимальный интервал между тапами</string>
-    <string name="dtw_proximity_check_title">Проверка приближения</string>
-    <string name="dtw_proximity_check_summary">Проверять датчик приближения для предотвращения пробуждения в кармане</string>
     <string name="dtw_coordinate_check_title">Проверка координат</string>
     <string name="dtw_coordinate_check_summary">Проверять совпадение координат тапов в пределах порога</string>
+    <string name="dtw_coordinate_preview_title">Допустимая область второго тапа</string>
+    <string name="dtw_coordinate_preview_summary">Это только визуальное превью, а не фиксированное место для нажатия. Нажимать точно в центр экрана не нужно: превью показывает максимальное расстояние от первого нажатия, в пределах которого будет распознано второе.</string>
+    <string name="dtw_coordinate_preview_value">Максимальное расстояние: %1$d dp</string>
     <string name="dtw_max_distance_title">Максимальное расстояние</string>
     <string name="dtw_max_distance_summary">Максимальное расстояние между тапами в dp</string>
     <string name="dtw_unsupported">Устройство не поддерживает датчик одиночного касания</string>
+
+    <string name="auto_lock_title">Автоблокировка</string>
+    <string name="auto_lock_summary">Блокировка экрана после бездействия</string>
+    <string name="auto_lock_enable_title">Автоблокировка</string>
+    <string name="auto_lock_enable_summary">Полезно для видео и приложений, которые не дают экрану уснуть. Экран заблокируется, когда вы перестанете им пользоваться.</string>
+    <string name="auto_lock_blocker_only_title">Только при необходимости</string>
+    <string name="auto_lock_blocker_only_summary">Запускать таймер, только когда приложение не даёт экрану уснуть.</string>
+    <string name="auto_lock_pause_media_title">Пауза медиа</string>
+    <string name="auto_lock_pause_media_summary">Поставить активное видео или аудио на паузу перед блокировкой.</string>
+    <string name="auto_lock_timer_section">Таймер</string>
+    <string name="auto_lock_timeout_title">Таймаут бездействия</string>
+    <string name="auto_lock_timeout_description">Время без действий до блокировки экрана.</string>
+    <string name="auto_lock_notification_title">Авто-блокировка активна</string>
+    <string name="auto_lock_notification_text">Блокировка через %1$s бездействия</string>
+    <string name="auto_lock_notification_countdown">Блокировка через %1$d с · умный %2$s · медиа %3$s</string>
+    <string name="auto_lock_notification_waiting">Ожидание приложения · умный %1$s · медиа %2$s</string>
+    <string name="auto_lock_state_on">вкл</string>
+    <string name="auto_lock_state_off">выкл</string>
+    <string name="auto_lock_notification_smart_on">Умный режим вкл</string>
+    <string name="auto_lock_notification_smart_off">Умный режим выкл</string>
+    <string name="auto_lock_notification_pause_on">Пауза вкл</string>
+    <string name="auto_lock_notification_pause_off">Пауза выкл</string>
+    <string name="auto_lock_notification_disable">Отключить</string>
+    <string name="auto_lock_tile_off">Выкл</string>
+    <string name="auto_lock_tile_always">Вкл · %1$s</string>
+    <string name="auto_lock_tile_blocker_only">Умный · %1$s</string>
+
+    <!-- AutoLock time formatting -->
+    <string name="auto_lock_time_seconds">%1$d сек</string>
+    <string name="auto_lock_time_seconds_short">сек</string>
+    <string name="auto_lock_time_minutes">%1$d мин</string>
+    <string name="auto_lock_time_minutes_short">мин</string>
+    <string name="auto_lock_time_hours">%1$d ч</string>
+    <string name="auto_lock_time_hours_short">ч</string>
+    <string name="auto_lock_time_format">%1$s / %2$s</string>
+    <string name="auto_lock_time_format_with_secs">%1$s / %2$s %3$s</string>
     <string name="auto_hbm_enable_title">Включить автоматический HBM</string>
     <string name="auto_hbm_mode_title">Режим HBM</string>
     <string name="auto_hbm_mode_auto">Автоматический (по датчику)</string>
     <string name="auto_hbm_mode_permanent">Постоянный максимум</string>
     <string name="auto_hbm_permanent_title">Постоянный HBM</string>
-    <string name="auto_hbm_permanent_summary">Всегда поддерживать максимальную яркость экрана, пока не выключен. Настройки ниже игнорируются.</string>
+    <string name="auto_hbm_permanent_summary">Поддерживать максимальную яркость, пока включён этот режим. Настройки авто-освещения ниже недоступны.</string>
     <string name="auto_hbm_brightness_lock_title">Блокировка яркости</string>
-    <string name="auto_hbm_brightness_lock_summary">Зафиксировать яркость на максимум, чтобы система не могла её опустить. Другие приложения (например, MX Player) могут временно переопределять.</string>
-    <string name="auto_hbm_auto_disabled_in_permanent">Настройки авто режима отключены в постоянном режиме</string>
+    <string name="auto_hbm_brightness_lock_summary">Зафиксировать яркость на максимуме и заблокировать системный ползунок во время работы HBM.</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Порог и настройки плавного повышения недоступны в постоянном режиме</string>
     <string name="auto_hbm_current_lux_title">Текущий уровень света</string>
     <string name="auto_hbm_threshold_title">Порог освещения</string>
     <string name="auto_hbm_enable_time_title">Задержка включения</string>
@@ -252,7 +300,10 @@
     <string name="auto_hbm_check_interval_title">Интервал проверки lux</string>
     <string name="auto_hbm_temperature_limit_title">Температурный лимит SoC</string>
     <string name="auto_hbm_temperature_unknown">неизвестно</string>
-    <string name="auto_hbm_add_tile">Добавить плитку Auto HBM</string>
+    <string name="auto_hbm_timeout_toast">HBM выключен после достижения таймаута</string>
+    <string name="auto_hbm_thermal_toast">HBM выключен из-за температурного лимита</string>
+    <string name="auto_hbm_restored_toast">HBM восстановлен после безопасной паузы</string>
+    <string name="auto_hbm_add_tile">Добавить плитку AutoHBM</string>
     <string name="auto_hbm_status_monitoring">Отслеживание освещения</string>
     <string name="auto_hbm_status_active">Максимальная яркость активна</string>
     <string name="auto_hbm_status_format">Порог: %1$d lx • Яркость: %2$d/%3$d • %4$s: %5$s</string>
@@ -262,7 +313,7 @@
     <string name="auto_hbm_tile_monitoring">Мониторинг</string>
     <string name="auto_hbm_tile_active">Макс. яркость</string>
     <string name="auto_hbm_tile_unsupported">Не поддерживается</string>
-    <string name="permanent_hbm_title">Постоянный HBM</string>
+    <string name="permanent_hbm_title">HBM</string>
     <string name="permanent_hbm_tile_on">Активен</string>
     <string name="permanent_hbm_tile_off">Выкл.</string>
     <string name="permanent_hbm_tile_unsupported">Не поддерживается</string>
@@ -1265,4 +1316,16 @@
     <string name="addon_active_apps_desc">%d приложение(й) с активными хуками</string>
     <string name="addon_active_apps_empty">Нет активных хуков</string>
     <string name="addon_active_apps_modules">%d модуль(ей)</string>
+
+    <!-- Rotation Animation Constructor -->
+    <string name="rotation_anim_constructor_title">Конструктор анимации поворота</string>
+    <string name="rotation_anim_constructor_exit">Выход</string>
+    <string name="rotation_anim_constructor_enter">Вход</string>
+    <string name="rotation_anim_constructor_preview">Предпросмотр поворота</string>
+    <string name="rotation_anim_constructor_style_name">Имя темы</string>
+    <string name="rotation_anim_constructor_style_hint">например, rotating_cards</string>
+    <string name="rotation_anim_constructor_build">Собрать тему поворота</string>
+    <string name="rotation_anim_constructor_hide">Скрыть</string>
+    <string name="rotation_anim_constructor_show_xml">Показать XML</string>
+    <string name="rotation_anim_constructor_hide_xml">Скрыть XML</string>
 </resources>

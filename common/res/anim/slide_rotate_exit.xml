@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Slide: move the old window out while fading it. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <translate
+        android:fromXDelta="0%" android:toXDelta="100%"
+        android:fromYDelta="0%" android:toYDelta="0%"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_cubic"
+        android:duration="300" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/linear"
+        android:duration="300" />
+</set>

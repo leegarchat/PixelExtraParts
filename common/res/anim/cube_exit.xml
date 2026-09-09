@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cube: the old face turns edge-on while fading slightly. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <scale
+        android:fromXScale="1.0" android:toXScale="0.0"
+        android:fromYScale="1.0" android:toYScale="1.0"
+        android:pivotX="50%" android:pivotY="50%"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_cubic"
+        android:duration="240" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.25"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/linear"
+        android:duration="240" />
+</set>

@@ -143,9 +143,9 @@
     <string name="icon_shape_presets_section">Presets</string>
     <string name="icon_shape_custom_section">Custom shape</string>
     <string name="icon_shape_custom_name">Shape name</string>
-    <string name="icon_shape_custom_apply">Build and apply</string>
+    <string name="icon_shape_custom_apply">Build</string>
     <string name="icon_shape_import">Import</string>
-    <string name="icon_shape_import_apply">Apply imported</string>
+    <string name="icon_shape_import_apply">Build imported</string>
     <string name="icon_shape_launcher_section">Launcher</string>
     <string name="icon_shape_workspace_match_all_apps_title">Home = All Apps</string>
     <string name="icon_shape_workspace_match_all_apps_summary">Uses the drawer shape on Home</string>
@@ -188,6 +188,14 @@
     <string name="icon_shape_import_success">Imported XML/SVG mask</string>
     <string name="icon_shape_delete_success">Custom shape deleted</string>
     <string name="icon_shape_delete_failed">Unable to delete custom shape</string>
+    <string name="icon_shape_compile_dialog_compiling">Compiling icon shape</string>
+    <string name="icon_shape_compile_dialog_installing">Installing icon shape</string>
+    <string name="icon_shape_compile_dialog_success">Shape compiled</string>
+    <string name="icon_shape_compile_dialog_error">Shape compilation failed</string>
+    <string name="icon_shape_compile_dialog_cancelled">Shape compilation cancelled</string>
+    <string name="icon_shape_compile_dialog_progress">%1$d%% complete</string>
+    <string name="icon_shape_compile_dialog_cancel">Cancel</string>
+    <string name="icon_shape_compile_dialog_ok">OK</string>
 
     <string name="saturation_title">Saturation</string>
     <string name="saturation_summary">Control display color saturation</string>
@@ -206,14 +214,17 @@
     <string name="tile_already_added">Tile is already added</string>
     <string name="tile_request_unavailable">Tile request is unavailable on this build</string>
 
-    <string name="auto_hbm_title">HBM</string>
+    <string name="auto_hbm_title">AutoHBM</string>
     <string name="auto_hbm_summary">Raise panel brightness in strong light</string>
-    <string name="auto_hbm_permanent_title">Permanent HBM</string>
-    <string name="auto_hbm_permanent_summary">Keep maximum brightness always on</string>
+    <string name="auto_hbm_notification_auto_title">AutoHBM enabled</string>
+    <string name="auto_hbm_notification_permanent_title">HBM enabled</string>
+    <string name="auto_hbm_notification_auto_summary">Automatic HBM service is active.</string>
+    <string name="auto_hbm_notification_permanent_summary">Permanent HBM service is active.</string>
+    <string name="auto_hbm_notification_disable">Disable</string>
+    <string name="auto_hbm_notification_live">Lux %1$d · peak %2$d · lock %3$s</string>
+    <string name="auto_hbm_notification_lock_on">Lock on</string>
+    <string name="auto_hbm_notification_lock_off">Lock off</string>
     <string name="auto_hbm_permanent_unsupported">Not supported on this device</string>
-    <string name="auto_hbm_brightness_lock_title">Lock brightness</string>
-    <string name="auto_hbm_brightness_lock_summary">Lock max brightness to prevent system dimming</string>
-    <string name="auto_hbm_auto_disabled_in_permanent">Auto HBM settings disabled in permanent mode</string>
 
     <string name="dtw_title">Double Tap to Wake</string>
     <string name="dtw_summary">Wake screen with a double tap gesture</string>
@@ -223,22 +234,59 @@
     <string name="dtw_tap_count_summary">Number of taps to wake (1-3)</string>
     <string name="dtw_timeout_title">Tap timeout</string>
     <string name="dtw_timeout_summary">Max interval between taps</string>
-    <string name="dtw_proximity_check_title">Proximity check</string>
-    <string name="dtw_proximity_check_summary">Check proximity sensor to prevent pocket wake</string>
     <string name="dtw_coordinate_check_title">Coordinate check</string>
     <string name="dtw_coordinate_check_summary">Check tap coordinates match within threshold</string>
+    <string name="dtw_coordinate_preview_title">Allowed second-tap area</string>
+    <string name="dtw_coordinate_preview_summary">This is only a visual preview, not a fixed place to tap. You do not need to tap the center of the screen: it shows how far the second tap may be from the first tap.</string>
+    <string name="dtw_coordinate_preview_value">Maximum distance: %1$d dp</string>
     <string name="dtw_max_distance_title">Max distance</string>
     <string name="dtw_max_distance_summary">Max distance between taps in dp</string>
     <string name="dtw_unsupported">Device does not support single touch sensor</string>
+
+    <string name="auto_lock_title">Auto lock</string>
+    <string name="auto_lock_summary">Lock the screen after inactivity</string>
+    <string name="auto_lock_enable_title">Auto lock</string>
+    <string name="auto_lock_enable_summary">Useful for videos and other apps that keep the screen on. The screen locks when you stop using it.</string>
+    <string name="auto_lock_blocker_only_title">Only when needed</string>
+    <string name="auto_lock_blocker_only_summary">Start the timer only when an app prevents the screen from sleeping.</string>
+    <string name="auto_lock_pause_media_title">Pause media</string>
+    <string name="auto_lock_pause_media_summary">Pause the active video or audio before locking the screen.</string>
+    <string name="auto_lock_timer_section">Timer</string>
+    <string name="auto_lock_timeout_title">Inactivity timeout</string>
+    <string name="auto_lock_timeout_description">Time without interaction before the screen locks.</string>
+    <string name="auto_lock_notification_title">Auto Lock active</string>
+    <string name="auto_lock_notification_text">Will lock after %1$s of inactivity</string>
+    <string name="auto_lock_notification_countdown">Locks in %1$d sec · smart %2$s · media %3$s</string>
+    <string name="auto_lock_notification_waiting">Waiting for an app · smart %1$s · media %2$s</string>
+    <string name="auto_lock_state_on">on</string>
+    <string name="auto_lock_state_off">off</string>
+    <string name="auto_lock_notification_smart_on">Smart on</string>
+    <string name="auto_lock_notification_smart_off">Smart off</string>
+    <string name="auto_lock_notification_pause_on">Pause on</string>
+    <string name="auto_lock_notification_pause_off">Pause off</string>
+    <string name="auto_lock_notification_disable">Disable</string>
+    <string name="auto_lock_tile_off">Off</string>
+    <string name="auto_lock_tile_always">On · %1$s</string>
+    <string name="auto_lock_tile_blocker_only">Smart · %1$s</string>
+
+    <!-- AutoLock time formatting -->
+    <string name="auto_lock_time_seconds">%1$d sec</string>
+    <string name="auto_lock_time_seconds_short">sec</string>
+    <string name="auto_lock_time_minutes">%1$d min</string>
+    <string name="auto_lock_time_minutes_short">min</string>
+    <string name="auto_lock_time_hours">%1$d hr</string>
+    <string name="auto_lock_time_hours_short">hr</string>
+    <string name="auto_lock_time_format">%1$s / %2$s</string>
+    <string name="auto_lock_time_format_with_secs">%1$s / %2$s %3$s</string>
     <string name="auto_hbm_enable_title">Enable automatic HBM</string>
     <string name="auto_hbm_mode_title">HBM mode</string>
     <string name="auto_hbm_mode_auto">Automatic (sensor-based)</string>
     <string name="auto_hbm_mode_permanent">Permanent maximum</string>
     <string name="auto_hbm_permanent_title">Permanent HBM</string>
-    <string name="auto_hbm_permanent_summary">Always keep maximum screen brightness until disabled. Ignores auto-threshold settings below.</string>
+    <string name="auto_hbm_permanent_summary">Keep maximum screen brightness while this mode is active. Auto-light controls below are inactive.</string>
     <string name="auto_hbm_brightness_lock_title">Lock brightness</string>
-    <string name="auto_hbm_brightness_lock_summary">Lock screen brightness at maximum so the system cannot lower it. Other apps (e.g. MX Player) may still override temporarily.</string>
-    <string name="auto_hbm_auto_disabled_in_permanent">Auto settings are disabled in permanent mode</string>
+    <string name="auto_hbm_brightness_lock_summary">Lock brightness at maximum and block the system slider while HBM is active.</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Auto-light threshold and ramp settings are disabled in permanent mode</string>
     <string name="auto_hbm_current_lux_title">Current light level</string>
     <string name="auto_hbm_threshold_title">Light threshold</string>
     <string name="auto_hbm_enable_time_title">Enable delay</string>
@@ -251,7 +299,10 @@
     <string name="auto_hbm_check_interval_title">Lux check interval</string>
     <string name="auto_hbm_temperature_limit_title">SoC temperature limit</string>
     <string name="auto_hbm_temperature_unknown">unknown</string>
-    <string name="auto_hbm_add_tile">Add Auto HBM tile</string>
+    <string name="auto_hbm_timeout_toast">HBM disabled after the maximum active time</string>
+    <string name="auto_hbm_thermal_toast">HBM disabled at the temperature limit</string>
+    <string name="auto_hbm_restored_toast">HBM restored after the safety cooldown</string>
+    <string name="auto_hbm_add_tile">Add AutoHBM tile</string>
     <string name="auto_hbm_status_monitoring">Monitoring ambient light</string>
     <string name="auto_hbm_status_active">High brightness is active</string>
     <string name="auto_hbm_status_format">Threshold: %1$d lx • Brightness: %2$d/%3$d • %4$s: %5$s</string>
@@ -261,7 +312,7 @@
     <string name="auto_hbm_tile_monitoring">Monitoring</string>
     <string name="auto_hbm_tile_active">Max brightness</string>
     <string name="auto_hbm_tile_unsupported">Unsupported</string>
-    <string name="permanent_hbm_title">Permanent HBM</string>
+    <string name="permanent_hbm_title">HBM</string>
     <string name="permanent_hbm_tile_on">Active</string>
     <string name="permanent_hbm_tile_off">Off</string>
     <string name="permanent_hbm_tile_unsupported">Unsupported</string>
@@ -1124,6 +1175,14 @@
     <string name="anim_theme_xml_hint">Paste animation XML here…</string>
     <string name="anim_theme_input_mode_file">File</string>
     <string name="anim_theme_input_mode_xml">XML Text</string>
+    <string name="anim_compile_dialog_compiling">Compiling animation theme</string>
+    <string name="anim_compile_dialog_installing">Installing animation theme</string>
+    <string name="anim_compile_dialog_success">Theme installed</string>
+    <string name="anim_compile_dialog_error">Operation failed</string>
+    <string name="anim_compile_dialog_cancelled">Operation cancelled</string>
+    <string name="anim_compile_dialog_progress">%1$d%% complete</string>
+    <string name="anim_compile_dialog_cancel">Cancel</string>
+    <string name="anim_compile_dialog_ok">OK</string>
 
     <!-- Built-in Animations -->
     <string name="anim_builtin_title">Built-in Animations</string>
@@ -1268,4 +1327,46 @@
     <string name="addon_active_apps_desc">%d app(s) with active hooks</string>
     <string name="addon_active_apps_empty">No active hooks</string>
     <string name="addon_active_apps_modules">%d module(s)</string>
+
+    <!-- Rotation Animation -->
+    <string name="rotation_anim_title">Rotation Animation</string>
+    <string name="rotation_anim_subtitle">Customize screen rotation animation style</string>
+    <string name="rotation_anim_current">Current: %s</string>
+    <string name="rotation_anim_reset">Reset to default</string>
+    <string name="rotation_anim_builtin_title">Built-in Styles</string>
+    <string name="rotation_anim_custom_title">Custom Themes</string>
+    <string name="rotation_anim_no_themes">No custom themes installed</string>
+    <string name="rotation_anim_import_title">Import Theme</string>
+    <string name="rotation_anim_style_name">Style name</string>
+    <string name="rotation_anim_exit_file">Exit animation</string>
+    <string name="rotation_anim_enter_file">Enter animation</string>
+    <string name="rotation_anim_no_file">No file selected</string>
+    <string name="rotation_anim_compile_btn">Build &amp; Install</string>
+    <string name="rotation_anim_log_title">Build Log</string>
+    <string name="rotation_anim_active">Active</string>
+    <string name="rotation_anim_apply">Apply</string>
+    <string name="rotation_anim_delete">Delete</string>
+    <string name="rotation_anim_delete_confirm">Confirm delete</string>
+    <string name="rotation_anim_cancel">Cancel</string>
+    <string name="rotation_anim_preview">Preview</string>
+    <string name="rotation_anim_default">Default</string>
+    <string name="rotation_anim_custom">Custom APK</string>
+    <string name="rotation_anim_constructor_title">Rotation Animation Constructor</string>
+    <string name="rotation_anim_constructor_exit">Exit</string>
+    <string name="rotation_anim_constructor_enter">Enter</string>
+    <string name="rotation_anim_constructor_preview">Rotation preview</string>
+    <string name="rotation_anim_constructor_style_name">Theme name</string>
+    <string name="rotation_anim_constructor_style_hint">e.g. rotating cards</string>
+    <string name="rotation_anim_constructor_build">Build Rotation Theme</string>
+    <string name="rotation_anim_constructor_hide">Hide</string>
+    <string name="rotation_anim_constructor_show_xml">Show XML</string>
+    <string name="rotation_anim_constructor_hide_xml">Hide XML</string>
+    <string name="rotation_style_windows_phone">Windows Phone</string>
+    <string name="rotation_style_win10_11">Windows 10/11</string>
+    <string name="rotation_style_cube">Cube</string>
+    <string name="rotation_style_zoom">Zoom</string>
+    <string name="rotation_style_slide">Slide</string>
+    <string name="rotation_style_flip">Flip</string>
+    <string name="rotation_style_fade">Fade</string>
+    <string name="rotation_style_bounce">Bounce</string>
 </resources>

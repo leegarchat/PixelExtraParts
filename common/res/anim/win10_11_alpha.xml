@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Screenshot fade starts after the shrink phase. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_cubic"
+        android:startOffset="220"
+        android:duration="140" />
+</set>

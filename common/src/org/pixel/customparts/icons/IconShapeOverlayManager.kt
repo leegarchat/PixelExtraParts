@@ -1,9 +1,14 @@
 package org.pixel.customparts.icons
 
 import android.content.Context
+import android.content.om.FabricatedOverlay
 import android.content.om.IOverlayManager
+import android.content.om.OverlayIdentifier
+import android.content.om.OverlayManager
+import android.content.om.OverlayManagerTransaction
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.util.TypedValue
 import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.PathMeasure
@@ -17,12 +22,9 @@ import android.util.Log
 import android.util.PathParser
 import android.util.Xml
 import org.json.JSONObject
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
-import org.pixel.customparts.utils.AnimThemeCompiler
-import org.pixel.customparts.utils.AnimThemeSigner
+import org.pixel.customparts.utils.ApkInstaller
 import org.xmlpull.v1.XmlPullParser
-import java.io.File
 import java.io.StringReader
 import java.util.Locale
 import kotlin.math.PI
@@ -40,6 +42,12 @@ object IconShapeOverlayManager {
     private const val TARGET_PACKAGE = "android"
     private const val CATEGORY = "android.theme.customization.adaptive_icon_shape"
     private const val CUSTOM_PACKAGE_PREFIX = "org.pixel.customparts.iconshape."
+    private const val FABRICATED_OVERLAY_NAME = "icon_shape_custom"
+    private const val FABRICATED_OVERLAY_ID =
+        "org.pixel.customparts:$FABRICATED_OVERLAY_NAME"
+    private const val FABRICATED_PREFS = "icon_shape_fabricated_overlay"
+    private const val PREF_PATH = "path"
+    private const val PREF_LABEL = "label"
     private const val ANDROID_NS = "http://schemas.android.com/apk/res/android"
 
     data class ShapeOption(
@@ -103,14 +111,23 @@ object IconShapeOverlayManager {
 
     fun loadOptions(context: Context): List<ShapeOption> {
         val overlayManager = overlayManager() ?: return builtinOnlyOptions(context)
-        val overlays = runCatching {
+        val allOverlays = runCatching {
             overlayManager.getOverlayInfosForTarget(TARGET_PACKAGE, UserHandle.USER_SYSTEM)
         }.getOrElse {
             Log.e(TAG, "Unable to read overlay infos", it)
             emptyList()
-        }.filter { it.category == CATEGORY }
+        }
+        val overlays = allOverlays.filter {
+            it.category == CATEGORY && !it.isFabricated &&
+                !it.packageName.startsWith(CUSTOM_PACKAGE_PREFIX)
+        }
+        val fabricatedOverlay = allOverlays.firstOrNull {
+            it.isFabricated && it.packageName == context.packageName &&
+                it.overlayName == FABRICATED_OVERLAY_NAME
+        }
 
         val activePackage = overlays.firstOrNull { it.isEnabled }?.packageName
+        val fabricatedActive = fabricatedOverlay?.isEnabled == true
         val options = mutableListOf<ShapeOption>()
         val seenMasks = LinkedHashSet<String>()
         val defaultMask = readMask(context, TARGET_PACKAGE).ifEmpty { generatePath(CustomParams()) }
@@ -120,7 +137,7 @@ object IconShapeOverlayManager {
             packageName = TARGET_PACKAGE,
             pathData = defaultMask,
             source = ShapeSource.DEFAULT,
-            active = activePackage == null
+            active = activePackage == null && !fabricatedActive
         )
         seenMasks += normalizeMask(defaultMask)
 
@@ -143,6 +160,21 @@ object IconShapeOverlayManager {
             seenMasks += normalizeMask(mask)
         }
 
+        val fabricatedPath = context.getSharedPreferences(FABRICATED_PREFS, Context.MODE_PRIVATE)
+            .getString(PREF_PATH, null)
+        if (fabricatedOverlay != null && !fabricatedPath.isNullOrBlank()) {
+            options += ShapeOption(
+                id = FABRICATED_OVERLAY_ID,
+                label = context.getSharedPreferences(FABRICATED_PREFS, Context.MODE_PRIVATE)
+                    .getString(PREF_LABEL, "PixelParts shape") ?: "PixelParts shape",
+                packageName = FABRICATED_OVERLAY_ID,
+                pathData = fabricatedPath,
+                source = ShapeSource.CUSTOM_OVERLAY,
+                active = fabricatedActive
+            )
+            seenMasks += normalizeMask(fabricatedPath)
+        }
+
         builtinPresets.forEach { preset ->
             if (seenMasks.add(normalizeMask(preset.pathData))) {
                 options += ShapeOption(
@@ -161,12 +193,11 @@ object IconShapeOverlayManager {
     fun applyOption(context: Context, option: ShapeOption): Boolean {
         return when {
             option.packageName == TARGET_PACKAGE -> applyOverlay(context, TARGET_PACKAGE)
+            option.packageName == FABRICATED_OVERLAY_ID -> applyFabricatedOverlay(context)
             option.packageName != null -> applyOverlay(context, option.packageName)
             else -> {
-                val result = compileCustomOverlay(context, option.label, option.pathData)
-                result.success && result.packageName != null &&
-                    AnimThemeCompiler.install(context, result.apkPath.orEmpty(), result.packageName) &&
-                    applyOverlay(context, result.packageName)
+                val result = compileAndInstallCustom(context, option.label, option.pathData)
+                result.success && applyFabricatedOverlay(context)
             }
         }
     }
@@ -175,13 +206,20 @@ object IconShapeOverlayManager {
         val overlayManager = overlayManager() ?: return false
         return try {
             if (packageName == TARGET_PACKAGE) {
-                overlayManager.getOverlayInfosForTarget(TARGET_PACKAGE, UserHandle.USER_SYSTEM)
-                    .filter { it.category == CATEGORY && it.isEnabled }
-                    .forEach { overlayManager.setEnabled(it.packageName, false, UserHandle.USER_SYSTEM) }
-                writeThemeCustomization(context, null)
+                val disabled = overlayManager.getOverlayInfosForTarget(TARGET_PACKAGE, UserHandle.USER_SYSTEM)
+                    .filter { it.category == CATEGORY && !it.isFabricated && it.isEnabled }
+                    .all { overlayManager.setEnabled(it.packageName, false, UserHandle.USER_SYSTEM) }
+                if (!disabled) return false
+                if (!setFabricatedEnabled(context, false)) return false
+                if (!writeThemeCustomization(context, null)) return false
             } else {
-                overlayManager.setEnabledExclusiveInCategory(packageName, UserHandle.USER_SYSTEM)
-                writeThemeCustomization(context, packageName)
+                if (!setFabricatedEnabled(context, false)) return false
+                if (!overlayManager.setEnabledExclusiveInCategory(packageName, UserHandle.USER_SYSTEM)) {
+                    return false
+                }
+                val info = overlayManager.getOverlayInfo(packageName, UserHandle.USER_SYSTEM)
+                if (info == null || !info.isEnabled) return false
+                if (!writeThemeCustomization(context, packageName)) return false
             }
             true
         } catch (t: Throwable) {
@@ -192,36 +230,39 @@ object IconShapeOverlayManager {
 
     fun deleteCustomOverlay(context: Context, option: ShapeOption): Boolean {
         if (option.source != ShapeSource.CUSTOM_OVERLAY) return false
+        if (option.packageName == FABRICATED_OVERLAY_ID) {
+            return unregisterFabricatedOverlay(context)
+        }
         val packageName = option.packageName ?: return false
         return try {
-            if (option.active) {
+            val overlayDisabled = if (option.active) {
                 applyOverlay(context, TARGET_PACKAGE)
             } else {
-                overlayManager()?.setEnabled(packageName, false, UserHandle.USER_SYSTEM)
+                overlayManager()?.setEnabled(packageName, false, UserHandle.USER_SYSTEM) == true
             }
-            AnimThemeCompiler.uninstall(context, packageName)
+            if (!overlayDisabled) return false
+            ApkInstaller.uninstall(context, packageName)
         } catch (t: Throwable) {
             Log.e(TAG, "Unable to delete custom icon shape $packageName", t)
             false
         }
     }
 
-    fun compileAndApplyCustom(
+    fun compileAndInstallCustom(
         context: Context,
         label: String,
         pathData: String,
-        logCallback: ((String) -> Unit)? = null
+        logCallback: ((String) -> Unit)? = null,
+        installLogCallback: ((String) -> Unit)? = null
     ): CompileResult {
         val normalizedPath = pathData.trim().trim('"')
         if (!isValidPath(normalizedPath)) {
             return CompileResult(false, error = "Invalid path data")
         }
-        val result = compileCustomOverlay(context, label, normalizedPath, logCallback)
-        if (!result.success || result.packageName == null || result.apkPath == null) return result
-        val installed = AnimThemeCompiler.install(context, result.apkPath, result.packageName) { logCallback?.invoke(it) }
-        if (!installed) return result.copy(success = false, error = "Install failed")
-        val applied = applyOverlay(context, result.packageName)
-        return if (applied) result else result.copy(success = false, error = "Overlay apply failed")
+        return registerFabricatedOverlay(
+            context, label, normalizedPath, logCallback,
+            installLogCallback
+        )
     }
 
     fun readCustomPath(context: Context, uri: Uri): String {
@@ -247,79 +288,108 @@ object IconShapeOverlayManager {
         }
     }
 
-    private fun compileCustomOverlay(
+    private fun registerFabricatedOverlay(
         context: Context,
         label: String,
         pathData: String,
-        logCallback: ((String) -> Unit)? = null
+        logCallback: ((String) -> Unit)? = null,
+        installLogCallback: ((String) -> Unit)? = null
     ): CompileResult {
         val log = mutableListOf<String>()
-        fun emit(line: String) {
-            log += line
-            logCallback?.invoke(line)
-            Log.d(TAG, line)
+        fun emit(message: String) {
+            log += message
+            logCallback?.invoke(message)
         }
 
         return try {
-            val safeName = sanitizeName(label.ifBlank { "custom" })
-            val packageName = CUSTOM_PACKAGE_PREFIX + safeName
-            val workDir = File(context.cacheDir, "icon_shape_$safeName")
-            if (workDir.exists()) workDir.deleteRecursively()
-            File(workDir, "res/values").mkdirs()
-            emit("Package: $packageName")
-
-            File(workDir, "AndroidManifest.xml").writeText(generateOverlayManifest(packageName, label))
-            File(workDir, "res/values/config.xml").writeText(generateConfigXml(pathData))
-            File(workDir, "res/values/strings.xml").writeText(generateStringsXml(label))
-            emit("Overlay files written")
-
-            val aapt2 = getAapt2(context)
-            val frameworkRes = File("/system/framework/framework-res.apk")
-            if (!frameworkRes.exists()) {
-                return CompileResult(false, log = log, error = "framework-res.apk not found")
+            val manager = fabricatedOverlayManager(context)
+                ?: return CompileResult(false, log = log, error = "OverlayManager unavailable")
+            installLogCallback?.invoke("Registering fabricated overlay")
+            if (!setFabricatedEnabled(context, false)) {
+                return CompileResult(false, log = log, error = "Unable to disable old fabricated overlay")
             }
 
-            val compiledZip = File(workDir, "compiled.zip")
-            val compileOutput = runCommand(
-                arrayOf(aapt2.absolutePath, "compile", "--dir", File(workDir, "res").absolutePath, "-o", compiledZip.absolutePath),
-                workDir
-            )
-            if (compileOutput.output.isNotBlank()) emit(compileOutput.output)
-            if (compileOutput.exitCode != 0 || !compiledZip.exists()) {
-                return CompileResult(false, log = log, error = "aapt2 compile failed: ${compileOutput.output}")
-            }
+            val overlay = FabricatedOverlay.Builder(
+                context.packageName,
+                FABRICATED_OVERLAY_NAME,
+                TARGET_PACKAGE
+            ).setResourceValue(
+                "android:string/config_icon_mask",
+                TypedValue.TYPE_STRING,
+                pathData
+            ).setResourceValue(
+                "android:bool/config_useRoundIcon",
+                TypedValue.TYPE_INT_BOOLEAN,
+                1
+            ).build()
+            val transaction = OverlayManagerTransaction.Builder()
+            transaction.registerFabricatedOverlay(overlay)
+            manager.commit(transaction.build())
 
-            val unsignedApk = File(workDir, "unsigned.apk")
-            val linkOutput = runCommand(
-                arrayOf(
-                    aapt2.absolutePath,
-                    "link",
-                    "-I", frameworkRes.absolutePath,
-                    "--manifest", File(workDir, "AndroidManifest.xml").absolutePath,
-                    "--auto-add-overlay",
-                    "--min-sdk-version", "33",
-                    "--target-sdk-version", "35",
-                    "-o", unsignedApk.absolutePath,
-                    compiledZip.absolutePath
-                ),
-                workDir
-            )
-            if (linkOutput.output.isNotBlank()) emit(linkOutput.output)
-            if (linkOutput.exitCode != 0 || !unsignedApk.exists()) {
-                return CompileResult(false, log = log, error = "aapt2 link failed: ${linkOutput.output}")
-            }
+            val info = manager.getOverlayInfo(
+                OverlayIdentifier(context.packageName, FABRICATED_OVERLAY_NAME),
+                UserHandle.SYSTEM
+            ) ?: return CompileResult(false, log = log, error = "Fabricated overlay was not registered")
 
-            val signedApk = File(workDir, "$safeName.apk")
-            if (!AnimThemeSigner.sign(context, unsignedApk, signedApk)) {
-                return CompileResult(false, log = log, error = "APK signing failed")
-            }
-            emit("Signed APK: ${signedApk.absolutePath}")
-            CompileResult(true, packageName = packageName, apkPath = signedApk.absolutePath, log = log)
+            context.getSharedPreferences(FABRICATED_PREFS, Context.MODE_PRIVATE).edit()
+                .putString(PREF_PATH, pathData)
+                .putString(PREF_LABEL, label.ifBlank { "PixelParts shape" })
+                .apply()
+            emit("Fabricated overlay registered: $FABRICATED_OVERLAY_ID")
+            CompileResult(true, packageName = FABRICATED_OVERLAY_ID, log = log)
         } catch (t: Throwable) {
-            emit("ERROR: ${t.message}")
-            Log.e(TAG, "Unable to compile custom shape", t)
-            CompileResult(false, log = log, error = t.message)
+            Log.e(TAG, "Unable to register fabricated icon shape overlay", t)
+            CompileResult(false, log = log, error = t.message ?: "Fabricated overlay failed")
         }
+    }
+
+    private fun applyFabricatedOverlay(context: Context): Boolean {
+        return try {
+            val manager = overlayManager() ?: return false
+            val disabled = manager.getOverlayInfosForTarget(TARGET_PACKAGE, UserHandle.USER_SYSTEM)
+                .filter { it.category == CATEGORY && !it.isFabricated && it.isEnabled }
+                .all { manager.setEnabled(it.packageName, false, UserHandle.USER_SYSTEM) }
+            if (!disabled || !setFabricatedEnabled(context, true)) return false
+            writeThemeCustomization(context, null)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Unable to apply fabricated icon shape overlay", t)
+            false
+        }
+    }
+
+    private fun unregisterFabricatedOverlay(context: Context): Boolean {
+        return try {
+            val manager = fabricatedOverlayManager(context) ?: return false
+            val identifier = OverlayIdentifier(context.packageName, FABRICATED_OVERLAY_NAME)
+            if (manager.getOverlayInfo(identifier, UserHandle.SYSTEM) == null) return false
+            setFabricatedEnabled(context, false)
+            val transaction = OverlayManagerTransaction.Builder()
+            transaction.unregisterFabricatedOverlay(identifier)
+            manager.commit(transaction.build())
+            context.getSharedPreferences(FABRICATED_PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+            manager.getOverlayInfo(identifier, UserHandle.SYSTEM) == null
+        } catch (t: Throwable) {
+            Log.e(TAG, "Unable to unregister fabricated icon shape overlay", t)
+            false
+        }
+    }
+
+    private fun setFabricatedEnabled(context: Context, enabled: Boolean): Boolean {
+        val manager = fabricatedOverlayManager(context) ?: return false
+        val identifier = OverlayIdentifier(context.packageName, FABRICATED_OVERLAY_NAME)
+        val current = runCatching {
+            manager.getOverlayInfo(identifier, UserHandle.SYSTEM)
+        }.getOrNull() ?: return !enabled
+        if (current.isEnabled() == enabled) return true
+
+        val transaction = OverlayManagerTransaction.Builder()
+        transaction.setEnabled(identifier, enabled, UserHandle.USER_SYSTEM)
+        manager.commit(transaction.build())
+        return manager.getOverlayInfo(identifier, UserHandle.SYSTEM)?.isEnabled() == enabled
+    }
+
+    private fun fabricatedOverlayManager(context: Context): OverlayManager? {
+        return context.getSystemService(OverlayManager::class.java)
     }
 
     private fun builtinOnlyOptions(context: Context): List<ShapeOption> {
@@ -360,7 +430,7 @@ object IconShapeOverlayManager {
         }
     }
 
-    private fun writeThemeCustomization(context: Context, packageName: String?) {
+    private fun writeThemeCustomization(context: Context, packageName: String?): Boolean {
         val raw = Settings.Secure.getStringForUser(
             context.contentResolver,
             Settings.Secure.THEME_CUSTOMIZATION_OVERLAY_PACKAGES,
@@ -372,44 +442,13 @@ object IconShapeOverlayManager {
         } else {
             json.put(CATEGORY, packageName)
         }
-        Settings.Secure.putStringForUser(
+        return Settings.Secure.putStringForUser(
             context.contentResolver,
             Settings.Secure.THEME_CUSTOMIZATION_OVERLAY_PACKAGES,
             json.toString(),
             UserHandle.USER_CURRENT
         )
     }
-
-    private fun generateOverlayManifest(packageName: String, label: String): String = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="$packageName"
-            android:versionCode="1"
-            android:versionName="1.0">
-            <overlay
-                android:targetPackage="$TARGET_PACKAGE"
-                android:category="$CATEGORY"
-                android:priority="999"
-                android:isStatic="false" />
-            <application
-                android:hasCode="false"
-                android:label="${xmlEscape(label.ifBlank { "PixelParts shape" })}" />
-        </manifest>
-    """.trimIndent()
-
-    private fun generateConfigXml(pathData: String): String = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <string name="config_icon_mask" translatable="false">${xmlEscape(pathData)}</string>
-        </resources>
-    """.trimIndent()
-
-    private fun generateStringsXml(label: String): String = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <string name="app_name" translatable="false">${xmlEscape(label.ifBlank { "PixelParts shape" })}</string>
-        </resources>
-    """.trimIndent()
 
     private fun parseImportedMask(text: String): String? {
         val trimmed = text.trim()
@@ -682,36 +721,6 @@ object IconShapeOverlayManager {
             .ifEmpty { "custom" }
     }
 
-    private fun getAapt2(context: Context): File {
-        val candidates = mutableListOf<File>()
-        if (!AppConfig.IS_XPOSED) {
-            candidates += File("/system/bin/aapt2_pixelparts")
-            candidates += File("/system_ext/bin/aapt2_pixelparts")
-            candidates += File("/system/bin/aapt2")
-            candidates += File("/system_ext/bin/aapt2")
-            candidates += File("/system_ext/lib64/libaapt2.so")
-            candidates += File("/system/lib64/libaapt2.so")
-        }
-        candidates += File(context.applicationInfo.nativeLibraryDir, "libaapt2.so")
-        return candidates.firstOrNull { candidate ->
-            candidate.exists() && (candidate.canExecute() || runCatching {
-                Runtime.getRuntime().exec(arrayOf(candidate.absolutePath, "version")).waitFor()
-                true
-            }.getOrDefault(false))
-        } ?: throw IllegalStateException("aapt2 not found")
-    }
-
-    private fun runCommand(cmd: Array<String>, workDir: File): CommandResult {
-        val process = ProcessBuilder(*cmd)
-            .directory(workDir)
-            .redirectErrorStream(true)
-            .start()
-        process.outputStream.close()
-        val output = process.inputStream.bufferedReader().readText().trim()
-        val exitCode = process.waitFor()
-        return CommandResult(exitCode, output)
-    }
-
     private fun xmlEscape(value: String): String {
         return value
             .replace("&", "&amp;")
@@ -727,8 +736,4 @@ object IconShapeOverlayManager {
         val pathData: String
     )
 
-    private data class CommandResult(
-        val exitCode: Int,
-        val output: String
-    )
 }

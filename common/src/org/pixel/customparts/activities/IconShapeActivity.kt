@@ -14,11 +14,21 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -42,9 +52,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Error
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
@@ -57,6 +71,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -81,13 +96,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
@@ -108,6 +129,7 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
 import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 
 private const val DEFAULT_CUSTOM_SHAPE_SIDES = 6
@@ -164,9 +186,24 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     var offsetY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
     var importedPath by rememberSaveable { mutableStateOf("") }
     var resultLog by remember { mutableStateOf<List<String>>(emptyList()) }
+    var compileLog by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isCompiling by remember { mutableStateOf(false) }
+    var compileDialogState by remember { mutableStateOf<AnimationCompileState?>(null) }
+    var compileJob by remember { mutableStateOf<Job?>(null) }
+    var compileCancellation by remember { mutableStateOf<AtomicBoolean?>(null) }
+    var compileOperationId by remember { mutableIntStateOf(0) }
+    var compiledPackageName by remember { mutableStateOf<String?>(null) }
+    var highlightedShapeId by remember { mutableStateOf<String?>(null) }
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
     var infoDialogText by remember { mutableStateOf<String?>(null) }
     var infoDialogVideo by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(highlightedShapeId) {
+        if (highlightedShapeId != null) {
+            delay(3500)
+            highlightedShapeId = null
+        }
+    }
 
     val params = IconShapeOverlayManager.CustomParams(
         mode = mode,
@@ -182,8 +219,8 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     )
     val generatedPath = remember(params) { IconShapeOverlayManager.generatePath(params) }
 
-    suspend fun refreshOptions() {
-        isLoading = true
+    suspend fun refreshOptions(showLoading: Boolean = true) {
+        if (showLoading) isLoading = true
         options = withContext(Dispatchers.IO) { IconShapeOverlayManager.loadOptions(context) }
         isLoading = false
     }
@@ -210,26 +247,158 @@ private fun IconShapeScreen(onBack: () -> Unit) {
         }
     }
 
-    fun applyCustom(pathData: String) {
-        if (isBusy || pathData.isBlank()) return
-        scope.launch {
-            isBusy = true
-            resultLog = emptyList()
-            val result = withContext(Dispatchers.IO) {
-                IconShapeOverlayManager.compileAndApplyCustom(context, customName, pathData)
+    fun progressForLog(phase: AnimationCompilePhase, line: String, current: Float): Float {
+        if (phase == AnimationCompilePhase.INSTALLING) {
+            return when {
+                line.contains("Installing via") -> 0.94f
+                line.contains("successful", ignoreCase = true) -> 1f
+                else -> maxOf(current, 0.92f)
             }
-            resultLog = result.log + listOfNotNull(result.error)
-            if (result.success) {
-                IconPackManager.requestIconReload(context)
+        }
+        return when {
+            line.startsWith("Package:") -> 0.08f
+            line.contains("Overlay files written", ignoreCase = true) -> 0.18f
+            line.contains("AndroidManifest", ignoreCase = true) -> 0.25f
+            line.contains("aapt2 binary", ignoreCase = true) -> 0.32f
+            line.contains("compile output", ignoreCase = true) -> 0.58f
+            line.contains("Signing APK", ignoreCase = true) -> 0.78f
+            line.contains("Signed APK", ignoreCase = true) -> 0.9f
+            else -> current
+        }
+    }
+
+    fun postCompileLog(operationId: Int, phase: AnimationCompilePhase, line: String) {
+        scope.launch(Dispatchers.Main) {
+            if (compileOperationId != operationId) return@launch
+            compileLog = compileLog + line
+            val state = compileDialogState ?: return@launch
+            if (state.phase == AnimationCompilePhase.SUCCESS ||
+                state.phase == AnimationCompilePhase.ERROR ||
+                state.phase == AnimationCompilePhase.CANCELLED
+            ) return@launch
+            val effectivePhase = if (
+                state.phase == AnimationCompilePhase.INSTALLING &&
+                    phase == AnimationCompilePhase.COMPILING
+            ) AnimationCompilePhase.INSTALLING else phase
+            compileDialogState = state.copy(
+                phase = effectivePhase,
+                progress = progressForLog(effectivePhase, line, state.progress),
+                detail = line
+            )
+        }
+    }
+
+    fun startCompile(label: String, pathData: String) {
+        if (isCompiling || isBusy || pathData.isBlank()) return
+        val operationId = compileOperationId + 1
+        compileOperationId = operationId
+        val cancellation = AtomicBoolean(false)
+        compileCancellation = cancellation
+        isCompiling = true
+        isBusy = true
+        resultLog = emptyList()
+        compileLog = emptyList()
+        compileDialogState = AnimationCompileState(AnimationCompilePhase.COMPILING, 0.02f)
+
+        val job = scope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    IconShapeOverlayManager.compileAndInstallCustom(
+                        context = context,
+                        label = label,
+                        pathData = pathData,
+                        logCallback = { line ->
+                            postCompileLog(operationId, AnimationCompilePhase.COMPILING, line)
+                        },
+                        installLogCallback = { line ->
+                            postCompileLog(operationId, AnimationCompilePhase.INSTALLING, line)
+                        }
+                    )
+                }
+                if (cancellation.get()) throw CancellationException()
+
+                resultLog = result.log + listOfNotNull(result.error)
+                val packageName = result.packageName
+                if (result.success && packageName != null) {
+                    refreshOptions()
+                    compiledPackageName = packageName
+                    compileDialogState = AnimationCompileState(
+                        AnimationCompilePhase.SUCCESS,
+                        1f,
+                        packageName
+                    )
+                } else {
+                    compileDialogState = AnimationCompileState(
+                        AnimationCompilePhase.ERROR,
+                        0f,
+                        result.error ?: context.getString(R.string.icon_shape_compile_dialog_error)
+                    )
+                }
+            } catch (_: CancellationException) {
+                compileDialogState = AnimationCompileState(
+                    AnimationCompilePhase.CANCELLED,
+                    compileDialogState?.progress ?: 0f
+                )
+            } catch (t: Throwable) {
+                resultLog = resultLog + listOfNotNull(t.message)
+                compileDialogState = AnimationCompileState(
+                    AnimationCompilePhase.ERROR,
+                    0f,
+                    t.message ?: context.getString(R.string.icon_shape_compile_dialog_error)
+                )
+            } finally {
+                isCompiling = false
+                isBusy = false
+                compileJob = null
+                compileCancellation = null
             }
-            showApplyResult(result.success)
-            refreshOptions()
-            isBusy = false
+        }
+        compileJob = job
+    }
+
+    fun compileCustom(pathData: String) {
+        startCompile(customName, pathData)
+    }
+
+    fun compilePreset(option: ShapeOption) {
+        startCompile(option.label, option.pathData)
+    }
+
+    fun cancelCompile() {
+        compileCancellation?.set(true)
+        compileJob?.cancel()
+    }
+
+    fun dismissCompileDialog() {
+        val packageName = compiledPackageName
+        compiledPackageName = null
+        compileDialogState = null
+        if (packageName != null) {
+            highlightedShapeId = packageName
+            scope.launch {
+                repeat(5) { attempt ->
+                    val index = options.indexOfFirst { it.packageName == packageName }
+                    if (index >= 0) {
+                        listState.animateScrollToItem(2 + index)
+                        return@launch
+                    }
+                    refreshOptions(showLoading = false)
+                    if (attempt < 4) delay(100)
+                }
+            }
         }
     }
 
     fun deleteOption(option: ShapeOption) {
         if (isBusy) return
+        val anchor = listState.layoutInfo.visibleItemsInfo
+            .mapNotNull { itemInfo ->
+                val optionIndex = itemInfo.index - 2
+                options.getOrNull(optionIndex)
+                    ?.takeIf { it.id != option.id }
+                    ?.let { it.id to itemInfo.offset }
+            }
+            .firstOrNull()
         scope.launch {
             isBusy = true
             val success = withContext(Dispatchers.IO) { IconShapeOverlayManager.deleteCustomOverlay(context, option) }
@@ -241,7 +410,14 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             if (success) {
                 IconPackManager.requestIconReload(context)
             }
-            refreshOptions()
+            refreshOptions(showLoading = false)
+            if (success && anchor != null) {
+                val (anchorId, anchorOffset) = anchor
+                val anchorIndex = options.indexOfFirst { it.id == anchorId }
+                if (anchorIndex >= 0) {
+                    listState.scrollToItem(2 + anchorIndex, anchorOffset)
+                }
+            }
             isBusy = false
         }
     }
@@ -355,9 +531,9 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                             onOffsetXChange = { offsetX = it },
                             onOffsetYChange = { offsetY = it },
                             onNameChange = { customName = it },
-                            onApplyGenerated = { applyCustom(generatedPath) },
+                            onCompileGenerated = { compileCustom(generatedPath) },
                             onPickFile = { importLauncher.launch("*/*") },
-                            onApplyImported = { applyCustom(importedPath) }
+                            onCompileImported = { compileCustom(importedPath) }
                         )
                     }
                 }
@@ -382,7 +558,13 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                         ShapeOptionCard(
                             option = option,
                             isBusy = isBusy,
+                            isHighlighted = highlightedShapeId != null &&
+                                (highlightedShapeId == option.id ||
+                                    highlightedShapeId == option.packageName),
                             onApply = { applyOption(option) },
+                            onBuild = if (option.source == ShapeSource.BUILTIN_PRESET) {
+                                { compilePreset(option) }
+                            } else null,
                             onDelete = if (option.source == ShapeSource.CUSTOM_OVERLAY) {
                                 { deleteOption(option) }
                             } else null
@@ -400,6 +582,24 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 isScrolled = isScrolled
             )
         }
+    }
+
+    compileDialogState?.let { state ->
+        AnimationCompileDialog(
+            state = state,
+            labels = CompileDialogLabels(
+                compiling = R.string.icon_shape_compile_dialog_compiling,
+                installing = R.string.icon_shape_compile_dialog_installing,
+                success = R.string.icon_shape_compile_dialog_success,
+                error = R.string.icon_shape_compile_dialog_error,
+                cancelled = R.string.icon_shape_compile_dialog_cancelled,
+                progress = R.string.icon_shape_compile_dialog_progress,
+                cancel = R.string.icon_shape_compile_dialog_cancel,
+                ok = R.string.icon_shape_compile_dialog_ok
+            ),
+            onCancel = ::cancelCompile,
+            onDismiss = ::dismissCompileDialog
+        )
     }
 }
 
@@ -431,9 +631,9 @@ private fun CustomShapeBuilder(
     onOffsetXChange: (Float) -> Unit,
     onOffsetYChange: (Float) -> Unit,
     onNameChange: (String) -> Unit,
-    onApplyGenerated: () -> Unit,
+    onCompileGenerated: () -> Unit,
     onPickFile: () -> Unit,
-    onApplyImported: () -> Unit
+    onCompileImported: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -453,7 +653,7 @@ private fun CustomShapeBuilder(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Button(onClick = onApplyGenerated, enabled = !isBusy) {
+                Button(onClick = onCompileGenerated, enabled = !isBusy) {
                     Text(dynamicStringResource(R.string.icon_shape_custom_apply))
                 }
             }
@@ -574,7 +774,7 @@ private fun CustomShapeBuilder(
             }
             Spacer(Modifier.width(8.dp))
             TextButton(
-                onClick = onApplyImported,
+                onClick = onCompileImported,
                 enabled = !isBusy && IconShapeOverlayManager.isValidPath(importedPath)
             ) {
                 Text(dynamicStringResource(R.string.icon_shape_import_apply))
@@ -652,22 +852,41 @@ private fun ShapeSlider(
 private fun ShapeOptionCard(
     option: ShapeOption,
     isBusy: Boolean,
+    isHighlighted: Boolean = false,
     onApply: () -> Unit,
+    onBuild: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null
 ) {
     var showConfirmDelete by remember { mutableStateOf(false) }
+    val pulse = rememberInfiniteTransition(label = "icon_shape_highlight")
+    val pulseAlpha by pulse.animateFloat(
+        initialValue = 0f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(300),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "icon_shape_highlight_alpha"
+    )
+    val cardBorder = if (isHighlighted) {
+        BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
+    } else if (option.source != ShapeSource.DEFAULT) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    } else null
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = cardBorder
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = !isBusy && !option.active) { onApply() }
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Box {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isBusy && !option.active && onBuild == null) { onApply() }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             IconShapePreview(pathData = option.pathData, modifier = Modifier.size(56.dp), active = option.active)
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -689,6 +908,12 @@ private fun ShapeOptionCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (option.active) {
                     Icon(Icons.Rounded.Check, dynamicStringResource(R.string.icon_shape_active))
+                } else if (onBuild != null) {
+                    Button(onClick = onBuild, enabled = !isBusy) {
+                        Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(dynamicStringResource(R.string.icon_shape_custom_apply))
+                    }
                 } else {
                     TextButton(onClick = onApply, enabled = !isBusy) {
                         Text(dynamicStringResource(R.string.icon_shape_apply))
@@ -723,6 +948,14 @@ private fun ShapeOptionCard(
                         }
                     }
                 }
+            }
+            }
+            if (isHighlighted) {
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(Color.White.copy(alpha = pulseAlpha))
+                )
             }
         }
     }

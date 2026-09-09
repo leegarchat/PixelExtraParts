@@ -36,6 +36,12 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -63,8 +69,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
@@ -76,8 +86,8 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.dynamicStringResource
+import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 
@@ -320,6 +330,12 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
     var compileLog by remember { mutableStateOf<List<String>>(emptyList()) }
     var isCompiling by remember { mutableStateOf(false) }
     var compileError by remember { mutableStateOf<String?>(null) }
+    var compileDialogState by remember { mutableStateOf<AnimationCompileState?>(null) }
+    var compileJob by remember { mutableStateOf<Job?>(null) }
+    var compileCancellation by remember { mutableStateOf<AtomicBoolean?>(null) }
+    var compileOperationId by remember { mutableIntStateOf(0) }
+    var compiledPackageName by remember { mutableStateOf<String?>(null) }
+    var highlightedThemePackage by remember { mutableStateOf<String?>(null) }
 
     // ── constructor state ──
     var constructorTab by remember { mutableIntStateOf(0) } // 0=OpenEnter,1=OpenExit,2=CloseEnter,3=CloseExit
@@ -357,6 +373,12 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
 
     LaunchedEffect(Unit) { refreshThemes() }
     LaunchedEffect(currentOpenMode, currentCloseMode) { refreshThemes() }
+    LaunchedEffect(highlightedThemePackage) {
+        if (highlightedThemePackage != null) {
+            delay(3500)
+            highlightedThemePackage = null
+        }
+    }
 
     // ── file pickers ──
     val openEnterPicker = rememberLauncherForActivityResult(
@@ -372,55 +394,189 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
         ActivityResultContracts.GetContent()
     ) { uri -> if (uri != null) closeExitUri = uri }
 
+    fun progressForLog(
+        phase: AnimationCompilePhase,
+        line: String,
+        current: Float
+    ): Float {
+        if (phase == AnimationCompilePhase.INSTALLING) {
+            return when {
+                line.contains("Installing via") -> 0.94f
+                line.contains("successful", ignoreCase = true) -> 1f
+                else -> maxOf(current, 0.92f)
+            }
+        }
+        return when {
+            line.startsWith("Package:") -> 0.08f
+            line.contains("files written", ignoreCase = true) -> 0.18f
+            line.contains("AndroidManifest", ignoreCase = true) -> 0.25f
+            line.contains("aapt2 binary", ignoreCase = true) -> 0.32f
+            line.contains("compile output", ignoreCase = true) -> 0.58f
+            line.contains("Signing APK", ignoreCase = true) -> 0.78f
+            line.contains("Signed APK", ignoreCase = true) -> 0.9f
+            else -> current
+        }
+    }
+
+    fun postCompileLog(operationId: Int, phase: AnimationCompilePhase, line: String) {
+        scope.launch(Dispatchers.Main) {
+            if (compileOperationId != operationId) return@launch
+            compileLog = compileLog + line
+            val state = compileDialogState ?: return@launch
+            if (state.phase == AnimationCompilePhase.SUCCESS ||
+                state.phase == AnimationCompilePhase.ERROR ||
+                state.phase == AnimationCompilePhase.CANCELLED
+            ) return@launch
+            val effectivePhase = if (
+                state.phase == AnimationCompilePhase.INSTALLING &&
+                    phase == AnimationCompilePhase.COMPILING
+            ) AnimationCompilePhase.INSTALLING else phase
+            compileDialogState = state.copy(
+                phase = effectivePhase,
+                progress = progressForLog(effectivePhase, line, state.progress),
+                detail = line
+            )
+        }
+    }
+
+    fun startCompile(
+        build: (AtomicBoolean, (String) -> Unit) -> AnimThemeCompiler.CompileResult
+    ) {
+        if (isCompiling) return
+        val operationId = compileOperationId + 1
+        compileOperationId = operationId
+        val cancellation = AtomicBoolean(false)
+        compileCancellation = cancellation
+        isCompiling = true
+        compileError = null
+        compileLog = emptyList()
+        compileDialogState = AnimationCompileState(AnimationCompilePhase.COMPILING, 0.02f)
+
+        val job = scope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    build(cancellation) { line ->
+                        postCompileLog(operationId, AnimationCompilePhase.COMPILING, line)
+                    }
+                }
+                if (cancellation.get()) throw CancellationException()
+
+                if (result.success && result.apkPath != null && result.packageName != null) {
+                    compileDialogState = AnimationCompileState(
+                        AnimationCompilePhase.INSTALLING,
+                        0.92f,
+                        context.getString(R.string.anim_compile_dialog_installing)
+                    )
+                    compileLog = compileLog + context.getString(R.string.anim_compile_dialog_installing)
+                    val installed = withContext(Dispatchers.IO) {
+                        AnimThemeCompiler.install(
+                            context = context,
+                            apkPath = result.apkPath,
+                            packageName = result.packageName,
+                            logCallback = { line ->
+                                postCompileLog(operationId, AnimationCompilePhase.INSTALLING, line)
+                            },
+                            isCancelled = cancellation::get
+                        )
+                    }
+                    if (cancellation.get()) throw CancellationException()
+
+                    if (installed) {
+                        compileLog = compileLog + "✓ Installed successfully"
+                        refreshThemes()
+                        compiledPackageName = result.packageName
+                        compileDialogState = AnimationCompileState(
+                            AnimationCompilePhase.SUCCESS,
+                            1f,
+                            result.packageName
+                        )
+                    } else {
+                        compileError = context.getString(R.string.anim_install_failed)
+                        compileLog = compileLog + context.getString(R.string.anim_install_failed_log)
+                        compileDialogState = AnimationCompileState(
+                            AnimationCompilePhase.ERROR,
+                            0.98f,
+                            compileError.orEmpty()
+                        )
+                    }
+                } else {
+                    compileError = result.error ?: context.getString(R.string.anim_compile_failed)
+                    compileDialogState = AnimationCompileState(
+                        AnimationCompilePhase.ERROR,
+                        0f,
+                        compileError.orEmpty()
+                    )
+                }
+            } catch (_: CancellationException) {
+                compileDialogState = AnimationCompileState(
+                    AnimationCompilePhase.CANCELLED,
+                    compileDialogState?.progress ?: 0f
+                )
+            } catch (t: Throwable) {
+                compileError = t.message ?: context.getString(R.string.anim_compile_failed)
+                compileDialogState = AnimationCompileState(
+                    AnimationCompilePhase.ERROR,
+                    0f,
+                    compileError.orEmpty()
+                )
+            } finally {
+                isCompiling = false
+                compileJob = null
+                compileCancellation = null
+            }
+        }
+        compileJob = job
+    }
+
+    fun cancelCompile() {
+        compileCancellation?.set(true)
+        compileJob?.cancel()
+    }
+
+    fun dismissCompileDialog() {
+        val packageName = compiledPackageName
+        compiledPackageName = null
+        compileDialogState = null
+        if (packageName != null) {
+            highlightedThemePackage = packageName
+            scope.launch {
+                delay(100)
+                val themeIndex = installedThemes.indexOfFirst { it.packageName == packageName }
+                if (themeIndex >= 0) {
+                    lazyListState.animateScrollToItem(5 + BUILTIN_MODES.size + themeIndex)
+                }
+            }
+        }
+    }
+
     // ── compile ──
     fun doCompile() {
         if (styleName.isBlank()) return
         if (!useXmlInput && (openEnterUri == null || openExitUri == null)) return
         if (useXmlInput && (openEnterXml.isBlank() || openExitXml.isBlank())) return
-        isCompiling = true
-        compileError = null
-        compileLog = emptyList()
-        scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                if (useXmlInput) {
-                    AnimThemeCompiler.compileFromXml(
-                        context = context,
-                        styleName = styleName,
-                        openEnterXml = openEnterXml,
-                        openExitXml = openExitXml,
-                        closeEnterXml = closeEnterXml.ifBlank { null },
-                        closeExitXml = closeExitXml.ifBlank { null }
-                    ) { line -> scope.launch(Dispatchers.Main) { compileLog = compileLog + line } }
-                } else {
-                    AnimThemeCompiler.compile(
-                        context = context,
-                        styleName = styleName,
-                        openEnterUri = openEnterUri!!,
-                        openExitUri = openExitUri!!,
-                        closeEnterUri = closeEnterUri,
-                        closeExitUri = closeExitUri
-                    ) { line -> scope.launch(Dispatchers.Main) { compileLog = compileLog + line } }
-                }
-            }
-            isCompiling = false
-            
-            // Здесь мы используем result.packageName и передаем его в install
-            if (result.success && result.apkPath != null && result.packageName != null) {
-                compileLog = compileLog + RemoteStringsManager.getString(context, R.string.anim_installing)
-                val installed = withContext(Dispatchers.IO) {
-                    AnimThemeCompiler.install(context, result.apkPath, result.packageName) { line ->
-                        scope.launch(Dispatchers.Main) { compileLog = compileLog + line }
-                    }
-                }
-                if (installed) {
-                    compileLog = compileLog + RemoteStringsManager.getString(context, R.string.anim_install_success)
-                    refreshThemes()
-                } else {
-                    compileError = RemoteStringsManager.getString(context, R.string.anim_install_failed)
-                    compileLog = compileLog + RemoteStringsManager.getString(context, R.string.anim_install_failed_log)
-                }
+        startCompile { cancellation, logCallback ->
+            if (useXmlInput) {
+                AnimThemeCompiler.compileFromXml(
+                    context = context,
+                    styleName = styleName,
+                    openEnterXml = openEnterXml,
+                    openExitXml = openExitXml,
+                    closeEnterXml = closeEnterXml.ifBlank { null },
+                    closeExitXml = closeExitXml.ifBlank { null },
+                    logCallback = AnimThemeCompiler.LogCallback(logCallback),
+                    isCancelled = cancellation::get
+                )
             } else {
-                compileError = result.error ?: RemoteStringsManager.getString(context, R.string.anim_compile_failed)
+                AnimThemeCompiler.compile(
+                    context = context,
+                    styleName = styleName,
+                    openEnterUri = openEnterUri!!,
+                    openExitUri = openExitUri!!,
+                    closeEnterUri = closeEnterUri,
+                    closeExitUri = closeExitUri,
+                    logCallback = AnimThemeCompiler.LogCallback(logCallback),
+                    isCancelled = cancellation::get
+                )
             }
         }
     }
@@ -736,9 +892,10 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 }
 
                 items(installedThemes, key = { it.packageName }) { theme ->
-                    ThemeItem(
-                        theme = theme,
-                        onApplyOpen = {
+                        ThemeItem(
+                            theme = theme,
+                            isHighlighted = highlightedThemePackage == theme.packageName,
+                            onApplyOpen = {
                             activateOpenTheme(theme.packageName)
                             applyOpen(MODE_CUSTOM)
                         },
@@ -764,9 +921,9 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             // Style name
                             OutlinedTextField(
                                 value = styleName,
-                                onValueChange = { styleName = it },
+                                onValueChange = { styleName = filterThemeNameInput(it) },
                                 label = { Text(dynamicStringResource(R.string.anim_theme_style_name)) },
-                                placeholder = { Text("e.g. bouncy_slide") },
+                                placeholder = { Text("e.g. bouncy slide") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Ascii,
@@ -987,6 +1144,14 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
             )
         }
     }
+
+    compileDialogState?.let { state ->
+        AnimationCompileDialog(
+            state = state,
+            onCancel = ::cancelCompile,
+            onDismiss = ::dismissCompileDialog
+        )
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1184,6 +1349,7 @@ private fun LoopingAnimPreview(
 @Composable
 private fun ThemeItem(
     theme: InstalledTheme,
+    isHighlighted: Boolean,
     onApplyOpen: () -> Unit,
     onApplyClose: () -> Unit,
     onApplyBoth: () -> Unit,
@@ -1192,6 +1358,16 @@ private fun ThemeItem(
     var showConfirmDelete by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
     val isActive = theme.isActiveOpen || theme.isActiveClose
+    val highlightTransition = rememberInfiniteTransition(label = "theme_highlight")
+    val highlightAlpha by highlightTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(300),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "theme_highlight_alpha"
+    )
 
     Card(
         colors = CardDefaults.cardColors(
@@ -1200,9 +1376,13 @@ private fun ThemeItem(
             else MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        border = if (isHighlighted) {
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
+        } else null
     ) {
-        Column {
+        Box {
+            Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1277,7 +1457,15 @@ private fun ThemeItem(
                 )
             }
         }
+        if (isHighlighted) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.White.copy(alpha = highlightAlpha))
+            )
+        }
     }
+}
 }
 
 // ── Theme Preview Panel ─────────────────────────────────────────────
@@ -1800,7 +1988,7 @@ private fun AnimConstructorBlock(
 }
 
 @Composable
-private fun ParamEditor(
+internal fun ParamEditor(
     params: AnimParams,
     onParamsChange: (AnimParams) -> Unit
 ) {
@@ -2108,7 +2296,7 @@ private fun ConstructorPreview(
 
 // ── Export XML button ───────────────────────────────────────────────
 
-private fun animParamsToXml(params: AnimParams): String {
+internal fun animParamsToXml(params: AnimParams): String {
     val sb = StringBuilder()
     sb.appendLine("""<?xml version="1.0" encoding="utf-8"?>""")
     sb.appendLine("""<set xmlns:android="http://schemas.android.com/apk/res/android">""")
@@ -2209,9 +2397,9 @@ private fun ConstructorExportButton(
                 Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     OutlinedTextField(
                         value = buildThemeName,
-                        onValueChange = { buildThemeName = it },
+                        onValueChange = { buildThemeName = filterThemeNameInput(it) },
                         label = { Text(dynamicStringResource(R.string.anim_constructor_style_name)) },
-                        placeholder = { Text("e.g. my_animation") },
+                        placeholder = { Text("e.g. my animation") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -2322,7 +2510,7 @@ private fun ConstructorExportButton(
  * Create a looping preview that animates using raw AnimParams
  * instead of loading anim XML resources.
  */
-private fun createConstructorPreview(
+internal fun createConstructorPreview(
     ctx: Context,
     enterParams: AnimParams,
     exitParams: AnimParams,
