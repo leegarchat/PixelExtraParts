@@ -36,7 +36,7 @@ grep -rn "android.hardware.thermal-service.pixel" device/<vendor>/<codename>/  #
 
 ```bash
 # Clone STRICTLY into this path:
-git clone <repo> packages/apps/PixelExtraParts
+git clone https://github.com/leegarchat/PixelExtraParts.git packages/apps/PixelExtraParts
 ```
 
 In your device/product makefile, **before** `inherit-product`:
