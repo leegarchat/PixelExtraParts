@@ -3,6 +3,7 @@
 /entities.json
 /.vscode
 /.github
+/.opencode
 /test.files
 /.history
 /ThermalConfigs/ThermalConfigCopyRules.mk
