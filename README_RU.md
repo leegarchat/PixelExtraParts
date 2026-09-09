@@ -1,6 +1,6 @@
 # PixelExtraParts
 
-PixelExtraParts — системный пакет кастомизации для Android ROM-сборок. Проект объединяет privileged-приложение настроек, runtime-хуки для Launcher/SystemUI/framework, отдельную Xposed-сборку, Pine-инъекцию ART-хуков, генератор thermal-профилей и SDK для внешних addon-хуков.
+PixelExtraParts — системный пакет кастомизации для Android ROM-сборок. Проект объединяет privileged-приложение настроек, runtime-хуки для Launcher/SystemUI/framework, Pine-инъекцию ART-хуков, генератор thermal-профилей и SDK для внешних addon-хуков.
 
 English documentation: [README.md](README.md)
 
@@ -15,11 +15,10 @@ PixelExtraParts состоит из нескольких связанных ча
 | Область | Назначение |
 | --- | --- |
 | Privileged system app | UI настроек на Compose/Material3 с package `org.pixel.customparts`. |
-| Xposed APK | APK модуля/test target с package `org.pixel.customparts.xposed`, Xposed API 82. |
 | Pine injection JAR | `PineInject.jar` с runtime-хуками для source-built ROM интеграции. |
 | Built-in hooks | Настройки launcher grid/recents, overscroll physics, magnifier, activity transitions, predictive back, SystemUI/doze/shade tweaks. |
 | Thermal tooling | Build-time генерация thermal profile JSON из vendor `thermal_info_config.json`. |
-| Source patch tooling | Python launcher для framework и Settings snapshots из `changebe/`. |
+| Source patch tooling | Python launcher для framework и Settings snapshots из `patches/files/`. |
 | Addon SDK | Примеры внешних hook-модулей, которые собираются как addon JAR и загружаются динамически. |
 | OTA helpers | Вспомогательные скрипты и JSON metadata для OTA в `OTA/`. |
 
@@ -29,11 +28,12 @@ PixelExtraParts состоит из нескольких связанных ча
 | --- | --- |
 | [Android.bp](Android.bp) | Soong-модули, prebuilt libraries, APK targets и `PineInject`. |
 | [device.mk](device.mk) | Product include file для ROM/device trees. |
+| [sync_tree.py](sync_tree.py) | Хелпер безопасного `repo sync`: сохраняет локальные изменения, синкает, возвращает их. Запускать из корня дерева. |
 | [common/](common/) | Общий app-код, Compose UI, ресурсы, менеджеры и утилиты. |
 | [system/](system/) | Manifest privileged system APK и system-build `AppConfig`. |
-| [xposed-pine/](xposed-pine/) | Xposed APK, Pine runtime sources, hook core, managers, built-in hooks и prebuilt Pine/Xposed jars. |
-| [changebe/](changebe/) | Snapshots для framework и Settings patches. |
-| [patches/](patches/) | Python patch launcher для применения или проверки snapshots из `changebe/`. |
+| [pine/](pine/) | Pine runtime sources, hook core, managers, built-in hooks и prebuilt Pine jars. |
+| [patches/files/](patches/files/) | Snapshots (`modified/`, `original/`, `new/`) и unified diffs (`patches/`) для framework и Settings patches. |
+| [patches/](patches/) | Python patch launcher для применения или проверки snapshots из `patches/files/`. |
 | [ThermalConfigs/](ThermalConfigs/) | Генератор thermal profiles и integration copy rules. |
 | [example.addon.hook/](example.addon.hook/) | Примеры внешних addon-хуков и build scripts. |
 | [sepolicy/](sepolicy/) | SELinux policy snippets, подключаемые через `device.mk`. |
@@ -47,7 +47,6 @@ PixelExtraParts состоит из нескольких связанных ча
 | Target | Тип | Назначение |
 | --- | --- | --- |
 | `PixelCustomPartsSystem` | `android_app` | Privileged `system_ext` app из `common/` + `system/`, platform APIs, platform certificate. |
-| `PixelCustomPartsXposed` | `android_test` | Xposed module APK из `common/` + `xposed-pine/`, asset `xposed_init`. |
 | `PineInject` | `java_library` | Hook payload, устанавливаемый как `system/framework/PineInject.jar`. |
 | `libpine` | prebuilt shared library | Native runtime dependency для Pine. |
 | `aapt2_pixelparts` / `libaapt2_pixelparts` | prebuilts | Runtime/build helper binaries для приложения и tooling. |
@@ -115,12 +114,6 @@ lunch <your_target>
 m PixelCustomPartsSystem PineInject libpine
 ```
 
-Для Xposed APK target:
-
-```bash
-m PixelCustomPartsXposed
-```
-
 При полной ROM-сборке system target подтянется автоматически после подключения [device.mk](device.mk).
 
 ## Как это работает
@@ -133,7 +126,7 @@ System manifest запрашивает privileged Android permissions для з�
 
 ### Pine runtime
 
-`PineInject` упаковывает hook core, built-in hooks и Pine manager code в `PineInject.jar`. Source-tree patches могут инжектить этот JAR в выбранные app processes. Во время runtime [HookEntry.java](xposed-pine/src/org/pixel/customparts/manager/pine/HookEntry.java) применяет built-in hooks к launcher packages и `com.android.systemui`, затем загружает addon hooks, если для package есть подходящие addon metadata.
+`PineInject` упаковывает hook core, built-in hooks и Pine manager code в `PineInject.jar`. Source-tree patches могут инжектить этот JAR в выбранные app processes. Во время runtime [HookEntry.java](pine/src/org/pixel/customparts/manager/pine/HookEntry.java) применяет built-in hooks к launcher packages и `com.android.systemui`, затем загружает addon hooks, если для package есть подходящие addon metadata.
 
 Текущий built-in launcher scope:
 
@@ -151,40 +144,77 @@ com.android.systemui
 
 [init.pixelextraparts.rc](init.pixelextraparts.rc) создаёт `/data/pixelparts` директории для addons и runtime data.
 
-### Xposed runtime
-
-`PixelCustomPartsXposed` собирает module APK с package `org.pixel.customparts.xposed`. Xposed entrypoint указан в [xposed-pine/assets/xposed_init](xposed-pine/assets/xposed_init):
-
-```text
-org.pixel.customparts.manager.xposed.XposedInit
-```
-
-`XposedInit` применяет global hooks, launcher hooks и SystemUI hooks через Xposed API. Этот target полезен для Xposed-style deployments и тестирования вне полной source-интеграции Pine injection.
-
 ### Runtime settings suffixes
 
-Настройки, зависящие от runtime, используют suffixes вроде `_pine` и `_xposed` через project settings helpers. При добавлении новых settings или hooks используйте `SettingsKeys` и `SettingsCompat`, а не дублируйте `Settings.Global` keys вручную.
+Настройки, зависящие от runtime, используют суффикс `_pine` через project settings helpers (legacy-суффикс `_xposed` по-прежнему распознаётся при чтении сохранённых ключей для обратной совместимости). При добавлении новых settings или hooks используйте `SettingsKeys` и `SettingsCompat`, а не дублируйте `Settings.Global` keys вручную.
 
 ## Source patches
 
-Некоторым фичам нужны изменения в Android framework или Settings source tree. Snapshots лежат в [changebe/](changebe/), а управляет ими patch launcher из [patches/](patches/).
+PixelExtraParts корректно работает только с накатанными source-tree патчами: хуки из [pine/](pine/) рассчитаны на matching-изменения в Android framework, Settings, thermal HAL, sepolicy и исходниках Updater. Без них приложение соберётся, но runtime-фичи (overscroll, magnifier, launcher, thermal и т.д.) молча не будут работать.
 
-Основные команды:
+Накатывайте snapshots из [patches/files/](patches/files/) через patch launcher из [patches/](patches/). Все команды ниже выполняются из корня Android source tree:
 
 ```bash
+cd $ANDROID_BUILD_TOP
 python3 packages/apps/PixelExtraParts/patches/apply_patches.py --list
 python3 packages/apps/PixelExtraParts/patches/apply_patches.py --check
 python3 packages/apps/PixelExtraParts/patches/apply_patches.py --apply
 ```
 
-Settings resources по умолчанию bypassed, потому что они ROM-specific. Чтобы разрешить patcher управлять ими:
+Отдельные патчи можно пропускать по ID (список ID — в `--list`):
 
 ```bash
-python3 packages/apps/PixelExtraParts/patches/apply_patches.py --configure-bypass settings-res off
+python3 packages/apps/PixelExtraParts/patches/apply_patches.py --configure-bypass <patch-id> on
 python3 packages/apps/PixelExtraParts/patches/apply_patches.py --apply
 ```
 
-Если upstream-файл слишком сильно ушёл от snapshot, patcher остановится и напечатает manual porting hint вместо рискованного угадывания.
+Ручной вариант: если launcher сообщает о drift для файла, накатите matching unified diff вручную, тоже из корня дерева:
+
+```bash
+patch -p1 < packages/apps/PixelExtraParts/patches/files/patches/frameworks/base/core/java/android/widget/EdgeEffect.java.patch
+```
+
+Новые файлы из `patches/files/new/` создаются автоматически через `--apply`; при ручном накатывании скопируйте их руками. Если upstream-файл слишком сильно ушёл от snapshot, patcher остановится и напечатает manual porting hint вместо рискованного угадывания.
+
+### Безопасный repo sync с локальными изменениями (sync_tree.py)
+
+[sync_tree.py](sync_tree.py) — копия утилиты синхронизации дерева. Она сохраняет ваши локальные изменения framework/Settings/thermal в `bakFiles/snapshots/`, выполняет `repo sync`, затем возвращает изменения поверх обновлённого дерева:
+
+```bash
+cd $ANDROID_BUILD_TOP
+python3 packages/apps/PixelExtraParts/sync_tree.py -s -j 4
+```
+
+Важно: скрипт резолвит все пути (`bakFiles/`, git-проекты, вызовы `repo`) относительно текущей рабочей директории — сам корень дерева он не ищет (в коде `ROOT_DIR = Path(".").resolve()`, привязки к расположению `.py`-файла нет). Всегда запускайте его из корня Android source tree, а не из каталога проекта. Другие полезные режимы: `-s -d` — только слепок без sync, `-c` — просмотр/применение снимков, `-f` — force-sync без повторного наката патчей, `-y` — неинтерактивный режим. После нового `-s`-снимка обновите checked-in файлы через `patches/sync_from_bakfiles.py --snapshot latest --prune`.
+
+Перед первым запуском `-s` добавьте в исключения (`-e`) ваш device tree, vendor tree и прочие приватные каталоги — иначе сканер подхватит чужие изменения. Пути указываются от корня дерева:
+
+```bash
+cd $ANDROID_BUILD_TOP
+python3 packages/apps/PixelExtraParts/sync_tree.py -e
+```
+
+Рабочий пример (Pixel 8 series + локальные деревья):
+
+| Игнорируемый путь (от корня дерева) |
+| --- |
+| `device/google/akita` |
+| `device/google/build` |
+| `device/google/gs-common` |
+| `device/google/husky` |
+| `device/google/pixel-kernels` |
+| `device/google/shiba` |
+| `device/google/shusky` |
+| `device/google/zuma` |
+| `out` (`out` исключён по умолчанию, указан для наглядности) |
+| `packages/apps/PixelExtraParts` |
+| `vendor/JamesDSP` |
+| `vendor/google/akita` |
+| `vendor/google/faceunlock` |
+| `vendor/google/husky` |
+| `vendor/google/shiba` |
+
+Без этих исключений сканер будет цеплять посторонние device/vendor-модификации — наснимает мусор или будет конфликтовать с вашим device tree на каждом sync.
 
 ## Thermal profiles
 
@@ -205,6 +235,34 @@ persist.sys.pixelparts.thermal_available=true
 
 Когда пользователь выбирает profile, приложение обновляет `persist.sys.pixelparts.thermal_config`; init переносит значение в `vendor.thermal.config` и перезапускает `vendor.thermal-hal`.
 
+> [!WARNING]
+> Обязательно для работы кастомного thermal: стоковый AOSP/vendor thermal-компонент нужно исключить из vendor-сборки, иначе он конфликтует с Pixel thermal HAL, который патчит PixelExtraParts (`hardware/google/pixel/thermal/`). Вынесите эти пребилды из vendor-образа в ваше древо устройства:
+>
+> - `vendor/etc/init/android.hardware.thermal-service.pixel.rc`
+> - `vendor/etc/init/pixel-thermal-symlinks.rc`
+> - `thermal-budget-interface-ndk`
+> - `android.hardware.thermal-service.pixel.xml`
+> - `android.hardware.thermal-service.pixel`
+> - `thermal_symlinks`
+>
+> Пример для Pixel 8 series (zuma-древо, например `common.mk`):
+>
+> ```makefile
+> # Thermal
+> PRODUCT_PACKAGES += \
+>     android.hardware.thermal-service.pixel \
+>     thermal_symlinks
+> ```
+>
+> И в этом же файле объявите Soong-неймспейс, который их собирает:
+>
+> ```makefile
+> PRODUCT_SOONG_NAMESPACES += \
+>     hardware/google/pixel/thermal
+> ```
+>
+> Без этого на устройстве останется стоковый vendor thermal-сервис и кастомные профили не заработают. Хуже того, стоковый HAL падает с ошибкой преобразования пути на кастомном конфиге: после перезагрузки система просто не запустится, так как HAL не найдёт файл конфига, а fallback для стокового HAL программой не предусмотрен. В этом случае самостоятельно выпилите thermal-секцию и логику init-файлов из PEP (thermal UI/сервисы в `common/`, подключение `ThermalConfigs/` в `device.mk` и обработку `persist.sys.pixelparts.thermal_*` в `init.pixelextraparts.rc`), пока древо устройства не исправлено как описано выше.
+
 ## Addons
 
 Внешние хуки можно собирать как addon JAR. Формат addon, build scripts, `META-INF/addon.json`, entry class contract и metadata для settings UI описаны в [example.addon.hook/README.md](example.addon.hook/README.md).
@@ -217,7 +275,7 @@ Addon payloads хранятся в `/data/pixelparts/addons` и загружаю
 
 ## Development guidelines
 
-- Держите изменения в рамках нужного runtime: system app, Xposed APK, Pine injection, patches, thermal tooling или addon SDK.
+- Держите изменения в рамках нужного runtime: system app, Pine injection, patches, thermal tooling или addon SDK.
 - Используйте существующие helpers для `Settings.Global`, restart actions, package queries и hook setup.
 - Видимый UI-текст добавляйте через ресурсы в [common/res](common/res/).
 - Не коммитьте generated thermal configs и локальные MemPalace files.
@@ -226,4 +284,4 @@ Addon payloads хранятся в `/data/pixelparts/addons` и загружаю
 
 ## License
 
-Репозиторий содержит project code и несколько Android/Pine/Xposed integration artifacts. Перед распространением бинарников вне вашего ROM workflow проверьте upstream files и imported prebuilts.
+Репозиторий содержит project code и несколько Android/Pine integration artifacts. Перед распространением бинарников вне вашего ROM workflow проверьте upstream files и imported prebuilts.
