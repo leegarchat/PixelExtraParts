@@ -1,0 +1,14 @@
+--- a/packages/apps/Settings/Android.bp
++++ b/packages/apps/Settings/Android.bp
+@@ -256,6 +256,11 @@
+ }
+ 
+ filegroup {
++    name: "Settings_manifest",
++    srcs: ["AndroidManifest.xml"],
++}
++
++filegroup {
+     name: "Settings_proguard_flags",
+     srcs: ["proguard.flags"],
+ }

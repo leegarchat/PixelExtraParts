@@ -1,0 +1,136 @@
+--- a/hardware/google/pixel/thermal/thermal-helper.cpp
++++ b/hardware/google/pixel/thermal/thermal-helper.cpp
+@@ -24,6 +24,8 @@
+ #include <android-base/strings.h>
+ #include <utils/Trace.h>
+ 
++#include <algorithm>
++#include <cctype>
+ #include <set>
+ #include <sstream>
+ #include <vector>
+@@ -119,6 +121,32 @@
+     return path_map;
+ }
+ 
++std::string resolveThermalConfigPath(std::string config_value) {
++    config_value = ::android::base::Trim(config_value);
++    if (config_value.empty()) {
++        config_value = kConfigDefaultFileName.data();
++    }
++
++    const auto comma_pos = config_value.find(',');
++    if (comma_pos != std::string::npos) {
++        const std::string serial = ::android::base::Trim(config_value.substr(0, comma_pos));
++        const std::string target = ::android::base::Trim(config_value.substr(comma_pos + 1));
++        const bool numeric_serial =
++                !serial.empty() &&
++                std::all_of(serial.begin(), serial.end(), [](unsigned char ch) {
++                    return std::isdigit(ch) != 0;
++                });
++        if (numeric_serial && !target.empty()) {
++            config_value = target;
++        }
++    }
++
++    if (::android::base::StartsWith(config_value, "/")) {
++        return config_value;
++    }
++    return StringPrintf("/vendor/etc/%s", config_value.c_str());
++}
++
+ }  // namespace
+ 
+ // dump additional traces for a given sensor
+@@ -171,13 +199,17 @@
+  * reading the type file and assigning the temp file path to the map.  If we do
+  * not succeed, abort.
+  */
+-ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb)
++ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb, bool start_watcher,
++                                     bool fatal_on_error)
+     : thermal_watcher_(new ThermalWatcher(std::bind(&ThermalHelperImpl::thermalWatcherCallbackFunc,
+                                                     this, std::placeholders::_1))),
+       cb_(cb) {
+-    const std::string config_path =
+-            "/vendor/etc/" +
++    const std::string config_property =
+             ::android::base::GetProperty(kConfigProperty.data(), kConfigDefaultFileName.data());
++    loaded_config_property_ = config_property;
++    std::string config_path = resolveThermalConfigPath(config_property);
++    LOG(INFO) << "Using thermal config: " << config_path << " from " << kConfigProperty.data()
++              << "=" << config_property;
+     bool thermal_throttling_disabled =
+             ::android::base::GetBoolProperty(kThermalDisabledProperty.data(), false);
+     bool ret = true;
+@@ -185,7 +217,22 @@
+     std::unordered_set<std::string> loaded_config_paths;
+     if (!ParseThermalConfig(config_path, &config, &loaded_config_paths)) {
+         LOG(ERROR) << "Failed to read JSON config";
+-        ret = false;
++        const std::string default_config_property(kConfigDefaultFileName.data());
++        const std::string default_config_path = resolveThermalConfigPath(default_config_property);
++        if (config_path != default_config_path) {
++            LOG(WARNING) << "Falling back to default thermal config while waiting for "
++                         << config_path;
++            config = Json::Value();
++            loaded_config_paths.clear();
++            config_path = default_config_path;
++            loaded_config_property_ = default_config_property;
++            if (!ParseThermalConfig(config_path, &config, &loaded_config_paths)) {
++                LOG(ERROR) << "Failed to read fallback JSON config";
++                ret = false;
++            }
++        } else {
++            ret = false;
++        }
+     }
+ 
+     const std::string &comment = config["Comment"].asString();
+@@ -413,7 +460,13 @@
+             return;
+         }
+     } else if (!ret) {
+-        LOG(FATAL) << "ThermalHAL could not be initialized properly.";
++        if (fatal_on_error) {
++            LOG(FATAL) << "ThermalHAL could not be initialized properly.";
++        }
++        sensor_info_map_.clear();
++        cooling_device_info_map_.clear();
++        is_initialized_ = false;
++        return;
+     }
+     is_initialized_ = ret;
+ 
+@@ -429,13 +482,28 @@
+         thermal_watcher_->registerFilesToWatch(monitored_sensors);
+     }
+ 
+-    // Need start watching after status map initialized
+-    is_initialized_ = thermal_watcher_->startWatchingDeviceFiles();
+-    if (!is_initialized_) {
++    if (start_watcher && !startWatcher()) {
+         LOG(FATAL) << "ThermalHAL could not start watching thread properly.";
+     }
+ }
+ 
++ThermalHelperImpl::~ThermalHelperImpl() {
++    if (thermal_watcher_ != nullptr && thermal_watcher_->isRunning()) {
++        thermal_watcher_->requestExit();
++        thermal_watcher_->wake();
++        thermal_watcher_->requestExitAndWait();
++    }
++}
++
++bool ThermalHelperImpl::startWatcher() {
++    if (!is_initialized_) {
++        return false;
++    }
++    // Need start watching after status map initialized.
++    is_initialized_ = thermal_watcher_->startWatchingDeviceFiles();
++    return is_initialized_;
++}
++
+ bool getThermalZoneTypeById(int tz_id, std::string *type) {
+     std::string tz_type;
+     std::string path =

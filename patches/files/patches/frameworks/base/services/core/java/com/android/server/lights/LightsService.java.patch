@@ -1,0 +1,11 @@
+--- a/frameworks/base/services/core/java/com/android/server/lights/LightsService.java
++++ b/frameworks/base/services/core/java/com/android/server/lights/LightsService.java
+@@ -269,7 +269,7 @@
+             if (!DumpUtils.checkDumpPermission(getContext(), TAG, pw)) return;
+ 
+             synchronized (LightsService.this) {
+-                pw.println("Service: " + mVintfLights != null ? mVintfLights.get() : null);
++                pw.println("Service: " + (mVintfLights != null ? mVintfLights.get() : null));
+ 
+                 pw.println("Lights:");
+                 for (int i = 0; i < mLightsById.size(); i++) {

@@ -1,0 +1,12 @@
+--- a/system/memory/libdmabufheap/include/BufferAllocator/BufferAllocator.h
++++ b/system/memory/libdmabufheap/include/BufferAllocator/BufferAllocator.h
+@@ -35,7 +35,8 @@
+ class BufferAllocator {
+   public:
+     BufferAllocator();
+-    ~BufferAllocator() {}
++    /* User-provided (out-of-line) so the symbol is exported; retained for GRF prebuilts */
++    ~BufferAllocator();
+ 
+     /* Not copyable or movable */
+     BufferAllocator(const BufferAllocator&) = delete;

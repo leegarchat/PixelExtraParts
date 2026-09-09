@@ -1,0 +1,48 @@
+--- a/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java
++++ b/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java
+@@ -177,6 +177,7 @@
+ import android.content.ComponentCallbacks;
+ import android.content.ComponentName;
+ import android.content.Context;
++import android.content.Intent;
+ import android.content.pm.ActivityInfo;
+ import android.content.pm.ActivityInfo.ScreenOrientation;
+ import android.content.res.CompatibilityInfo;
+@@ -299,6 +300,11 @@
+  * particular Display.
+  */
+ class DisplayContent extends RootDisplayArea implements WindowManagerPolicy.DisplayContentInfo {
++    private static final String PIXELPARTS_PACKAGE = "org.pixel.customparts";
++    private static final String ACTION_PIXELPARTS_KEEP_SCREEN_ON =
++            "org.pixel.customparts.action.KEEP_SCREEN_ON_CHANGED";
++    private static final String EXTRA_PIXELPARTS_KEEP_SCREEN_ON = "active";
++    private static final String EXTRA_PIXELPARTS_KEEP_SCREEN_ON_PACKAGE = "package";
+     private static final String TAG = TAG_WITH_CLASS_NAME ? "DisplayContent" : TAG_WM;
+ 
+     /** The default scaling mode that scales content automatically. */
+@@ -1392,6 +1398,7 @@
+     }
+ 
+     private void finishHoldScreenUpdate() {
++        final boolean wasHolding = mHoldScreenWindow != null;
+         final boolean hold = mTmpHoldScreenWindow != null;
+         if (hold && mTmpHoldScreenWindow != mHoldScreenWindow) {
+             mHoldScreenWakeLock.setWorkSource(new WorkSource(mTmpHoldScreenWindow.mSession.mUid,
+@@ -1400,6 +1407,17 @@
+         mHoldScreenWindow = mTmpHoldScreenWindow;
+         mTmpHoldScreenWindow = null;
+ 
++        if (hold != wasHolding) {
++            final String holderPackage = hold && mHoldScreenWindow != null
++                ? mHoldScreenWindow.mSession.mPackageName : "";
++            mWmService.mH.post(() -> mWmService.mContext.sendBroadcastAsUser(
++                new Intent(ACTION_PIXELPARTS_KEEP_SCREEN_ON)
++                    .setPackage(PIXELPARTS_PACKAGE)
++                    .putExtra(EXTRA_PIXELPARTS_KEEP_SCREEN_ON, hold)
++                    .putExtra(EXTRA_PIXELPARTS_KEEP_SCREEN_ON_PACKAGE, holderPackage),
++                UserHandle.ALL));
++        }
++
+         final boolean state = mHoldScreenWakeLock.isHeld();
+         if (hold != state) {
+             if (hold) {

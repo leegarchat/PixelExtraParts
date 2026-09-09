@@ -1,1 +1,0 @@
-"""PixelExtraParts patch groups."""

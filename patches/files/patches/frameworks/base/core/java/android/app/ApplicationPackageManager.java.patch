@@ -1,0 +1,343 @@
+--- a/frameworks/base/core/java/android/app/ApplicationPackageManager.java
++++ b/frameworks/base/core/java/android/app/ApplicationPackageManager.java
+@@ -42,6 +42,7 @@
+ import android.app.admin.DevicePolicyManager;
+ import android.app.role.RoleManager;
+ import android.compat.annotation.UnsupportedAppUsage;
++import android.content.BroadcastReceiver;
+ import android.content.ComponentName;
+ import android.content.ContentResolver;
+ import android.content.Context;
+@@ -92,6 +93,7 @@
+ import android.content.res.TypedArray;
+ import android.content.res.XmlResourceParser;
+ import android.graphics.Bitmap;
++import android.graphics.BitmapFactory;
+ import android.graphics.Canvas;
+ import android.graphics.Rect;
+ import android.graphics.drawable.BitmapDrawable;
+@@ -133,8 +135,10 @@
+ import android.util.ArrayMap;
+ import android.util.ArraySet;
+ import android.util.AttributeSet;
++import android.util.DisplayMetrics;
+ import android.util.LauncherIcons;
+ import android.util.Log;
++import android.util.LruCache;
+ import android.util.Slog;
+ import android.util.Xml;
+ import android.window.DesktopExperienceFlags;
+@@ -150,13 +154,17 @@
+ 
+ import libcore.util.EmptyArray;
+ 
++import org.json.JSONException;
++import org.json.JSONObject;
+ import org.xmlpull.v1.XmlPullParser;
+ import org.xmlpull.v1.XmlPullParserException;
+ 
+ import java.io.File;
++import java.io.FileInputStream;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.lang.ref.WeakReference;
++import java.nio.charset.StandardCharsets;
+ import java.security.cert.Certificate;
+ import java.security.cert.CertificateEncodingException;
+ import java.security.cert.X509Certificate;
+@@ -168,6 +176,7 @@
+ import java.util.Objects;
+ import java.util.Set;
+ import java.util.concurrent.Executor;
++import java.util.concurrent.ConcurrentHashMap;
+ import java.util.function.Consumer;
+ import java.util.function.Function;
+ 
+@@ -192,6 +201,31 @@
+                     | TYPE_WHOLE_SHA512 | TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256
+                     | TYPE_PARTIAL_MERKLE_ROOT_1M_SHA512;
+ 
++    private static final String PIXEL_PARTS_ICON_RELOAD_ACTION =
++            "com.pixelparts.intent.action.RELOAD_ICONS";
++    private static final String PIXEL_PARTS_ICON_ENABLED_SETTING =
++            "pixelparts_app_icons_enabled";
++    private static final File PIXEL_PARTS_ICON_ROOT =
++            new File("/data/pixelparts/IconsManager");
++    private static final File PIXEL_PARTS_ICON_MAP =
++            new File(PIXEL_PARTS_ICON_ROOT, "icon_map.json");
++    private static final String[] PIXEL_PARTS_ICON_DENSITY_FOLDERS = {
++            "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"
++    };
++    private static final ConcurrentHashMap<String, String> sPixelPartsIconMap =
++            new ConcurrentHashMap<>();
++    private static final LruCache<String, Drawable.ConstantState> sPixelPartsIconCache =
++            new LruCache<>(160);
++    private static final Object sPixelPartsIconLock = new Object();
++    private static boolean sPixelPartsIconMapLoaded;
++    private static boolean sPixelPartsIconReceiverRegistered;
++
++    static {
++        synchronized (sPixelPartsIconLock) {
++            loadPixelPartsIconMapLocked();
++        }
++    }
++
+     // Name of the resource which provides background permission button string
+     public static final String APP_PERMISSION_BUTTON_ALLOW_ALWAYS =
+             "app_permission_button_allow_always";
+@@ -3786,6 +3820,244 @@
+     /**
+      * @hide
+      */
++    private Drawable loadPixelPartsIconOverride(@NonNull PackageItemInfo itemInfo,
++            @Nullable ApplicationInfo appInfo) {
++        final String packageName = resolvePixelPartsIconPackageName(itemInfo, appInfo);
++        if (TextUtils.isEmpty(packageName)) {
++            return null;
++        }
++
++        return loadPixelPartsIconOverride(
++                mContext,
++                packageName,
++                mContext.getResources().getDisplayMetrics().densityDpi);
++    }
++
++    /** @hide */
++    public static Drawable loadPixelPartsIconOverride(@NonNull Context context,
++            @NonNull String packageName, int densityDpi) {
++        if (TextUtils.isEmpty(packageName)) {
++            return null;
++        }
++
++        if (!arePixelPartsIconsEnabled(context)) {
++            return null;
++        }
++
++        maybeRegisterPixelPartsIconReloadReceiver(context);
++
++        final String iconFileName = getPixelPartsIconFileName(packageName);
++        if (TextUtils.isEmpty(iconFileName)) {
++            return null;
++        }
++
++        final File iconFile = findPixelPartsIconFile(iconFileName, densityDpi);
++        if (iconFile == null) {
++            return null;
++        }
++
++        final String cacheKey = packageName + "|" + densityDpi + "|"
++                + iconFile.getAbsolutePath() + "|"
++                + iconFile.lastModified();
++        Drawable.ConstantState cachedState;
++        synchronized (sPixelPartsIconCache) {
++            cachedState = sPixelPartsIconCache.get(cacheKey);
++        }
++        if (cachedState != null) {
++            return cachedState.newDrawable(context.getResources());
++        }
++
++        final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
++        try (InputStream input = new FileInputStream(iconFile)) {
++            final Bitmap bitmap = BitmapFactory.decodeStream(input);
++            if (bitmap == null) {
++                return null;
++            }
++
++            final BitmapDrawable drawable = new BitmapDrawable(context.getResources(), bitmap);
++            drawable.setTargetDensity(context.getResources().getDisplayMetrics());
++            final Drawable.ConstantState state = drawable.getConstantState();
++            if (state == null) {
++                return drawable;
++            }
++            synchronized (sPixelPartsIconCache) {
++                sPixelPartsIconCache.put(cacheKey, state);
++            }
++            return state.newDrawable(context.getResources());
++        } catch (IOException e) {
++            Slog.w(TAG, "Unable to load PixelParts icon override for " + packageName, e);
++            return null;
++        } finally {
++            StrictMode.setThreadPolicy(oldPolicy);
++        }
++    }
++
++    /** @hide */
++    public static boolean hasPixelPartsIconOverride(@NonNull Context context,
++            @NonNull String packageName, int densityDpi) {
++        if (TextUtils.isEmpty(packageName) || !arePixelPartsIconsEnabled(context)) {
++            return false;
++        }
++
++        maybeRegisterPixelPartsIconReloadReceiver(context);
++
++        final String iconFileName = getPixelPartsIconFileName(packageName);
++        return !TextUtils.isEmpty(iconFileName)
++                && findPixelPartsIconFile(iconFileName, densityDpi) != null;
++    }
++
++    private static String resolvePixelPartsIconPackageName(@NonNull PackageItemInfo itemInfo,
++            @Nullable ApplicationInfo appInfo) {
++        if (!TextUtils.isEmpty(itemInfo.packageName)) {
++            return itemInfo.packageName;
++        }
++        return appInfo != null ? appInfo.packageName : null;
++    }
++
++    private static String getPixelPartsIconFileName(String packageName) {
++        synchronized (sPixelPartsIconLock) {
++            if (!sPixelPartsIconMapLoaded) {
++                loadPixelPartsIconMapLocked();
++            }
++            return sPixelPartsIconMap.get(packageName);
++        }
++    }
++
++    private static boolean arePixelPartsIconsEnabled(@NonNull Context context) {
++        return Settings.Global.getInt(
++                context.getContentResolver(), PIXEL_PARTS_ICON_ENABLED_SETTING, 1) != 0;
++    }
++
++    private static void loadPixelPartsIconMapLocked() {
++        sPixelPartsIconMapLoaded = true;
++        sPixelPartsIconMap.clear();
++
++        if (!PIXEL_PARTS_ICON_MAP.isFile()) {
++            return;
++        }
++
++        final StrictMode.ThreadPolicy oldPolicy = StrictMode.allowThreadDiskReads();
++        try (InputStream input = new FileInputStream(PIXEL_PARTS_ICON_MAP)) {
++            final JSONObject root = new JSONObject(
++                    new String(input.readAllBytes(), StandardCharsets.UTF_8));
++            final JSONObject icons = root.optJSONObject("icons") != null
++                    ? root.optJSONObject("icons") : root;
++            final Iterator<String> packages = icons.keys();
++            while (packages.hasNext()) {
++                final String packageName = packages.next();
++                final Object value = icons.opt(packageName);
++                if (!(value instanceof String)) {
++                    continue;
++                }
++
++                final String fileName = normalizePixelPartsIconFileName((String) value);
++                if (!TextUtils.isEmpty(packageName) && fileName != null) {
++                    sPixelPartsIconMap.put(packageName, fileName);
++                }
++            }
++        } catch (IOException | JSONException e) {
++            Slog.w(TAG, "Unable to read PixelParts icon map", e);
++        } finally {
++            StrictMode.setThreadPolicy(oldPolicy);
++        }
++    }
++
++    private static String normalizePixelPartsIconFileName(String value) {
++        if (value == null) {
++            return null;
++        }
++
++        String fileName = value.trim();
++        if (TextUtils.isEmpty(fileName) || fileName.contains("/") || fileName.contains("\\")
++                || fileName.contains("..")) {
++            return null;
++        }
++
++        if (!fileName.endsWith(".png")) {
++            fileName += ".png";
++        }
++        return fileName.length() > ".png".length() ? fileName : null;
++    }
++
++    private static File findPixelPartsIconFile(String fileName, int densityDpi) {
++        final String densityFolder = pixelPartsIconDensityFolder(densityDpi);
++        final File currentDensityFile = new File(new File(PIXEL_PARTS_ICON_ROOT, densityFolder),
++                fileName);
++        if (currentDensityFile.isFile()) {
++            return currentDensityFile;
++        }
++
++        for (String fallbackDensity : PIXEL_PARTS_ICON_DENSITY_FOLDERS) {
++            if (fallbackDensity.equals(densityFolder)) {
++                continue;
++            }
++            final File fallbackFile = new File(new File(PIXEL_PARTS_ICON_ROOT, fallbackDensity),
++                    fileName);
++            if (fallbackFile.isFile()) {
++                return fallbackFile;
++            }
++        }
++
++        return null;
++    }
++
++    private static String pixelPartsIconDensityFolder(int densityDpi) {
++        if (densityDpi <= DisplayMetrics.DENSITY_MEDIUM) {
++            return "mdpi";
++        } else if (densityDpi <= DisplayMetrics.DENSITY_HIGH) {
++            return "hdpi";
++        } else if (densityDpi <= DisplayMetrics.DENSITY_XHIGH) {
++            return "xhdpi";
++        } else if (densityDpi <= DisplayMetrics.DENSITY_XXHIGH) {
++            return "xxhdpi";
++        }
++        return "xxxhdpi";
++    }
++
++    private static void maybeRegisterPixelPartsIconReloadReceiver(@NonNull Context context) {
++        synchronized (sPixelPartsIconLock) {
++            if (sPixelPartsIconReceiverRegistered) {
++                return;
++            }
++            sPixelPartsIconReceiverRegistered = true;
++        }
++
++        final Context receiverContext = context.getApplicationContext() != null
++                ? context.getApplicationContext() : context;
++        try {
++            receiverContext.registerReceiver(
++                    new BroadcastReceiver() {
++                        @Override
++                        public void onReceive(Context context, Intent intent) {
++                            if (intent != null
++                                    && PIXEL_PARTS_ICON_RELOAD_ACTION.equals(intent.getAction())) {
++                                reloadPixelPartsIcons();
++                            }
++                        }
++                    },
++                    new IntentFilter(PIXEL_PARTS_ICON_RELOAD_ACTION),
++                    Context.RECEIVER_EXPORTED);
++        } catch (Throwable t) {
++            synchronized (sPixelPartsIconLock) {
++                sPixelPartsIconReceiverRegistered = false;
++            }
++            Slog.w(TAG, "Unable to register PixelParts icon reload receiver", t);
++        }
++    }
++
++    private static void reloadPixelPartsIcons() {
++        synchronized (sPixelPartsIconLock) {
++            sPixelPartsIconMapLoaded = false;
++            loadPixelPartsIconMapLocked();
++        }
++        synchronized (sPixelPartsIconCache) {
++            sPixelPartsIconCache.evictAll();
++        }
++    }
++
++    /**
++     * @hide
++     */
+     public Drawable loadItemIcon(PackageItemInfo itemInfo, ApplicationInfo appInfo) {
+         Drawable dr = loadUnbadgedItemIcon(itemInfo, appInfo);
+         if (itemInfo.showUserIcon != UserHandle.USER_NULL) {
+@@ -3806,6 +4078,10 @@
+             return UserIcons.getDefaultUserIcon(
+                     mContext.getResources(), targetUserId, /* light= */ false);
+         }
++        final Drawable pixelPartsIcon = loadPixelPartsIconOverride(itemInfo, appInfo);
++        if (pixelPartsIcon != null) {
++            return pixelPartsIcon;
++        }
+         Drawable dr = null;
+         if (itemInfo.packageName != null) {
+             if (itemInfo.isArchived) {

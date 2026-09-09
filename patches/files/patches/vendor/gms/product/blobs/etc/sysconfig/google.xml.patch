@@ -1,0 +1,13 @@
+--- a/vendor/gms/product/blobs/etc/sysconfig/google.xml
++++ b/vendor/gms/product/blobs/etc/sysconfig/google.xml
+@@ -128,6 +128,10 @@
+      <!-- Specify the explicit set of other applications that Glasses Secure service is allowed to interact with.-->
+     <allow-association target="com.google.android.glasses.secure" allowed="com.google.android.as.oss" />
+ 
++    <!-- Now Playing can bind to Private Compute Services and GMS. -->
++    <allow-association target="com.google.android.apps.pixel.nowplaying" allowed="com.google.android.as.oss" />
++    <allow-association target="com.google.android.apps.pixel.nowplaying" allowed="com.google.android.gms" />
++
+     <!-- Specify the explicit set of other applications whose app data directories are
+         accessible by other applications. -->
+     <app-data-isolation-whitelisted-app package="com.google.android.gms" />

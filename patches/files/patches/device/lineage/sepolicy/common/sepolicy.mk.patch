@@ -1,0 +1,11 @@
+--- a/device/lineage/sepolicy/common/sepolicy.mk
++++ b/device/lineage/sepolicy/common/sepolicy.mk
+@@ -15,7 +15,7 @@
+ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
+     device/lineage/sepolicy/common/private
+ 
+-ifeq ($(filter tokay caiman komodo comet tegu frankel blazer mustang rango, $(LINEAGE_BUILD)),)
++ifeq ($(filter tokay caiman komodo comet tegu frankel blazer mustang rango akita, $(LINEAGE_BUILD)),)
+ SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
+     device/lineage/sepolicy/mosey/system_ext/public
+ 

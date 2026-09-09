@@ -1,0 +1,508 @@
+--- a/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java
++++ b/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java
+@@ -5,6 +5,7 @@
+ import static com.android.settingslib.Utils.fetchUserIconInfo;
+ 
+ import android.annotation.ColorInt;
++import android.app.ApplicationPackageManager;
+ import android.app.admin.DevicePolicyManager;
+ import android.content.Context;
+ import android.content.Intent;
+@@ -24,6 +25,13 @@
+ import android.graphics.ColorFilter;
+ import android.graphics.ColorMatrix;
+ import android.graphics.ColorMatrixColorFilter;
++import android.graphics.PixelFormat;
++import android.graphics.PorterDuff;
++import android.graphics.PorterDuffColorFilter;
++import android.graphics.Rect;
++import android.graphics.drawable.AdaptiveIconDrawable;
++import android.graphics.drawable.BitmapDrawable;
++import android.graphics.drawable.ColorDrawable;
+ import android.graphics.drawable.Drawable;
+ import android.hardware.usb.UsbManager;
+ import android.hardware.usb.UsbPort;
+@@ -72,12 +80,53 @@
+ import com.android.settingslib.fuelgauge.BatteryUtils;
+ import com.android.users.UserType;
+ 
++import org.json.JSONException;
++import org.json.JSONObject;
++
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.charset.StandardCharsets;
++import java.util.HashMap;
++import java.util.Iterator;
+ import java.util.List;
++import java.util.Map;
+ 
+ public class Utils {
+ 
+     private static final String TAG = "Utils";
+ 
++    private static final String PIXEL_PARTS_ICON_SYSTEM_STRETCH_SHAPE_SETTING =
++            "pixelparts_app_icons_system_stretch_shape";
++    private static final String PIXEL_PARTS_ICON_SYSTEM_REMOVE_SHAPE_SETTING =
++            "pixelparts_app_icons_system_remove_shape";
++        private static final String PIXEL_PARTS_ICON_SYSTEM_SHAPE_SCALE_SETTING =
++            "pixelparts_app_icons_system_shape_scale";
++        private static final String PIXEL_PARTS_ICON_SHAPE_BACKGROUND_TINT_MODE_SETTING =
++            "pixelparts_app_icons_shape_background_tint_mode";
++        private static final String PIXEL_PARTS_ICON_SHAPE_BACKGROUND_TINT_COLOR_SETTING =
++            "pixelparts_app_icons_shape_background_tint_color";
++        private static final String PIXEL_PARTS_ICON_SHAPE_FOREGROUND_TINT_MODE_SETTING =
++            "pixelparts_app_icons_shape_foreground_tint_mode";
++        private static final String PIXEL_PARTS_ICON_SHAPE_FOREGROUND_TINT_COLOR_SETTING =
++            "pixelparts_app_icons_shape_foreground_tint_color";
++    private static final int PIXEL_PARTS_ICON_SHAPE_DEFAULT = 0;
++    private static final int PIXEL_PARTS_ICON_SHAPE_STRETCH = 1;
++    private static final int PIXEL_PARTS_ICON_SHAPE_REMOVE = 2;
++        private static final int PIXEL_PARTS_ICON_TINT_OFF = 0;
++        private static final int PIXEL_PARTS_ICON_TINT_CUSTOM = 1;
++        private static final int PIXEL_PARTS_ICON_TINT_AUTO = 2;
++        private static final float PIXEL_PARTS_ICON_SHAPE_DEFAULT_SCALE_PERCENT = 72f;
++        private static final float PIXEL_PARTS_ICON_SHAPE_MIN_SCALE_PERCENT = 0f;
++        private static final float PIXEL_PARTS_ICON_SHAPE_MAX_SCALE_PERCENT = 200f;
++        private static final File PIXEL_PARTS_ICON_MAP_FILE =
++            new File("/data/pixelparts/IconsManager/icon_map.json");
++        private static final Object PIXEL_PARTS_ICON_SHAPE_OVERRIDE_LOCK = new Object();
++        private static final Map<String, PixelPartsIconShapeOverride> sPixelPartsIconShapeOverrides =
++            new HashMap<>();
++        private static long sPixelPartsIconShapeOverridesLastModified = Long.MIN_VALUE;
++
+     public static final String INCOMPATIBLE_CHARGER_WARNING_DISABLED =
+             "incompatible_charger_warning_disabled";
+     public static final String KEY_WIRELESS_INCOMPATIBLE_CHARGING_STATE =
+@@ -753,20 +802,427 @@
+     @NonNull
+     public static Drawable getBadgedIcon(@NonNull Context context, @NonNull Drawable icon,
+             @NonNull UserHandle user) {
++        return getBadgedIcon(context, icon, user, null);
++    }
++
++    /** Get the corresponding adaptive icon drawable. */
++    @NonNull
++    private static Drawable getBadgedIcon(@NonNull Context context, @NonNull Drawable icon,
++            @NonNull UserHandle user, @Nullable ApplicationInfo appInfo) {
+         try (IconFactory iconFactory = IconFactory.obtain(context)) {
++            final IconOptions options = new IconOptions().setUser(fetchUserIconInfo(context, user));
++            Drawable iconToBadge = icon;
++
++            final PixelPartsIconShapeConfig pixelPartsShapeConfig =
++                    getPixelPartsSystemIconShapeConfig(context, appInfo);
++            if (pixelPartsShapeConfig.mode == PIXEL_PARTS_ICON_SHAPE_REMOVE) {
++                options.setWrapNonAdaptiveIcon(false).setIconScale(1f);
++            } else if (pixelPartsShapeConfig.mode == PIXEL_PARTS_ICON_SHAPE_STRETCH
++                    && !(iconToBadge instanceof AdaptiveIconDrawable)) {
++                final int backgroundTint = pixelPartsResolveBackgroundTint(
++                        iconToBadge, pixelPartsShapeConfig);
++                iconToBadge = new AdaptiveIconDrawable(
++                        new ColorDrawable(backgroundTint),
++                        new PixelPartsScaledIconDrawable(
++                                iconToBadge,
++                                pixelPartsShapeConfig.scale,
++                                pixelPartsResolveForegroundTint(
++                                        iconToBadge, pixelPartsShapeConfig, backgroundTint)));
++                options.setWrapNonAdaptiveIcon(false).setIconScale(1f);
++            }
++
+             return iconFactory
+                     .createBadgedIconBitmap(
+-                            icon, new IconOptions().setUser(fetchUserIconInfo(context, user)))
++                            iconToBadge, options)
+                     .newIcon(context);
+         }
+     }
+ 
++    private static PixelPartsIconShapeConfig getPixelPartsSystemIconShapeConfig(
++            @NonNull Context context, @Nullable ApplicationInfo appInfo) {
++        final PixelPartsIconTintConfig tintConfig = getPixelPartsIconTintConfig(context);
++        if (!hasPixelPartsIconOverride(context, appInfo)) {
++            return new PixelPartsIconShapeConfig(
++                PIXEL_PARTS_ICON_SHAPE_DEFAULT, 1f, tintConfig);
++        }
++        final PixelPartsIconShapeOverride override = getPixelPartsIconShapeOverride(
++                appInfo != null ? appInfo.packageName : null);
++        if (override != null) {
++            return new PixelPartsIconShapeConfig(
++                    override.mode,
++                pixelPartsScalePercentToFloat(override.scalePercent),
++                tintConfig);
++        }
++        final float scalePercent = Settings.Global.getFloat(context.getContentResolver(),
++                PIXEL_PARTS_ICON_SYSTEM_SHAPE_SCALE_SETTING,
++                PIXEL_PARTS_ICON_SHAPE_DEFAULT_SCALE_PERCENT);
++        if (Settings.Global.getInt(context.getContentResolver(),
++                PIXEL_PARTS_ICON_SYSTEM_REMOVE_SHAPE_SETTING, 0) != 0) {
++            return new PixelPartsIconShapeConfig(
++                    PIXEL_PARTS_ICON_SHAPE_REMOVE,
++                    pixelPartsScalePercentToFloat(scalePercent),
++                    tintConfig);
++        }
++        if (Settings.Global.getInt(context.getContentResolver(),
++                PIXEL_PARTS_ICON_SYSTEM_STRETCH_SHAPE_SETTING, 0) != 0) {
++            return new PixelPartsIconShapeConfig(
++                    PIXEL_PARTS_ICON_SHAPE_STRETCH,
++                    pixelPartsScalePercentToFloat(scalePercent),
++                    tintConfig);
++        }
++            return new PixelPartsIconShapeConfig(PIXEL_PARTS_ICON_SHAPE_DEFAULT, 1f, tintConfig);
++    }
++
++            private static PixelPartsIconTintConfig getPixelPartsIconTintConfig(@NonNull Context context) {
++            return new PixelPartsIconTintConfig(
++                pixelPartsNormalizeTintMode(Settings.Global.getInt(
++                    context.getContentResolver(),
++                    PIXEL_PARTS_ICON_SHAPE_BACKGROUND_TINT_MODE_SETTING,
++                    PIXEL_PARTS_ICON_TINT_OFF)),
++                Settings.Global.getInt(
++                    context.getContentResolver(),
++                    PIXEL_PARTS_ICON_SHAPE_BACKGROUND_TINT_COLOR_SETTING,
++                    Color.TRANSPARENT),
++                pixelPartsNormalizeTintMode(Settings.Global.getInt(
++                    context.getContentResolver(),
++                    PIXEL_PARTS_ICON_SHAPE_FOREGROUND_TINT_MODE_SETTING,
++                    PIXEL_PARTS_ICON_TINT_OFF)),
++                Settings.Global.getInt(
++                    context.getContentResolver(),
++                    PIXEL_PARTS_ICON_SHAPE_FOREGROUND_TINT_COLOR_SETTING,
++                    Color.WHITE));
++            }
++
++    private static float pixelPartsScalePercentToFloat(float scalePercent) {
++        final float clamped = Math.max(
++                PIXEL_PARTS_ICON_SHAPE_MIN_SCALE_PERCENT,
++                Math.min(PIXEL_PARTS_ICON_SHAPE_MAX_SCALE_PERCENT, scalePercent));
++        return clamped / 100f;
++    }
++
++    private static int pixelPartsNormalizeTintMode(int mode) {
++        return mode == PIXEL_PARTS_ICON_TINT_CUSTOM || mode == PIXEL_PARTS_ICON_TINT_AUTO
++                ? mode : PIXEL_PARTS_ICON_TINT_OFF;
++    }
++
++    private static int pixelPartsResolveBackgroundTint(
++            @Nullable Drawable drawable, @NonNull PixelPartsIconShapeConfig shapeConfig) {
++        if (shapeConfig.backgroundTintMode == PIXEL_PARTS_ICON_TINT_CUSTOM) {
++            return shapeConfig.backgroundTintColor;
++        }
++        if (shapeConfig.backgroundTintMode == PIXEL_PARTS_ICON_TINT_AUTO) {
++            return pixelPartsDominantIconColor(drawable);
++        }
++        return Color.TRANSPARENT;
++    }
++
++    @Nullable
++    private static Integer pixelPartsResolveForegroundTint(
++            @Nullable Drawable drawable,
++            @NonNull PixelPartsIconShapeConfig shapeConfig,
++            @ColorInt int backgroundTint) {
++        if (shapeConfig.foregroundTintMode == PIXEL_PARTS_ICON_TINT_CUSTOM) {
++            return shapeConfig.foregroundTintColor;
++        }
++        if (shapeConfig.foregroundTintMode == PIXEL_PARTS_ICON_TINT_AUTO) {
++            final int baseColor = Color.alpha(backgroundTint) > 0
++                    ? backgroundTint : pixelPartsDominantIconColor(drawable);
++            return pixelPartsContrastColor(baseColor);
++        }
++        return null;
++    }
++
++    @ColorInt
++    private static int pixelPartsDominantIconColor(@Nullable Drawable drawable) {
++        if (drawable == null) {
++            return Color.TRANSPARENT;
++        }
++        try {
++            int width = Math.max(1,
++                    drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : 48);
++            int height = Math.max(1,
++                    drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : 48);
++            width = Math.min(width, 64);
++            height = Math.min(height, 64);
++            final Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
++            final Canvas canvas = new Canvas(bitmap);
++            final int oldLeft = drawable.getBounds().left;
++            final int oldTop = drawable.getBounds().top;
++            final int oldRight = drawable.getBounds().right;
++            final int oldBottom = drawable.getBounds().bottom;
++            drawable.setBounds(0, 0, width, height);
++            drawable.draw(canvas);
++            drawable.setBounds(oldLeft, oldTop, oldRight, oldBottom);
++
++            long red = 0L;
++            long green = 0L;
++            long blue = 0L;
++            long weight = 0L;
++            for (int y = 0; y < height; y++) {
++                for (int x = 0; x < width; x++) {
++                    final int color = bitmap.getPixel(x, y);
++                    final int alpha = Color.alpha(color);
++                    if (alpha < 32) {
++                        continue;
++                    }
++                    red += (long) Color.red(color) * alpha;
++                    green += (long) Color.green(color) * alpha;
++                    blue += (long) Color.blue(color) * alpha;
++                    weight += alpha;
++                }
++            }
++            bitmap.recycle();
++            if (weight <= 0L) {
++                return Color.TRANSPARENT;
++            }
++            return Color.rgb((int) (red / weight), (int) (green / weight), (int) (blue / weight));
++        } catch (Throwable ignored) {
++            return Color.TRANSPARENT;
++        }
++    }
++
++    @ColorInt
++    private static int pixelPartsContrastColor(@ColorInt int color) {
++        final double luminance = (0.299d * Color.red(color)
++                + 0.587d * Color.green(color)
++                + 0.114d * Color.blue(color)) / 255d;
++        return luminance > 0.55d ? Color.BLACK : Color.WHITE;
++    }
++
++    private static boolean hasPixelPartsIconOverride(
++            @NonNull Context context, @Nullable ApplicationInfo appInfo) {
++        return appInfo != null
++                && appInfo.packageName != null
++                && !appInfo.packageName.isEmpty()
++                && ApplicationPackageManager.hasPixelPartsIconOverride(
++                        context,
++                        appInfo.packageName,
++                        context.getResources().getConfiguration().densityDpi);
++    }
++
++    private static PixelPartsIconShapeOverride getPixelPartsIconShapeOverride(
++            @Nullable String packageName) {
++        if (packageName == null || packageName.isEmpty()) {
++            return null;
++        }
++        synchronized (PIXEL_PARTS_ICON_SHAPE_OVERRIDE_LOCK) {
++            refreshPixelPartsIconShapeOverridesLocked();
++            return sPixelPartsIconShapeOverrides.get(packageName);
++        }
++    }
++
++    private static void refreshPixelPartsIconShapeOverridesLocked() {
++        final long lastModified = PIXEL_PARTS_ICON_MAP_FILE.isFile()
++                ? PIXEL_PARTS_ICON_MAP_FILE.lastModified() : 0L;
++        if (sPixelPartsIconShapeOverridesLastModified == lastModified) {
++            return;
++        }
++        sPixelPartsIconShapeOverridesLastModified = lastModified;
++        sPixelPartsIconShapeOverrides.clear();
++        if (lastModified == 0L) {
++            return;
++        }
++        try (InputStream input = new FileInputStream(PIXEL_PARTS_ICON_MAP_FILE)) {
++            final JSONObject root = new JSONObject(
++                    new String(input.readAllBytes(), StandardCharsets.UTF_8));
++            final JSONObject overrides = root.optJSONObject("shapeOverrides");
++            if (overrides == null) {
++                return;
++            }
++            final Iterator<String> packages = overrides.keys();
++            while (packages.hasNext()) {
++                final String packageName = packages.next();
++                final PixelPartsIconShapeOverride override = readPixelPartsIconShapeOverride(
++                        overrides.optJSONObject(packageName), "system");
++                if (override != null && packageName != null && !packageName.isEmpty()) {
++                    sPixelPartsIconShapeOverrides.put(packageName, override);
++                }
++            }
++        } catch (IOException | JSONException e) {
++            sPixelPartsIconShapeOverrides.clear();
++        }
++    }
++
++    private static PixelPartsIconShapeOverride readPixelPartsIconShapeOverride(
++            @Nullable JSONObject appObject, @NonNull String areaName) {
++        if (appObject == null) {
++            return null;
++        }
++        final JSONObject area = appObject.optJSONObject(areaName);
++        if (area == null) {
++            return null;
++        }
++        final boolean removeShape = area.optBoolean("removeShape", false);
++        final boolean stretchShape = area.optBoolean("stretchShape", false) && !removeShape;
++        final int mode = removeShape
++                ? PIXEL_PARTS_ICON_SHAPE_REMOVE
++                : (stretchShape ? PIXEL_PARTS_ICON_SHAPE_STRETCH : PIXEL_PARTS_ICON_SHAPE_DEFAULT);
++        final float scalePercent = Math.max(
++                PIXEL_PARTS_ICON_SHAPE_MIN_SCALE_PERCENT,
++                Math.min(
++                        PIXEL_PARTS_ICON_SHAPE_MAX_SCALE_PERCENT,
++                (float) area.optDouble(
++                    "scalePercent",
++                    PIXEL_PARTS_ICON_SHAPE_DEFAULT_SCALE_PERCENT)));
++        return new PixelPartsIconShapeOverride(mode, scalePercent);
++    }
++
++    private static final class PixelPartsIconShapeConfig {
++        final int mode;
++        final float scale;
++        final int backgroundTintMode;
++        final int backgroundTintColor;
++        final int foregroundTintMode;
++        final int foregroundTintColor;
++
++        PixelPartsIconShapeConfig(int mode, float scale, PixelPartsIconTintConfig tintConfig) {
++            this.mode = mode;
++            this.scale = Math.max(0f, Math.min(2f, scale));
++            this.backgroundTintMode = tintConfig.backgroundTintMode;
++            this.backgroundTintColor = tintConfig.backgroundTintColor;
++            this.foregroundTintMode = tintConfig.foregroundTintMode;
++            this.foregroundTintColor = tintConfig.foregroundTintColor;
++        }
++    }
++
++    private static final class PixelPartsIconTintConfig {
++        final int backgroundTintMode;
++        final int backgroundTintColor;
++        final int foregroundTintMode;
++        final int foregroundTintColor;
++
++        PixelPartsIconTintConfig(
++                int backgroundTintMode,
++                int backgroundTintColor,
++                int foregroundTintMode,
++                int foregroundTintColor) {
++            this.backgroundTintMode = pixelPartsNormalizeTintMode(backgroundTintMode);
++            this.backgroundTintColor = backgroundTintColor;
++            this.foregroundTintMode = pixelPartsNormalizeTintMode(foregroundTintMode);
++            this.foregroundTintColor = foregroundTintColor;
++        }
++    }
++
++    private static final class PixelPartsIconShapeOverride {
++        final int mode;
++        final float scalePercent;
++
++        PixelPartsIconShapeOverride(int mode, float scalePercent) {
++            this.mode = mode;
++            this.scalePercent = scalePercent;
++        }
++    }
++
++    private static final class PixelPartsScaledIconDrawable extends Drawable {
++        private final Drawable mDrawable;
++        private final float mScale;
++        private final ColorFilter mTintFilter;
++        private int mAlpha = 255;
++        private ColorFilter mColorFilter;
++
++        PixelPartsScaledIconDrawable(
++                @NonNull Drawable drawable, float scale, @Nullable Integer tintColor) {
++            mDrawable = drawable.mutate();
++            mScale = Math.max(0f, Math.min(2f, scale));
++            mTintFilter = tintColor != null
++                    ? new PorterDuffColorFilter(tintColor, PorterDuff.Mode.SRC_IN)
++                    : null;
++            if (mDrawable instanceof BitmapDrawable) {
++                final BitmapDrawable bitmapDrawable = (BitmapDrawable) mDrawable;
++                bitmapDrawable.setAntiAlias(true);
++                bitmapDrawable.setFilterBitmap(true);
++                bitmapDrawable.setDither(true);
++            }
++        }
++
++        @Override
++        public void draw(@NonNull Canvas canvas) {
++            if (mScale <= 0f) {
++                return;
++            }
++            final Rect bounds = getBounds();
++            final int save = canvas.saveLayerAlpha(
++                    bounds.left,
++                    bounds.top,
++                    bounds.right,
++                    bounds.bottom,
++                    mAlpha);
++            canvas.clipRect(bounds);
++            canvas.scale(mScale, mScale, bounds.exactCenterX(), bounds.exactCenterY());
++            mDrawable.setBounds(bounds);
++            final ColorFilter previousColorFilter = mDrawable.getColorFilter();
++            final ColorFilter activeColorFilter = mColorFilter != null ? mColorFilter : mTintFilter;
++            if (activeColorFilter != null) {
++                mDrawable.setColorFilter(activeColorFilter);
++            }
++            mDrawable.draw(canvas);
++            if (activeColorFilter != null) {
++                mDrawable.setColorFilter(previousColorFilter);
++            }
++            canvas.restoreToCount(save);
++        }
++
++        @Override
++        public void setAlpha(int alpha) {
++            mAlpha = Math.max(0, Math.min(255, alpha));
++            invalidateSelf();
++        }
++
++        @Override
++        public int getAlpha() {
++            return mAlpha;
++        }
++
++        @Override
++        public void setColorFilter(@Nullable ColorFilter colorFilter) {
++            mColorFilter = colorFilter;
++            mDrawable.setColorFilter(colorFilter);
++            invalidateSelf();
++        }
++
++        @Override
++        public int getOpacity() {
++            return PixelFormat.TRANSLUCENT;
++        }
++
++        @Override
++        public int getIntrinsicWidth() {
++            return mDrawable.getIntrinsicWidth();
++        }
++
++        @Override
++        public int getIntrinsicHeight() {
++            return mDrawable.getIntrinsicHeight();
++        }
++
++        @Override
++        public boolean isStateful() {
++            return mDrawable.isStateful();
++        }
++
++        @Override
++        protected boolean onStateChange(int[] state) {
++            return mDrawable.setState(state);
++        }
++
++        @Override
++        protected boolean onLevelChange(int level) {
++            return mDrawable.setLevel(level);
++        }
++
++        @Override
++        public boolean setVisible(boolean visible, boolean restart) {
++            return mDrawable.setVisible(visible, restart) || super.setVisible(visible, restart);
++        }
++    }
++
+     /** Get the {@link Drawable} that represents the app icon */
+     public static Drawable getBadgedIcon(Context context, ApplicationInfo appInfo) {
+         return getBadgedIcon(
+                 context,
+                 appInfo.loadUnbadgedIcon(context.getPackageManager()),
+-                UserHandle.getUserHandleForUid(appInfo.uid));
++                UserHandle.getUserHandleForUid(appInfo.uid),
++                appInfo);
+     }
+ 
+     /**

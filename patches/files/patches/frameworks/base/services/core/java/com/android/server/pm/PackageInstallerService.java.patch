@@ -1,0 +1,41 @@
+--- a/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java
++++ b/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java
+@@ -864,6 +864,9 @@
+             params.installFlags &= ~PackageManager.INSTALL_ALLOW_DOWNGRADE;
+         }
+ 
++        final boolean isTrustedSystemInstaller = callingUid == Process.SYSTEM_UID
++                && mContext.checkCallingOrSelfPermission(Manifest.permission.INSTALL_PACKAGES)
++                == PackageManager.PERMISSION_GRANTED;
+         if (mDisableVerificationForUid != INVALID_UID) {
+             if (callingUid == mDisableVerificationForUid) {
+                 params.installFlags |= PackageManager.INSTALL_DISABLE_VERIFICATION;
+@@ -873,9 +876,11 @@
+             }
+             // Reset the field as this is a one-off request.
+             mDisableVerificationForUid = INVALID_UID;
+-        } else if ((params.installFlags & ADB_DEV_MODE) != ADB_DEV_MODE) {
++        } else if ((params.installFlags & ADB_DEV_MODE) != ADB_DEV_MODE
++                && !isTrustedSystemInstaller) {
+             // Only tools under specific conditions (test app installed through ADB, and
+-            // verification disabled flag specified) can disable verification.
++            // verification disabled flag specified), or the trusted system installer, can
++            // disable verification.
+             params.installFlags &= ~PackageManager.INSTALL_DISABLE_VERIFICATION;
+         }
+ 
+@@ -1130,9 +1135,12 @@
+             }
+         }
+ 
+-        // reset the force queryable param if it's not called by an approved caller.
++        // System packages are trusted installers in this build and may mark their generated
++        // resource-only packages as force-queryable. This is needed for framework consumers in
++        // unrelated app processes to resolve those packages through package visibility.
+         if (params.forceQueryableOverride) {
+-            if (!PackageManagerServiceUtils.isRootOrShell(callingUid)) {
++            if (!PackageManagerServiceUtils.isRootOrShell(callingUid)
++                    && callingUid != Process.SYSTEM_UID) {
+                 params.forceQueryableOverride = false;
+             }
+         }

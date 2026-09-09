@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-"""PixelExtraParts source patch launcher."""
+"""PixelExtraParts source patch launcher (files/ based)."""
 
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 import sys
 from pathlib import Path
@@ -15,26 +14,55 @@ from typing import Iterable
 sys.dont_write_bytecode = True
 
 PATCHES_DIR = Path(__file__).resolve().parent
+FILES_DIR = PATCHES_DIR / "files"
+MODIFIED_DIR = FILES_DIR / "modified"
+ORIGINAL_DIR = FILES_DIR / "original"
+NEW_DIR = FILES_DIR / "new"
+UNIFIED_DIR = FILES_DIR / "patches"
 DEFAULT_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_CONFIG = PATCHES_DIR / "config.json"
 
 
-def _load_patch_modules() -> list:
-    sys.path.insert(0, str(PATCHES_DIR))
-    modules = []
-    for module_file in sorted((PATCHES_DIR / "subpatches").glob("*.py")):
-        if module_file.name == "__init__.py":
-            continue
-        modules.append(importlib.import_module(f"subpatches.{module_file.stem}"))
-    return modules
+def _patch_id_for(rel: str, prefix: str = "snap") -> str:
+    return prefix + "-" + rel.replace("/", "-").replace(".", "-").replace("_", "-")
 
 
 def load_patches() -> list:
-    patches = []
-    for module in _load_patch_modules():
-        if not hasattr(module, "get_patches"):
-            raise RuntimeError(f"Subpatch module {module.__name__} does not expose get_patches()")
-        patches.extend(module.get_patches())
+    from patchlib import NewFilePatch, SnapshotPatch
+
+    patches: list = []
+
+    if MODIFIED_DIR.exists():
+        for mod_file in sorted(p for p in MODIFIED_DIR.rglob("*") if p.is_file()):
+            rel = mod_file.relative_to(MODIFIED_DIR).as_posix()
+            orig_file = ORIGINAL_DIR / rel
+            patch_file = UNIFIED_DIR / f"{rel}.patch"
+            patches.append(
+                SnapshotPatch(
+                    patch_id=_patch_id_for(rel),
+                    title=f"Snapshot {rel}",
+                    target=rel,
+                    original_file=orig_file,
+                    modified_file=mod_file,
+                    patch_file=patch_file if patch_file.exists() else None,
+                )
+            )
+
+    if NEW_DIR.exists():
+        for new_file in sorted(p for p in NEW_DIR.rglob("*") if p.is_file()):
+            rel = new_file.relative_to(NEW_DIR).as_posix()
+            # Skip files that are also covered as modified (should not happen).
+            if (MODIFIED_DIR / rel).exists():
+                continue
+            patches.append(
+                NewFilePatch(
+                    patch_id=_patch_id_for(rel, prefix="new"),
+                    title=f"New file {rel}",
+                    target=rel,
+                    source_file=new_file,
+                )
+            )
+
     return patches
 
 
@@ -77,12 +105,12 @@ def print_patch_list(patches: Iterable, config: dict, root: Path) -> None:
     )
     for patch in patches:
         bypass = "bypass" if context.should_bypass(patch) else "apply"
-        print(f"{patch.id:40} {bypass:7} {patch.title}")
+        print(f"{patch.id:70} {bypass:7} {patch.title}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Apply PixelExtraParts source patches from changebe snapshots.",
+        description="Apply PixelExtraParts source patches from patches/files.",
     )
     parser.add_argument(
         "--root",
@@ -123,6 +151,12 @@ def parse_args() -> argparse.Namespace:
         help="Set a patch mode in config.json. 'on' means bypass, 'off' means apply.",
     )
     parser.add_argument(
+        "--only",
+        action="append",
+        default=None,
+        help="Apply/check only matching target path (repeatable, substring match).",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print extra details for failed patches.",
@@ -145,10 +179,15 @@ def main() -> int:
 
     config = load_config(config_path)
     patches = load_patches()
+    if args.only:
+        patches = [p for p in patches if any(s in p.target for s in args.only)]
     root = args.root.resolve()
 
     if args.list:
         print_patch_list(patches, config, root)
+        print(f"\nTotal: {len(patches)} (modified={sum(1 for p in patches if p.id.startswith('snap-'))}, "
+              f"new={sum(1 for p in patches if p.id.startswith('new-'))})")
+        print(f"Sources: {MODIFIED_DIR} / {ORIGINAL_DIR} / {NEW_DIR} / {UNIFIED_DIR}")
         return 0
 
     from patchlib import PatchContext

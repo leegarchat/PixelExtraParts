@@ -1,0 +1,31 @@
+--- a/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -308,6 +308,9 @@
+  * of both of those when held.
+  */
+ public class PhoneWindowManager implements WindowManagerPolicy {
++    private static final String PIXELPARTS_PACKAGE = "org.pixel.customparts";
++    private static final String ACTION_PIXELPARTS_HARDWARE_INPUT =
++            "org.pixel.customparts.action.HARDWARE_INPUT";
+     static final String TAG = "WindowManager";
+     static final boolean localLOGV = false;
+     static final boolean DEBUG = false;
+@@ -5114,6 +5117,18 @@
+     public int interceptKeyBeforeQueueing(KeyEvent event, int policyFlags) {
+         final int keyCode = event.getKeyCode();
+         final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
++        if (down && (policyFlags & WindowManagerPolicy.FLAG_INJECTED) == 0) {
++            final KeyEvent keyEvent = KeyEvent.obtain(event);
++            mHandler.post(() -> {
++                try {
++                    mContext.sendBroadcastAsUser(new Intent(ACTION_PIXELPARTS_HARDWARE_INPUT)
++                            .setPackage(PIXELPARTS_PACKAGE)
++                            .putExtra(Intent.EXTRA_KEY_EVENT, keyEvent), UserHandle.ALL);
++                } finally {
++                    keyEvent.recycle();
++                }
++            });
++        }
+         boolean isWakeKey = (policyFlags & WindowManagerPolicy.FLAG_WAKE) != 0
+                 || event.isWakeKey();
+         boolean isKeyGestureTriggered = (policyFlags & FLAG_KEY_GESTURE_TRIGGERED) != 0;

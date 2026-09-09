@@ -1,0 +1,187 @@
+{
+  "timestamp": "20260905_085323",
+  "created": "2026-09-05T08:57:36.070821",
+  "mode": "smart",
+  "repos": {
+    "device/lineage/sepolicy": {
+      "modified": [
+        "device/lineage/sepolicy/common/sepolicy.mk"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "frameworks/base": {
+      "modified": [
+        "frameworks/base/core/java/android/app/Activity.java",
+        "frameworks/base/core/java/android/app/ActivityThread.java",
+        "frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+        "frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
+        "frameworks/base/core/java/android/widget/EdgeEffect.java",
+        "frameworks/base/core/java/android/widget/Magnifier.java",
+        "frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+        "frameworks/base/libs/WindowManager/Shell/src/com/android/wm/shell/transition/ScreenRotationAnimation.java",
+        "frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
+        "frameworks/base/packages/SystemUI/pods/brightness/src/main/data/repository/ScreenBrightnessDisplayManagerRepository.kt",
+        "frameworks/base/packages/SystemUI/src/com/android/systemui/keyguard/ui/view/layout/sections/AodBurnInLayer.kt",
+        "frameworks/base/services/core/java/com/android/server/lights/LightsService.java",
+        "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+        "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+        "frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+        "frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+        "frameworks/base/services/java/com/android/server/SystemServer.java"
+      ],
+      "untracked": [
+        "frameworks/base/services/core/java/com/android/server/DtwSystemService.java"
+      ],
+      "deleted": []
+    },
+    "hardware/google/pixel": {
+      "modified": [
+        "hardware/google/pixel/thermal/Thermal.cpp",
+        "hardware/google/pixel/thermal/Thermal.h",
+        "hardware/google/pixel/thermal/thermal-helper.cpp",
+        "hardware/google/pixel/thermal/thermal-helper.h",
+        "hardware/google/pixel/thermal/utils/powerhal_helper.h"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "packages/apps/Settings": {
+      "modified": [
+        "packages/apps/Settings/Android.bp"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "packages/apps/Updater": {
+      "modified": [
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesActivity.java",
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesListAdapter.java",
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/controller/UpdaterController.java",
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/misc/Utils.java",
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBase.java",
+        "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBaseInfo.java",
+        "packages/apps/Updater/app/src/main/res/layout/update_item_view.xml",
+        "packages/apps/Updater/app/src/main/res/menu/menu_toolbar.xml",
+        "packages/apps/Updater/app/src/main/res/values/strings.xml"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "system/memory/libdmabufheap": {
+      "modified": [
+        "system/memory/libdmabufheap/BufferAllocator.cpp",
+        "system/memory/libdmabufheap/include/BufferAllocator/BufferAllocator.h"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "system/sepolicy": {
+      "modified": [
+        "system/sepolicy/private/coredomain.te",
+        "system/sepolicy/private/domain.te"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "vendor/gms": {
+      "modified": [
+        "vendor/gms/product/blobs/etc/sysconfig/google.xml"
+      ],
+      "untracked": [],
+      "deleted": []
+    },
+    "vendor/lineage": {
+      "modified": [
+        "vendor/lineage/config/evolution.mk"
+      ],
+      "untracked": [],
+      "deleted": []
+    }
+  },
+  "processed": {
+    "device/lineage/sepolicy/common/sepolicy.mk": "ok",
+    "frameworks/base/core/java/android/app/Activity.java": "ok",
+    "frameworks/base/core/java/android/app/ActivityThread.java": "ok",
+    "frameworks/base/core/java/android/app/ApplicationPackageManager.java": "ok",
+    "frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java": "ok",
+    "frameworks/base/core/java/android/widget/EdgeEffect.java": "ok",
+    "frameworks/base/core/java/android/widget/Magnifier.java": "ok",
+    "frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java": "ok",
+    "frameworks/base/libs/WindowManager/Shell/src/com/android/wm/shell/transition/ScreenRotationAnimation.java": "ok",
+    "frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java": "ok",
+    "frameworks/base/packages/SystemUI/pods/brightness/src/main/data/repository/ScreenBrightnessDisplayManagerRepository.kt": "ok",
+    "frameworks/base/packages/SystemUI/src/com/android/systemui/keyguard/ui/view/layout/sections/AodBurnInLayer.kt": "ok",
+    "frameworks/base/services/core/java/com/android/server/lights/LightsService.java": "ok",
+    "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java": "ok",
+    "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java": "ok",
+    "frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java": "ok",
+    "frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java": "ok",
+    "frameworks/base/services/java/com/android/server/SystemServer.java": "ok",
+    "hardware/google/pixel/thermal/Thermal.cpp": "ok",
+    "hardware/google/pixel/thermal/Thermal.h": "ok",
+    "hardware/google/pixel/thermal/thermal-helper.cpp": "ok",
+    "hardware/google/pixel/thermal/thermal-helper.h": "ok",
+    "hardware/google/pixel/thermal/utils/powerhal_helper.h": "ok",
+    "packages/apps/Settings/Android.bp": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesActivity.java": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesListAdapter.java": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/controller/UpdaterController.java": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/misc/Utils.java": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBase.java": "ok",
+    "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBaseInfo.java": "ok",
+    "packages/apps/Updater/app/src/main/res/layout/update_item_view.xml": "ok",
+    "packages/apps/Updater/app/src/main/res/menu/menu_toolbar.xml": "ok",
+    "packages/apps/Updater/app/src/main/res/values/strings.xml": "ok",
+    "system/memory/libdmabufheap/BufferAllocator.cpp": "ok",
+    "system/memory/libdmabufheap/include/BufferAllocator/BufferAllocator.h": "ok",
+    "system/sepolicy/private/coredomain.te": "ok",
+    "system/sepolicy/private/domain.te": "ok",
+    "vendor/gms/product/blobs/etc/sysconfig/google.xml": "ok",
+    "vendor/lineage/config/evolution.mk": "ok"
+  },
+  "sync_rc": 0,
+  "apply": {
+    "applied": [
+      "device/lineage/sepolicy/common/sepolicy.mk",
+      "frameworks/base/core/java/android/app/Activity.java",
+      "frameworks/base/core/java/android/app/ActivityThread.java",
+      "frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+      "frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
+      "frameworks/base/core/java/android/widget/EdgeEffect.java",
+      "frameworks/base/core/java/android/widget/Magnifier.java",
+      "frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+      "frameworks/base/libs/WindowManager/Shell/src/com/android/wm/shell/transition/ScreenRotationAnimation.java",
+      "frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
+      "frameworks/base/packages/SystemUI/pods/brightness/src/main/data/repository/ScreenBrightnessDisplayManagerRepository.kt",
+      "frameworks/base/packages/SystemUI/src/com/android/systemui/keyguard/ui/view/layout/sections/AodBurnInLayer.kt",
+      "frameworks/base/services/core/java/com/android/server/lights/LightsService.java",
+      "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+      "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+      "frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+      "frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+      "frameworks/base/services/java/com/android/server/SystemServer.java",
+      "hardware/google/pixel/thermal/Thermal.cpp",
+      "hardware/google/pixel/thermal/Thermal.h",
+      "hardware/google/pixel/thermal/thermal-helper.cpp",
+      "hardware/google/pixel/thermal/thermal-helper.h",
+      "hardware/google/pixel/thermal/utils/powerhal_helper.h",
+      "packages/apps/Settings/Android.bp",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesActivity.java",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesListAdapter.java",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/controller/UpdaterController.java",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/misc/Utils.java",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBase.java",
+      "packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBaseInfo.java",
+      "packages/apps/Updater/app/src/main/res/layout/update_item_view.xml",
+      "packages/apps/Updater/app/src/main/res/menu/menu_toolbar.xml",
+      "packages/apps/Updater/app/src/main/res/values/strings.xml",
+      "system/memory/libdmabufheap/BufferAllocator.cpp",
+      "system/memory/libdmabufheap/include/BufferAllocator/BufferAllocator.h",
+      "system/sepolicy/private/coredomain.te",
+      "system/sepolicy/private/domain.te",
+      "vendor/gms/product/blobs/etc/sysconfig/google.xml",
+      "vendor/lineage/config/evolution.mk"
+    ]
+  }
+}

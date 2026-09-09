@@ -1,0 +1,398 @@
+--- a/hardware/google/pixel/thermal/Thermal.cpp
++++ b/hardware/google/pixel/thermal/Thermal.cpp
+@@ -20,8 +20,12 @@
+ 
+ #include <android-base/file.h>
+ #include <android-base/logging.h>
++#include <android-base/properties.h>
++#include <android-base/strings.h>
+ #include <utils/Trace.h>
+ 
++#include <chrono>
++
+ namespace aidl {
+ namespace android {
+ namespace hardware {
+@@ -48,17 +52,136 @@
+     return left->asBinder() == right->asBinder();
+ }
+ 
++constexpr std::string_view kConfigProperty("vendor.thermal.config");
++constexpr std::string_view kConfigDefaultFileName("thermal_info_config.json");
++constexpr std::chrono::milliseconds kConfigPollInterval(200);
++constexpr std::chrono::seconds kMissingConfigRetryInterval(5);
++
+ }  // namespace
+ 
+ Thermal::Thermal() {
+-    thermal_helper_ = std::make_shared<ThermalHelperImpl>(
++    auto thermal_helper = std::make_shared<ThermalHelperImpl>(
+             std::bind(&Thermal::sendThermalChangedCallback, this, std::placeholders::_1));
++    thermal_helper_ = thermal_helper;
++    last_config_property_ = thermal_helper->getLoadedConfigProperty();
++    if (last_config_property_.empty()) {
++        last_config_property_ = readThermalConfigProperty();
++    }
++    startConfigWatcher();
+ }
+ 
+ Thermal::Thermal(const std::shared_ptr<ThermalHelper> &helper) {
+     thermal_helper_ = helper;
+ }
+ 
++Thermal::~Thermal() {
++    stopConfigWatcher();
++}
++
++std::shared_ptr<ThermalHelper> Thermal::getThermalHelper() const {
++    std::shared_lock<std::shared_mutex> lock(thermal_helper_mutex_);
++    return thermal_helper_;
++}
++
++std::string Thermal::readThermalConfigProperty() const {
++    std::string value = ::android::base::GetProperty(kConfigProperty.data(),
++                                                     kConfigDefaultFileName.data());
++    value = ::android::base::Trim(value);
++    return value.empty() ? std::string(kConfigDefaultFileName.data()) : value;
++}
++
++void Thermal::startConfigWatcher() {
++    config_watcher_running_ = true;
++    config_watcher_thread_ = std::thread([this] { configWatcherLoop(); });
++}
++
++void Thermal::stopConfigWatcher() {
++    if (!config_watcher_running_.exchange(false)) {
++        return;
++    }
++    if (config_watcher_thread_.joinable()) {
++        config_watcher_thread_.join();
++    }
++}
++
++void Thermal::configWatcherLoop() {
++    while (config_watcher_running_) {
++        std::this_thread::sleep_for(kConfigPollInterval);
++        if (!config_watcher_running_) {
++            break;
++        }
++
++        const std::string current_config_property = readThermalConfigProperty();
++        if (current_config_property == last_config_property_) {
++            pending_config_property_.clear();
++            continue;
++        }
++
++        const auto now = std::chrono::steady_clock::now();
++        if (current_config_property == pending_config_property_ &&
++            now - last_pending_config_check_ < kMissingConfigRetryInterval) {
++            continue;
++        }
++
++        std::string loaded_config_property;
++        if (reloadThermalHelper(current_config_property, &loaded_config_property)) {
++            last_config_property_ = loaded_config_property.empty() ? current_config_property
++                                                                   : loaded_config_property;
++            if (last_config_property_ == current_config_property) {
++                pending_config_property_.clear();
++            } else {
++                pending_config_property_ = current_config_property;
++                last_pending_config_check_ = now;
++            }
++        } else {
++            pending_config_property_ = current_config_property;
++            last_pending_config_check_ = now;
++        }
++    }
++}
++
++bool Thermal::reloadThermalHelper(const std::string &config_property,
++                                  std::string *loaded_config_property) {
++    LOG(INFO) << "Reloading Thermal HAL config from " << kConfigProperty.data() << "="
++              << config_property;
++    auto new_helper = std::make_shared<ThermalHelperImpl>(
++            std::bind(&Thermal::sendThermalChangedCallback, this, std::placeholders::_1), false,
++            false);
++    if (!new_helper->isInitializedOk()) {
++        LOG(ERROR) << "New thermal config failed to initialize; keeping previous helper";
++        return false;
++    }
++    const std::string loaded_property = new_helper->getLoadedConfigProperty();
++    if (loaded_config_property != nullptr) {
++        *loaded_config_property = loaded_property;
++    }
++    if (loaded_property != config_property) {
++        LOG(WARNING) << "Thermal config " << config_property << " is pending; using "
++                     << loaded_property << " until it becomes available";
++        if (loaded_property == last_config_property_) {
++            return true;
++        }
++    }
++
++    std::shared_ptr<ThermalHelper> old_helper;
++    {
++        std::unique_lock<std::shared_mutex> lock(thermal_helper_mutex_);
++        old_helper = thermal_helper_;
++        if (old_helper) {
++            old_helper->clearCurrentThrottling();
++        }
++        thermal_helper_ = new_helper;
++    }
++
++    if (!new_helper->startWatcher()) {
++        LOG(ERROR) << "New thermal helper failed to start watcher";
++        std::unique_lock<std::shared_mutex> lock(thermal_helper_mutex_);
++        thermal_helper_ = old_helper;
++        return false;
++    }
++    return true;
++}
++
+ ndk::ScopedAStatus Thermal::getTemperatures(std::vector<Temperature> *_aidl_return) {
+     return getFilteredTemperatures(false, TemperatureType::UNKNOWN, _aidl_return);
+ }
+@@ -71,10 +194,11 @@
+ ndk::ScopedAStatus Thermal::getFilteredTemperatures(bool filterType, TemperatureType type,
+                                                     std::vector<Temperature> *_aidl_return) {
+     *_aidl_return = {};
+-    if (!thermal_helper_->isInitializedOk()) {
++    auto thermal_helper = getThermalHelper();
++    if (!thermal_helper->isInitializedOk()) {
+         return initErrorStatus();
+     }
+-    if (!thermal_helper_->fillCurrentTemperatures(filterType, false, type, _aidl_return)) {
++    if (!thermal_helper->fillCurrentTemperatures(filterType, false, type, _aidl_return)) {
+         return readErrorStatus();
+     }
+     return ndk::ScopedAStatus::ok();
+@@ -92,10 +216,11 @@
+ ndk::ScopedAStatus Thermal::getFilteredCoolingDevices(bool filterType, CoolingType type,
+                                                       std::vector<CoolingDevice> *_aidl_return) {
+     *_aidl_return = {};
+-    if (!thermal_helper_->isInitializedOk()) {
++    auto thermal_helper = getThermalHelper();
++    if (!thermal_helper->isInitializedOk()) {
+         return initErrorStatus();
+     }
+-    if (!thermal_helper_->fillCurrentCoolingDevices(filterType, type, _aidl_return)) {
++    if (!thermal_helper->fillCurrentCoolingDevices(filterType, type, _aidl_return)) {
+         return readErrorStatus();
+     }
+     return ndk::ScopedAStatus::ok();
+@@ -115,10 +240,11 @@
+ ndk::ScopedAStatus Thermal::getFilteredTemperatureThresholds(
+         bool filterType, TemperatureType type, std::vector<TemperatureThreshold> *_aidl_return) {
+     *_aidl_return = {};
+-    if (!thermal_helper_->isInitializedOk()) {
++    auto thermal_helper = getThermalHelper();
++    if (!thermal_helper->isInitializedOk()) {
+         return initErrorStatus();
+     }
+-    if (!thermal_helper_->fillTemperatureThresholds(filterType, type, _aidl_return)) {
++    if (!thermal_helper->fillTemperatureThresholds(filterType, type, _aidl_return)) {
+         return readErrorStatus();
+     }
+     return ndk::ScopedAStatus::ok();
+@@ -173,7 +299,8 @@
+         return ndk::ScopedAStatus::fromExceptionCodeWithMessage(EX_ILLEGAL_ARGUMENT,
+                                                                 "Invalid nullptr callback");
+     }
+-    if (!thermal_helper_->isInitializedOk()) {
++    auto thermal_helper = getThermalHelper();
++    if (!thermal_helper->isInitializedOk()) {
+         return initErrorStatus();
+     }
+     std::lock_guard<std::mutex> _lock(thermal_callback_mutex_);
+@@ -189,7 +316,8 @@
+     // Send notification right away after successful thermal callback registration
+     std::function<void()> handler = [this, c, filterType, type]() {
+         std::vector<Temperature> temperatures;
+-        if (thermal_helper_->fillCurrentTemperatures(filterType, true, type, &temperatures)) {
++        auto thermal_helper = getThermalHelper();
++        if (thermal_helper->fillCurrentTemperatures(filterType, true, type, &temperatures)) {
+             std::lock_guard<std::mutex> _lock(thermal_callback_mutex_);
+             auto it = std::find_if(callbacks_.begin(), callbacks_.end(),
+                                    [&](const CallbackSetting &cc) {
+@@ -250,7 +378,8 @@
+                                                                 "Invalid nullptr callback");
+     }
+ 
+-    if (!thermal_helper_->isInitializedOk()) {
++    auto thermal_helper = getThermalHelper();
++    if (!thermal_helper->isInitializedOk()) {
+         return initErrorStatus();
+     }
+ 
+@@ -313,7 +442,8 @@
+ 
+ void Thermal::dumpVirtualSensorInfo(std::ostringstream *dump_buf) {
+     *dump_buf << "getVirtualSensorInfo:" << std::endl;
+-    const auto &map = thermal_helper_->GetSensorInfoMap();
++    auto thermal_helper = getThermalHelper();
++    const auto &map = thermal_helper->GetSensorInfoMap();
+     for (const auto &sensor_info_pair : map) {
+         if (sensor_info_pair.second.virtual_sensor_info != nullptr) {
+             *dump_buf << " Name: " << sensor_info_pair.first << std::endl;
+@@ -368,16 +498,18 @@
+ 
+ void Thermal::dumpVtEstimatorInfo(std::ostringstream *dump_buf) {
+     *dump_buf << "getVtEstimatorInfo:" << std::endl;
+-    const auto &map = thermal_helper_->GetSensorInfoMap();
++    auto thermal_helper = getThermalHelper();
++    const auto &map = thermal_helper->GetSensorInfoMap();
+     for (const auto &name_info_pair : map) {
+-        thermal_helper_->dumpVtEstimatorStatus(name_info_pair.first, dump_buf);
++        thermal_helper->dumpVtEstimatorStatus(name_info_pair.first, dump_buf);
+     }
+ }
+ 
+ void Thermal::dumpThrottlingInfo(std::ostringstream *dump_buf) {
+     *dump_buf << "getThrottlingInfo:" << std::endl;
+-    const auto &map = thermal_helper_->GetSensorInfoMap();
+-    const auto &thermal_throttling_status_map = thermal_helper_->GetThermalThrottlingStatusMap();
++    auto thermal_helper = getThermalHelper();
++    const auto &map = thermal_helper->GetSensorInfoMap();
++    const auto &thermal_throttling_status_map = thermal_helper->GetThermalThrottlingStatusMap();
+     for (const auto &name_info_pair : map) {
+         if (name_info_pair.second.throttling_info == nullptr) {
+             continue;
+@@ -515,7 +647,8 @@
+ }
+ 
+ void Thermal::dumpThrottlingRequestStatus(std::ostringstream *dump_buf) {
+-    const auto &thermal_throttling_status_map = thermal_helper_->GetThermalThrottlingStatusMap();
++    auto thermal_helper = getThermalHelper();
++    const auto &thermal_throttling_status_map = thermal_helper->GetThermalThrottlingStatusMap();
+     if (!thermal_throttling_status_map.size()) {
+         return;
+     }
+@@ -565,8 +698,9 @@
+ }
+ 
+ void Thermal::dumpPowerRailInfo(std::ostringstream *dump_buf) {
+-    const auto &power_rail_info_map = thermal_helper_->GetPowerRailInfoMap();
+-    const auto &power_status_map = thermal_helper_->GetPowerStatusMap();
++    auto thermal_helper = getThermalHelper();
++    const auto &power_rail_info_map = thermal_helper->GetPowerRailInfoMap();
++    const auto &power_status_map = thermal_helper->GetPowerStatusMap();
+ 
+     *dump_buf << "getPowerRailInfo:" << std::endl;
+     for (const auto &power_rail_pair : power_rail_info_map) {
+@@ -644,7 +778,8 @@
+ void Thermal::dumpThermalStats(std::ostringstream *dump_buf) {
+     *dump_buf << "getThermalStatsInfo:" << std::endl;
+     *dump_buf << " Sensor Temp Stats Info:" << std::endl;
+-    const auto &sensor_temp_stats_map_ = thermal_helper_->GetSensorTempStatsSnapshot();
++    auto thermal_helper = getThermalHelper();
++    const auto &sensor_temp_stats_map_ = thermal_helper->GetSensorTempStatsSnapshot();
+     const std::string sensor_temp_stats_line_prefix("    ");
+     for (const auto &sensor_temp_stats_pair : sensor_temp_stats_map_) {
+         *dump_buf << "  Sensor Name: " << sensor_temp_stats_pair.first << std::endl;
+@@ -675,7 +810,7 @@
+     }
+     *dump_buf << " Sensor Cdev Request Stats Info:" << std::endl;
+     const auto &sensor_cdev_request_stats_map_ =
+-            thermal_helper_->GetSensorCoolingDeviceRequestStatsSnapshot();
++            thermal_helper->GetSensorCoolingDeviceRequestStatsSnapshot();
+     const std::string sensor_cdev_request_stats_line_prefix("     ");
+     for (const auto &sensor_cdev_request_stats_pair : sensor_cdev_request_stats_map_) {
+         *dump_buf << "  Sensor Name: " << sensor_cdev_request_stats_pair.first << std::endl;
+@@ -706,11 +841,12 @@
+ 
+ void Thermal::dumpThermalData(int fd, const char **args, uint32_t numArgs) {
+     std::ostringstream dump_buf;
++    auto thermal_helper = getThermalHelper();
+ 
+-    if (!thermal_helper_->isInitializedOk()) {
++    if (!thermal_helper->isInitializedOk()) {
+         dump_buf << "ThermalHAL not initialized properly." << std::endl;
+     } else if (numArgs == 0 || std::string(args[0]) == "-a") {
+-        const auto &sensor_status_map = thermal_helper_->GetSensorStatusMap();
++        const auto &sensor_status_map = thermal_helper->GetSensorStatusMap();
+         {
+             dump_buf << "getCachedTemperatures:" << std::endl;
+             boot_clock::time_point now = boot_clock::now();
+@@ -752,11 +888,11 @@
+             }
+         }
+         {
+-            const auto &map = thermal_helper_->GetSensorInfoMap();
++            const auto &map = thermal_helper->GetSensorInfoMap();
+             dump_buf << "getCurrentTemperatures:" << std::endl;
+             Temperature temp_2_0;
+             for (const auto &name_info_pair : map) {
+-                thermal_helper_->readTemperature(name_info_pair.first, &temp_2_0, true);
++                thermal_helper->readTemperature(name_info_pair.first, &temp_2_0, true);
+                 dump_buf << " Type: " << toString(temp_2_0.type)
+                          << " Name: " << name_info_pair.first << " CurrentValue: " << temp_2_0.value
+                          << " ThrottlingStatus: " << toString(temp_2_0.throttlingStatus)
+@@ -800,8 +936,8 @@
+         {
+             dump_buf << "getCurrentCoolingDevices:" << std::endl;
+             std::vector<CoolingDevice> cooling_devices;
+-            if (!thermal_helper_->fillCurrentCoolingDevices(false, CoolingType::CPU,
+-                                                            &cooling_devices)) {
++            if (!thermal_helper->fillCurrentCoolingDevices(false, CoolingType::CPU,
++                                                           &cooling_devices)) {
+                 dump_buf << " Failed to getCurrentCoolingDevices." << std::endl;
+             }
+ 
+@@ -821,7 +957,7 @@
+         {
+             dump_buf << "sendCallback:" << std::endl;
+             dump_buf << "  Enabled List: ";
+-            const auto &map = thermal_helper_->GetSensorInfoMap();
++            const auto &map = thermal_helper->GetSensorInfoMap();
+             for (const auto &name_info_pair : map) {
+                 if (name_info_pair.second.send_cb) {
+                     dump_buf << name_info_pair.first << " ";
+@@ -832,7 +968,7 @@
+         {
+             dump_buf << "sendPowerHint:" << std::endl;
+             dump_buf << "  Enabled List: ";
+-            const auto &map = thermal_helper_->GetSensorInfoMap();
++            const auto &map = thermal_helper->GetSensorInfoMap();
+             for (const auto &name_info_pair : map) {
+                 if (name_info_pair.second.send_powerhint) {
+                     dump_buf << name_info_pair.first << " ";
+@@ -848,12 +984,12 @@
+         dumpThermalStats(&dump_buf);
+         {
+             dump_buf << "getAIDLPowerHalInfo:" << std::endl;
+-            dump_buf << " Exist: " << std::boolalpha << thermal_helper_->isAidlPowerHalExist()
++            dump_buf << " Exist: " << std::boolalpha << thermal_helper->isAidlPowerHalExist()
+                      << std::endl;
+-            dump_buf << " Connected: " << std::boolalpha << thermal_helper_->isPowerHalConnected()
++            dump_buf << " Connected: " << std::boolalpha << thermal_helper->isPowerHalConnected()
+                      << std::endl;
+             dump_buf << " Ext connected: " << std::boolalpha
+-                     << thermal_helper_->isPowerHalExtConnected() << std::endl;
++                     << thermal_helper->isPowerHalExtConnected() << std::endl;
+         }
+     } else if (std::string(args[0]) == "-vt-estimator") {
+         dumpVtEstimatorInfo(&dump_buf);
+@@ -872,20 +1008,21 @@
+         return STATUS_OK;
+     }
+ 
++    auto thermal_helper = getThermalHelper();
+     if (std::string(args[0]) == "emul_temp" && numArgs >= 3) {
+-        return thermal_helper_->emulTemp(
++        return thermal_helper->emulTemp(
+                        std::string(args[1]), std::atof(args[2]),
+                        numArgs == 3 ? false : std::string(args[3]) == "max_throttling")
+                        ? STATUS_OK
+                        : STATUS_BAD_VALUE;
+     } else if (std::string(args[0]) == "emul_severity" && numArgs >= 3) {
+-        return thermal_helper_->emulSeverity(
++        return thermal_helper->emulSeverity(
+                        std::string(args[1]), std::atof(args[2]),
+                        numArgs == 3 ? false : std::string(args[3]) == "max_throttling")
+                        ? STATUS_OK
+                        : STATUS_BAD_VALUE;
+     } else if (std::string(args[0]) == "emul_clear") {
+-        return (numArgs != 2 || !thermal_helper_->emulClear(std::string(args[1])))
++        return (numArgs != 2 || !thermal_helper->emulClear(std::string(args[1])))
+                        ? STATUS_BAD_VALUE
+                        : STATUS_OK;
+     }

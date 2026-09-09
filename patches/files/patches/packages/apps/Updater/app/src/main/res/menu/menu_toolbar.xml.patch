@@ -1,0 +1,11 @@
+--- a/packages/apps/Updater/app/src/main/res/menu/menu_toolbar.xml
++++ b/packages/apps/Updater/app/src/main/res/menu/menu_toolbar.xml
+@@ -18,4 +18,8 @@
+         android:id="@+id/menu_show_changelog"
+         android:title="@string/menu_show_changelog"
+         app:showAsAction="never" />
++    <item
++        android:id="@+id/menu_clear_cache"
++        android:title="@string/menu_clear_cache"
++        app:showAsAction="never" />
+ </menu>

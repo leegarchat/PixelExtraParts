@@ -1,0 +1,17 @@
+--- a/system/memory/libdmabufheap/BufferAllocator.cpp
++++ b/system/memory/libdmabufheap/BufferAllocator.cpp
+@@ -117,6 +117,14 @@
+         QueryIonHeaps();
+ }
+ 
++/*
++ * User-provided and defined out-of-line so the compiler will not inline it.
++ * The exported symbol is required by GRF/vendor prebuilts built against
++ * headers with a non-inline destructor.
++ */
++BufferAllocator::~BufferAllocator() {
++}
++
+ int BufferAllocator::MapNameToIonMask(const std::string& heap_name, unsigned int ion_heap_mask,
+                                       unsigned int ion_heap_flags) {
+     if (!ion_heap_mask)

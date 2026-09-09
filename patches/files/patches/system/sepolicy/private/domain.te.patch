@@ -1,0 +1,20 @@
+--- a/system/sepolicy/private/domain.te
++++ b/system/sepolicy/private/domain.te
+@@ -1636,7 +1636,7 @@
+   -coredomain
+ } mnt_product_file:dir *;
+ 
+-# Platform must not have access to sysfs_batteryinfo, but should do it via health HAL
++#Platform must not have access to sysfs_batteryinfo, but should do it via health HAL
+ full_treble_only(`
+   neverallow {
+     coredomain
+@@ -1653,6 +1653,8 @@
+     -charger
+     # TODO(b/110891300): remove this exception
+     -incidentd
++    # PixelExtraParts mod:
++    -system_app
+   } sysfs_batteryinfo:file { open read };
+ ')
+ 

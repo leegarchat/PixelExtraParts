@@ -1,0 +1,77 @@
+--- a/packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesActivity.java
++++ b/packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesActivity.java
+@@ -279,6 +279,9 @@
+                     Uri.parse(Utils.getChangelogURL(this)));
+             startActivity(openUrl);
+             return true;
++        } else if (itemId == R.id.menu_clear_cache) {
++            clearUpdatesCache();
++            return true;
+         } else if (itemId == R.id.menu_local_update) {
+             mUpdateImporter.openImportPicker();
+             return true;
+@@ -367,6 +370,41 @@
+         }
+     };
+ 
++    private void updateVisibleUpdates(List<UpdateInfo> sortedUpdates) {
++        List<String> updateIds = new ArrayList<>();
++        if (sortedUpdates.isEmpty()) {
++            findViewById(R.id.no_new_updates_view).setVisibility(View.VISIBLE);
++            findViewById(R.id.recycler_view).setVisibility(View.GONE);
++        } else {
++            findViewById(R.id.no_new_updates_view).setVisibility(View.GONE);
++            findViewById(R.id.recycler_view).setVisibility(View.VISIBLE);
++            sortedUpdates.sort((u1, u2) -> {
++                int timestampCompare = Long.compare(u2.getTimestamp(), u1.getTimestamp());
++                if (timestampCompare != 0) {
++                    return timestampCompare;
++                }
++                return u1.getDownloadId().compareTo(u2.getDownloadId());
++            });
++            for (UpdateInfo update : sortedUpdates) {
++                updateIds.add(update.getDownloadId());
++            }
++        }
++        mAdapter.setData(updateIds);
++        mAdapter.notifyDataSetChanged();
++    }
++
++    private void clearUpdatesCache() {
++        Utils.clearCachedUpdateList(this);
++        if (mUpdaterService != null) {
++            UpdaterController controller = mUpdaterService.getUpdaterController();
++            controller.setUpdatesAvailableOnline(new ArrayList<>(), true);
++            updateVisibleUpdates(controller.getUpdates());
++        } else {
++            updateVisibleUpdates(new ArrayList<>());
++        }
++        showSnackbar(R.string.snack_updates_cache_cleared, Snackbar.LENGTH_SHORT);
++    }
++
+     private void loadUpdatesList(File jsonFile, boolean manualRefresh)
+             throws IOException, JSONException {
+         Log.d(TAG, "Adding remote updates");
+@@ -387,21 +425,7 @@
+                     Snackbar.LENGTH_SHORT);
+         }
+ 
+-        List<String> updateIds = new ArrayList<>();
+-        List<UpdateInfo> sortedUpdates = controller.getUpdates();
+-        if (sortedUpdates.isEmpty()) {
+-            findViewById(R.id.no_new_updates_view).setVisibility(View.VISIBLE);
+-            findViewById(R.id.recycler_view).setVisibility(View.GONE);
+-        } else {
+-            findViewById(R.id.no_new_updates_view).setVisibility(View.GONE);
+-            findViewById(R.id.recycler_view).setVisibility(View.VISIBLE);
+-            sortedUpdates.sort((u1, u2) -> Long.compare(u2.getTimestamp(), u1.getTimestamp()));
+-            for (UpdateInfo update : sortedUpdates) {
+-                updateIds.add(update.getDownloadId());
+-            }
+-            mAdapter.setData(updateIds);
+-            mAdapter.notifyDataSetChanged();
+-        }
++        updateVisibleUpdates(controller.getUpdates());
+     }
+ 
+     private void getUpdatesList() {

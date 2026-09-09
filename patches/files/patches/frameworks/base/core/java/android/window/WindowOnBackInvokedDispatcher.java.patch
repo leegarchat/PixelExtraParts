@@ -1,0 +1,40 @@
+--- a/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java
++++ b/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java
+@@ -40,7 +40,7 @@
+ import android.view.ImeBackAnimationController;
+ import android.view.MotionEvent;
+ import android.view.ViewRootImpl;
+-
++import android.provider.Settings;
+ import androidx.annotation.VisibleForTesting;
+ 
+ import com.android.internal.R;
+@@ -465,6 +465,19 @@
+             OnBackInvokedCallbackInfo callbackInfo = null;
+             if (callback != null) {
+                 int priority = mAllCallbacks.get(callback);
++
++
++                Context context = mChecker.getContext();
++                boolean disableAnim = false;
++                if (context != null) {
++                    disableAnim = android.provider.Settings.Global.getInt(
++                            context.getContentResolver(), "disable_predictive_back_anim_pine", 0) == 1;
++                }
++                if (priority == OnBackInvokedDispatcher.PRIORITY_SYSTEM && disableAnim) {
++                    priority = OnBackInvokedDispatcher.PRIORITY_DEFAULT;
++                }
++
++                
+                 int overrideAnimation = OVERRIDE_UNDEFINED;
+                 if (callback instanceof SystemOverrideOnBackInvokedCallback) {
+                     overrideAnimation = ((SystemOverrideOnBackInvokedCallback) callback)
+@@ -780,7 +793,7 @@
+             return true;
+         }
+ 
+-        @Nullable private Context getContext() {
++        @Nullable Context getContext() {
+             return mContext.get();
+         }
+     }

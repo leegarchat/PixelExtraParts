@@ -1,0 +1,54 @@
+--- a/packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBase.java
++++ b/packages/apps/Updater/app/src/main/java/org/evolution/updater/model/UpdateBase.java
+@@ -24,6 +24,9 @@
+     private String mType;
+     private String mVersion;
+     private long mFileSize;
++    private String mWebSource;
++    private String mDescription;
++    private String mChangelogUrl;
+ 
+     public UpdateBase() {
+     }
+@@ -36,6 +39,9 @@
+         mType = update.getType();
+         mVersion = update.getVersion();
+         mFileSize = update.getFileSize();
++        mWebSource = update.getWebSource();
++        mDescription = update.getDescription();
++        mChangelogUrl = update.getChangelogUrl();
+     }
+ 
+     @Override
+@@ -100,4 +106,31 @@
+     public void setFileSize(long fileSize) {
+         mFileSize = fileSize;
+     }
++
++    @Override
++    public String getWebSource() {
++        return mWebSource;
++    }
++
++    public void setWebSource(String webSource) {
++        mWebSource = webSource;
++    }
++
++    @Override
++    public String getDescription() {
++        return mDescription;
++    }
++
++    public void setDescription(String description) {
++        mDescription = description;
++    }
++
++    @Override
++    public String getChangelogUrl() {
++        return mChangelogUrl;
++    }
++
++    public void setChangelogUrl(String changelogUrl) {
++        mChangelogUrl = changelogUrl;
++    }
+ }

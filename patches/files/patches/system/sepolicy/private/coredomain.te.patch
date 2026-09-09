@@ -1,0 +1,11 @@
+--- a/system/sepolicy/private/coredomain.te
++++ b/system/sepolicy/private/coredomain.te
+@@ -48,6 +48,8 @@
+     -apexd
+     -ueventd
+     -vold
++    # PixelExtraParts mod:
++    -system_app
+ } sysfs_leds:file *;
+ ')
+ 

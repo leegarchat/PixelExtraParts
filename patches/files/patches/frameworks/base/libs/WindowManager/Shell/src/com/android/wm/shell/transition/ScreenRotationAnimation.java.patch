@@ -1,0 +1,411 @@
+--- a/frameworks/base/libs/WindowManager/Shell/src/com/android/wm/shell/transition/ScreenRotationAnimation.java
++++ b/frameworks/base/libs/WindowManager/Shell/src/com/android/wm/shell/transition/ScreenRotationAnimation.java
+@@ -31,9 +31,12 @@
+ import android.animation.ValueAnimator;
+ import android.annotation.NonNull;
+ import android.content.Context;
++import android.content.pm.PackageManager;
++import android.content.res.Resources;
+ import android.graphics.Matrix;
+ import android.graphics.Rect;
+ import android.hardware.HardwareBuffer;
++import android.provider.Settings;
+ import android.util.Slog;
+ import android.view.Surface;
+ import android.view.SurfaceControl;
+@@ -320,41 +323,63 @@
+ 
+         final boolean customRotate = isCustomRotate();
+         if (customRotate) {
+-            mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
+-                    mAnimHint == ROTATION_ANIMATION_JUMPCUT ? R.anim.rotation_animation_jump_exit
+-                            : R.anim.rotation_animation_xfade_exit);
+-            mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
+-                    R.anim.rotation_animation_enter);
+-            mRotateAlphaAnimation = AnimationUtils.loadAnimation(mContext,
+-                    R.anim.screen_rotate_alpha);
++            // Evolution X: try custom rotation animation first
++            Animation customExit = RotationAnimationHelper.loadCustomExitAnimation(mContext, 0);
++            Animation customEnter = RotationAnimationHelper.loadCustomEnterAnimation(mContext, 0);
++            Animation customAlpha = RotationAnimationHelper.loadCustomAlphaAnimation(mContext);
++
++            if (customExit != null && customEnter != null) {
++                mRotateExitAnimation = customExit;
++                mRotateEnterAnimation = customEnter;
++                mRotateAlphaAnimation = customAlpha != null ? customAlpha
++                        : AnimationUtils.loadAnimation(mContext, R.anim.screen_rotate_alpha);
++            } else {
++                mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
++                        mAnimHint == ROTATION_ANIMATION_JUMPCUT ? R.anim.rotation_animation_jump_exit
++                                : R.anim.rotation_animation_xfade_exit);
++                mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
++                        R.anim.rotation_animation_enter);
++                mRotateAlphaAnimation = AnimationUtils.loadAnimation(mContext,
++                        R.anim.screen_rotate_alpha);
++            }
+         } else {
+             // Figure out how the screen has moved from the original rotation.
+             int delta = deltaRotation(mEndRotation, mStartRotation);
+-            switch (delta) { /* Counter-Clockwise Rotations */
+-                case Surface.ROTATION_0:
+-                    mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_0_exit);
+-                    mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.rotation_animation_enter);
+-                    break;
+-                case Surface.ROTATION_90:
+-                    mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_plus_90_exit);
+-                    mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_plus_90_enter);
+-                    break;
+-                case Surface.ROTATION_180:
+-                    mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_180_exit);
+-                    mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_180_enter);
+-                    break;
+-                case Surface.ROTATION_270:
+-                    mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_minus_90_exit);
+-                    mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
+-                            R.anim.screen_rotate_minus_90_enter);
+-                    break;
++
++            // Evolution X: try custom rotation animation first
++            Animation customExit = RotationAnimationHelper.loadCustomExitAnimation(mContext, delta);
++            Animation customEnter = RotationAnimationHelper.loadCustomEnterAnimation(mContext, delta);
++
++            if (customExit != null && customEnter != null) {
++                mRotateExitAnimation = customExit;
++                mRotateEnterAnimation = customEnter;
++            } else {
++                switch (delta) { /* Counter-Clockwise Rotations */
++                    case Surface.ROTATION_0:
++                        mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_0_exit);
++                        mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.rotation_animation_enter);
++                        break;
++                    case Surface.ROTATION_90:
++                        mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_plus_90_exit);
++                        mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_plus_90_enter);
++                        break;
++                    case Surface.ROTATION_180:
++                        mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_180_exit);
++                        mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_180_enter);
++                        break;
++                    case Surface.ROTATION_270:
++                        mRotateExitAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_minus_90_exit);
++                        mRotateEnterAnimation = AnimationUtils.loadAnimation(mContext,
++                                R.anim.screen_rotate_minus_90_enter);
++                        break;
++                }
+             }
+ 
+             if (mColorOverlay != null) {
+@@ -497,4 +522,299 @@
+             mTransaction.setColor(mLeash, mColorArray);
+         }
+     }
++
++    // BEGIN Evolution X: Custom rotation animation support ────────────────────
++
++    /**
++     * Helper for custom rotation animations.
++     * Reads rotation animation style from Settings.Global and loads custom
++     * animations from the PixelExtraParts module or custom theme APKs.
++     *
++     * @hide
++     */
++    static final class RotationAnimationHelper {
++        private static final String TAG = "RotationAnimHelper";
++
++        // Settings.Global key
++        private static final String KEY_ROTATION_STYLE = "rotation_animation_style";
++        private static final String KEY_ROTATION_CUSTOM_PACKAGE = "rotation_animation_custom_package";
++
++        // Style constants
++        static final int STYLE_DEFAULT = 0;
++        static final int STYLE_CUSTOM_APK = -1;
++
++        // Built-in styles
++        static final int STYLE_WINDOWS_PHONE = 1;  // scale + fade (WP style)
++        static final int STYLE_WIN10_11 = 2;        // sequential shrink/expand (Win10/11 style)
++        static final int STYLE_CUBE = 3;            // 3D cube rotation
++        static final int STYLE_ZOOM = 4;            // simple zoom in/out
++        static final int STYLE_SLIDE = 5;           // slide from edges
++        static final int STYLE_FLIP = 6;            // horizontal flip
++        static final int STYLE_FADE = 7;            // simple crossfade
++        static final int STYLE_BOUNCE = 8;          // bounce with overshoot
++
++        // Module packages to try
++        private static final String[] MODULE_PACKAGES = {
++                "org.pixel.customparts",
++                "org.pixel.customparts.xposed"
++        };
++
++        // Custom rotation anim resource names
++        private static final String ANIM_ROTATE_EXIT = "custom_rotate_exit";
++        private static final String ANIM_ROTATE_ENTER = "custom_rotate_enter";
++        private static final String ANIM_ROTATE_ALPHA = "custom_rotate_alpha";
++
++        /** Holds resource name/ID pairs for a rotation animation style. */
++        private static final class AnimDef {
++            final String exitName, enterName, alphaName;
++            int exitId, enterId, alphaId;
++
++            AnimDef(String exit, String enter, String alpha) {
++                this.exitName = exit;
++                this.enterName = enter;
++                this.alphaName = alpha;
++            }
++        }
++
++        // Built-in styles table
++        private static final android.util.SparseArray<AnimDef> STYLES = new android.util.SparseArray<>();
++        static {
++            // Windows Phone style: scale + fade (simultaneous)
++            STYLES.put(STYLE_WINDOWS_PHONE, new AnimDef(
++                    "wp_exit", "wp_enter", "wp_alpha"));
++            // Windows 10/11 style: sequential shrink/expand
++            STYLES.put(STYLE_WIN10_11, new AnimDef(
++                    "win10_11_exit", "win10_11_enter", "win10_11_alpha"));
++            // Cube style: 3D-like cube rotation
++            STYLES.put(STYLE_CUBE, new AnimDef(
++                    "cube_exit", "cube_enter", "cube_alpha"));
++            // Zoom style: simple zoom in/out
++            STYLES.put(STYLE_ZOOM, new AnimDef(
++                    "zoom_rotate_exit", "zoom_rotate_enter", "zoom_rotate_alpha"));
++            // Slide style: slide out/in from edges
++            STYLES.put(STYLE_SLIDE, new AnimDef(
++                    "slide_rotate_exit", "slide_rotate_enter", "slide_rotate_alpha"));
++            // Flip style: horizontal flip
++            STYLES.put(STYLE_FLIP, new AnimDef(
++                    "flip_exit", "flip_enter", "flip_alpha"));
++            // Fade style: simple crossfade
++            STYLES.put(STYLE_FADE, new AnimDef(
++                    "fade_rotate_exit", "fade_rotate_enter", "fade_rotate_alpha"));
++            // Bounce style: bounce with overshoot
++            STYLES.put(STYLE_BOUNCE, new AnimDef(
++                    "bounce_exit", "bounce_enter", "bounce_alpha"));
++        }
++
++        // Cached state
++        private static volatile boolean sResolved;
++        private static volatile Context sModuleCtx;
++        private static volatile String sModulePackage;
++        private static volatile Context sCustomThemeCtx;
++        private static volatile String sCustomThemePackage;
++
++        // Re-entrancy guard
++        private static final ThreadLocal<Boolean> sInHook =
++                ThreadLocal.withInitial(() -> Boolean.FALSE);
++
++        // ── Settings ────────────────────────────────────────────────
++
++        static int getRotationStyle(Context context) {
++            try {
++                return Settings.Global.getInt(
++                        context.getContentResolver(), KEY_ROTATION_STYLE, STYLE_DEFAULT);
++            } catch (Throwable t) {
++                return STYLE_DEFAULT;
++            }
++        }
++
++        static String getCustomPackage(Context context) {
++            try {
++                return Settings.Global.getString(
++                        context.getContentResolver(), KEY_ROTATION_CUSTOM_PACKAGE);
++            } catch (Throwable t) {
++                return null;
++            }
++        }
++
++        // ── Resource resolution ─────────────────────────────────────
++
++        private static boolean ensureResources(Context anyContext) {
++            if (sResolved) return sModuleCtx != null;
++            synchronized (RotationAnimationHelper.class) {
++                if (sResolved) return sModuleCtx != null;
++                for (String pkg : MODULE_PACKAGES) {
++                    try {
++                        Context mc = anyContext.createPackageContext(pkg,
++                                Context.CONTEXT_IGNORE_SECURITY);
++                        Resources res = mc.getResources();
++                        int test = res.getIdentifier("slide_in_right", "anim", pkg);
++                        if (test == 0) continue;
++
++                        sModuleCtx = mc;
++                        sModulePackage = pkg;
++
++                        // Resolve built-in styles
++                        for (int i = 0; i < STYLES.size(); i++) {
++                            AnimDef def = STYLES.valueAt(i);
++                            def.exitId = res.getIdentifier(def.exitName, "anim", pkg);
++                            def.enterId = res.getIdentifier(def.enterName, "anim", pkg);
++                            def.alphaId = res.getIdentifier(def.alphaName, "anim", pkg);
++                        }
++
++                        sResolved = true;
++                        Slog.i(TAG, "resources resolved via " + pkg);
++                        return true;
++                    } catch (PackageManager.NameNotFoundException ignored) {
++                    } catch (Throwable t) {
++                        Slog.e(TAG, "ensureResources failed for " + pkg, t);
++                    }
++                }
++                sResolved = true;
++                return false;
++            }
++        }
++
++        // ── Custom theme APK helpers ────────────────────────────────
++
++        private static Context resolveCustomThemeContext(Context anyContext) {
++            String pkg = getCustomPackage(anyContext);
++            if (pkg == null || pkg.isEmpty()) {
++                Slog.w(TAG, "no custom rotation theme package configured");
++                return null;
++            }
++            if (sCustomThemeCtx != null && pkg.equals(sCustomThemePackage)) {
++                return sCustomThemeCtx;
++            }
++            try {
++                Context themeCtx = anyContext.createPackageContext(pkg,
++                        Context.CONTEXT_IGNORE_SECURITY);
++                sCustomThemeCtx = themeCtx;
++                sCustomThemePackage = pkg;
++                return themeCtx;
++            } catch (PackageManager.NameNotFoundException e) {
++                sCustomThemeCtx = null;
++                sCustomThemePackage = null;
++                Slog.w(TAG, "custom rotation theme package not visible: " + pkg);
++                return null;
++            } catch (Throwable t) {
++                sCustomThemeCtx = null;
++                sCustomThemePackage = null;
++                Slog.e(TAG, "failed to resolve custom rotation theme: " + pkg, t);
++                return null;
++            }
++        }
++
++        static void invalidateCustomThemeCache() {
++            sCustomThemeCtx = null;
++            sCustomThemePackage = null;
++        }
++
++        private static int resolveThemeAnim(Context themeCtx, String animName) {
++            if (themeCtx == null || sCustomThemePackage == null) return 0;
++            return themeCtx.getResources()
++                    .getIdentifier(animName, "anim", sCustomThemePackage);
++        }
++
++        // ── Public API ──────────────────────────────────────────────
++
++        /**
++         * Loads custom exit animation for rotation.
++         * Returns null if default behavior should be used.
++         */
++        static Animation loadCustomExitAnimation(Context context, int delta) {
++            if (Boolean.TRUE.equals(sInHook.get())) return null;
++            sInHook.set(Boolean.TRUE);
++            try {
++                int style = getRotationStyle(context);
++                if (style == STYLE_DEFAULT) return null;
++
++                if (style == STYLE_CUSTOM_APK) {
++                    return loadFromCustomTheme(context, ANIM_ROTATE_EXIT);
++                }
++
++                AnimDef def = STYLES.get(style);
++                if (def == null) return null;
++                if (!ensureResources(context)) return null;
++                if (def.exitId == 0) return null;
++
++                return AnimationUtils.loadAnimation(sModuleCtx, def.exitId);
++            } catch (Throwable t) {
++                Slog.e(TAG, "loadCustomExitAnimation failed", t);
++                return null;
++            } finally {
++                sInHook.set(Boolean.FALSE);
++            }
++        }
++
++        /**
++         * Loads custom enter animation for rotation.
++         * Returns null if default behavior should be used.
++         */
++        static Animation loadCustomEnterAnimation(Context context, int delta) {
++            if (Boolean.TRUE.equals(sInHook.get())) return null;
++            sInHook.set(Boolean.TRUE);
++            try {
++                int style = getRotationStyle(context);
++                if (style == STYLE_DEFAULT) return null;
++
++                if (style == STYLE_CUSTOM_APK) {
++                    return loadFromCustomTheme(context, ANIM_ROTATE_ENTER);
++                }
++
++                AnimDef def = STYLES.get(style);
++                if (def == null) return null;
++                if (!ensureResources(context)) return null;
++                if (def.enterId == 0) return null;
++
++                return AnimationUtils.loadAnimation(sModuleCtx, def.enterId);
++            } catch (Throwable t) {
++                Slog.e(TAG, "loadCustomEnterAnimation failed", t);
++                return null;
++            } finally {
++                sInHook.set(Boolean.FALSE);
++            }
++        }
++
++        /**
++         * Loads custom alpha animation for rotation (used in custom rotate mode).
++         * Returns null if default behavior should be used.
++         */
++        static Animation loadCustomAlphaAnimation(Context context) {
++            if (Boolean.TRUE.equals(sInHook.get())) return null;
++            sInHook.set(Boolean.TRUE);
++            try {
++                int style = getRotationStyle(context);
++                if (style == STYLE_DEFAULT) return null;
++
++                if (style == STYLE_CUSTOM_APK) {
++                    return loadFromCustomTheme(context, ANIM_ROTATE_ALPHA);
++                }
++
++                AnimDef def = STYLES.get(style);
++                if (def == null) return null;
++                if (!ensureResources(context)) return null;
++                if (def.alphaId == 0) return null;
++
++                return AnimationUtils.loadAnimation(sModuleCtx, def.alphaId);
++            } catch (Throwable t) {
++                Slog.e(TAG, "loadCustomAlphaAnimation failed", t);
++                return null;
++            } finally {
++                sInHook.set(Boolean.FALSE);
++            }
++        }
++
++        private static Animation loadFromCustomTheme(Context context, String animName) {
++            Context themeCtx = resolveCustomThemeContext(context);
++            if (themeCtx == null) return null;
++            int resId = resolveThemeAnim(themeCtx, animName);
++            if (resId == 0) {
++                Slog.w(TAG, "custom theme missing resource: " + animName);
++                return null;
++            }
++            return AnimationUtils.loadAnimation(themeCtx, resId);
++        }
++    }
++
++    // END Evolution X: Custom rotation animation support ──────────────────────
+ }

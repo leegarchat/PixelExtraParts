@@ -1,0 +1,49 @@
+--- a/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java
++++ b/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java
+@@ -18,6 +18,7 @@
+ 
+ import android.annotation.FloatRange;
+ import android.annotation.NonNull;
++import android.app.ApplicationPackageManager;
+ import android.content.ComponentName;
+ import android.content.Context;
+ import android.content.pm.PackageManager.NameNotFoundException;
+@@ -40,6 +41,7 @@
+  * and badged icon for the activity.
+  */
+ public class LauncherActivityInfo {
++    private final Context mContext;
+     private final PackageManager mPm;
+     private final LauncherActivityInfoInternal mInternal;
+ 
+@@ -56,6 +58,7 @@
+ 
+      */
+     LauncherActivityInfo(Context context, LauncherActivityInfoInternal internal) {
++        mContext = context;
+         mPm = context.getPackageManager();
+         mInternal = internal;
+     }
+@@ -127,6 +130,22 @@
+      * @return The drawable associated with the activity.
+      */
+     public Drawable getIcon(int density) {
++        ComponentName cn = null;
++        try {
++            cn = getComponentName();
++            if (cn != null) {
++                final int targetDensity = density != 0
++                        ? density : mContext.getResources().getDisplayMetrics().densityDpi;
++                final Drawable pixelPartsIcon = ApplicationPackageManager
++                        .loadPixelPartsIconOverride(mContext, cn.getPackageName(), targetDensity);
++                if (pixelPartsIcon != null) {
++                    return pixelPartsIcon;
++                }
++            }
++        } catch (Exception e) {
++            android.util.Log.d("LauncherActivityInfo", "Launcher icon override failed", e);
++        }
++
+         // TODO: Go through LauncherAppsService
+         final int iconRes = getActivityInfo().getIconResource();
+         Drawable icon = null;

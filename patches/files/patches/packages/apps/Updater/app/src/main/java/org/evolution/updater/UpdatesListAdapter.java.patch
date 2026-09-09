@@ -1,0 +1,78 @@
+--- a/packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesListAdapter.java
++++ b/packages/apps/Updater/app/src/main/java/org/evolution/updater/UpdatesListAdapter.java
+@@ -22,6 +22,7 @@
+ import android.os.BatteryManager;
+ import android.os.PowerManager;
+ import android.text.SpannableString;
++import android.text.TextUtils;
+ import android.text.format.Formatter;
+ import android.text.method.LinkMovementMethod;
+ import android.text.util.Linkify;
+@@ -101,6 +102,8 @@
+         private final TextView mBuildDate;
+         private final TextView mBuildVersion;
+         private final TextView mBuildSize;
++        private final TextView mBuildWebSource;
++        private final TextView mBuildDescription;
+ 
+         private final LinearLayout mProgress;
+         private final ProgressBar mProgressBar;
+@@ -115,6 +118,8 @@
+             mBuildDate = view.findViewById(R.id.build_date);
+             mBuildVersion = view.findViewById(R.id.build_version);
+             mBuildSize = view.findViewById(R.id.build_size);
++            mBuildWebSource = view.findViewById(R.id.build_websource);
++            mBuildDescription = view.findViewById(R.id.build_description);
+ 
+             mProgress = view.findViewById(R.id.progress);
+             mProgressBar = view.findViewById(R.id.progress_bar);
+@@ -153,6 +158,15 @@
+         notifyDataSetChanged();
+     }
+ 
++    private void bindOptionalText(TextView textView, String value, int stringResId) {
++        if (TextUtils.isEmpty(value)) {
++            textView.setVisibility(View.GONE);
++            return;
++        }
++        textView.setText(mActivity.getString(stringResId, value));
++        textView.setVisibility(View.VISIBLE);
++    }
++
+     private void handleActiveStatus(ViewHolder viewHolder, UpdateInfo update) {
+         boolean canDelete = false;
+ 
+@@ -279,6 +293,10 @@
+         viewHolder.mBuildDate.setText(buildDate);
+         viewHolder.mBuildVersion.setText(buildVersion);
+         viewHolder.mBuildVersion.setCompoundDrawables(null, null, null, null);
++        bindOptionalText(viewHolder.mBuildWebSource, update.getWebSource(),
++            R.string.list_build_websource);
++        bindOptionalText(viewHolder.mBuildDescription, update.getDescription(),
++            R.string.list_build_description);
+ 
+         if (activeLayout) {
+             handleActiveStatus(viewHolder, update);
+@@ -308,7 +326,11 @@
+         if (mDownloadIds == null) {
+             return;
+         }
+-        notifyItemChanged(mDownloadIds.indexOf(downloadId));
++        int position = mDownloadIds.indexOf(downloadId);
++        if (position < 0) {
++            return;
++        }
++        notifyItemChanged(position);
+     }
+ 
+     public void removeItem(String downloadId) {
+@@ -316,6 +338,9 @@
+             return;
+         }
+         int position = mDownloadIds.indexOf(downloadId);
++        if (position < 0) {
++            return;
++        }
+         mDownloadIds.remove(downloadId);
+         notifyItemRemoved(position);
+         notifyItemRangeChanged(position, getItemCount());
