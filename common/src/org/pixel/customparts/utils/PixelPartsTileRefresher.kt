@@ -7,6 +7,7 @@ import org.pixel.customparts.activities.OverscrollManager
 import org.pixel.customparts.services.AutoHbmTileService
 import org.pixel.customparts.services.MainActivityTileService
 import org.pixel.customparts.services.OverscrollTileService
+import org.pixel.customparts.services.PermanentHbmTileService
 import org.pixel.customparts.services.PixelPartsLogTileService
 import org.pixel.customparts.services.SaturationTileService
 import org.pixel.customparts.services.ThermalManagerTileService
@@ -20,15 +21,28 @@ object PixelPartsTileRefresher {
         MainActivityTileService::class.java,
         SaturationTileService::class.java,
         AutoHbmTileService::class.java,
+        PermanentHbmTileService::class.java,
         OverscrollTileService::class.java,
         ThermalManagerTileService::class.java,
         PixelPartsLogTileService::class.java
     )
 
+    private val hbmTileServices = listOf(
+        AutoHbmTileService::class.java,
+        PermanentHbmTileService::class.java
+    )
+
     private val settingTileServices by lazy {
         mapOf(
             normalizeKey(SettingsKeys.SATURATION_ENABLED) to listOf(SaturationTileService::class.java),
-            normalizeKey(SettingsKeys.AUTO_HBM_ENABLED) to listOf(AutoHbmTileService::class.java),
+            normalizeKey(SettingsKeys.AUTO_HBM_ENABLED) to listOf(
+                AutoHbmTileService::class.java,
+                PermanentHbmTileService::class.java
+            ),
+            normalizeKey(SettingsKeys.AUTO_HBM_MODE) to listOf(
+                AutoHbmTileService::class.java,
+                PermanentHbmTileService::class.java
+            ),
             normalizeKey(SettingsKeys.AUTO_HBM_ACTIVE) to listOf(AutoHbmTileService::class.java),
             normalizeKey(OverscrollManager.KEY_ENABLED) to listOf(OverscrollTileService::class.java),
             normalizeKey(SettingsKeys.THERMAL_TILE_PROFILE_QUEUE) to listOf(ThermalManagerTileService::class.java),
@@ -43,6 +57,13 @@ object PixelPartsTileRefresher {
             TileUtils.requestTileRefresh(appContext, tileServiceClass)
         }
         boundDynamicTileServices(appContext).forEach { tileServiceClass ->
+            TileUtils.requestTileRefresh(appContext, tileServiceClass)
+        }
+    }
+
+    fun refreshHbmTiles(context: Context) {
+        val appContext = context.applicationContext ?: context
+        hbmTileServices.forEach { tileServiceClass ->
             TileUtils.requestTileRefresh(appContext, tileServiceClass)
         }
     }

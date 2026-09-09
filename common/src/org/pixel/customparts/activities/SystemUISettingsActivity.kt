@@ -256,6 +256,18 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                         )
                     }
                 }
+
+                item {
+                    SettingsGroupCard(title = dynamicStringResource(R.string.rotation_anim_title)) {
+                        SystemUIStaticNavigationRow(
+                            title = dynamicStringResource(R.string.rotation_anim_title),
+                            subtitle = dynamicStringResource(R.string.rotation_anim_subtitle),
+                            onClick = {
+                                context.startActivity(Intent(context, RotationAnimationActivity::class.java))
+                            }
+                        )
+                    }
+                }
             }
 
             TopBarBlurOverlay(
