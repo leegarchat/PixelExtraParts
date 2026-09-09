@@ -10,8 +10,13 @@ sync_tree.py — умная синхронизация дерева исходн
   -d, --diff     (только с -s) сделать только слепок изменений, без repo sync
   -c, --change   интерактивный менеджер снимков и патчей
   -f, --forcesync  полный force sync с принудительным откатом изменений,
-                 без последующего применения патчей (с -s слепок всё равно делается)
-  -e, --except   UI управления исключениями smart-сканера
+                   без последующего применения патчей (слепок делается ВСЕГДА:
+                   без -s — по bakFiles/original, с -s — глубокий сканер);
+                   если по original/ ничего не найдено — предложит глубокий -s скан
+  -r, --revert   ТОЛЬКО откат локальных изменений к HEAD, без repo sync
+                   (слепок делается ВСЕГДА как страховка, патчи обратно НЕ
+                   накатываются; без -s — по bakFiles/original, с -s — глубокий скан)
+   -e, --except   UI управления исключениями smart-сканера
   -j, --jobs N   количество потоков repo sync
   -y, --yes      неинтерактивный режим (автоподтверждение всех вопросов)
 
@@ -949,7 +954,11 @@ def main():
     parser.add_argument("-c", "--change", action="store_true",
                         help="Диалог выбора снимка: просмотр и применение патчей")
     parser.add_argument("-f", "--forcesync", action="store_true",
-                        help="Полный force sync с откатом всех изменений, без применения патчей")
+                        help="Полный force sync с откатом изменений, без применения патчей "
+                             "(слепок делается всегда; без -s — по bakFiles/original, с -s — глубокий скан)")
+    parser.add_argument("-r", "--revert", action="store_true",
+                        help="Только откатить локальные изменения к HEAD (со слепком), без repo sync. "
+                             "Без -s — по bakFiles/original, с -s — глубокий скан")
     parser.add_argument("-e", "--except", dest="manage_exceptions", action="store_true",
                         help="Открыть UI управления исключениями smart-сканера")
     parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 8,
@@ -967,7 +976,7 @@ def main():
     # --- UI исключений ---
     if args.manage_exceptions:
         manage_exceptions_ui(uid, gid)
-        if not (args.smart or args.forcesync or args.change):
+        if not (args.smart or args.forcesync or args.change or args.revert):
             return
 
     # --- Менеджер снимков ---
@@ -979,13 +988,27 @@ def main():
         console.print("[bold red]❌ Флаг -d/--diff работает только вместе с -s/--smart![/bold red]")
         sys.exit(2)
 
-    # --- Чистый force sync без слепков ---
-    if args.forcesync and not args.smart:
-        console.print("[bold yellow]! Режим FORCE SYNC: откат всех изменений, без слепков и патчей[/bold yellow]")
-        if interactive and not safe_confirm("Все локальные изменения в git-проектах будут ОТКАЧЕНЫ. Продолжить?", False):
-            console.print("[yellow]Отменено.[/yellow]")
-            return
-        sys.exit(run_repo_sync(args.jobs, force=True))
+    if args.revert and args.forcesync:
+        console.print("[bold red]❌ Флаги -r/--revert и -f/--forcesync несовместимы "
+                      "(revert — без sync, forcesync — с sync).[/bold red]")
+        sys.exit(2)
+    if args.revert and args.diff:
+        console.print("[bold red]❌ Флаги -r/--revert и -d/--diff несовместимы "
+                      "(diff возвращает файлы в дерево, revert — откатывает).[/bold red]")
+        sys.exit(2)
+
+    # --- FORCE SYNC идёт через общий конвейер, чтобы изменения были
+    # --- найдены (по original/ или глубоким сканом -s), сохранены в слепок,
+    # --- откачены к HEAD и НЕ накатывались обратно после sync.
+    # --- Раннего "голого" repo sync без слепка здесь больше нет.
+    is_force = args.forcesync
+    is_revert = args.revert
+    if is_force:
+        console.print("[bold yellow]! Режим FORCE SYNC: изменения будут сохранены "
+                      "в слепок, откачены к HEAD и НЕ применены обратно[/bold yellow]")
+    if is_revert:
+        console.print("[bold yellow]! Режим REVERT: откат изменений к HEAD "
+                      "без repo sync (слепок сохранится, патчи НЕ вернутся)[/bold yellow]")
 
     # --- Сбор изменений ---
     exceptions = load_exceptions()
@@ -1003,17 +1026,78 @@ def main():
     untracked = flatten_untracked(scan)
 
     if not scan or (not modified and not untracked):
-        if not args.smart and not ORIG_DIR.exists():
-            console.print("[yellow]ℹ bakFiles/original отсутствует — отслеживаемых файлов нет.\n"
-                          "  Запустите с -s для первичного сканирования.[/yellow]")
-        else:
-            console.print("[green]✓ Локальных изменений не найдено.[/green]")
-        if args.diff:
-            console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+        # -f / -r без -s смотрят только bakFiles/original и могут пропустить
+        # правки вне отслеживаемого списка — предлагаем глубокий скан.
+        if (is_force or is_revert) and not args.smart:
+            console.print("[yellow]ℹ По bakFiles/original изменений не найдено, "
+                          "но это не гарантирует чистоту дерева.[/yellow]")
+            do_smart = False
+            if interactive:
+                action = "REVERT" if is_revert else "FORCE SYNC"
+                do_smart = safe_confirm(
+                    f"Запустить глубокий smart-скан всех git-проектов перед {action}?", True)
+            if do_smart:
+                with Progress(*PROGRESS_COLUMNS, console=console, transient=True) as progress2:
+                    task2 = progress2.add_task("[cyan]Глубокий поиск изменений (-s)...", total=None)
+                    scan = smart_scan(exceptions)
+                modified = flatten_modified(scan)
+                untracked = flatten_untracked(scan)
+                if scan and (modified or untracked):
+                    console.print("[bold yellow]--> Глубокий скан нашёл изменения, "
+                                  "перехожу к слепку и откату.[/bold yellow]")
+                    # таблицу покажет общий display ниже, минуя выход
+                else:
+                    console.print("[green]✓ Глубокий скан тоже ничего не нашёл.[/green]")
+                    if is_revert:
+                        console.print("[green]Откат не требуется — дерево чистое.[/green]")
+                        return
+                    if args.diff:
+                        console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                        return
+                    sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
+            else:
+                if not ORIG_DIR.exists():
+                    console.print("[yellow]ℹ bakFiles/original отсутствует — отслеживаемых файлов нет.\n"
+                                  "  Запустите с -s для первичного сканирования.[/yellow]")
+                else:
+                    console.print("[green]✓ Локальных изменений не найдено.[/green]")
+                if is_revert:
+                    console.print("[green]Откат не требуется — дерево чистое.[/green]")
+                    return
+                if args.diff:
+                    console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                    return
+                sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
+        elif is_revert:
+            console.print("[green]✓ Локальных изменений не найдено — откат не требуется.[/green]")
             return
-        sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
+        else:
+            if not args.smart and not ORIG_DIR.exists():
+                console.print("[yellow]ℹ bakFiles/original отсутствует — отслеживаемых файлов нет.\n"
+                              "  Запустите с -s для первичного сканирования.[/yellow]")
+            else:
+                console.print("[green]✓ Локальных изменений не найдено.[/green]")
+            if args.diff:
+                console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                return
+            sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
 
     display_scan_binding(scan)
+
+    # Финальное подтверждение для -f / -r: откат необратим в дереве
+    # (остаётся только слепок), патчи обратно не накатываются.
+    if is_force and interactive:
+        if not safe_confirm(
+                f"FORCE SYNC откатит {len(modified)} изм. + уберёт {len(untracked)} новых "
+                f"файлов (слепок сохранится, патчи НЕ вернутся). Продолжить?", False):
+            console.print("[yellow]Отменено.[/yellow]")
+            return
+    if is_revert and interactive:
+        if not safe_confirm(
+                f"REVERT откатит {len(modified)} изм. + уберёт {len(untracked)} новых "
+                f"файлов БЕЗ синхронизации (слепок сохранится, патчи НЕ вернутся). Продолжить?", False):
+            console.print("[yellow]Отменено.[/yellow]")
+            return
 
     # --- Создание снимка и подготовка ---
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1022,10 +1106,50 @@ def main():
     console.print(f"\n[bold yellow]--> Снимок состояния:[/] {snap.root}")
 
     mode = "smart" if args.smart else "original"
+    # Для -f / -r уже было глобальное подтверждение выше — пофайловые вопросы
+    # отключаем, чтобы ВСЕ найденные изменения гарантированно ушли в слепок и откат.
     untracked, processed = snapshot_pipeline(
         scan, snap, uid, gid,
         clean_original=args.smart,
-        interactive=interactive)
+        interactive=(interactive and not is_force and not is_revert))
+
+    # --- Режим -r: только откат, без sync и без возврата файлов ---
+    if is_revert:
+        # snapshot_pipeline уже откатил modified к HEAD и убрал untracked в слепок.
+        # Дополнительно восстанавливаем удалённые из дерева файлы к HEAD.
+        reverted_deleted = 0
+        for repo_rel, data in scan.items():
+            repo_abs = ROOT_DIR / repo_rel if repo_rel else ROOT_DIR
+            for rel in data.get("deleted", []):
+                target = ROOT_DIR / rel
+                if target.exists():
+                    continue
+                try:
+                    rel_in_repo = norm_rel(target.resolve().relative_to(repo_abs.resolve()))
+                except ValueError:
+                    continue
+                if git_checkout_head(repo_abs, rel_in_repo):
+                    reverted_deleted += 1
+                else:
+                    head_data = git_show_head(repo_abs, rel_in_repo)
+                    if head_data is not None:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(head_data)
+                        reverted_deleted += 1
+        if reverted_deleted:
+            console.print(f"[green]✓ Восстановлено удалённых файлов: {reverted_deleted}[/green]")
+        n_mod = sum(1 for s in processed.values() if s == "ok")
+        n_untracked = len(untracked)
+        write_manifest(snap, mode + "+revert", scan, processed,
+                       {"reverted_modified": n_mod,
+                        "removed_untracked": n_untracked,
+                        "reverted_deleted": reverted_deleted})
+        fix_permissions(BAK_ROOT, uid, gid)
+        console.print(f"\n[bold green]✨ Откат завершён (без sync):[/] {snap.root}\n"
+                      f"  Откачено изменённых: {n_mod}, убрано новых: {n_untracked}, "
+                      f"восстановлено удалённых: {reverted_deleted}.\n"
+                      f"  Всё сохранено в слепке; вернуть можно через -c.")
+        return
 
     # --- Режим -d: только слепок, возвращаем изменения в дерево ---
     if args.diff:
