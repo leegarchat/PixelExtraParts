@@ -389,7 +389,6 @@ Example-focused documents:
 - `ims_carrier_config`: settings-only IMS controls that combine Settings.Secure writes with `CarrierConfigManager.overrideConfig` actions.
 - `launcher_hooks`: Pixel Launcher addon for home screen, dock/search, app drawer, recents, gesture bar and dynamic launcher tiles.
 - `systemui_hooks`: SystemUI addon for lock screen, charging info, shade/media/scrim and notification icon controls.
-- `demo_settings`: settings-only showcase for every generated UI type and layout pattern.
 
 ## Practical Rules
 
