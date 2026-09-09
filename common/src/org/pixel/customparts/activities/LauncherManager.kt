@@ -78,7 +78,8 @@ object LauncherManager {
     suspend fun setNativeSearchEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
         Settings.Global.putInt(context.contentResolver, KEY_NATIVE_SEARCH, if (enabled) 1 else 0)
         val cmdValue = if (enabled) "true" else "false"
-        val command = "cmd device_config override launcher enable_one_search $cmdValue"
+        val command = "cmd device_config override launcher enable_one_search $cmdValue; " +
+                "cmd device_config override launcher enable_one_search_aa $cmdValue"
         runRootCommand(command)
     }
     suspend fun restartLauncher(context: Context) = withContext(Dispatchers.IO) {

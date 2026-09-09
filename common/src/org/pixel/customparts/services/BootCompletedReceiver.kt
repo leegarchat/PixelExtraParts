@@ -7,16 +7,14 @@ import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.activities.ThermalManager
-import org.pixel.customparts.services.DtwSensorService
 import org.pixel.customparts.utils.AddonBinderReapply
 import org.pixel.customparts.utils.AddonBootSync
 import org.pixel.customparts.utils.AutoHbmController
+import org.pixel.customparts.utils.AutoLockController
 import org.pixel.customparts.utils.PixelPartsLogController
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.SaturationController
-import org.pixel.customparts.utils.SettingsCompat
 import org.pixel.customparts.utils.ThermalProfileController
 
 class BootCompletedReceiver : BroadcastReceiver() {
@@ -36,12 +34,10 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 ThermalProfileController.syncService(context)
                 SaturationController.applyEffectiveSaturation(context)
                 AutoHbmController.syncService(context)
+                AutoLockController.syncService(context)
                 PixelPartsLogController.syncService(context)
                 AddonBootSync.sync(context)
                 AddonBinderReapply.reapply(context)
-                if (SettingsCompat.isEnabled(context, SettingsKeys.DTW_ENABLED, false)) {
-                    context.startService(Intent(context, DtwSensorService::class.java))
-                }
                 PixelPartsTileRefresher.requestAll(context)
             } catch (e: Exception) {
                 Log.e("PixelParts", "Error during boot initialization", e)
