@@ -6,7 +6,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
-import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
@@ -21,11 +20,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.WeakHashMap;
 
@@ -49,12 +45,11 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
     private static final String KEY_PADDING_SEARCH = "launcher_padding_search";
     private static final String KEY_HIDE_SEARCH = "launcher_hidden_search";
     private static final String KEY_PADDING_HOMEPAGE = "launcher_padding_homepage";
-    private static final String KEY_DISABLE_FEED = "launcher_disable_google_feed";
     private static final String KEY_PADDING_DOTS = "launcher_padding_dots";
     private static final String KEY_PADDING_DOTS_X = "launcher_padding_dots_x";
+    private static final String KEY_NATIVE_SEARCH = "pixel_launcher_native_search";
     private static final String KEY_DT2S_ENABLED = "launcher_dt2s_enabled";
     private static final String KEY_DT2S_TIMEOUT = "launcher_dt2s_timeout";
-    private static final String KEY_TOP_WIDGET_ENABLE = "launcher_disable_top_widget";
     private static final int DEFAULT_PADDING_DOTS = 0;
     private static final int SETTINGS_DEFAULT_PADDING = -45;
     private static final int DISPLAY_WORKSPACE = 0;
@@ -95,9 +90,8 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                 || getIntSetting(context, KEY_DOCK_ENABLE, 0) == 1
                 || getIntSetting(context, KEY_HOTSEAT_ICONS, 0) > 0
                 || getIntSetting(context, KEY_HOTSEAT_ICON_SIZE, 100) != 100
-                || isSettingEnabled(context, KEY_DISABLE_FEED)
                 || isSettingEnabled(context, KEY_DT2S_ENABLED)
-                || getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1;
+                || isSettingEnabled(context, KEY_NATIVE_SEARCH, true);
     }
 
     @Override
@@ -112,12 +106,13 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             hookModelCallbacks(classLoader);
             hookLauncherUnlockAnimation(classLoader);
             hookInvariantDeviceProfile(idpClass);
+            hookDeviceProfileBuilder(classLoader);
+            hookQsbWidgetFactory(classLoader);
             hookBubbleTextView(bubbleTextViewClass, classLoader);
             hookFloatingIconView(classLoader);
             hookWorkspace(workspaceClass, classLoader);
-            hookTopWidgetSuppression(classLoader);
             hookDockAnimationCorrection(classLoader);
-            hookPersistenceLogic(classLoader);
+            hookHotseatMigration(classLoader);
 
             log("UnifiedLauncherHook installed successfully");
 
@@ -136,10 +131,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             protected void afterHookedMethod(MethodHookParam param) {
                 final Activity activity = (Activity) param.thisObject;
                 
-                if (isSettingEnabled(activity, KEY_DISABLE_FEED)) {
-                    disableFeedOverlay(activity);
-                }
-
                 View rootView = activity.findViewById(android.R.id.content);
                 Runnable updateTask = new Runnable() {
                     @Override
@@ -148,7 +139,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                         applyDockSettings(activity);
                         forceUpdateDots(activity);
                         applyDT2SListener(activity);
-                        removeHiddenTopWidgetBlankScreen(activity);
                     }
                 };
 
@@ -160,26 +150,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             }
         });
 
-        try {
-            Class<?> overlayProxyClass = XposedHelpers.findClass(
-                "com.android.systemui.plugins.shared.LauncherOverlayManager$LauncherOverlayTouchProxy",
-                classLoader
-            );
-            XposedHelpers.findAndHookMethod(launcherClass, "setLauncherOverlay", overlayProxyClass, new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) {
-                    if (isSettingEnabled(getCurrentApplication(), KEY_DISABLE_FEED)) {
-                        param.args[0] = null;
-                    }
-                }
-            });
-        } catch (Throwable e) { /* ignore */ }
-    }
-
-    private void disableFeedOverlay(Object launcherActivity) {
-        try {
-            XposedHelpers.callMethod(launcherActivity, "setLauncherOverlay", new Object[]{null});
-        } catch (Throwable e) { /* ignore */ }
     }
 
     // =========================================================================
@@ -231,6 +201,75 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
         };
 
         XposedBridge.hookAllMethods(idpClass, "initGrid", initGridHook);
+    }
+
+    private void hookDeviceProfileBuilder(ClassLoader classLoader) {
+        try {
+            Class<?> builderClass = XposedHelpers.findClass(
+                    "com.android.launcher3.DeviceProfile$Builder", classLoader);
+            XposedHelpers.findAndHookMethod(builderClass, "build", new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) {
+                    applyGridSettingsToBuilder(param.thisObject);
+                }
+            });
+        } catch (Throwable e) {
+            logError("Failed to hook DeviceProfile.Builder", e);
+        }
+    }
+
+    private void applyGridSettingsToBuilder(Object builder) {
+        if (builder == null) return;
+        Context context = getContextFromBuilder(builder);
+        if (context == null) return;
+
+        Object invariantProfile = null;
+        Object displayOptionSpec = null;
+        try {
+            invariantProfile = XposedHelpers.getObjectField(builder, "mInv");
+            displayOptionSpec = XposedHelpers.getObjectField(builder, "mDisplayOptionSpec");
+        } catch (Throwable ignored) {
+            return;
+        }
+
+        if (isSettingEnabled(context, KEY_HOME_ENABLE)) {
+            int homeCols = getIntSetting(context, KEY_HOME_COLS, 0);
+            int homeRows = getIntSetting(context, KEY_HOME_ROWS, 0);
+            if (homeCols > 0 && invariantProfile != null) {
+                try {
+                    XposedHelpers.setIntField(invariantProfile, "numColumns", homeCols);
+                } catch (Throwable ignored) { }
+            }
+            if (homeRows > 0 && invariantProfile != null) {
+                try {
+                    XposedHelpers.setIntField(invariantProfile, "numRows", homeRows);
+                } catch (Throwable ignored) { }
+            }
+        }
+
+        int hotseatIcons = getIntSetting(context, KEY_HOTSEAT_ICONS, 0);
+        if (hotseatIcons > 0) {
+            if (invariantProfile != null) {
+                try {
+                    XposedHelpers.setIntField(invariantProfile, "numShownHotseatIcons", hotseatIcons);
+                    XposedHelpers.setIntField(invariantProfile, "numDatabaseHotseatIcons", hotseatIcons);
+                } catch (Throwable ignored) { }
+            }
+            if (displayOptionSpec != null) {
+                try {
+                    XposedHelpers.setIntField(displayOptionSpec, "numShownHotseatIcons", hotseatIcons);
+                } catch (Throwable ignored) { }
+            }
+        }
+    }
+
+    private Context getContextFromBuilder(Object builder) {
+        try {
+            Object displayInfo = XposedHelpers.getObjectField(builder, "mInfo");
+            Object context = XposedHelpers.getObjectField(displayInfo, "context");
+            if (context instanceof Context) return (Context) context;
+        } catch (Throwable ignored) { }
+        return getCurrentApplication();
     }
 
     // =========================================================================
@@ -573,8 +612,7 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                     try {
                         Object launcher = XposedHelpers.getObjectField(param.thisObject, "launcher");
                         if (launcher instanceof Activity) {
-                            removeHiddenTopWidgetBlankScreen((Activity) launcher);
-                        }
+                    }
                     } catch (Throwable t) {
                         logError("Failed to trim hidden top widget blank screen after binding", t);
                     }
@@ -621,17 +659,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             }
         });
 
-        XposedHelpers.findAndHookMethod(workspaceClass, "bindAndInitFirstWorkspaceScreen", new XC_MethodHook() {
-            @Override
-            protected void afterHookedMethod(MethodHookParam param) {
-                ViewGroup workspace = (ViewGroup) param.thisObject;
-                Context context = workspace.getContext();
-                if (getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1) {
-                    removeFirstPagePinnedItem(workspace);
-                }
-            }
-        });
-        
         try {
             Class<?> pageIndicatorDotsClass = XposedHelpers.findClass("com.android.launcher3.pageindicators.PageIndicatorDots", classLoader);
             XC_MethodHook dotsVisibleHook = new XC_MethodHook() {
@@ -649,214 +676,6 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
             XposedHelpers.findAndHookMethod(pageIndicatorDotsClass, "onDraw", Canvas.class, dotsVisibleHook);
         } catch (Throwable e) { /* ignore */ }
     }
-
-    private void hookTopWidgetSuppression(ClassLoader classLoader) {
-        try {
-            final Class<?> smartspaceClass = XposedHelpers.findClass(
-                    "com.google.android.apps.nexuslauncher.qsb.SmartspaceViewContainer",
-                    classLoader
-            );
-            XposedBridge.hookAllConstructors(smartspaceClass, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
-                    if (param.thisObject instanceof View) {
-                        enforceTopWidgetHidden((View) param.thisObject);
-                    }
-                }
-            });
-            try {
-                XposedHelpers.findAndHookMethod(smartspaceClass, "onAttachedToWindow", new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        if (param.thisObject instanceof View) {
-                            enforceTopWidgetHidden((View) param.thisObject);
-                        }
-                    }
-                });
-            } catch (Throwable ignored) { }
-            try {
-                XposedHelpers.findAndHookMethod(smartspaceClass, "onLayout", boolean.class, int.class, int.class, int.class, int.class, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        if (param.thisObject instanceof View) {
-                            enforceTopWidgetHidden((View) param.thisObject);
-                        }
-                    }
-                });
-            } catch (Throwable ignored) { }
-            XposedHelpers.findAndHookMethod(View.class, "setVisibility", int.class, new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) {
-                    if (smartspaceClass.isInstance(param.thisObject)) {
-                        View view = (View) param.thisObject;
-                        Context context = view.getContext();
-                        if (context != null && getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1) {
-                            param.args[0] = View.GONE;
-                        }
-                    }
-                }
-            });
-        } catch (Throwable e) {
-            logError("Failed to hook top widget view suppression", e);
-        }
-    }
-
-    private void enforceTopWidgetHidden(View view) {
-        if (view == null || view.getContext() == null) return;
-        if (getIntSetting(view.getContext(), KEY_TOP_WIDGET_ENABLE, 0) != 1) return;
-        if (view.getVisibility() != View.GONE) view.setVisibility(View.GONE);
-        if (view.getAlpha() != 0f) view.setAlpha(0f);
-        ViewGroup.LayoutParams params = view.getLayoutParams();
-        if (params != null && params.height != 0) {
-            params.height = 0;
-            view.setLayoutParams(params);
-        }
-    }
-
-    private void removeFirstPagePinnedItem(ViewGroup workspace) {
-        try {
-            Object pinnedItem = XposedHelpers.getObjectField(workspace, "mFirstPagePinnedItem");
-            if (pinnedItem instanceof View) {
-                View pinnedView = (View) pinnedItem;
-                ViewGroup parent = (ViewGroup) pinnedView.getParent();
-                if (parent != null) {
-                    parent.removeView(pinnedView);
-                }
-                XposedHelpers.setObjectField(workspace, "mFirstPagePinnedItem", null);
-            }
-        } catch (Throwable t) {
-            logError("Failed to remove first page pinned item", t);
-        }
-    }
-
-    private void removeHiddenTopWidgetBlankScreen(Activity activity) {
-        if (activity == null) return;
-        boolean hideTopWidget = getIntSetting(activity, KEY_TOP_WIDGET_ENABLE, 0) == 1;
-        boolean customHomeGrid = isSettingEnabled(activity, KEY_HOME_ENABLE);
-        if (!hideTopWidget && !customHomeGrid) return;
-        try {
-            Object workspaceObject = XposedHelpers.getObjectField(activity, "mWorkspace");
-            if (!(workspaceObject instanceof ViewGroup)) return;
-
-            ViewGroup workspace = (ViewGroup) workspaceObject;
-            if (hideTopWidget) {
-                removeFirstPagePinnedItem(workspace);
-            }
-            if (workspace.getChildCount() <= 1) return;
-
-            Object screenOrder = XposedHelpers.getObjectField(workspace, "mScreenOrder");
-            Object workspaceScreens = XposedHelpers.getObjectField(workspace, "mWorkspaceScreens");
-            if (screenOrder == null || workspaceScreens == null) return;
-            if (getIntFieldSafely(screenOrder, "mSize", 0) <= 1) return;
-
-            Object firstScreenIdObj = XposedHelpers.callMethod(screenOrder, "get", 0);
-            if (!(firstScreenIdObj instanceof Integer) || ((Integer) firstScreenIdObj) != 0) return;
-
-            Object firstScreenObject = XposedHelpers.callMethod(workspaceScreens, "get", 0);
-            if (!(firstScreenObject instanceof View)) return;
-            View firstScreen = (View) firstScreenObject;
-            int firstScreenChildCount = getWorkspaceItemChildCount(firstScreen);
-            int firstScreenRealItemCount = getWorkspaceRealItemChildCount(firstScreen);
-            int firstRealPageIndex = findFirstRealWorkspacePageIndex(workspace, screenOrder, workspaceScreens);
-            if (firstScreenRealItemCount > 0 || firstRealPageIndex <= 0) return;
-
-            if (firstScreenChildCount != 0) {
-                setWorkspaceCurrentPage(workspace, firstRealPageIndex);
-                return;
-            }
-
-            XposedHelpers.callMethod(workspaceScreens, "remove", 0);
-            XposedHelpers.callMethod(screenOrder, "removeValue", 0);
-            workspace.removeView(firstScreen);
-            setWorkspaceCurrentPage(workspace, 0);
-        } catch (Throwable t) {
-            logError("Failed to remove hidden top widget blank screen", t);
-        }
-    }
-
-    private int findFirstRealWorkspacePageIndex(ViewGroup workspace, Object screenOrder, Object workspaceScreens) {
-        int size = getIntFieldSafely(screenOrder, "mSize", workspace.getChildCount());
-        for (int i = 0; i < size; i++) {
-            try {
-                Object screenIdObj = XposedHelpers.callMethod(screenOrder, "get", i);
-                if (!(screenIdObj instanceof Integer)) continue;
-                int screenId = (Integer) screenIdObj;
-                if (screenId < 0) continue;
-                Object screenObject = XposedHelpers.callMethod(workspaceScreens, "get", screenId);
-                if (screenObject instanceof View && getWorkspaceRealItemChildCount((View) screenObject) > 0) {
-                    return i;
-                }
-            } catch (Throwable ignored) { }
-        }
-        return -1;
-    }
-
-    private int getWorkspaceItemChildCount(View screen) {
-        ViewGroup shortcutsAndWidgets = getShortcutsAndWidgetsContainer(screen);
-        if (shortcutsAndWidgets != null) {
-            return shortcutsAndWidgets.getChildCount();
-        }
-        if (screen instanceof ViewGroup) {
-            return ((ViewGroup) screen).getChildCount();
-        }
-        return 0;
-    }
-
-    private int getWorkspaceRealItemChildCount(View screen) {
-        ViewGroup shortcutsAndWidgets = getShortcutsAndWidgetsContainer(screen);
-        if (shortcutsAndWidgets == null) return getWorkspaceItemChildCount(screen);
-
-        int count = 0;
-        for (int i = 0; i < shortcutsAndWidgets.getChildCount(); i++) {
-            View child = shortcutsAndWidgets.getChildAt(i);
-            if (!isPinnedSmartspaceView(child)) count++;
-        }
-        return count;
-    }
-
-    private ViewGroup getShortcutsAndWidgetsContainer(View screen) {
-        try {
-            Object shortcutsAndWidgets = XposedHelpers.getObjectField(screen, "mShortcutsAndWidgets");
-            if (shortcutsAndWidgets instanceof ViewGroup) {
-                return (ViewGroup) shortcutsAndWidgets;
-            }
-        } catch (Throwable ignored) { }
-        return null;
-    }
-
-    private boolean isPinnedSmartspaceView(View view) {
-        if (view == null) return false;
-        String className = view.getClass().getName();
-        if (className.contains("SmartspaceViewContainer") || className.contains("BcSmartspaceView")) return true;
-        try {
-            int id = view.getId();
-            if (id != View.NO_ID) {
-                String entryName = view.getResources().getResourceEntryName(id);
-                return "search_container_workspace".equals(entryName);
-            }
-        } catch (Throwable ignored) { }
-        return false;
-    }
-
-    private void setWorkspaceCurrentPage(ViewGroup workspace, int pageIndex) {
-        try {
-            XposedHelpers.callMethod(workspace, "setCurrentPage", pageIndex, pageIndex);
-        } catch (Throwable ignored) {
-            XposedHelpers.callMethod(workspace, "setCurrentPage", pageIndex);
-        }
-        try {
-            XposedHelpers.callMethod(workspace, "updatePageScrollValues");
-        } catch (Throwable ignored) { }
-    }
-
-    private int getIntFieldSafely(Object object, String fieldName, int fallback) {
-        try {
-            return XposedHelpers.getIntField(object, fieldName);
-        } catch (Throwable ignored) {
-            return fallback;
-        }
-    }
-
 
     private void applyDT2SListener(Activity activity) {
         if (!isSettingEnabled(activity, KEY_DT2S_ENABLED)) return;
@@ -922,207 +741,57 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
     // SECTION 5: PERSISTENCE & MIGRATION
     // =========================================================================
 
-    private void hookPersistenceLogic(ClassLoader classLoader) {
+    private void hookHotseatMigration(ClassLoader classLoader) {
         try {
-            Class<?> logicClass = XposedHelpers.findClass("com.android.launcher3.model.GridSizeMigrationLogic", classLoader);
-            final Class<?> itemsToPlaceClass = XposedHelpers.findClass("com.android.launcher3.model.GridSizeMigrationLogic$WorkspaceItemsToPlace", classLoader);
-            final Class<?> occupancyClass = XposedHelpers.findClass("com.android.launcher3.util.GridOccupancy", classLoader);
-            Class<?> dbReaderClass = XposedHelpers.findClass("com.android.launcher3.model.DbReader", classLoader);
-            Class<?> dbHelperClass = XposedHelpers.findClass("com.android.launcher3.model.DatabaseHelper", classLoader);
+            Class<?> logicClass = XposedHelpers.findClass(
+                    "com.android.launcher3.model.GridSizeMigrationLogic", classLoader);
+            Class<?> dbReaderClass = XposedHelpers.findClass(
+                    "com.android.launcher3.model.DbReader", classLoader);
+            Class<?> dbHelperClass = XposedHelpers.findClass(
+                    "com.android.launcher3.model.DatabaseHelper", classLoader);
 
-            XposedHelpers.findAndHookMethod(logicClass, "migrateHotseat", int.class, int.class, dbReaderClass, dbReaderClass, dbHelperClass, List.class, new XC_MethodReplacement() {
-                @Override
-                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                    Context context = getCurrentApplication();
-                    if (getIntSetting(context, KEY_HOTSEAT_ICONS, 0) > 0) return null;
-                    return XposedBridge.invokeOriginalMethod(param.method, param.thisObject, param.args);
-                }
-            });
-
-            XposedHelpers.findAndHookMethod(logicClass, "solveGridPlacement", int.class, int.class, int.class, List.class, List.class, new XC_MethodReplacement() {
-                @Override
-                protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
-                    int screenId = (Integer) param.args[0];
-                    int trgX = (Integer) param.args[1];
-                    int trgY = (Integer) param.args[2];
-                    List<Object> remaining = (List<Object>) param.args[3];
-                    List<Object> placed = (List<Object>) param.args[4];
-
-                    Context context = getCurrentApplication();
-                    boolean allowTopRow = (context != null && getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) == 1);
-
-                    if (screenId == 0 && allowTopRow) {
-                        Constructor<?> solutionConstructor = itemsToPlaceClass.getConstructor(List.class, List.class);
-                        ArrayList<Object> placementSolution = new ArrayList<>();
-                        Object result = solutionConstructor.newInstance(remaining, placementSolution);
-                        
-                        Constructor<?> occupancyConstructor = occupancyClass.getConstructor(int.class, int.class);
-                        Object gridOccupancy = occupancyConstructor.newInstance(trgX, trgY);
-                        Point nextEmptyCell = new Point(0, 0);
-
-                        if (placed != null) {
-                            for (Object dbEntry : placed) {
-                                XposedHelpers.callMethod(gridOccupancy, "markCells", true, 
-                                    XposedHelpers.getIntField(dbEntry, "cellX"), 
-                                    XposedHelpers.getIntField(dbEntry, "cellY"), 
-                                    XposedHelpers.getIntField(dbEntry, "spanX"), 
-                                    XposedHelpers.getIntField(dbEntry, "spanY"));
+            XposedHelpers.findAndHookMethod(logicClass, "migrateHotseat", int.class, int.class,
+                    dbReaderClass, dbReaderClass, dbHelperClass, List.class,
+                    new XC_MethodReplacement() {
+                        @Override
+                        protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+                            Context context = getCurrentApplication();
+                            if (getIntSetting(context, KEY_HOTSEAT_ICONS, 0) > 0) {
+                                return null;
                             }
+                            return XposedBridge.invokeOriginalMethod(
+                                    param.method, param.thisObject, param.args);
                         }
-                        Iterator<Object> it = remaining.iterator();
-                        while (it.hasNext()) {
-                            Object dbEntry = it.next();
-                            int minSpanX = XposedHelpers.getIntField(dbEntry, "minSpanX");
-                            int minSpanY = XposedHelpers.getIntField(dbEntry, "minSpanY");
-                            if (minSpanX > trgX || minSpanY > trgY) { it.remove(); continue; }
-                            
-                            int foundCellX = -1; int foundCellY = -1;
-                             for (int y = nextEmptyCell.y; y < trgY; y++) {
-                                int x = (y == nextEmptyCell.y) ? nextEmptyCell.x : 0;
-                                for (; x < trgX; x++) {
-                                    if ((Boolean) XposedHelpers.callMethod(gridOccupancy, "isRegionVacant", x, y, minSpanX, minSpanY)) {
-                                        foundCellX = x; foundCellY = y; break;
-                                    }
-                                }
-                                if (foundCellX != -1) break;
-                            }
-
-                            if (foundCellX != -1) {
-                                XposedHelpers.setIntField(dbEntry, "screenId", screenId);
-                                XposedHelpers.setIntField(dbEntry, "cellX", foundCellX);
-                                XposedHelpers.setIntField(dbEntry, "cellY", foundCellY);
-                                XposedHelpers.setIntField(dbEntry, "spanX", minSpanX);
-                                XposedHelpers.setIntField(dbEntry, "spanY", minSpanY);
-                                XposedHelpers.callMethod(gridOccupancy, "markCells", true, foundCellX, foundCellY, minSpanX, minSpanY);
-                                nextEmptyCell.set(foundCellX + minSpanX, foundCellY);
-                                placementSolution.add(dbEntry);
-                                it.remove();
-                            }
-                        }
-                        return result;
-                    } else {
-                        return XposedBridge.invokeOriginalMethod(param.method, null, param.args);
-                    }
-                }
-            });
-
-            hookLoaderCursor(classLoader);
-            XposedHelpers.findAndHookMethod(occupancyClass, "isRegionVacant", int.class, int.class, int.class, int.class, new XC_MethodHook() {
-                @Override
-                protected void afterHookedMethod(MethodHookParam param) {
-
-                    int y = (Integer) param.args[1];
-                    if (y > 0) return; 
-                    
-                    if ((Boolean) param.getResult()) return;
-
-                    Context context = getCurrentApplication();
-                    if (context == null || getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) != 1) return;
-
-                    try {
-                        int x = (Integer) param.args[0];
-                        int spanX = (Integer) param.args[2];
-                        int spanY = (Integer) param.args[3];
-                        Object gridOccupancy = param.thisObject;
-                        
-                        boolean[][] cells = (boolean[][]) XposedHelpers.getObjectField(gridOccupancy, "cells");
-                        int countX = XposedHelpers.getIntField(gridOccupancy, "mCountX");
-                        int countY = XposedHelpers.getIntField(gridOccupancy, "mCountY");
-                        int endX = x + spanX - 1;
-                        int endY = y + spanY - 1;
-
-                        if (x < 0 || y < 0 || endX >= countX || endY >= countY) return;
-
-                        boolean wouldBeVacant = true;
-                        for (int cx = x; cx <= endX; cx++) {
-                            for (int cy = y; cy <= endY; cy++) {
-                                if (cy > 0 && cells[cx][cy]) {
-                                    wouldBeVacant = false;
-                                    break;
-                                }
-                            }
-                            if (!wouldBeVacant) break;
-                        }
-
-                        if (wouldBeVacant) {
-                            param.setResult(true);
-                        }
-                    } catch (Throwable t) {
-                        logError("Failed to relax top row occupancy", t);
-                    }
-                }
-            });
-
+                    });
         } catch (Throwable e) {
-            logError("Failed to hook Persistence Logic", e);
+            logError("Failed to hook hotseat migration", e);
         }
     }
 
-    private void hookLoaderCursor(ClassLoader classLoader) {
+    private void hookQsbWidgetFactory(ClassLoader classLoader) {
         try {
-            Class<?> loaderCursorClass = XposedHelpers.findClass("com.android.launcher3.model.LoaderCursor", classLoader);
-            Class<?> itemInfoClass = XposedHelpers.findClass("com.android.launcher3.model.data.ItemInfo", classLoader);
-            Class<?> intSparseArrayMapClass = XposedHelpers.findClass("com.android.launcher3.util.IntSparseArrayMap", classLoader);
-            Class<?> loaderMemoryLoggerClass = XposedHelpers.findClass("com.android.launcher3.model.LoaderMemoryLogger", classLoader);
-
-            XposedHelpers.findAndHookMethod(loaderCursorClass, "checkAndAddItem",
-                itemInfoClass, intSparseArrayMapClass, loaderMemoryLoggerClass,
-                new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        try {
-                            Object cursor = param.thisObject;
-                            Object item = param.args[0];
-                            Context context = (Context) XposedHelpers.getObjectField(cursor, "mContext");
-
-                            if (getIntSetting(context, KEY_TOP_WIDGET_ENABLE, 0) != 1) return;
-
-                            int container = XposedHelpers.getIntField(item, "container");
-                            if (container != -100) return; // Desktop
-
-                            int screenId = XposedHelpers.getIntField(item, "screenId");
-                            if (screenId != 0) return;
-
-                            int cellY = XposedHelpers.getIntField(item, "cellY");
-                            if (cellY != 0) return;
-
-                            Object mOccupied = XposedHelpers.getObjectField(cursor, "mOccupied");
-                            Object gridOccupancy = XposedHelpers.callMethod(mOccupied, "get", screenId);
-
-                            if (gridOccupancy != null) {
-                                int cellX = XposedHelpers.getIntField(item, "cellX");
-                                int spanX = XposedHelpers.getIntField(item, "spanX");
-                                int spanY = XposedHelpers.getIntField(item, "spanY");
-
-                                XposedHelpers.callMethod(gridOccupancy, "markCells", false, cellX, cellY, spanX, spanY);
-
-                                param.setObjectExtra("gridOccupancy", gridOccupancy);
-                                param.setObjectExtra("cellX", cellX);
-                                param.setObjectExtra("cellY", cellY);
-                                param.setObjectExtra("spanX", spanX);
-                                param.setObjectExtra("spanY", spanY);
+            Class<?> factoryClass = XposedHelpers.findClass(
+                    "com.android.launcher3.qsb.QsbWidgetFactory", classLoader);
+            XposedHelpers.findAndHookMethod(factoryClass, "createView", ViewGroup.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            if (!(param.args[0] instanceof ViewGroup)) return;
+                            ViewGroup container = (ViewGroup) param.args[0];
+                            if (!"com.android.launcher3.Hotseat".equals(
+                                    container.getClass().getName())) return;
+                            if (!isSettingEnabled(container.getContext(), KEY_NATIVE_SEARCH, true)) {
+                                return;
                             }
-                        } catch (Throwable e) { }
-                    }
-
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        try {
-                            Object gridOccupancy = param.getObjectExtra("gridOccupancy");
-                            if (gridOccupancy != null) {
-                                int cellX = (Integer) param.getObjectExtra("cellX");
-                                int cellY = (Integer) param.getObjectExtra("cellY");
-                                int spanX = (Integer) param.getObjectExtra("spanX");
-                                int spanY = (Integer) param.getObjectExtra("spanY");
-
-                                XposedHelpers.callMethod(gridOccupancy, "markCells", true, cellX, cellY, spanX, spanY);
+                            View original = (View) param.getResult();
+                            if (original != null) {
+                                param.setResult(new NativeSearchRedirectView(
+                                        container.getContext(), original));
                             }
-                        } catch (Throwable e) { }
-                    }
-                }
-            );
+                        }
+                    });
         } catch (Throwable e) {
-            logError("Failed to hook LoaderCursor", e);
+            logError("Failed to hook QsbWidgetFactory", e);
         }
     }
 
@@ -1234,28 +903,44 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
         int paddingDots = getIntSetting(context, KEY_PADDING_DOTS, DEFAULT_PADDING_DOTS);
         int paddingDotsX = getIntSetting(context, KEY_PADDING_DOTS_X, 0);
         
-        int diffDp = paddingDots - DEFAULT_PADDING_DOTS;
+        int diffDp = DEFAULT_PADDING_DOTS - paddingDots;
         int diffPx = toPx(context, diffDp);
         int diffPxX = toPx(context, paddingDotsX);
-
+        
         try {
             View pageIndicator = (View) XposedHelpers.getObjectField(workspace, "mPageIndicator");
-            if (pageIndicator != null && pageIndicator.getParent() instanceof View) {
-                View parent = (View) pageIndicator.getParent();
-                if (parent.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-                    ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) parent.getLayoutParams();
-                    Object baseMarginObj = parent.getTag(TAG_DOTS_BASE_MARGIN);
-                    int baseMargin = (baseMarginObj instanceof Integer) ? (Integer) baseMarginObj : params.bottomMargin;
-                    if (!(baseMarginObj instanceof Integer)) parent.setTag(TAG_DOTS_BASE_MARGIN, baseMargin);
-                    int targetBottomMargin = baseMargin + diffPx;
-                    if (params.bottomMargin != targetBottomMargin) {
-                        params.bottomMargin = targetBottomMargin;
-                        parent.setLayoutParams(params);
-                    }
-                    if (parent.getTranslationX() != diffPxX) parent.setTranslationX(diffPxX);
+            if (pageIndicator != null) {
+                View content = findPageIndicatorContent(pageIndicator);
+                if (content == null) content = pageIndicator;
+                if (pageIndicator instanceof ViewGroup) {
+                    ViewGroup indicatorGroup = (ViewGroup) pageIndicator;
+                    indicatorGroup.setClipChildren(false);
+                    indicatorGroup.setClipToPadding(false);
                 }
+                if (content instanceof ViewGroup) {
+                    ViewGroup contentGroup = (ViewGroup) content;
+                    contentGroup.setClipChildren(false);
+                    contentGroup.setClipToPadding(false);
+                }
+                pageIndicator.setClipToOutline(false);
+                content.setTranslationX(diffPxX);
+                content.setTranslationY(diffPx);
             }
         } catch (Throwable e) { /* ignore */ }
+    }
+
+    private View findPageIndicatorContent(View pageIndicator) {
+        try {
+            Object content = XposedHelpers.getObjectField(
+                    pageIndicator, "pageIndicatorContentContainer");
+            if (content instanceof View) return (View) content;
+        } catch (Throwable ignored) { }
+        try {
+            int id = pageIndicator.getResources().getIdentifier(
+                    "page_indicator_content_container", "id", pageIndicator.getContext().getPackageName());
+            if (id != 0) return pageIndicator.findViewById(id);
+        } catch (Throwable ignored) { }
+        return null;
     }
 
     private void handleWorkspaceView(TextView view, Object itemInfo) {

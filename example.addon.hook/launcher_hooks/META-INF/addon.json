@@ -4,7 +4,7 @@
     "name": "Pixel Launcher Settings",
     "author": "LeeGarChat",
     "description": "Nexus Launcher layout, drawer, icons and recents customization moved to an addon.",
-    "version": "2.0.0",
+    "version": "2.2.1",
     "targetPackages": [
         "com.google.android.apps.nexuslauncher"
     ],
@@ -134,26 +134,6 @@
                     "category": "home_grid"
                 },
                 {
-                    "key": "launcher_disable_top_widget",
-                    "title": "Hide top widget",
-                    "description": "Frees the top home screen row.",
-                    "type": "switch",
-                    "provider": "global",
-                    "default": false,
-                    "category": "home_surface",
-                    "categoryTitle": "Home surfaces",
-                    "categoryDescription": "Top widget and Discover feed."
-                },
-                {
-                    "key": "launcher_disable_google_feed",
-                    "title": "Disable Google Feed",
-                    "description": "Removes the left Discover page.",
-                    "type": "switch",
-                    "provider": "global",
-                    "default": false,
-                    "category": "home_surface"
-                },
-                {
                     "key": "launcher_dt2s_enabled",
                     "title": "Double tap to sleep",
                     "description": "Double-tapping an empty workspace area locks the screen.",
@@ -207,7 +187,7 @@
                 {
                     "key": "pixel_launcher_native_search",
                     "title": "Use native search",
-                    "description": "Toggles enable_one_search through device_config.",
+                    "description": "Redirects only the QSB input field; Google and shortcut icons keep their standard actions.",
                     "type": "switch",
                     "provider": "global",
                     "default": true,
@@ -324,7 +304,7 @@
                     "description": "Move page dots up or down independently from the dock.",
                     "type": "int",
                     "provider": "global",
-                    "default": 45,
+                    "default": 0,
                     "min": -200,
                     "max": 2000,
                     "step": 1,
@@ -1184,18 +1164,6 @@
                             "pageId": "main/pixel-launcher/home-screen"
                         },
                         {
-                            "key": "launcher_disable_top_widget",
-                            "label": "Hide top widget",
-                            "mode": "toggle",
-                            "pageId": "main/pixel-launcher/home-screen"
-                        },
-                        {
-                            "key": "launcher_disable_google_feed",
-                            "label": "Disable Google Feed",
-                            "mode": "toggle",
-                            "pageId": "main/pixel-launcher/home-screen"
-                        },
-                        {
                             "key": "launcher_hidden_dock",
                             "label": "Hide dock",
                             "mode": "toggle",
@@ -1363,20 +1331,6 @@
                             "category": "home_grid"
                         },
                         {
-                            "key": "launcher_disable_top_widget",
-                            "title": "Скрыть верхний виджет",
-                            "description": "Освобождает верхнюю строку рабочего стола.",
-                            "category": "home_surface",
-                            "categoryTitle": "Поверхности рабочего стола",
-                            "categoryDescription": "Верхний виджет и лента Discover."
-                        },
-                        {
-                            "key": "launcher_disable_google_feed",
-                            "title": "Отключить Google Feed",
-                            "description": "Убирает левую страницу Discover.",
-                            "category": "home_surface"
-                        },
-                        {
                             "key": "launcher_dt2s_enabled",
                             "title": "Двойной тап для сна",
                             "description": "Двойной тап по пустому месту блокирует экран.",
@@ -1411,7 +1365,7 @@
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Использовать нативный поиск",
-                            "description": "Переключает enable_one_search через device_config.",
+                            "description": "Перенаправляет только поле QSB; иконки Google и shortcuts сохраняют штатные действия.",
                             "category": "dock_layout"
                         },
                         {
@@ -1859,14 +1813,6 @@
                                     "label": "Двойной тап для сна"
                                 },
                                 {
-                                    "key": "launcher_disable_top_widget",
-                                    "label": "Скрыть верхний виджет"
-                                },
-                                {
-                                    "key": "launcher_disable_google_feed",
-                                    "label": "Отключить Google Feed"
-                                },
-                                {
                                     "key": "launcher_hidden_dock",
                                     "label": "Скрыть док"
                                 },
@@ -2013,20 +1959,6 @@
                             "category": "home_grid"
                         },
                         {
-                            "key": "launcher_disable_top_widget",
-                            "title": "Hide top widget",
-                            "description": "Frees the top home screen row.",
-                            "category": "home_surface",
-                            "categoryTitle": "Startbildschirmflächen",
-                            "categoryDescription": "Oberes Widget und Discover-Feed."
-                        },
-                        {
-                            "key": "launcher_disable_google_feed",
-                            "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page.",
-                            "category": "home_surface"
-                        },
-                        {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
                             "description": "Double-tapping an empty workspace area locks the screen.",
@@ -2061,7 +1993,7 @@
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config.",
+                            "description": "Redirects only the QSB input field; Google and shortcut icons keep their standard actions.",
                             "category": "dock_layout"
                         },
                         {
@@ -2509,14 +2441,6 @@
                                     "label": "Double tap to sleep"
                                 },
                                 {
-                                    "key": "launcher_disable_top_widget",
-                                    "label": "Hide top widget"
-                                },
-                                {
-                                    "key": "launcher_disable_google_feed",
-                                    "label": "Disable Google Feed"
-                                },
-                                {
                                     "key": "launcher_hidden_dock",
                                     "label": "Hide dock"
                                 },
@@ -2663,20 +2587,6 @@
                             "category": "home_grid"
                         },
                         {
-                            "key": "launcher_disable_top_widget",
-                            "title": "Hide top widget",
-                            "description": "Frees the top home screen row.",
-                            "category": "home_surface",
-                            "categoryTitle": "Surfaces d'accueil",
-                            "categoryDescription": "Widget superieur et flux Discover."
-                        },
-                        {
-                            "key": "launcher_disable_google_feed",
-                            "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page.",
-                            "category": "home_surface"
-                        },
-                        {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
                             "description": "Double-tapping an empty workspace area locks the screen.",
@@ -2711,7 +2621,7 @@
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config.",
+                            "description": "Redirects only the QSB input field; Google and shortcut icons keep their standard actions.",
                             "category": "dock_layout"
                         },
                         {
@@ -3159,14 +3069,6 @@
                                     "label": "Double tap to sleep"
                                 },
                                 {
-                                    "key": "launcher_disable_top_widget",
-                                    "label": "Hide top widget"
-                                },
-                                {
-                                    "key": "launcher_disable_google_feed",
-                                    "label": "Disable Google Feed"
-                                },
-                                {
                                     "key": "launcher_hidden_dock",
                                     "label": "Hide dock"
                                 },
@@ -3313,20 +3215,6 @@
                             "category": "home_grid"
                         },
                         {
-                            "key": "launcher_disable_top_widget",
-                            "title": "Hide top widget",
-                            "description": "Frees the top home screen row.",
-                            "category": "home_surface",
-                            "categoryTitle": "Поверхні головного екрана",
-                            "categoryDescription": "Верхній віджет і стрічка Discover."
-                        },
-                        {
-                            "key": "launcher_disable_google_feed",
-                            "title": "Disable Google Feed",
-                            "description": "Removes the left Discover page.",
-                            "category": "home_surface"
-                        },
-                        {
                             "key": "launcher_dt2s_enabled",
                             "title": "Double tap to sleep",
                             "description": "Double-tapping an empty workspace area locks the screen.",
@@ -3361,7 +3249,7 @@
                         {
                             "key": "pixel_launcher_native_search",
                             "title": "Use native search",
-                            "description": "Toggles enable_one_search through device_config.",
+                            "description": "Redirects only the QSB input field; Google and shortcut icons keep their standard actions.",
                             "category": "dock_layout"
                         },
                         {
@@ -3807,14 +3695,6 @@
                                 {
                                     "key": "launcher_dt2s_enabled",
                                     "label": "Double tap to sleep"
-                                },
-                                {
-                                    "key": "launcher_disable_top_widget",
-                                    "label": "Hide top widget"
-                                },
-                                {
-                                    "key": "launcher_disable_google_feed",
-                                    "label": "Disable Google Feed"
                                 },
                                 {
                                     "key": "launcher_hidden_dock",

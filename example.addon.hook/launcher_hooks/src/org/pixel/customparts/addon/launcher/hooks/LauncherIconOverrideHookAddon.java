@@ -125,6 +125,7 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
         initDynamicClockClasses(classLoader);
         hookProviderClass(classLoader, "com.android.launcher3.icons.IconProvider");
         hookProviderClass(classLoader, "com.android.launcher3.icons.LauncherIconProviderImpl");
+        hookThemedIconData(classLoader);
         hookIconProviderGetIcon(classLoader);
         hookBaseIconFactory(classLoader);
         hookThemeIconStateUniqueId(classLoader);
@@ -274,6 +275,44 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
         }
     }
 
+    private void hookThemedIconData(ClassLoader classLoader) {
+        try {
+            Class<?> providerClass = XposedHelpers.findClass(
+                    "com.android.launcher3.icons.LauncherIconProviderImpl", classLoader);
+            XposedHelpers.findAndHookMethod(
+                    providerClass,
+                    "getThemeDataForPackage",
+                    String.class,
+                    new XC_MethodHook() {
+                        @Override
+                        protected void afterHookedMethod(MethodHookParam param) {
+                            Object themeData = param.getResult();
+                            if (themeData == null) {
+                                return;
+                            }
+                            try {
+                                Resources resources = (Resources) XposedHelpers.getObjectField(
+                                        themeData, "mResources");
+                                int resourceId = XposedHelpers.getIntField(themeData, "mResID");
+                                if (resources == null || resourceId == 0) {
+                                    param.setResult(null);
+                                    return;
+                                }
+                                resources.getResourceTypeName(resourceId);
+                            } catch (Resources.NotFoundException e) {
+                                // A resource overlay can invalidate the cached themed-icon ID.
+                                param.setResult(null);
+                            } catch (Throwable ignored) {
+                                // Keep the launcher-provided themed icon data on unknown layouts.
+                            }
+                        }
+                    });
+            log("Hooked LauncherIconProviderImpl.getThemeDataForPackage validation");
+        } catch (Throwable t) {
+            logError("Unable to hook LauncherIconProviderImpl.getThemeDataForPackage", t);
+        }
+    }
+
     private void hookFloatingIconView(ClassLoader classLoader) {
         try {
             Class<?> floatingIconViewClass = XposedHelpers.findClass(
@@ -353,7 +392,12 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
                     new XC_MethodHook() {
                         @Override
                         protected void afterHookedMethod(MethodHookParam param) {
-                            String baseState = String.valueOf(param.getResult());
+                            Object baseState = param.getResult();
+                            if (baseState == null
+                                    || !"com.android.launcher3.icons.PersistedItemState".equals(
+                                            baseState.getClass().getName())) {
+                                return;
+                            }
                             Context context = getProviderContext(param.thisObject);
                             maybeRegisterIconReloadReceiver(context);
                             ApplicationInfo appInfo = (ApplicationInfo) param.args[0];
@@ -361,7 +405,7 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
                             long mapVersion = getFileLastModified(ICON_MAP_FILE);
                             String packageName = appInfo != null ? appInfo.packageName : "";
                             ShapeConfig shapeConfig = getLauncherIconShapeConfig(context, packageName);
-                            param.setResult(baseState + " pixelparts-icons=" + enabled + ":"
+                            String extraState = "pixelparts-icons=" + enabled + ":"
                                     + mapVersion + ":" + shapeConfig.mode + ":"
                                     + Math.round(shapeConfig.scale * 10000f) + ":"
                                     + shapeConfig.backgroundTintMode + ":"
@@ -369,8 +413,18 @@ public class LauncherIconOverrideHookAddon extends BaseLauncherHook {
                                     + shapeConfig.foregroundTintMode + ":"
                                     + shapeConfig.foregroundTintColor + ":" + packageName
                                     + ":" + dynamicStateForPackage(packageName)
-                                    + ":" + launcherShapeFlagsState(context)
-                                    + ":" + launcherIconMaskState(context));
+                                    + ":" + launcherShapeFlagsState(context);
+                            try {
+                                Object updatedState = XposedHelpers.callMethod(
+                                        baseState,
+                                        "withAdditionalValues",
+                                        new Object[]{new String[]{extraState}});
+                                if (updatedState != null) {
+                                    param.setResult(updatedState);
+                                }
+                            } catch (Throwable ignored) {
+                                // Keep the original PersistedItemState if this launcher changes again.
+                            }
                         }
                     });
             log("Hooked IconProvider.getStateForApp freshness");

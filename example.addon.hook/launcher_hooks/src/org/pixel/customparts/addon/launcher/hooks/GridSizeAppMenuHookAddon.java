@@ -117,6 +117,11 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
                 "build",
                 new XC_MethodHook() {
                     @Override
+                    protected void beforeHookedMethod(MethodHookParam param) {
+                        applyAllAppsSettingsToBuilder(param.thisObject);
+                    }
+
+                    @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         Object deviceProfile = param.getResult();
                         if (deviceProfile == null) return;
@@ -131,6 +136,35 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
         } catch (Throwable e) {
             logError("Failed to hook DeviceProfile.Builder", e);
         }
+    }
+
+    private void applyAllAppsSettingsToBuilder(Object builder) {
+        Context context = getContextFromBuilder(builder);
+        if (context == null || !isSettingEnabled(context, KEY_MENU_ENABLE)) return;
+        int menuCols = getIntSetting(context, KEY_MENU_COLS, 0);
+        if (menuCols <= 0) return;
+        try {
+            Object invariantProfile = XposedHelpers.getObjectField(builder, "mInv");
+            if (invariantProfile != null) {
+                XposedHelpers.setIntField(invariantProfile, "numAllAppsColumns", menuCols);
+                XposedHelpers.setIntField(invariantProfile, "numDatabaseAllAppsColumns", menuCols);
+            }
+            Object displayOptionSpec = XposedHelpers.getObjectField(builder, "mDisplayOptionSpec");
+            if (displayOptionSpec != null) {
+                XposedHelpers.setIntField(displayOptionSpec, "numAllAppsColumns", menuCols);
+            }
+        } catch (Throwable e) {
+            logError("Failed to update AllApps grid before DeviceProfile build", e);
+        }
+    }
+
+    private Context getContextFromBuilder(Object builder) {
+        try {
+            Object displayInfo = XposedHelpers.getObjectField(builder, "mInfo");
+            Object context = XposedHelpers.getObjectField(displayInfo, "context");
+            if (context instanceof Context) return (Context) context;
+        } catch (Throwable ignored) { }
+        return getCurrentApplication();
     }
 
     private void hookAlphabeticalAppsList(ClassLoader classLoader) {
@@ -233,7 +267,10 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
         
         if (menuCols > 0) {
             try {
-                XposedHelpers.setIntField(deviceProfile, "numShownAllAppsColumns", menuCols);
+                Object allAppsProfile = XposedHelpers.getObjectField(deviceProfile, "mAllAppsProfile");
+                if (allAppsProfile != null) {
+                    XposedHelpers.setIntField(allAppsProfile, "numShownAllAppsColumns", menuCols);
+                }
             } catch (Throwable e) {
                 logError("Failed to update DeviceProfile AllApps columns", e);
             }

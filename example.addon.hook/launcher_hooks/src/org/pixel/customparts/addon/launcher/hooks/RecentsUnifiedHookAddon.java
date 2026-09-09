@@ -195,6 +195,16 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
     // SECTION 1: RECENTS VIEW LIFECYCLE & MAIN LOOP
     // =========================================================================
 
+    private boolean requiresStaticTaskSnapshots() {
+        return Settings.disableLiveTile
+                || Settings.hasRenderEffects
+                || Settings.spacingOffset != 0
+                || Math.abs(Settings.scaleMin - 1.0f) > 0.001f
+                || Math.abs(Settings.alphaMin - 1.0f) > 0.001f
+                || Settings.hasIconOffset
+                || (Settings.commonScaleEnabled && Settings.commonScalePercent != 100);
+    }
+
     private void hookRecentsView(Class<?> recentsViewClass) {
         XposedHelpers.findAndHookMethod(recentsViewClass, "onAttachedToWindow", new XC_MethodHook() {
             @Override
@@ -279,7 +289,7 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
                     RecentsState.isGestureInProgress = false;
                     ViewGroup view = (ViewGroup) param.thisObject;
                     
-                    if (Settings.enabled && Settings.disableLiveTile) {
+                    if (Settings.enabled && requiresStaticTaskSnapshots()) {
                         disableLiveTile(view);
                     }
 
@@ -365,6 +375,7 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
                 ((View) param.thisObject).setTag(RecentsState.TAG_SYS_NON_GRID_SCALE, param.args[0]);
             }
         });
+
     }
 
     // =========================================================================
@@ -896,16 +907,46 @@ public class RecentsUnifiedHookAddon extends BaseLauncherHook {
     
     private void disableLiveTile(ViewGroup view) {
         try {
-            Runnable r = new Runnable() {
+            if (view == null) return;
+
+            Object endTarget = view.getTag(RecentsState.TAG_PENDING_END_TARGET);
+            if (endTarget == null || !endTarget.toString().contains("RECENTS")) return;
+
+            try {
+                Object enabled = XposedHelpers.callMethod(view, "getEnableDrawingLiveTile");
+                if (enabled instanceof Boolean && !((Boolean) enabled)) return;
+            } catch (Throwable ignored) {
+                // Keep compatibility with Launcher builds without the getter.
+            }
+
+            try {
+                XposedHelpers.callMethod(view, "setEnableDrawingLiveTile", false);
+            } catch (Throwable ignored) {}
+
+            Runnable screenshotCallback = new Runnable() {
                 @Override
                 public void run() {
+                    // Finish only after the screenshot is on screen so the remote
+                    // live-tile surface is released without racing the transition.
                     try {
-                        XposedHelpers.callMethod(view, "finishRecentsAnimation", false, false, null);
+                        XposedHelpers.callMethod(
+                                view,
+                                "finishRecentsAnimation",
+                                true,
+                                false,
+                                null
+                        );
+                    } catch (Throwable ignored) {}
+
+                    try {
                         XposedHelpers.callMethod(view, "setEnableDrawingLiveTile", false);
                     } catch (Throwable ignored) {}
                 }
             };
-            try { XposedHelpers.callMethod(view, "switchToScreenshot", r); } catch (Throwable t) { r.run(); }
+
+            try {
+                XposedHelpers.callMethod(view, "switchToScreenshot", screenshotCallback);
+            } catch (Throwable ignored) {}
         } catch (Throwable ignored) {}
     }
 

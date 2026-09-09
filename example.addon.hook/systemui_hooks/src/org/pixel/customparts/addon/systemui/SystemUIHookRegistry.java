@@ -10,7 +10,6 @@ import org.pixel.customparts.addon.systemui.hooks.NotificationIconShapeHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeCompactMediaHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeDateCalendarHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeUnifiedSurfaceHook;
-import org.pixel.customparts.addon.systemui.hooks.SystemUIRestartHook;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +36,6 @@ public final class SystemUIHookRegistry {
         hooks.add(new ShadeCompactMediaHook());
         hooks.add(new NotificationIconShapeHook());
         hooks.add(new AodNotificationIconColorHook());
-        hooks.add(new SystemUIRestartHook());
 
         Collections.sort(hooks, new Comparator<BaseSystemUIHook>() {
             @Override
