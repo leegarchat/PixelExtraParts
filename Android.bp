@@ -1,10 +1,4 @@
 
-java_import {
-    name: "xposed_api_82",
-    jars: ["xposed-pine/libs/xposed/api-82.jar"],
-    sdk_version: "current",
-}
-
 prebuilt_etc {
     name: "privapp_whitelist_org.pixel.customparts",
     sub_dir: "permissions",
@@ -110,66 +104,6 @@ cc_prebuilt_library_shared {
     // Оставляем поведение по умолчанию.
 }
 
-android_test {
-    name: "PixelCustomPartsXposed",
-    manifest: "xposed-pine/AndroidManifest.xml",
-    resource_dirs: [
-        "common/res", 
-        "xposed-pine/res"
-    ],
-    use_embedded_native_libs: false,
-    jni_libs: [
-        "libaapt2_pixelparts"
-    ],
-    srcs: [
-        "common/src/**/*.kt",
-        "common/src/**/*.java",
-        "xposed-pine/src/org/pixel/customparts/core/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/core/**/*.java",
-        // Общие хуки (код реализации)
-        "xposed-pine/src/org/pixel/customparts/hooks/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/hooks/**/*.java",
-        // Pine-специфичный менеджер
-        "xposed-pine/src/org/pixel/customparts/manager/xposed/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/manager/xposed/**/*.java"
-    ],
-    asset_dirs: ["xposed-pine/assets"],
-    static_libs: [
-        "apksig-jar",
-        "androidx.core_core",
-        "androidx.appcompat_appcompat",
-        "com.google.android.material_material",
-        "androidx.core_core-ktx",
-        "androidx.activity_activity-compose",
-        "androidx.lifecycle_lifecycle-runtime-ktx",
-        "androidx.lifecycle_lifecycle-viewmodel-compose",
-        "androidx.compose.runtime_runtime",
-        "androidx.compose.foundation_foundation",
-        "androidx.compose.foundation_foundation-layout",
-        "androidx.compose.ui_ui",
-        "androidx.compose.ui_ui-tooling-preview",
-        "androidx.compose.material3_material3",
-        "androidx.compose.material_material-icons-extended",
-        "SettingsLib",
-    ],
-    libs: [
-        "xposed_api_82"
-    ],
-    dex_preopt: {
-        enabled: false,
-    },
-    optimize: {
-        enabled: true,
-        optimize: true,
-        shrink: true,
-        obfuscate: true,
-        proguard_flags_files: ["proguard.flags"],
-    },
-
-    aaptflags: ["--custom-package", "org.pixel.customparts"],
-    certificate: "platform",
-    platform_apis: true
-}
 android_app {
     name: "PixelCustomPartsSystem",
 
@@ -224,19 +158,19 @@ android_app {
 
 java_import {
     name: "pine-core-jar",
-    jars: ["xposed-pine/libs/pine/pine-core.jar"],
+    jars: ["pine/libs/pine/pine-core.jar"],
     sdk_version: "current",
 }
 
 java_import {
     name: "pine-xposed-jar",
-    jars: ["xposed-pine/libs/pine/pine-xposed.jar"],
+    jars: ["pine/libs/pine/pine-xposed.jar"],
     sdk_version: "current",
 }
 
 cc_prebuilt_library_shared {
     name: "libpine",
-    srcs: ["xposed-pine/libs/pine/arm64-v8a/libpine.so"],
+    srcs: ["pine/libs/pine/arm64-v8a/libpine.so"],
     strip: {
     none: true,
     },
@@ -259,14 +193,14 @@ java_library {
     name: "PineInject",
     srcs: [
         // Общий интерфейс IHookEnvironment
-        "xposed-pine/src/org/pixel/customparts/core/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/core/**/*.java",
+        "pine/src/org/pixel/customparts/core/**/*.kt",
+        "pine/src/org/pixel/customparts/core/**/*.java",
         // Общие хуки (код реализации)
-        "xposed-pine/src/org/pixel/customparts/hooks/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/hooks/**/*.java",
+        "pine/src/org/pixel/customparts/hooks/**/*.kt",
+        "pine/src/org/pixel/customparts/hooks/**/*.java",
         // Pine-специфичный менеджер
-        "xposed-pine/src/org/pixel/customparts/manager/pine/**/*.kt",
-        "xposed-pine/src/org/pixel/customparts/manager/pine/**/*.java"
+        "pine/src/org/pixel/customparts/manager/pine/**/*.kt",
+        "pine/src/org/pixel/customparts/manager/pine/**/*.java"
     ],
     installable: true,
     libs: [
