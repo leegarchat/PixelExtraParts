@@ -1,0 +1,1 @@
+type sysfs_pixelparts_leds, sysfs_type, fs_type;

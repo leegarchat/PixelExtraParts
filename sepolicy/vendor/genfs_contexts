@@ -1,0 +1,3 @@
+genfscon sysfs /class/backlight u:object_r:sysfs_pixelparts_leds:s0
+genfscon sysfs /devices/platform/19440000.drmdsim/19440000.drmdsim.0/backlight/panel0-backlight/brightness u:object_r:sysfs_pixelparts_leds:s0
+genfscon sysfs /devices/platform/19440000.drmdsim/19440000.drmdsim.0/backlight/panel0-backlight/max_brightness u:object_r:sysfs_pixelparts_leds:s0

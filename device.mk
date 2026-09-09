@@ -52,5 +52,8 @@ endif
 BOARD_VENDOR_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/vendor
 
+SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
+    $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/public
+
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private

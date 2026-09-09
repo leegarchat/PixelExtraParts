@@ -1,1 +1,0 @@
-genfscon sysfs /class/backlight u:object_r:sysfs_leds:s0
