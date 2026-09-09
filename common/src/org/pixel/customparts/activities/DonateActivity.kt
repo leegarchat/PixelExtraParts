@@ -191,7 +191,7 @@ fun DonateScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(refreshKey) {
-        val rawJsonUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/main/donate_page.json?t=${System.currentTimeMillis()}"
+        val rawJsonUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/lineage-24.0/donate_page.json?t=${System.currentTimeMillis()}"
         try {
             isLoading = true
             loadError = null

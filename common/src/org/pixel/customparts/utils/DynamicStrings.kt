@@ -15,7 +15,7 @@ import java.util.Locale
 object RemoteStringsManager {
     private const val PREFS_NAME = "remote_strings_cache"
     private const val KEY_JSON = "json_data"
-    private const val BASE_URL_PATTERN = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/main/lang/strings_%s.json"
+    private const val BASE_URL_PATTERN = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/lineage-24.0/lang/strings_%s.json"
     private val overrides = mutableStateMapOf<Int, String>()
     private var isInitialized = false
     private fun getUrlForLocale(lang: String): String {

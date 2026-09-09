@@ -28,7 +28,7 @@ SUPPORTED_DEVICES = ("shiba", "husky", "akita")
 SOURCEFORGE_PROJECT = "evolutionx-unofficial-leegar"
 GDRIVE_BASE_URL = "https://leegarchat.mooo.com/files"
 CHANGELOG_BASE_URL = (
-    "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/main/"
+    "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/"
     "OTA/changelogs"
 )
 VARIANT_RULES = {
