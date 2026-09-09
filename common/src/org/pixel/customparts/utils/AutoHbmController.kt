@@ -2,21 +2,22 @@ package org.pixel.customparts.utils
 
 import android.content.Context
 import android.content.Intent
+import android.hardware.display.DisplayManager
 import android.os.Handler
 import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
+import android.view.Display
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.Interpolator
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.services.AutoHbmService
 import java.io.File
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 object AutoHbmController {
     const val DEFAULT_THRESHOLD_LUX = 20000
-    const val MIN_THRESHOLD_LUX = 2000
+    const val MIN_THRESHOLD_LUX = 100
     const val MAX_THRESHOLD_LUX = 60000
     const val DEFAULT_ENABLE_TIME_SECONDS = 0
     const val DEFAULT_DISABLE_TIME_SECONDS = 1
@@ -48,25 +49,16 @@ object AutoHbmController {
 
     private const val TAG = "AutoHbmController"
     private const val NO_ORIGINAL_BRIGHTNESS = -1
+    private const val NO_SYSTEM_BRIGHTNESS = -1
+    private const val MAX_SYSTEM_BRIGHTNESS = 255
     private const val NO_AUTO_BRIGHTNESS_STATE = -1
     private const val NO_TEMPERATURE = -1f
     private const val FRAME_INTERVAL_MS = 16L
     private val rampInterpolator: Interpolator = AccelerateDecelerateInterpolator()
+    private val hbmModeLock = Any()
     private const val THERMAL_ROOT = "/sys/class/thermal"
+    private const val SOC_THERMAL_NAME = "soc_therm"
     private const val BATTERY_TEMP_PATH = "/sys/class/power_supply/battery/temp"
-    private val SOC_THERMAL_KEYWORDS = listOf(
-        "soc",
-        "cpu",
-        "gpu",
-        "tpu",
-        "tensor",
-        "big",
-        "little",
-        "mid",
-        "silver",
-        "gold",
-        "prime"
-    )
 
     fun isSupported(): Boolean {
         return File(BRIGHTNESS_PATH).exists() && File(MAX_BRIGHTNESS_PATH).exists()
@@ -74,6 +66,18 @@ object AutoHbmController {
 
     fun isEnabled(context: Context): Boolean {
         return SettingsCompat.isEnabled(context, SettingsKeys.AUTO_HBM_ENABLED, false)
+    }
+
+    fun getHbmMode(context: Context): Int {
+        return SettingsCompat.getInt(
+            context,
+            SettingsKeys.AUTO_HBM_MODE,
+            SettingsKeys.HBM_MODE_AUTO
+        ).coerceIn(SettingsKeys.HBM_MODE_AUTO, SettingsKeys.HBM_MODE_PERMANENT)
+    }
+
+    fun isAutoModeEnabled(context: Context): Boolean {
+        return isEnabled(context) && getHbmMode(context) == SettingsKeys.HBM_MODE_AUTO
     }
 
     fun isHbmActive(context: Context): Boolean {
@@ -229,17 +233,39 @@ object AutoHbmController {
         return SettingsCompat.getInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, readBrightness() ?: 0)
     }
 
+    fun getActiveSince(context: Context): Long {
+        return SettingsCompat.getString(context, SettingsKeys.AUTO_HBM_ACTIVE_SINCE, null)
+            ?.toLongOrNull()
+            ?.takeIf { it > 0L }
+            ?: 0L
+    }
+
     fun getSocModel(): String {
         return readSystemProperty("ro.soc.model") ?: "SoC"
     }
 
     fun isPermanentMode(context: Context): Boolean {
-        return SettingsCompat.getInt(context, SettingsKeys.AUTO_HBM_MODE, SettingsKeys.HBM_MODE_AUTO) == SettingsKeys.HBM_MODE_PERMANENT
+        return isEnabled(context) && getHbmMode(context) == SettingsKeys.HBM_MODE_PERMANENT
     }
 
     fun setHbmMode(context: Context, mode: Int) {
-        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_MODE, mode)
+        SettingsCompat.putInt(
+            context,
+            SettingsKeys.AUTO_HBM_MODE,
+            mode.coerceIn(SettingsKeys.HBM_MODE_AUTO, SettingsKeys.HBM_MODE_PERMANENT)
+        )
         syncService(context)
+    }
+
+    fun setModeEnabled(context: Context, mode: Int, enabled: Boolean) {
+        val normalizedMode = mode.coerceIn(SettingsKeys.HBM_MODE_AUTO, SettingsKeys.HBM_MODE_PERMANENT)
+        synchronized(hbmModeLock) {
+            // Commit the mutually-exclusive mode pair before asking either tile to refresh.
+            Settings.Global.putInt(context.contentResolver, SettingsKeys.AUTO_HBM_MODE, normalizedMode)
+            Settings.Global.putInt(context.contentResolver, SettingsKeys.AUTO_HBM_ENABLED, if (enabled) 1 else 0)
+            syncService(context)
+            PixelPartsTileRefresher.refreshHbmTiles(context)
+        }
     }
 
     fun isBrightnessLockEnabled(context: Context): Boolean {
@@ -259,9 +285,14 @@ object AutoHbmController {
 
     fun forceMaxBrightness(context: Context): Boolean {
         val maxBrightness = readMaxBrightness() ?: return false
+        if (!isHbmActive(context)) {
+            captureOriginalSystemBrightness(context)
+            captureOriginalPanelBrightness(context, maxBrightness)
+        }
         val success = writeBrightness(maxBrightness)
         if (success) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+            setHbmActive(context, true)
+            syncSystemBrightnessToMax(context)
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
         }
         return success
@@ -291,47 +322,61 @@ object AutoHbmController {
         onComplete: (success: Boolean) -> Unit
     ) {
         val maxBrightness = readMaxBrightness() ?: run { onComplete(false); return }
-        val currentBrightness = readBrightness() ?: run { onComplete(false); return }
 
         if (!isHbmActive(context)) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, currentBrightness)
+            captureOriginalSystemBrightness(context)
+            captureOriginalPanelBrightness(context, maxBrightness)
         }
 
-        if (smoothRamp && rampTimeMs > 0 && currentBrightness != maxBrightness) {
-            rampBrightnessAsync(
+        disableAutoBrightnessIfNeeded(context)
+
+        if (smoothRamp && rampTimeMs > 0) {
+            val logicalBrightness = SettingsCompat.getInt(
+                context,
+                SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS,
+                MAX_SYSTEM_BRIGHTNESS
+            ).coerceIn(1, MAX_SYSTEM_BRIGHTNESS)
+            rampDisplayBrightnessAsync(
+                context = context,
                 handler = handler,
-                from = currentBrightness,
-                to = maxBrightness,
+                from = logicalBrightness.toFloat() / MAX_SYSTEM_BRIGHTNESS,
+                to = 1f,
                 durationMs = rampTimeMs,
                 shouldContinue = shouldContinue
-            ) { success ->
+            ) { rampSuccess ->
+                val success = rampSuccess && writeBrightness(maxBrightness)
                 if (success) {
-                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+                    setHbmActive(context, true)
                     SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
                 }
                 onComplete(success)
             }
-        } else {
-            val success = writeBrightness(maxBrightness)
-            if (success) {
-                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
-                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
-            }
-            onComplete(success)
+            return
         }
+
+        // The raw node is written only for the panel's HBM peak. Normal brightness
+        // transitions and restoration belong to DisplayManager/Settings.
+        val success = writeBrightness(maxBrightness)
+        if (success) {
+            setHbmActive(context, true)
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
+        }
+        onComplete(success)
     }
 
     fun maintainHighBrightness(context: Context): Boolean {
         val maxBrightness = readMaxBrightness() ?: return false
         val currentBrightness = readBrightness() ?: return false
         if (currentBrightness == maxBrightness) {
+            syncSystemBrightnessToMax(context)
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
             return true
         }
 
         val success = writeBrightness(maxBrightness)
         if (success) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 1)
+            setHbmActive(context, true)
+            syncSystemBrightnessToMax(context)
             SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, maxBrightness)
         }
         return success
@@ -345,59 +390,17 @@ object AutoHbmController {
         shouldContinue: () -> Boolean = { true },
         onComplete: (success: Boolean) -> Unit
     ) {
-        val originalBrightness = SettingsCompat.getInt(
-            context,
-            SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS,
-            NO_ORIGINAL_BRIGHTNESS
-        )
-
-        if (originalBrightness < 0) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
-            onComplete(true)
-            return
-        }
-
-        val currentBrightness = readBrightness() ?: originalBrightness
-        if (smoothRamp && rampTimeMs > 0 && currentBrightness != originalBrightness) {
-            rampBrightnessAsync(
-                handler = handler,
-                from = currentBrightness,
-                to = originalBrightness,
-                durationMs = rampTimeMs,
-                shouldContinue = shouldContinue
-            ) { success ->
-                if (success) {
-                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
-                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
-                    SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, originalBrightness)
-                }
-                onComplete(success)
-            }
-        } else {
-            val success = writeBrightness(originalBrightness)
-            if (success) {
-                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
-                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
-                SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, originalBrightness)
-            }
-            onComplete(success)
-        }
+        setHbmActive(context, false)
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
+        readBrightness()?.let { SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, it) }
+        onComplete(true)
     }
 
     fun restoreOriginalBrightnessImmediate(context: Context): Boolean {
-        val originalBrightness = SettingsCompat.getInt(
-            context,
-            SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS,
-            NO_ORIGINAL_BRIGHTNESS
-        )
-        val target = if (originalBrightness >= 0) originalBrightness else (readBrightness() ?: return false)
-        val success = writeBrightness(target)
-        if (success) {
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, 0)
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
-            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, target)
-        }
-        return success
+        setHbmActive(context, false)
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
+        readBrightness()?.let { SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, it) }
+        return true
     }
 
     fun disableAutoBrightnessIfNeeded(context: Context): Boolean {
@@ -447,11 +450,14 @@ object AutoHbmController {
     }
 
     fun publishState(context: Context, lux: Float, temperatureCelsius: Float? = readSocTemperatureC()) {
-        SettingsCompat.putFloat(context, SettingsKeys.AUTO_HBM_LAST_LUX, lux)
+        // High-frequency state publication must not trigger a QS refresh scan on every sample.
+        Settings.Global.putFloat(context.contentResolver, SettingsKeys.AUTO_HBM_LAST_LUX, lux)
         if (temperatureCelsius != null) {
-            SettingsCompat.putFloat(context, SettingsKeys.AUTO_HBM_LAST_TEMPERATURE, temperatureCelsius)
+            Settings.Global.putFloat(context.contentResolver, SettingsKeys.AUTO_HBM_LAST_TEMPERATURE, temperatureCelsius)
         }
-        readBrightness()?.let { SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, it) }
+        readBrightness()?.let {
+            Settings.Global.putInt(context.contentResolver, SettingsKeys.AUTO_HBM_LAST_BRIGHTNESS, it)
+        }
 
         val intent = Intent(ACTION_STATE_CHANGED).setPackage(context.packageName)
             .putExtra(EXTRA_LUX, lux)
@@ -470,21 +476,27 @@ object AutoHbmController {
     fun readMaxBrightness(): Int? = readIntFile(MAX_BRIGHTNESS_PATH)
 
     fun readSocTemperatureC(): Float? {
-        val thermalKeywords = getSocThermalKeywords()
-        val thermalTemps = runCatching {
+        // Match the sensor selected by Pixel's thermal HAL. Do not use the
+        // generic "soc" zone: it is a CPU hotspot and is not in the HAL config.
+        val socTemperature = runCatching {
             File(THERMAL_ROOT).listFiles { file -> file.name.startsWith("thermal_zone") }
                 ?.mapNotNull { zone ->
-                    val type = File(zone, "type").readTextOrNull()?.trim()?.lowercase() ?: return@mapNotNull null
-                    if (thermalKeywords.none { type.contains(it) }) return@mapNotNull null
-                    File(zone, "temp").readTextOrNull()?.trim()?.toLongOrNull()?.let(::normalizeTemperature)
+                    val type = File(zone, "type").readTextOrNull()?.trim()?.lowercase()
+                        ?: return@mapNotNull null
+                    if (type != SOC_THERMAL_NAME) return@mapNotNull null
+                    File(zone, "temp").readTextOrNull()?.trim()?.toLongOrNull()
+                        ?.let(::normalizeTemperature)
+                        ?.takeIf { it in 0f..150f }
                 }
-                ?.filter { it in 0f..150f }
-                ?.maxOrNull()
+                ?.firstOrNull()
         }
-            .onFailure { Log.w(TAG, "Unable to read SoC thermal zones", it) }
+            .onFailure { Log.w(TAG, "Unable to read $SOC_THERMAL_NAME thermal zone", it) }
             .getOrNull()
 
-        return thermalTemps ?: File(BATTERY_TEMP_PATH).readTextOrNull()
+        if (socTemperature != null) return socTemperature
+
+        // Keep the battery value as a safe fallback on devices without soc_therm.
+        return File(BATTERY_TEMP_PATH).readTextOrNull()
             ?.trim()
             ?.toLongOrNull()
             ?.let(::normalizeTemperature)
@@ -507,17 +519,166 @@ object AutoHbmController {
             .isSuccess
     }
 
-    fun rampBrightnessAsync(
+    private fun setHbmActive(context: Context, active: Boolean) {
+        val wasActive = isHbmActive(context)
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ACTIVE, if (active) 1 else 0)
+        if (active && !wasActive) {
+            SettingsCompat.putString(context, SettingsKeys.AUTO_HBM_ACTIVE_SINCE, SystemClock.elapsedRealtime().toString())
+            disableAutoBrightnessIfNeeded(context)
+            setDisplayBrightness(context, 1f)
+            Settings.System.putIntForUser(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS,
+                MAX_SYSTEM_BRIGHTNESS,
+                android.os.UserHandle.USER_CURRENT
+            )
+        } else if (!active) {
+            SettingsCompat.putString(context, SettingsKeys.AUTO_HBM_ACTIVE_SINCE, null)
+            restoreOriginalSystemBrightness(context)
+        }
+    }
+
+    fun rememberSystemBrightness(context: Context) {
+        if (isHbmActive(context)) return
+        val current = readSystemBrightness(context) ?: return
+        if (current in 1..MAX_SYSTEM_BRIGHTNESS) {
+            Settings.Global.putInt(
+                context.contentResolver,
+                SettingsKeys.AUTO_HBM_LAST_SYSTEM_BRIGHTNESS,
+                current
+            )
+        }
+    }
+
+    private fun captureOriginalSystemBrightness(context: Context) {
+        if (SettingsCompat.getInt(
+                context,
+                SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS,
+                NO_SYSTEM_BRIGHTNESS
+            ) in 1..MAX_SYSTEM_BRIGHTNESS
+        ) {
+            return
+        }
+
+        rememberSystemBrightness(context)
+        val current = readSystemBrightness(context)
+            ?: SettingsCompat.getInt(
+                context,
+                SettingsKeys.AUTO_HBM_LAST_SYSTEM_BRIGHTNESS,
+                NO_SYSTEM_BRIGHTNESS
+            )
+        if (current in 1..MAX_SYSTEM_BRIGHTNESS) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS, current)
+        }
+    }
+
+    private fun captureOriginalPanelBrightness(context: Context, maxBrightness: Int) {
+        val logicalBrightness = SettingsCompat.getInt(
+            context,
+            SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS,
+            NO_SYSTEM_BRIGHTNESS
+        )
+        if (logicalBrightness !in 1..MAX_SYSTEM_BRIGHTNESS) {
+            SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, NO_ORIGINAL_BRIGHTNESS)
+            return
+        }
+
+        val panelBrightness = (logicalBrightness.toFloat() / MAX_SYSTEM_BRIGHTNESS * maxBrightness)
+            .roundToInt()
+            .coerceIn(1, maxBrightness)
+        SettingsCompat.putInt(context, SettingsKeys.AUTO_HBM_ORIGINAL_BRIGHTNESS, panelBrightness)
+    }
+
+    private fun restoreOriginalSystemBrightness(context: Context) {
+        val originalBrightness = SettingsCompat.getInt(
+            context,
+            SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS,
+            NO_SYSTEM_BRIGHTNESS
+        )
+        if (originalBrightness !in 1..MAX_SYSTEM_BRIGHTNESS) return
+
+        val settingsUpdated = Settings.System.putIntForUser(
+            context.contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS,
+            originalBrightness,
+            android.os.UserHandle.USER_CURRENT
+        )
+        setDisplayBrightness(context, originalBrightness.toFloat() / MAX_SYSTEM_BRIGHTNESS)
+        if (settingsUpdated) {
+            SettingsCompat.putInt(
+                context,
+                SettingsKeys.AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS,
+                NO_SYSTEM_BRIGHTNESS
+            )
+        }
+    }
+
+    private fun readSystemBrightness(context: Context): Int? {
+        return runCatching {
+            Settings.System.getIntForUser(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS,
+                NO_SYSTEM_BRIGHTNESS,
+                android.os.UserHandle.USER_CURRENT
+            )
+        }.getOrNull()?.takeIf { it in 1..MAX_SYSTEM_BRIGHTNESS }
+    }
+
+    private fun setDisplayBrightness(context: Context, brightness: Float): Boolean {
+        val displayManager = context.getSystemService(DisplayManager::class.java) ?: return false
+        return runCatching {
+            displayManager.setBrightness(
+                Display.DEFAULT_DISPLAY,
+                brightness.coerceIn(0f, 1f)
+            )
+            true
+        }.onFailure {
+            Log.w(TAG, "Unable to update system brightness state", it)
+        }.getOrDefault(false)
+    }
+
+    private fun syncSystemBrightnessToMax(context: Context): Boolean {
+        val settingsUpdated = Settings.System.putIntForUser(
+            context.contentResolver,
+            Settings.System.SCREEN_BRIGHTNESS,
+            MAX_SYSTEM_BRIGHTNESS,
+            android.os.UserHandle.USER_CURRENT
+        )
+        val displayUpdated = setDisplayBrightness(context, 1f)
+        if (!settingsUpdated || !displayUpdated) {
+            Log.w(
+                TAG,
+                "Unable to synchronize system brightness slider to max " +
+                    "(settings=$settingsUpdated, display=$displayUpdated)"
+            )
+        }
+        return settingsUpdated && displayUpdated
+    }
+
+    private fun setTemporaryDisplayBrightness(context: Context, brightness: Float): Boolean {
+        val displayManager = context.getSystemService(DisplayManager::class.java) ?: return false
+        return runCatching {
+            displayManager.setTemporaryBrightness(
+                Display.DEFAULT_DISPLAY,
+                brightness.coerceIn(0f, 1f)
+            )
+            true
+        }.onFailure {
+            Log.w(TAG, "Unable to update temporary system brightness", it)
+        }.getOrDefault(false)
+    }
+
+    private fun rampDisplayBrightnessAsync(
+        context: Context,
         handler: Handler,
-        from: Int,
-        to: Int,
+        from: Float,
+        to: Float,
         durationMs: Int,
         shouldContinue: () -> Boolean,
         onComplete: (success: Boolean) -> Unit
     ) {
         val clampedDuration = durationMs.coerceIn(MIN_RAMP_TIME_MS, MAX_RAMP_TIME_MS).toLong()
         val startTime = SystemClock.elapsedRealtime()
-        val upperBound = max(from, to).coerceAtLeast(1)
 
         val frameRunnable = object : Runnable {
             override fun run() {
@@ -529,11 +690,9 @@ object AutoHbmController {
                 val elapsed = SystemClock.elapsedRealtime() - startTime
                 val fraction = (elapsed.toFloat() / clampedDuration).coerceIn(0f, 1f)
                 val interpolatedFraction = rampInterpolator.getInterpolation(fraction)
-                val currentBrightness = (from + ((to - from) * interpolatedFraction))
-                    .roundToInt()
-                    .coerceIn(0, upperBound)
+                val currentBrightness = from + ((to - from) * interpolatedFraction)
 
-                if (!writeBrightness(currentBrightness)) {
+                if (!setTemporaryDisplayBrightness(context, currentBrightness)) {
                     onComplete(false)
                     return
                 }
@@ -541,7 +700,7 @@ object AutoHbmController {
                 if (fraction < 1f) {
                     handler.postDelayed(this, FRAME_INTERVAL_MS)
                 } else {
-                    val finalSuccess = writeBrightness(to)
+                    val finalSuccess = setDisplayBrightness(context, to)
                     onComplete(finalSuccess && shouldContinue())
                 }
             }
@@ -551,7 +710,12 @@ object AutoHbmController {
 
     private fun getScreenBrightnessMode(context: Context): Int? {
         return runCatching {
-            Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE)
+            Settings.System.getIntForUser(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
+                android.os.UserHandle.USER_CURRENT
+            )
         }
             .onFailure { Log.w(TAG, "Unable to read screen brightness mode", it) }
             .getOrNull()
@@ -559,23 +723,15 @@ object AutoHbmController {
 
     private fun setScreenBrightnessMode(context: Context, mode: Int): Boolean {
         return runCatching {
-            Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE, mode)
+            Settings.System.putIntForUser(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS_MODE,
+                mode,
+                android.os.UserHandle.USER_CURRENT
+            )
         }
             .onFailure { Log.w(TAG, "Unable to write screen brightness mode", it) }
             .getOrDefault(false)
-    }
-
-    private fun getSocThermalKeywords(): List<String> {
-        val model = readSystemProperty("ro.soc.model")?.lowercase().orEmpty()
-        if (model.isBlank()) return SOC_THERMAL_KEYWORDS
-
-        val modelTokens = model.split(Regex("[^a-z0-9]+"))
-            .filter { it.length >= 2 }
-        val compactModel = model.filter { it.isLetterOrDigit() }
-
-        return (SOC_THERMAL_KEYWORDS + modelTokens + compactModel)
-            .filter { it.isNotBlank() }
-            .distinct()
     }
 
     private fun readSystemProperty(name: String): String? {

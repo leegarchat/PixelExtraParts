@@ -31,13 +31,11 @@ class PermanentHbmTileService : TileService() {
 
                 val currentlyActive = AutoHbmController.isPermanentMode(this)
                 if (currentlyActive) {
-                    // Disable permanent mode, also disable HBM entirely
-                    AutoHbmController.setEnabled(this, false)
-                    AutoHbmController.setHbmMode(this, SettingsKeys.HBM_MODE_AUTO)
+                    // Disable permanent mode, leaving both HBM modes off.
+                    AutoHbmController.setModeEnabled(this, SettingsKeys.HBM_MODE_PERMANENT, false)
                 } else {
-                    // Enable permanent mode
-                    AutoHbmController.setEnabled(this, true)
-                    AutoHbmController.setHbmMode(this, SettingsKeys.HBM_MODE_PERMANENT)
+                    // Enabling permanent HBM also selects it over auto HBM.
+                    AutoHbmController.setModeEnabled(this, SettingsKeys.HBM_MODE_PERMANENT, true)
                 }
             }.onFailure {
                 Log.e(TAG, "Failed to toggle Permanent HBM tile", it)

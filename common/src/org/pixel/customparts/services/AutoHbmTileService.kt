@@ -29,14 +29,13 @@ class AutoHbmTileService : TileService() {
             runCatching {
                 if (!AutoHbmController.isSupported()) return@runCatching
 
-                val currentlyEnabled = AutoHbmController.isEnabled(this) && !AutoHbmController.isPermanentMode(this)
+                val currentlyEnabled = AutoHbmController.isAutoModeEnabled(this)
                 if (currentlyEnabled) {
                     // Disabling auto HBM
-                    AutoHbmController.setEnabled(this, false)
+                    AutoHbmController.setModeEnabled(this, SettingsKeys.HBM_MODE_AUTO, false)
                 } else {
-                    // Enabling auto HBM - disable permanent mode if active
-                    AutoHbmController.setHbmMode(this, SettingsKeys.HBM_MODE_AUTO)
-                    AutoHbmController.setEnabled(this, true)
+                    // Enabling auto HBM also selects it over permanent HBM.
+                    AutoHbmController.setModeEnabled(this, SettingsKeys.HBM_MODE_AUTO, true)
                 }
             }.onFailure {
                 Log.e(TAG, "Failed to toggle Auto HBM tile", it)
@@ -52,7 +51,7 @@ class AutoHbmTileService : TileService() {
     private fun updateTile() {
         val tile = qsTile ?: return
         val supported = AutoHbmController.isSupported()
-        val enabled = AutoHbmController.isEnabled(this) && !AutoHbmController.isPermanentMode(this)
+        val enabled = AutoHbmController.isAutoModeEnabled(this)
 
         tile.label = getString(R.string.auto_hbm_title)
         tile.subtitle = getString(

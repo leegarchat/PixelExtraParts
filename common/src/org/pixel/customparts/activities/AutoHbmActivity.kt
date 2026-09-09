@@ -118,7 +118,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var enabled by remember { mutableStateOf(AutoHbmController.isEnabled(context)) }
-    var hbmMode by remember { mutableIntStateOf(if (AutoHbmController.isPermanentMode(context)) SettingsKeys.HBM_MODE_PERMANENT else SettingsKeys.HBM_MODE_AUTO) }
+    var hbmMode by remember { mutableIntStateOf(AutoHbmController.getHbmMode(context)) }
     var brightnessLockEnabled by remember { mutableStateOf(AutoHbmController.isBrightnessLockEnabled(context)) }
     var threshold by remember { mutableIntStateOf(AutoHbmController.getThreshold(context)) }
     var enableTime by remember { mutableIntStateOf(AutoHbmController.getEnableTime(context)) }
@@ -138,21 +138,19 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
     var maxBrightness by remember { mutableIntStateOf(AutoHbmController.readMaxBrightness() ?: 0) }
     val socModel = remember { AutoHbmController.getSocModel() }
     val supported = remember { AutoHbmController.isSupported() }
+    val autoModeEnabled = enabled && hbmMode == SettingsKeys.HBM_MODE_AUTO
+    val permanentModeEnabled = enabled && hbmMode == SettingsKeys.HBM_MODE_PERMANENT
 
-    DisposableEffect(Unit) {
+    DisposableEffect(supported, checkIntervalMs, enabled) {
         val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
         val lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
-        // When service is running, broadcast is the authoritative lux source.
-        // Local sensor is only used when service is not broadcasting (AutoHBM disabled).
-        var lastBroadcastTime = 0L
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 if (event.sensor.type == Sensor.TYPE_LIGHT) {
-                    // Only update from local sensor if no recent broadcast (service not active)
-                    val now = android.os.SystemClock.uptimeMillis()
-                    if (now - lastBroadcastTime > 1000L) {
-                        currentLux = event.values.firstOrNull() ?: currentLux
+                    if (!enabled) {
+                        val lux = event.values.firstOrNull() ?: return
+                        if (lux.isFinite() && lux >= 0f) currentLux = lux
                     }
                 }
             }
@@ -160,13 +158,12 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
 
-        if (supported && lightSensor != null) {
-            sensorManager.registerListener(listener, lightSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        if (supported && lightSensor != null && !enabled) {
+            sensorManager.registerListener(listener, lightSensor, checkIntervalMs * 1000, 0)
         }
 
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                lastBroadcastTime = android.os.SystemClock.uptimeMillis()
                 currentLux = intent.getFloatExtra(AutoHbmController.EXTRA_LUX, currentLux)
                 hbmActive = intent.getBooleanExtra(AutoHbmController.EXTRA_ACTIVE, AutoHbmController.isHbmActive(context))
                 brightness = intent.getIntExtra(AutoHbmController.EXTRA_BRIGHTNESS, brightness)
@@ -240,7 +237,17 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         brightness = brightness,
                         maxBrightness = maxBrightness,
                         socModel = socModel,
-                        currentTemperature = currentTemperature
+                        currentTemperature = currentTemperature,
+                        supported = supported,
+                        checkIntervalMs = checkIntervalMs,
+                        onCheckIntervalChange = {
+                            checkIntervalMs = it
+                            AutoHbmController.setCheckIntervalMs(context, it)
+                        },
+                        onCheckIntervalDefault = {
+                            checkIntervalMs = AutoHbmController.DEFAULT_CHECK_INTERVAL_MS
+                            AutoHbmController.setCheckIntervalMs(context, checkIntervalMs)
+                        }
                     )
                 }
 
@@ -249,11 +256,12 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_hbm_enable_title),
                             summary = dynamicStringResource(R.string.auto_hbm_summary),
-                            checked = enabled,
+                            checked = autoModeEnabled,
                             enabled = supported,
                             onCheckedChange = {
                                 enabled = it
-                                AutoHbmController.setEnabled(context, it)
+                                hbmMode = SettingsKeys.HBM_MODE_AUTO
+                                AutoHbmController.setModeEnabled(context, SettingsKeys.HBM_MODE_AUTO, it)
                                 hbmActive = AutoHbmController.isHbmActive(context)
                                 brightness = AutoHbmController.getLastBrightness(context)
                                 maxBrightness = AutoHbmController.readMaxBrightness() ?: maxBrightness
@@ -263,11 +271,15 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_hbm_permanent_title),
                             summary = dynamicStringResource(R.string.auto_hbm_permanent_summary),
-                            checked = hbmMode == SettingsKeys.HBM_MODE_PERMANENT,
-                            enabled = enabled && supported,
+                            checked = permanentModeEnabled,
+                            enabled = supported,
                             onCheckedChange = {
-                                hbmMode = if (it) SettingsKeys.HBM_MODE_PERMANENT else SettingsKeys.HBM_MODE_AUTO
-                                AutoHbmController.setHbmMode(context, hbmMode)
+                                hbmMode = SettingsKeys.HBM_MODE_PERMANENT
+                                enabled = it
+                                AutoHbmController.setModeEnabled(context, SettingsKeys.HBM_MODE_PERMANENT, it)
+                                hbmActive = AutoHbmController.isHbmActive(context)
+                                brightness = AutoHbmController.getLastBrightness(context)
+                                maxBrightness = AutoHbmController.readMaxBrightness() ?: maxBrightness
                             }
                         )
 
@@ -275,14 +287,14 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             title = dynamicStringResource(R.string.auto_hbm_brightness_lock_title),
                             summary = dynamicStringResource(R.string.auto_hbm_brightness_lock_summary),
                             checked = brightnessLockEnabled,
-                            enabled = enabled && supported,
+                            enabled = supported,
                             onCheckedChange = {
                                 brightnessLockEnabled = it
                                 AutoHbmController.setBrightnessLock(context, it)
                             }
                         )
 
-                        if (hbmMode == SettingsKeys.HBM_MODE_PERMANENT) {
+                        if (permanentModeEnabled) {
                             Text(
                                 text = dynamicStringResource(R.string.auto_hbm_auto_disabled_in_permanent),
                                 style = MaterialTheme.typography.bodySmall,
@@ -291,7 +303,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             )
                         }
 
-                        val autoSettingsEnabled = enabled && supported && hbmMode == SettingsKeys.HBM_MODE_AUTO
+                        val autoSettingsEnabled = autoModeEnabled && supported
+                        val rampSettingsEnabled = enabled && supported
 
                         SliderSetting(
                             title = dynamicStringResource(R.string.auto_hbm_threshold_title),
@@ -348,7 +361,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             title = dynamicStringResource(R.string.auto_hbm_smooth_ramp_title),
                             summary = dynamicStringResource(R.string.auto_hbm_smooth_ramp_summary),
                             checked = smoothRampEnabled,
-                            enabled = autoSettingsEnabled,
+                            enabled = rampSettingsEnabled,
                             onCheckedChange = {
                                 smoothRampEnabled = it
                                 AutoHbmController.setSmoothRampEnabled(context, it)
@@ -361,7 +374,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 value = rampTimeMs,
                                 range = AutoHbmController.MIN_RAMP_TIME_MS..AutoHbmController.MAX_RAMP_TIME_MS,
                                 unit = "ms",
-                                enabled = autoSettingsEnabled,
+                                enabled = rampSettingsEnabled,
                                 valueText = "$rampTimeMs ms",
                                 onValueChange = {
                                     rampTimeMs = it
@@ -379,7 +392,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = maxActiveTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
-                            enabled = autoSettingsEnabled,
+                            enabled = supported,
                             valueText = "$maxActiveTime s",
                             onValueChange = {
                                 maxActiveTime = it
@@ -396,7 +409,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             value = cooldownTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
-                            enabled = autoSettingsEnabled,
+                            enabled = supported,
                             valueText = "$cooldownTime s",
                             onValueChange = {
                                 cooldownTime = it
@@ -409,28 +422,11 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_check_interval_title),
-                            value = checkIntervalMs,
-                            range = AutoHbmController.MIN_CHECK_INTERVAL_MS..AutoHbmController.MAX_CHECK_INTERVAL_MS,
-                            unit = "ms",
-                            enabled = autoSettingsEnabled,
-                            valueText = "$checkIntervalMs ms",
-                            onValueChange = {
-                                checkIntervalMs = it
-                                AutoHbmController.setCheckIntervalMs(context, it)
-                            },
-                            onDefault = {
-                                checkIntervalMs = AutoHbmController.DEFAULT_CHECK_INTERVAL_MS
-                                AutoHbmController.setCheckIntervalMs(context, checkIntervalMs)
-                            }
-                        )
-
-                        SliderSetting(
                             title = dynamicStringResource(R.string.auto_hbm_temperature_limit_title),
                             value = temperatureLimit,
                             range = AutoHbmController.MIN_TEMPERATURE_LIMIT_C..AutoHbmController.MAX_TEMPERATURE_LIMIT_C,
                             unit = "°C",
-                            enabled = autoSettingsEnabled,
+                            enabled = supported,
                             valueText = "$temperatureLimit°C",
                             onValueChange = {
                                 temperatureLimit = it
@@ -486,7 +482,11 @@ private fun AutoHbmLuxCard(
     brightness: Int,
     maxBrightness: Int,
     socModel: String,
-    currentTemperature: Float?
+    currentTemperature: Float?,
+    supported: Boolean,
+    checkIntervalMs: Int,
+    onCheckIntervalChange: (Int) -> Unit,
+    onCheckIntervalDefault: () -> Unit
 ) {
     val progress = (currentLux / threshold.coerceAtLeast(1)).coerceIn(0f, 1f)
     val temperatureText = currentTemperature?.let { String.format(Locale.US, "%.1f°C", it) }
@@ -496,52 +496,68 @@ private fun AutoHbmLuxCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Rounded.WbSunny,
-                    contentDescription = null,
-                    tint = if (hbmActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(28.dp)
-                )
-                Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
-                    Text(
-                        text = dynamicStringResource(R.string.auto_hbm_current_lux_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+        Column {
+            Column(
+                modifier = Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Rounded.WbSunny,
+                        contentDescription = null,
+                        tint = if (hbmActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
                     )
+                    Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
+                        Text(
+                            text = dynamicStringResource(R.string.auto_hbm_current_lux_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = dynamicStringResource(
+                                if (hbmActive) R.string.auto_hbm_status_active else R.string.auto_hbm_status_monitoring
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Text(
-                        text = dynamicStringResource(
-                            if (hbmActive) R.string.auto_hbm_status_active else R.string.auto_hbm_status_monitoring
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = currentLux.toInt().toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
                     )
                 }
+
+                LinearProgressIndicator(
+                    progress = progress,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 Text(
-                    text = currentLux.toInt().toString(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    text = dynamicStringResource(
+                        R.string.auto_hbm_status_format,
+                        threshold,
+                        brightness,
+                        maxBrightness,
+                        socModel,
+                        temperatureText
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                text = dynamicStringResource(
-                    R.string.auto_hbm_status_format,
-                    threshold,
-                    brightness,
-                    maxBrightness,
-                    socModel,
-                    temperatureText
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            SliderSetting(
+                title = dynamicStringResource(R.string.auto_hbm_check_interval_title),
+                value = checkIntervalMs,
+                range = AutoHbmController.MIN_CHECK_INTERVAL_MS..AutoHbmController.MAX_CHECK_INTERVAL_MS,
+                unit = "ms",
+                enabled = supported,
+                valueText = "$checkIntervalMs ms",
+                onValueChange = onCheckIntervalChange,
+                onDefault = onCheckIntervalDefault
             )
         }
     }
