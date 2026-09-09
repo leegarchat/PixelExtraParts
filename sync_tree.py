@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-sync_tree.py — умная синхронизация дерева исходников Android с сохранением
-локальных изменений (микро-патчей) и менеджер снимков.
+sync_tree.py — smart sync of the Android source tree while preserving
+local changes (micro-patches), plus a snapshot manager.
 
-Режимы работы:
-  (без флагов)   синхронизация по списку файлов из bakFiles/original
-  -s, --smart    глубокий сканер всех git-проектов дерева (по манифесту repo)
-  -d, --diff     (только с -s) сделать только слепок изменений, без repo sync
-  -c, --change   интерактивный менеджер снимков и патчей
-  -f, --forcesync  полный force sync с принудительным откатом изменений,
-                   без последующего применения патчей (слепок делается ВСЕГДА:
-                   без -s — по bakFiles/original, с -s — глубокий сканер);
-                   если по original/ ничего не найдено — предложит глубокий -s скан
-  -r, --revert   ТОЛЬКО откат локальных изменений к HEAD, без repo sync
-                   (слепок делается ВСЕГДА как страховка, патчи обратно НЕ
-                   накатываются; без -s — по bakFiles/original, с -s — глубокий скан)
-   -e, --except   UI управления исключениями smart-сканера
-  -j, --jobs N   количество потоков repo sync
-  -y, --yes      неинтерактивный режим (автоподтверждение всех вопросов)
+Modes:
+  (no flags)     sync using the file list from bakFiles/original
+  -s, --smart    deep scanner of all git projects in the tree (via the repo manifest)
+  -d, --diff     (only with -s) only take a snapshot of the changes, no repo sync
+  -c, --change   interactive snapshot and patch manager
+  -f, --forcesync  full force sync with forced revert of changes,
+                   without re-applying patches afterwards (a snapshot is ALWAYS taken:
+                   without -s — from bakFiles/original, with -s — deep scan);
+                   if nothing is found in original/ — offers a deep -s scan
+  -r, --revert   ONLY revert local changes to HEAD, no repo sync
+                   (a snapshot is ALWAYS taken as a safety net, patches are NOT
+                   re-applied; without -s — from bakFiles/original, with -s — deep scan)
+  -e, --except   smart-scanner exclusion management UI
+  -j, --jobs N   repo sync thread count
+  -y, --yes      non-interactive mode (auto-confirm all prompts)
 
-Структура bakFiles/:
-  original/                 чистые HEAD-копии отслеживаемых файлов (*.bp/*.mk -> +.bak)
-  smart_exceptions.json     пользовательские исключения smart-сканера
+bakFiles/ layout:
+  original/                 clean HEAD copies of tracked files (*.bp/*.mk -> +.bak)
+  smart_exceptions.json     user-defined smart-scanner exclusions
   snapshots/<ts>/
-    modified/               бэкап ТЕКУЩИХ изменённых файлов (*.bp/*.mk -> +.bak)
-    original/               чистые HEAD-копии на момент слепка (*.bp/*.mk -> +.bak)
+    modified/               backup of CURRENT modified files (*.bp/*.mk -> +.bak)
+    original/               clean HEAD copies at snapshot time (*.bp/*.mk -> +.bak)
     patches/<rel>.patch     unified diff (a/<rel> -> b/<rel>)
-    new_files/              untracked-файлы, временно убранные из дерева
-    original_prev/          прежнее содержимое bakFiles/original (при smart-очистке)
-    manifest.json           описание снимка и результаты
+    new_files/              untracked files temporarily removed from the tree
+    original_prev/          previous bakFiles/original content (after smart cleanup)
+    manifest.json           snapshot description and results
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ from datetime import datetime
 from typing import Optional, Tuple, List, Dict, Set
 
 # ============================================================
-# 1. Аварийное завершение (SIGINT / SIGTERM)
+# 1. Emergency exit (SIGINT / SIGTERM)
 # ============================================================
 ACTIVE_TEMP_PATHS: Set[Path] = set()
 _res_lock = threading.Lock()
@@ -66,7 +66,7 @@ signal.signal(signal.SIGINT, emergency_cleanup)
 signal.signal(signal.SIGTERM, emergency_cleanup)
 
 # ============================================================
-# 2. Зависимости (rich с самоустановкой)
+# 2. Dependencies (rich with self-install)
 # ============================================================
 try:
     from rich.console import Console
@@ -76,7 +76,7 @@ try:
     from rich.syntax import Syntax
     from rich.prompt import Confirm, Prompt
 except ImportError:
-    print("[*] Установка интерфейсной библиотеки 'rich'...")
+    print("[*] Installing the 'rich' UI library...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "rich", "--quiet"])
     from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
@@ -88,7 +88,7 @@ except ImportError:
 console = Console()
 
 # ============================================================
-# 3. Пути, константы, базовые хелперы
+# 3. Paths, constants, basic helpers
 # ============================================================
 ROOT_DIR = Path(".").resolve()
 BAK_ROOT = Path("bakFiles")
@@ -99,7 +99,7 @@ EXCEPTIONS_FILE = BAK_ROOT / "smart_exceptions.json"
 
 DEFAULT_EXCEPTIONS = ["out", "bakFiles", ".repo"]
 SKIP_SUFFIXES = (".rej", ".orig", ".patch", ".bak", ".pyc")
-STORAGE_BAK_SUFFIXES = (".bp", ".mk")  # файлы с такими расширениями хранятся с +.bak
+STORAGE_BAK_SUFFIXES = (".bp", ".mk")  # files with these extensions are stored with +.bak
 
 
 def get_target_uid_gid() -> Tuple[int, int]:
@@ -123,12 +123,12 @@ def fix_permissions(path: Path, uid: int, gid: int):
 
 
 def to_storage_name(rel: str) -> str:
-    """Имя файла внутри bakFiles-хранилищ (bp/mk прячем от сборщика суффиксом .bak)."""
+    """File name inside bakFiles stores (bp/mk files are hidden from the build with a .bak suffix)."""
     return rel + ".bak" if rel.endswith(STORAGE_BAK_SUFFIXES) else rel
 
 
 def from_storage_name(stored: str) -> str:
-    """Обратное преобразование: убрать .bak только у bp/mk."""
+    """Reverse mapping: strip .bak only for bp/mk."""
     if stored.endswith(".bak") and stored[:-4].endswith(STORAGE_BAK_SUFFIXES):
         return stored[:-4]
     return stored
@@ -139,10 +139,10 @@ def norm_rel(p) -> str:
 
 
 # ============================================================
-# 4. Git-хелперы
+# 4. Git helpers
 # ============================================================
 def get_git_info(file_path: Path) -> Tuple[Optional[Path], Optional[str]]:
-    """Возвращает (корень git-репозитория, путь файла внутри него)."""
+    """Returns (git repo root, file path inside it)."""
     resolved = file_path.resolve()
     curr = resolved if resolved.is_dir() else resolved.parent
     while curr != curr.parent:
@@ -156,7 +156,7 @@ def get_git_info(file_path: Path) -> Tuple[Optional[Path], Optional[str]]:
 
 
 def git_show_head(repo_root: Path, rel_in_repo: str) -> Optional[bytes]:
-    """Чистое содержимое файла из HEAD, не трогая рабочую копию."""
+    """Pristine file content from HEAD without touching the working copy."""
     res = subprocess.run(["git", "show", f"HEAD:{rel_in_repo}"],
                          cwd=repo_root, capture_output=True)
     return res.stdout if res.returncode == 0 else None
@@ -169,21 +169,21 @@ def git_head_has_file(repo_root: Path, rel_in_repo: str) -> bool:
 
 
 def git_checkout_head(repo_root: Path, rel_in_repo: str) -> bool:
-    """Откат файла к состоянию HEAD."""
+    """Revert a file to its HEAD state."""
     res = subprocess.run(["git", "checkout", "HEAD", "--", rel_in_repo],
                          cwd=repo_root, capture_output=True)
     return res.returncode == 0
 
 
 def git_is_modified(repo_root: Path, rel_in_repo: str) -> bool:
-    """True, если файл отличается от HEAD (рабочая копия или индекс)."""
+    """True if the file differs from HEAD (working copy or index)."""
     res = subprocess.run(["git", "diff", "--quiet", "HEAD", "--", rel_in_repo],
                          cwd=repo_root, capture_output=True)
     return res.returncode == 1
 
 
 # ============================================================
-# 5. Исключения smart-сканера
+# 5. Smart-scanner exclusions
 # ============================================================
 def load_exceptions() -> List[str]:
     if EXCEPTIONS_FILE.exists():
@@ -221,7 +221,7 @@ def safe_confirm(prompt_text: str, default: bool = True) -> bool:
             ans = input(f"{prompt_text} [{'Y/n' if default else 'y/N'}]: ").strip().lower()
             if not ans:
                 return default
-            return ans in ("y", "yes", "д", "да", "1")
+            return ans in ("y", "yes", "1")
         except Exception:
             return default
 
@@ -231,60 +231,60 @@ def manage_exceptions_ui(uid: int, gid: int):
         exceptions = load_exceptions()
         console.clear()
         console.print(Panel(
-            "[bold cyan]⚙️ Управление исключениями Smart-сканера (-s/--smart)[/bold cyan]\n"
-            "[dim]Указанные каталоги и ВСЕ их подкаталоги игнорируются при поиске изменений.\n"
-            "Системные исключения (всегда): out, bakFiles, .repo[/dim]", expand=False))
+            "[bold cyan]⚙️ Smart-scanner exclusion management (-s/--smart)[/bold cyan]\n"
+            "[dim]Listed directories and ALL of their subdirectories are ignored while searching for changes.\n"
+            "System exclusions (always): out, bakFiles, .repo[/dim]", expand=False))
 
-        table = Table(title="Текущие правила исключения", show_header=True)
-        table.add_column("№", style="cyan", width=5)
-        table.add_column("Игнорируемый путь (от корня дерева)", style="bold white")
+        table = Table(title="Current exclusion rules", show_header=True)
+        table.add_column("No.", style="cyan", width=5)
+        table.add_column("Ignored path (from tree root)", style="bold white")
         if exceptions:
             for idx, exc in enumerate(exceptions, 1):
                 table.add_row(str(idx), exc)
         else:
-            table.add_row("-", "[italic yellow]Пользовательских правил нет[/italic yellow]")
+            table.add_row("-", "[italic yellow]No user rules[/italic yellow]")
         console.print(table)
 
-        console.print("\n[bold yellow]Действия:[/bold yellow]")
-        console.print("  [bold green]1[/bold green] — Добавить каталог")
-        console.print("  [bold red]2[/bold red] — Удалить каталог")
-        console.print("  [bold cyan]0[/bold cyan] — Сохранить и выйти\n")
-        choice = Prompt.ask("Действие", choices=["1", "2", "0"], default="0")
+        console.print("\n[bold yellow]Actions:[/bold yellow]")
+        console.print("  [bold green]1[/bold green] — Add directory")
+        console.print("  [bold red]2[/bold red] — Remove directory")
+        console.print("  [bold cyan]0[/bold cyan] — Save and exit\n")
+        choice = Prompt.ask("Action", choices=["1", "2", "0"], default="0")
 
         if choice == "1":
-            new_path = norm_rel(Prompt.ask("\n[bold green]Путь к каталогу[/bold green]"))
+            new_path = norm_rel(Prompt.ask("\n[bold green]Directory path[/bold green]"))
             if new_path:
                 if new_path not in exceptions:
                     exceptions.append(new_path)
                     save_exceptions(exceptions)
                     fix_permissions(EXCEPTIONS_FILE, uid, gid)
-                    console.print(f"[bold green]✓ Добавлено:[/] {new_path}")
+                    console.print(f"[bold green]✓ Added:[/] {new_path}")
                 else:
-                    console.print("[yellow]Такой путь уже есть![/yellow]")
-            Prompt.ask("\nEnter для продолжения...")
+                    console.print("[yellow]This path is already listed![/yellow]")
+            Prompt.ask("\nPress Enter to continue...")
         elif choice == "2":
             if not exceptions:
-                console.print("[yellow]Список пуст![/yellow]")
-                Prompt.ask("\nEnter для продолжения...")
+                console.print("[yellow]The list is empty![/yellow]")
+                Prompt.ask("\nPress Enter to continue...")
                 continue
-            idx_str = Prompt.ask("\n[bold red]Номер записи для удаления[/bold red]")
+            idx_str = Prompt.ask("\n[bold red]Entry number to remove[/bold red]")
             if idx_str.isdigit() and 1 <= int(idx_str) <= len(exceptions):
                 removed = exceptions.pop(int(idx_str) - 1)
                 save_exceptions(exceptions)
                 fix_permissions(EXCEPTIONS_FILE, uid, gid)
-                console.print(f"[bold green]✓ Удалено:[/] {removed}")
+                console.print(f"[bold green]✓ Removed:[/] {removed}")
             else:
-                console.print("[red]Неверный номер![/red]")
-            Prompt.ask("\nEnter для продолжения...")
+                console.print("[red]Invalid number![/red]")
+            Prompt.ask("\nPress Enter to continue...")
         else:
             break
 
 
 # ============================================================
-# 6. Smart-сканер: поиск изменений по всем git-проектам дерева
+# 6. Smart scanner: find changes across all git projects in the tree
 # ============================================================
 def list_repo_projects() -> Optional[List[str]]:
-    """Список git-проектов дерева по манифесту repo (относительные пути)."""
+    """List of tree git projects from the repo manifest (relative paths)."""
     res = subprocess.run(["repo", "list", "-p"], cwd=ROOT_DIR,
                          capture_output=True, text=True)
     if res.returncode != 0:
@@ -293,7 +293,7 @@ def list_repo_projects() -> Optional[List[str]]:
 
 
 def walk_find_git_roots(exceptions: List[str]) -> List[str]:
-    """Fallback: обход дерева в поиске .git (если repo list недоступен)."""
+    """Fallback: walk the tree looking for .git (if repo list is unavailable)."""
     roots = []
     for current_root, dirs, _files in os.walk(ROOT_DIR):
         curr = Path(current_root)
@@ -308,12 +308,12 @@ def walk_find_git_roots(exceptions: List[str]) -> List[str]:
             d if rel == "." else f"{rel}/{d}", exceptions)]
         if ".git" in os.listdir(current_root):
             roots.append("" if rel == "." else rel)
-            dirs[:] = []  # вложенных проектов внутри проекта не ищем
+            dirs[:] = []  # don't look for nested projects inside a project
     return roots
 
 
 def parse_porcelain_z(data: bytes) -> Tuple[List[str], List[str], List[str]]:
-    """Разбор `git status --porcelain=v1 -z` -> (modified, untracked, deleted)."""
+    """Parse `git status --porcelain=v1 -z` -> (modified, untracked, deleted)."""
     modified, untracked, deleted = [], [], []
     fields = data.split(b"\0")
     i = 0
@@ -325,7 +325,7 @@ def parse_porcelain_z(data: bytes) -> Tuple[List[str], List[str], List[str]]:
         xy = field[:2].decode("ascii", "replace")
         path = os.fsdecode(field[3:])
         if "R" in xy or "C" in xy:
-            i += 1  # второе поле — старое имя файла
+            i += 1  # second field — the old file name
         if xy == "??" or "A" in xy or "R" in xy or "C" in xy:
             untracked.append(path)
         elif "D" in xy:
@@ -336,7 +336,7 @@ def parse_porcelain_z(data: bytes) -> Tuple[List[str], List[str], List[str]]:
 
 
 def scan_project(repo_rel: str, exceptions: List[str]):
-    """git status одного проекта. Возвращает (repo_rel, modified, untracked, deleted)."""
+    """git status of a single project. Returns (repo_rel, modified, untracked, deleted)."""
     repo_abs = ROOT_DIR / repo_rel if repo_rel else ROOT_DIR
     if not (repo_abs / ".git").exists():
         return repo_rel, [], [], []
@@ -358,13 +358,13 @@ def scan_project(repo_rel: str, exceptions: List[str]):
 
 def smart_scan(exceptions: List[str]) -> Dict[str, Dict[str, List[str]]]:
     """
-    Полное сканирование дерева. Возвращает привязку к git-каталогам:
+    Scan the whole tree. Returns a binding to git directories:
     { repo_rel: {"modified": [...], "untracked": [...], "deleted": [...]} }
-    (ключ "" — корневой проект, если он есть)
+    (key "" is the root project, if present)
     """
     projects = list_repo_projects()
     if projects is None:
-        console.print("[yellow]! repo list недоступен, использую обход файловой системы[/yellow]")
+        console.print("[yellow]! repo list is unavailable, falling back to filesystem walk[/yellow]")
         projects = walk_find_git_roots(exceptions)
 
     projects = [p for p in projects if not is_path_excluded(p, exceptions)]
@@ -387,19 +387,19 @@ def smart_scan(exceptions: List[str]) -> Dict[str, Dict[str, List[str]]]:
 
 
 def display_scan_binding(scan: Dict[str, Dict[str, List[str]]]):
-    """Таблица привязки найденных файлов к их git-каталогам."""
-    table = Table(title="📌 Привязка изменений к git-каталогам", show_header=True)
-    table.add_column("Git-каталог", style="bold cyan")
-    table.add_column("Изменено", style="yellow", justify="right")
-    table.add_column("Новых", style="green", justify="right")
-    table.add_column("Удалено", style="red", justify="right")
-    table.add_column("Файлы", style="white")
+    """Table binding the found files to their git directories."""
+    table = Table(title="📌 Change-to-git-directory mapping", show_header=True)
+    table.add_column("Git directory", style="bold cyan")
+    table.add_column("Modified", style="yellow", justify="right")
+    table.add_column("New", style="green", justify="right")
+    table.add_column("Deleted", style="red", justify="right")
+    table.add_column("Files", style="white")
     for repo, data in scan.items():
         files = data["modified"] + data["untracked"]
         shown = "\n".join(files[:8])
         if len(files) > 8:
-            shown += f"\n... и ещё {len(files) - 8}"
-        table.add_row(repo or "(корень дерева)",
+            shown += f"\n... and {len(files) - 8} more"
+        table.add_row(repo or "(tree root)",
                       str(len(data["modified"])),
                       str(len(data["untracked"])),
                       str(len(data["deleted"])),
@@ -408,7 +408,7 @@ def display_scan_binding(scan: Dict[str, Dict[str, List[str]]]):
 
 
 # ============================================================
-# 7. Снимок: бэкап изменённых, откат, оригиналы, патчи
+# 7. Snapshot: back up modified files, revert, originals, patches
 # ============================================================
 class SnapshotDirs:
     def __init__(self, ts: str):
@@ -426,7 +426,7 @@ class SnapshotDirs:
 
 
 def make_patch(orig_file: Path, modified_file: Path, patch_path: Path, rel: str) -> bool:
-    """Unified diff orig -> modified с метками a/<rel>, b/<rel>. True если патч непуст."""
+    """Unified diff orig -> modified with a/<rel>, b/<rel> labels. True if the patch is non-empty."""
     res = subprocess.run(
         ["diff", "-u", "--label", f"a/{rel}", "--label", f"b/{rel}",
          str(orig_file), str(modified_file)],
@@ -441,8 +441,8 @@ def make_patch(orig_file: Path, modified_file: Path, patch_path: Path, rel: str)
 def process_modified_file(rel: str, repo_abs: Path, snap: SnapshotDirs,
                           uid: int, gid: int) -> Tuple[str, str]:
     """
-    Конвейер одного изменённого файла:
-    бэкап текущего -> откат к HEAD -> копия оригинала -> генерация патча.
+    Pipeline for a single modified file:
+    back up current -> revert to HEAD -> copy original -> generate patch.
     """
     tree_file = ROOT_DIR / rel
     storage = to_storage_name(rel)
@@ -455,32 +455,32 @@ def process_modified_file(rel: str, repo_abs: Path, snap: SnapshotDirs,
         p.parent.mkdir(parents=True, exist_ok=True)
 
     if not tree_file.exists():
-        return "missing", f"Файл отсутствует в дереве: {rel}"
+        return "missing", f"File missing from the tree: {rel}"
 
-    # 1. Бэкап ТЕКУЩЕГО (изменённого) файла
+    # 1. Back up the CURRENT (modified) file
     shutil.copy2(tree_file, snap_mod)
 
-    # 2. Откат изменений к HEAD
+    # 2. Revert changes to HEAD
     rel_in_repo = norm_rel(tree_file.resolve().relative_to(repo_abs))
     if not git_checkout_head(repo_abs, rel_in_repo):
         head_data = git_show_head(repo_abs, rel_in_repo)
         if head_data is None:
-            return "revert_failed", f"Не удалось откатить к HEAD: {rel}"
+            return "revert_failed", f"Failed to revert to HEAD: {rel}"
         tree_file.write_bytes(head_data)
 
-    # 3. Чистый оригинал -> в снимок и в живое хранилище original/
+    # 3. Pristine original -> into the snapshot and the live original/ store
     shutil.copy2(tree_file, snap_orig)
     shutil.copy2(tree_file, live_orig)
     fix_permissions(live_orig, uid, gid)
 
-    # 4. Патч: оригинал vs сохранённая изменённая копия
+    # 4. Patch: original vs the saved modified copy
     if make_patch(snap_orig, snap_mod, patch_path, rel):
-        return "ok", f"Слепок готов: {rel}"
-    return "nodiff", f"Отличий от HEAD не найдено: {rel}"
+        return "ok", f"Snapshot ready: {rel}"
+    return "nodiff", f"No differences from HEAD found: {rel}"
 
 
 def clean_original_dir(snap: SnapshotDirs):
-    """Smart-режим: очистка original/ с бэкапом прежнего содержимого."""
+    """Smart mode: wipe original/ backing up the previous content."""
     if ORIG_DIR.exists() and any(ORIG_DIR.iterdir()):
         snap.original_prev.mkdir(parents=True, exist_ok=True)
         for item in ORIG_DIR.iterdir():
@@ -489,7 +489,7 @@ def clean_original_dir(snap: SnapshotDirs):
 
 
 def move_new_files_aside(new_files: List[str], snap: SnapshotDirs, uid: int, gid: int):
-    """Временно убирает untracked-файлы из дерева в снимок."""
+    """Temporarily move untracked files out of the tree into the snapshot."""
     if not new_files:
         return
     snap.new_files.mkdir(parents=True, exist_ok=True)
@@ -506,7 +506,7 @@ def move_new_files_aside(new_files: List[str], snap: SnapshotDirs, uid: int, gid
 
 
 def restore_new_files(snap: SnapshotDirs, uid: int, gid: int) -> int:
-    """Возвращает untracked-файлы из снимка в дерево."""
+    """Restore untracked files from the snapshot back into the tree."""
     if not snap.new_files.exists():
         return 0
     count = 0
@@ -521,7 +521,7 @@ def restore_new_files(snap: SnapshotDirs, uid: int, gid: int) -> int:
 
 
 def refresh_original_from_head(rel: str, uid: int, gid: int) -> bool:
-    """Обновляет bakFiles/original содержимым файла из ТЕКУЩЕГО HEAD (после sync)."""
+    """Refresh bakFiles/original with the file content from the CURRENT HEAD (after sync)."""
     repo_root, rel_in_repo = get_git_info(ROOT_DIR / rel)
     if not repo_root or not rel_in_repo:
         return False
@@ -536,7 +536,7 @@ def refresh_original_from_head(rel: str, uid: int, gid: int) -> bool:
 
 
 # ============================================================
-# 8. Отказоустойчивый движок наложения патчей
+# 8. Resilient patch-application engine
 # ============================================================
 def _run_patch(args: List[str], target: Path, patch_bytes: bytes) -> subprocess.CompletedProcess:
     return subprocess.run(["patch"] + args + [str(target)],
@@ -546,28 +546,28 @@ def _run_patch(args: List[str], target: Path, patch_bytes: bytes) -> subprocess.
 def apply_patch_smart(rel: str, patch_path: Path, orig_file: Path,
                       snap_mod: Optional[Path], uid: int, gid: int) -> Tuple[str, str]:
     """
-    Порядок попыток:
-      1) цель/патч существуют?
-      2) изменения уже присутствуют? (reverse dry-run)
-      3) patch -l --fuzz=3 (терпимость к пробелам), с предохранителем
-      4) fallback: трёхсторонний git merge-file (дерево / оригинал / копия из снимка)
-      5) failed с подробным отчётом (целевой файл не трогаем)
+    Attempt order:
+      1) do the target/patch exist?
+      2) are the changes already present? (reverse dry-run)
+      3) patch -l --fuzz=3 (whitespace tolerant), with a safety net
+      4) fallback: three-way git merge-file (tree / original / snapshot copy)
+      5) failed with a detailed report (the target file is left untouched)
     """
     target = ROOT_DIR / rel
     if not target.exists():
-        return "missing", f"Целевой файл не найден: {rel}"
+        return "missing", f"Target file not found: {rel}"
     if not patch_path.exists() or patch_path.stat().st_size == 0:
-        return "skipped", f"Патч пуст или отсутствует: {rel}"
+        return "skipped", f"Patch empty or missing: {rel}"
 
     patch_bytes = patch_path.read_bytes()
     repo_root, rel_in_repo = get_git_info(target)
 
-    # --- 2. Уже применён? ---
+    # --- 2. Already applied? ---
     chk = _run_patch(["-p0", "-R", "--dry-run", "-s", "-l", "--fuzz=3"], target, patch_bytes)
     if chk.returncode == 0:
-        return "already_applied", f"Изменения уже присутствуют (пропуск): {rel}"
+        return "already_applied", f"Changes already present (skipping): {rel}"
 
-    # --- 3. Прямое наложение с предохранителем ---
+    # --- 3. Direct apply with a safety net ---
     tmp_dir = Path(tempfile.mkdtemp(prefix="sync_tree_patch_"))
     ACTIVE_TEMP_PATHS.add(tmp_dir)
     try:
@@ -579,8 +579,8 @@ def apply_patch_smart(rel: str, patch_path: Path, orig_file: Path,
             fix_permissions(target, uid, gid)
             for junk in (Path(f"{target}.rej"), Path(f"{target}.orig")):
                 junk.unlink(missing_ok=True)
-            return "applied", f"Патч применён: {rel}"
-        # Неудача -> возвращаем целевой файл в исходное состояние
+            return "applied", f"Patch applied: {rel}"
+        # Failure -> restore the target file
         shutil.copy2(backup, target)
         for junk in (Path(f"{target}.rej"), Path(f"{target}.orig")):
             junk.unlink(missing_ok=True)
@@ -595,10 +595,10 @@ def apply_patch_smart(rel: str, patch_path: Path, orig_file: Path,
             if merge.returncode == 0 and merge.stdout:
                 target.write_bytes(merge.stdout)
                 fix_permissions(target, uid, gid)
-                return "merged", f"Применено 3-way слиянием (контекст съехал): {rel}"
-            return "failed", (f"Конфликт 3-way слияния: {rel} "
-                              f"(нужно ручное разрешение; патч: {patch_path})")
-        return "failed", f"Патч не лёг и нет данных для 3-way merge: {rel}"
+                return "merged", f"Applied via 3-way merge (context drifted): {rel}"
+            return "failed", (f"3-way merge conflict: {rel} "
+                              f"(needs manual resolution; patch: {patch_path})")
+        return "failed", f"Patch does not apply and no 3-way merge data: {rel}"
     finally:
         ACTIVE_TEMP_PATHS.discard(tmp_dir)
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -607,29 +607,29 @@ def apply_patch_smart(rel: str, patch_path: Path, orig_file: Path,
 def apply_patches_from_dir(patches_dir: Path, snap: Optional[SnapshotDirs],
                            uid: int, gid: int,
                            only: Optional[List[str]] = None) -> Dict[str, List[Tuple[str, str]]]:
-    """Применяет все *.patch из каталога. Возвращает {status: [(rel, msg)]}."""
+    """Apply all *.patch from a directory. Returns {status: [(rel, msg)]}."""
     results: Dict[str, List[Tuple[str, str]]] = {}
     patch_files = sorted(patches_dir.rglob("*.patch")) if patches_dir.exists() else []
     if not patch_files:
-        console.print("[yellow]Патчей для применения нет.[/yellow]")
+        console.print("[yellow]No patches to apply.[/yellow]")
         return results
 
     for patch_file in patch_files:
-        rel = norm_rel(patch_file.relative_to(patches_dir))[:-6]  # убрать ".patch"
+        rel = norm_rel(patch_file.relative_to(patches_dir))[:-6]  # strip ".patch"
         if only and rel not in only:
             continue
         storage = to_storage_name(rel)
         if snap is not None:
             orig_file = snap.original / storage
             if not orig_file.exists():
-                orig_file = snap.original / rel  # legacy-имена без .bak
+                orig_file = snap.original / rel  # legacy names without .bak
             if not orig_file.exists():
                 orig_file = ORIG_DIR / storage
             if not orig_file.exists():
                 orig_file = ORIG_DIR / rel
             snap_mod = snap.modified / storage
             if not snap_mod.exists():
-                snap_mod = snap.modified / rel  # legacy-имена без .bak
+                snap_mod = snap.modified / rel  # legacy names without .bak
             if not snap_mod.exists():
                 snap_mod = None
         else:
@@ -642,31 +642,31 @@ def apply_patches_from_dir(patches_dir: Path, snap: Optional[SnapshotDirs],
                 "yellow" if status in ("skipped", "missing") else "bold red"
         console.print(f"  [{color}]{msg}[/]")
 
-        # После успешного применения обновляем живой оригинал до нового HEAD
+        # After a successful apply, refresh the live original to the new HEAD
         if status in ("applied", "merged", "already_applied"):
             refresh_original_from_head(rel, uid, gid)
     return results
 
 
 def print_apply_summary(results: Dict[str, List[Tuple[str, str]]]):
-    table = Table(title="📊 Итоги применения патчей", show_header=True)
-    table.add_column("Статус", style="bold")
-    table.add_column("Файлов", justify="right")
-    table.add_column("Список", style="dim")
+    table = Table(title="📊 Patch apply summary", show_header=True)
+    table.add_column("Status", style="bold")
+    table.add_column("Files", justify="right")
+    table.add_column("List", style="dim")
     labels = {
-        "applied": ("✅ Применены", "green"),
-        "already_applied": ("✓ Уже были применены", "green"),
-        "merged": ("🔀 Применены 3-way merge", "cyan"),
-        "skipped": ("⏭ Пропущены (пустой патч)", "yellow"),
-        "missing": ("❓ Целевой файл отсутствует", "yellow"),
-        "failed": ("❌ Не применены", "red"),
+        "applied": ("✅ Applied", "green"),
+        "already_applied": ("✓ Already applied", "green"),
+        "merged": ("🔀 Applied via 3-way merge", "cyan"),
+        "skipped": ("⏭ Skipped (empty patch)", "yellow"),
+        "missing": ("❓ Target file missing", "yellow"),
+        "failed": ("❌ Failed", "red"),
     }
     total_fail = 0
     for status, items in results.items():
         label, color = labels.get(status, (status, "white"))
         names = "\n".join(rel for rel, _ in items[:6])
         if len(items) > 6:
-            names += f"\n... и ещё {len(items) - 6}"
+            names += f"\n... and {len(items) - 6} more"
         table.add_row(f"[{color}]{label}[/]", str(len(items)), names)
         if status == "failed":
             total_fail = len(items)
@@ -687,10 +687,10 @@ def run_repo_sync(jobs: int, force: bool = False) -> int:
 
 
 # ============================================================
-# 10. Интерактивный менеджер снимков (--change / -c)
+# 10. Interactive snapshot manager (--change / -c)
 # ============================================================
 def _snapshot_patch_files(snap_dir: Path) -> List[Path]:
-    """Патчи снимка: новый формат (patches/) и legacy (diff/)."""
+    """Snapshot patches: new layout (patches/) and legacy (diff/)."""
     for sub in ("patches", "diff"):
         d = snap_dir / sub
         if d.exists():
@@ -701,7 +701,7 @@ def _snapshot_patch_files(snap_dir: Path) -> List[Path]:
 
 
 def _snapshot_dirs_compat(snap_dir: Path) -> SnapshotDirs:
-    """SnapshotDirs с подстановкой legacy-имён (copy/ -> modified/, diff/ -> patches/)."""
+    """SnapshotDirs with legacy name substitution (copy/ -> modified/, diff/ -> patches/)."""
     snap = SnapshotDirs(snap_dir.name)
     snap.root = snap_dir
     snap.modified = snap_dir / "modified" if (snap_dir / "modified").exists() else snap_dir / "copy"
@@ -712,88 +712,88 @@ def _snapshot_dirs_compat(snap_dir: Path) -> SnapshotDirs:
 
 
 def change_mode_ui(uid: int, gid: int):
-    console.print(Panel("[bold cyan]🗂 Менеджер снимков и патчей (--change)[/bold cyan]\n"
-                        "[dim]Выбор снимка → просмотр/применение отдельных патчей или всех сразу.[/dim]",
+    console.print(Panel("[bold cyan]🗂 Snapshot and patch manager (--change)[/bold cyan]\n"
+                        "[dim]Pick a snapshot → view/apply individual patches or all at once.[/dim]",
                         expand=False))
     if not SNAP_ROOT.exists():
-        console.print("[bold red]❌ Каталог снимков не найден (bakFiles/snapshots).[/bold red]")
+        console.print("[bold red]❌ Snapshot directory not found (bakFiles/snapshots).[/bold red]")
         return
 
     while True:
         snaps = sorted([d for d in SNAP_ROOT.iterdir() if d.is_dir()],
                        key=lambda d: d.name, reverse=True)
         if not snaps:
-            console.print("[bold red]❌ Снимки не найдены.[/bold red]")
+            console.print("[bold red]❌ No snapshots found.[/bold red]")
             return
 
-        table = Table(title="Доступные снимки", show_header=True)
-        table.add_column("№", style="cyan", width=5)
-        table.add_column("Снимок", style="bold white")
-        table.add_column("Патчей", justify="right", style="yellow")
+        table = Table(title="Available snapshots", show_header=True)
+        table.add_column("No.", style="cyan", width=5)
+        table.add_column("Snapshot", style="bold white")
+        table.add_column("Patches", justify="right", style="yellow")
         for idx, s in enumerate(snaps, 1):
             table.add_row(str(idx), s.name, str(len(_snapshot_patch_files(s))))
         console.print(table)
 
-        choice = Prompt.ask("Номер снимка (q — выход)", default="q")
+        choice = Prompt.ask("Snapshot number (q to quit)", default="q")
         if choice.lower() == "q":
             return
         if not choice.isdigit() or not (1 <= int(choice) <= len(snaps)):
-            console.print("[red]Неверный номер![/red]")
+            console.print("[red]Invalid number![/red]")
             continue
 
         snap_dir = snaps[int(choice) - 1]
         snap = _snapshot_dirs_compat(snap_dir)
         patch_files = _snapshot_patch_files(snap_dir)
         if not patch_files:
-            console.print("[yellow]В этом снимке нет патчей.[/yellow]")
+            console.print("[yellow]This snapshot has no patches.[/yellow]")
             continue
 
         while True:
-            table = Table(title=f"Файлы снимка {snap_dir.name}", show_header=True)
-            table.add_column("№", style="cyan", width=5)
-            table.add_column("Целевой файл", style="white")
-            table.add_column("Размер", justify="right", style="dim")
+            table = Table(title=f"Files in snapshot {snap_dir.name}", show_header=True)
+            table.add_column("No.", style="cyan", width=5)
+            table.add_column("Target file", style="white")
+            table.add_column("Size", justify="right", style="dim")
             rels = []
             for idx, pf in enumerate(patch_files, 1):
                 rel = norm_rel(pf.relative_to(snap.patches))[:-6]
                 rels.append(rel)
                 table.add_row(str(idx), rel, f"{pf.stat().st_size} B")
             console.print(table)
-            console.print("[bold yellow]Команды:[/bold yellow] номер — просмотр/применение, "
-                          "[bold green]a[/bold green] — накатить ВСЕ патчи снимка, q — назад")
-            cmd = Prompt.ask("Команда", default="q")
+            console.print("[bold yellow]Commands:[/bold yellow] number — view/apply, "
+                          "[bold green]a[/bold green] — apply ALL snapshot patches, q — back")
+            cmd = Prompt.ask("Command", default="q")
 
             if cmd.lower() == "q":
                 break
             if cmd.lower() == "a":
-                if safe_confirm(f"Применить ВСЕ {len(patch_files)} патчей из {snap_dir.name}?", True):
+                if safe_confirm(f"Apply ALL {len(patch_files)} patches from {snap_dir.name}?", True):
                     results = apply_patches_from_dir(snap.patches, snap, uid, gid)
                     print_apply_summary(results)
-                    Prompt.ask("\nEnter для продолжения...")
+                    Prompt.ask("\nPress Enter to continue...")
                 continue
             if not cmd.isdigit() or not (1 <= int(cmd) <= len(patch_files)):
-                console.print("[red]Неверный номер![/red]")
+                console.print("[red]Invalid number![/red]")
                 continue
 
             pf = patch_files[int(cmd) - 1]
             rel = rels[int(cmd) - 1]
             syntax = Syntax(pf.read_text(errors="replace"), "diff",
                             theme="monokai", line_numbers=True)
-            console.print(Panel(syntax, title=f"Патч: {rel}", border_style="cyan", expand=True))
-            if safe_confirm(f"Применить этот патч к [cyan]{rel}[/cyan]?", True):
+            console.print(Panel(syntax, title=f"Patch: {rel}", border_style="cyan", expand=True))
+            if safe_confirm(f"Apply this patch to [cyan]{rel}[/cyan]?", True):
                 results = apply_patches_from_dir(snap.patches, snap, uid, gid, only=[rel])
                 print_apply_summary(results)
-                Prompt.ask("\nEnter для продолжения...")
+                Prompt.ask("\nPress Enter to continue...")
 
 
 # ============================================================
-# 11. Сборка списков изменений
+# 11. Change-list collection
 # ============================================================
 def gather_from_original(exceptions: List[str]) -> Dict[str, Dict[str, List[str]]]:
     """
-    Обычный режим: кандидаты = файлы из bakFiles/original.
-    Локальная модификация подтверждается через git diff HEAD (защита от
-    апстрим-изменений: если файл изменил только репо — это не локальный патч).
+    Default mode: candidates = files from bakFiles/original.
+    A local modification is confirmed via git diff HEAD (protection against
+    upstream changes: if only the repo changed the file — it is not a local patch).
     """
     result: Dict[str, Dict[str, List[str]]] = {}
     if not ORIG_DIR.exists():
@@ -813,13 +813,13 @@ def gather_from_original(exceptions: List[str]) -> Dict[str, Dict[str, List[str]
         if not git_head_has_file(repo_root, rel_in_repo):
             continue
         if not git_is_modified(repo_root, rel_in_repo):
-            continue  # в дереве чисто — локальных изменений нет
+            continue  # tree is clean — no local changes
         repo_rel = norm_rel(repo_root.relative_to(ROOT_DIR)) \
             if repo_root != ROOT_DIR else ""
         entry = result.setdefault(repo_rel, {"modified": [], "untracked": [], "deleted": []})
         entry["modified"].append(rel)
 
-    # Совместимость: дополнительные новые файлы из newFiles.txt
+    # Compatibility: extra new files from newFiles.txt
     if NEW_FILES_LIST.exists():
         for line in NEW_FILES_LIST.read_text().splitlines():
             line = norm_rel(line)
@@ -866,45 +866,45 @@ def write_manifest(snap: SnapshotDirs, mode: str,
 
 
 # ============================================================
-# 12. Главный конвейер
+# 12. Main pipeline
 # ============================================================
 def snapshot_pipeline(scan: Dict[str, Dict[str, List[str]]], snap: SnapshotDirs,
                       uid: int, gid: int, clean_original: bool,
                       interactive: bool) -> Tuple[List[str], Dict[str, str]]:
     """
-    Подтверждение -> бэкап -> откат -> оригиналы -> патчи -> убрать новые файлы.
-    Возвращает (список новых файлов, {rel: статус обработки}).
+    Confirm -> back up -> revert -> originals -> patches -> remove new files.
+    Returns (new file list, {rel: processing status}).
     """
     modified = flatten_modified(scan)
     untracked = flatten_untracked(scan)
     deleted = flatten_modified({r: {"modified": d["deleted"]} for r, d in scan.items()})
 
     if deleted:
-        console.print("[yellow]⚠ Обнаружены удалённые из дерева файлы (пропускаю, бэкап невозможен):[/yellow]")
+        console.print("[yellow]⚠ Files deleted from the tree found (skipping, backup is impossible):[/yellow]")
         for d in deleted:
             console.print(f"  [dim]{d}[/dim]")
 
     if interactive:
         if modified and not safe_confirm(
-                f"Сохранить и подготовить патчи для ВСЕХ {len(modified)} изменённых файлов?", True):
+                f"Save and prepare patches for ALL {len(modified)} modified files?", True):
             keep = []
             for f in modified:
-                if safe_confirm(f"  Включить [cyan]{f}[/cyan]?", True):
+                if safe_confirm(f"  Include [cyan]{f}[/cyan]?", True):
                     keep.append(f)
             modified = keep
             scan = {r: {"modified": [f for f in d["modified"] if f in keep],
                         "untracked": d["untracked"], "deleted": d["deleted"]}
                     for r, d in scan.items()}
         if untracked and not safe_confirm(
-                f"Временно убрать и сохранить ВСЕ {len(untracked)} новых/untracked файлов?", True):
+                f"Temporarily remove and save ALL {len(untracked)} new/untracked files?", True):
             keep_u = []
             for f in untracked:
-                if safe_confirm(f"  Включить [cyan]{f}[/cyan]?", True):
+                if safe_confirm(f"  Include [cyan]{f}[/cyan]?", True):
                     keep_u.append(f)
             untracked = keep_u
 
     if clean_original:
-        console.print("[yellow]--> Очистка original/ (прежнее содержимое — в снимке original_prev/)[/yellow]")
+        console.print("[yellow]--> Wiping original/ (previous content goes to the snapshot's original_prev/)[/yellow]")
         clean_original_dir(snap)
     ORIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -918,14 +918,14 @@ def snapshot_pipeline(scan: Dict[str, Dict[str, List[str]]], snap: SnapshotDirs,
             console.print(f"  [{color}]{msg}[/]")
 
     if untracked:
-        console.print(f"[yellow]--> Временное изъятие {len(untracked)} новых/untracked файлов[/yellow]")
+        console.print(f"[yellow]--> Temporarily removing {len(untracked)} new/untracked files[/yellow]")
         move_new_files_aside(untracked, snap, uid, gid)
 
     return untracked, processed
 
 
 def restore_modified_from_snapshot(snap: SnapshotDirs, uid: int, gid: int) -> int:
-    """Возврат изменённых файлов из снимка обратно в дерево (режим -d, откат при сбое sync)."""
+    """Restore modified files from the snapshot back into the tree (-d mode, rollback on sync failure)."""
     count = 0
     if not snap.modified.exists():
         return 0
@@ -942,81 +942,82 @@ def restore_modified_from_snapshot(snap: SnapshotDirs, uid: int, gid: int) -> in
 
 
 # ============================================================
-# 13. Точка входа
+# 13. Entry point
 # ============================================================
 def main():
     parser = argparse.ArgumentParser(
-        description="Умная синхронизация дерева Android с сохранением локальных патчей")
+        description="Smart sync of the Android source tree preserving local patches")
     parser.add_argument("-s", "--smart", action="store_true",
-                        help="Глубокий умный сканер git-репозиториев для поиска изменений")
+                        help="Deep smart scanner of git repos to find changes")
     parser.add_argument("-d", "--diff", action="store_true",
-                        help="(с -s) Подготовить ТОЛЬКО слепок изменений, без repo sync")
+                        help="(with -s) Only prepare a snapshot of the changes, no repo sync")
     parser.add_argument("-c", "--change", action="store_true",
-                        help="Диалог выбора снимка: просмотр и применение патчей")
+                        help="Snapshot picker dialog: view and apply patches")
     parser.add_argument("-f", "--forcesync", action="store_true",
-                        help="Полный force sync с откатом изменений, без применения патчей "
-                             "(слепок делается всегда; без -s — по bakFiles/original, с -s — глубокий скан)")
+                        help="Full force sync with revert of changes, without applying patches "
+                             "(a snapshot is always taken; without -s — from bakFiles/original, "
+                             "with -s — deep scan)")
     parser.add_argument("-r", "--revert", action="store_true",
-                        help="Только откатить локальные изменения к HEAD (со слепком), без repo sync. "
-                             "Без -s — по bakFiles/original, с -s — глубокий скан")
+                        help="Only revert local changes to HEAD (with snapshot), no repo sync. "
+                             "Without -s — from bakFiles/original, with -s — deep scan")
     parser.add_argument("-e", "--except", dest="manage_exceptions", action="store_true",
-                        help="Открыть UI управления исключениями smart-сканера")
+                        help="Open the smart-scanner exclusion management UI")
     parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 8,
-                        help="Количество потоков repo sync")
+                        help="repo sync thread count")
     parser.add_argument("-y", "--yes", action="store_true",
-                        help="Неинтерактивный режим (автоподтверждение)")
+                        help="Non-interactive mode (auto-confirm)")
     args = parser.parse_args()
 
     uid, gid = get_target_uid_gid()
     interactive = not args.yes
 
-    console.print(Panel("[bold cyan]🔄 Умная синхронизация дерева исходников Android[/bold cyan]",
+    console.print(Panel("[bold cyan]🔄 Smart sync of the Android source tree[/bold cyan]",
                         expand=False))
 
-    # --- UI исключений ---
+    # --- Exclusion UI ---
     if args.manage_exceptions:
         manage_exceptions_ui(uid, gid)
         if not (args.smart or args.forcesync or args.change or args.revert):
             return
 
-    # --- Менеджер снимков ---
+    # --- Snapshot manager ---
     if args.change:
         change_mode_ui(uid, gid)
         return
 
     if args.diff and not args.smart:
-        console.print("[bold red]❌ Флаг -d/--diff работает только вместе с -s/--smart![/bold red]")
+        console.print("[bold red]❌ The -d/--diff flag only works together with -s/--smart![/bold red]")
         sys.exit(2)
 
     if args.revert and args.forcesync:
-        console.print("[bold red]❌ Флаги -r/--revert и -f/--forcesync несовместимы "
-                      "(revert — без sync, forcesync — с sync).[/bold red]")
+        console.print("[bold red]❌ Flags -r/--revert and -f/--forcesync are incompatible "
+                      "(revert is without sync, forcesync is with sync).[/bold red]")
         sys.exit(2)
     if args.revert and args.diff:
-        console.print("[bold red]❌ Флаги -r/--revert и -d/--diff несовместимы "
-                      "(diff возвращает файлы в дерево, revert — откатывает).[/bold red]")
+        console.print("[bold red]❌ Flags -r/--revert and -d/--diff are incompatible "
+                      "(diff restores files to the tree, revert rolls them back).[/bold red]")
         sys.exit(2)
 
-    # --- FORCE SYNC идёт через общий конвейер, чтобы изменения были
-    # --- найдены (по original/ или глубоким сканом -s), сохранены в слепок,
-    # --- откачены к HEAD и НЕ накатывались обратно после sync.
-    # --- Раннего "голого" repo sync без слепка здесь больше нет.
+    # --- FORCE SYNC goes through the shared pipeline so that changes are
+    # --- found (via original/ or the deep -s scan), saved to a snapshot,
+    # --- reverted to HEAD and NOT applied back after sync.
+    # --- There is no early "bare" repo sync without a snapshot anymore.
     is_force = args.forcesync
     is_revert = args.revert
     if is_force:
-        console.print("[bold yellow]! Режим FORCE SYNC: изменения будут сохранены "
-                      "в слепок, откачены к HEAD и НЕ применены обратно[/bold yellow]")
+        console.print("[bold yellow]! FORCE SYNC mode: changes will be saved "
+                      "to a snapshot, reverted to HEAD and NOT applied back[/bold yellow]")
     if is_revert:
-        console.print("[bold yellow]! Режим REVERT: откат изменений к HEAD "
-                      "без repo sync (слепок сохранится, патчи НЕ вернутся)[/bold yellow]")
+        console.print("[bold yellow]! REVERT mode: revert changes to HEAD "
+                      "without repo sync (the snapshot is kept, patches will NOT be restored)[/bold yellow]")
 
-    # --- Сбор изменений ---
+    # --- Collect changes ---
     exceptions = load_exceptions()
     PROGRESS_COLUMNS = [SpinnerColumn(), TextColumn("{task.description}"),
                         BarColumn(bar_width=30), TextColumn("[progress.percentage]{task.percentage:>3.0f}%")]
 
     with Progress(*PROGRESS_COLUMNS, console=console, transient=True) as progress:
-        task = progress.add_task("[cyan]Поиск изменений в дереве...", total=None)
+        task = progress.add_task("[cyan]Searching the tree for changes...", total=None)
         if args.smart:
             scan = smart_scan(exceptions)
         else:
@@ -1026,97 +1027,97 @@ def main():
     untracked = flatten_untracked(scan)
 
     if not scan or (not modified and not untracked):
-        # -f / -r без -s смотрят только bakFiles/original и могут пропустить
-        # правки вне отслеживаемого списка — предлагаем глубокий скан.
+        # -f / -r without -s only look at bakFiles/original and may miss
+        # edits outside the tracked list — offer a deep scan.
         if (is_force or is_revert) and not args.smart:
-            console.print("[yellow]ℹ По bakFiles/original изменений не найдено, "
-                          "но это не гарантирует чистоту дерева.[/yellow]")
+            console.print("[yellow]ℹ No changes found in bakFiles/original, "
+                          "but that does not guarantee a clean tree.[/yellow]")
             do_smart = False
             if interactive:
                 action = "REVERT" if is_revert else "FORCE SYNC"
                 do_smart = safe_confirm(
-                    f"Запустить глубокий smart-скан всех git-проектов перед {action}?", True)
+                    f"Run a deep smart scan of all git projects before {action}?", True)
             if do_smart:
                 with Progress(*PROGRESS_COLUMNS, console=console, transient=True) as progress2:
-                    task2 = progress2.add_task("[cyan]Глубокий поиск изменений (-s)...", total=None)
+                    task2 = progress2.add_task("[cyan]Deep change search (-s)...", total=None)
                     scan = smart_scan(exceptions)
                 modified = flatten_modified(scan)
                 untracked = flatten_untracked(scan)
                 if scan and (modified or untracked):
-                    console.print("[bold yellow]--> Глубокий скан нашёл изменения, "
-                                  "перехожу к слепку и откату.[/bold yellow]")
-                    # таблицу покажет общий display ниже, минуя выход
+                    console.print("[bold yellow]--> Deep scan found changes, "
+                                  "moving on to snapshot and revert.[/bold yellow]")
+                    # the shared display below will show the table, skipping the exit
                 else:
-                    console.print("[green]✓ Глубокий скан тоже ничего не нашёл.[/green]")
+                    console.print("[green]✓ Deep scan found nothing either.[/green]")
                     if is_revert:
-                        console.print("[green]Откат не требуется — дерево чистое.[/green]")
+                        console.print("[green]Nothing to revert — the tree is clean.[/green]")
                         return
                     if args.diff:
-                        console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                        console.print("[yellow]Snapshot is empty — exiting without sync.[/yellow]")
                         return
                     sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
             else:
                 if not ORIG_DIR.exists():
-                    console.print("[yellow]ℹ bakFiles/original отсутствует — отслеживаемых файлов нет.\n"
-                                  "  Запустите с -s для первичного сканирования.[/yellow]")
+                    console.print("[yellow]ℹ bakFiles/original is missing — no tracked files.\n"
+                                  "  Run with -s for an initial scan.[/yellow]")
                 else:
-                    console.print("[green]✓ Локальных изменений не найдено.[/green]")
+                    console.print("[green]✓ No local changes found.[/green]")
                 if is_revert:
-                    console.print("[green]Откат не требуется — дерево чистое.[/green]")
+                    console.print("[green]Nothing to revert — the tree is clean.[/green]")
                     return
                 if args.diff:
-                    console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                    console.print("[yellow]Snapshot is empty — exiting without sync.[/yellow]")
                     return
                 sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
         elif is_revert:
-            console.print("[green]✓ Локальных изменений не найдено — откат не требуется.[/green]")
+            console.print("[green]✓ No local changes found — nothing to revert.[/green]")
             return
         else:
             if not args.smart and not ORIG_DIR.exists():
-                console.print("[yellow]ℹ bakFiles/original отсутствует — отслеживаемых файлов нет.\n"
-                              "  Запустите с -s для первичного сканирования.[/yellow]")
+                console.print("[yellow]ℹ bakFiles/original is missing — no tracked files.\n"
+                              "  Run with -s for an initial scan.[/yellow]")
             else:
-                console.print("[green]✓ Локальных изменений не найдено.[/green]")
+                console.print("[green]✓ No local changes found.[/green]")
             if args.diff:
-                console.print("[yellow]Слепок пуст — выход без sync.[/yellow]")
+                console.print("[yellow]Snapshot is empty — exiting without sync.[/yellow]")
                 return
             sys.exit(run_repo_sync(args.jobs, force=args.forcesync))
 
     display_scan_binding(scan)
 
-    # Финальное подтверждение для -f / -r: откат необратим в дереве
-    # (остаётся только слепок), патчи обратно не накатываются.
+    # Final confirmation for -f / -r: the revert cannot be undone in the tree
+    # (only the snapshot remains), patches are not applied back.
     if is_force and interactive:
         if not safe_confirm(
-                f"FORCE SYNC откатит {len(modified)} изм. + уберёт {len(untracked)} новых "
-                f"файлов (слепок сохранится, патчи НЕ вернутся). Продолжить?", False):
-            console.print("[yellow]Отменено.[/yellow]")
+                f"FORCE SYNC will revert {len(modified)} modified + remove {len(untracked)} new "
+                f"files (the snapshot is kept, patches will NOT come back). Continue?", False):
+            console.print("[yellow]Cancelled.[/yellow]")
             return
     if is_revert and interactive:
         if not safe_confirm(
-                f"REVERT откатит {len(modified)} изм. + уберёт {len(untracked)} новых "
-                f"файлов БЕЗ синхронизации (слепок сохранится, патчи НЕ вернутся). Продолжить?", False):
-            console.print("[yellow]Отменено.[/yellow]")
+                f"REVERT will revert {len(modified)} modified + remove {len(untracked)} new "
+                f"files WITHOUT syncing (the snapshot is kept, patches will NOT come back). Continue?", False):
+            console.print("[yellow]Cancelled.[/yellow]")
             return
 
-    # --- Создание снимка и подготовка ---
+    # --- Create the snapshot and prepare ---
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     snap = SnapshotDirs(ts)
     snap.mkdirs()
-    console.print(f"\n[bold yellow]--> Снимок состояния:[/] {snap.root}")
+    console.print(f"\n[bold yellow]--> Snapshot state:[/] {snap.root}")
 
     mode = "smart" if args.smart else "original"
-    # Для -f / -r уже было глобальное подтверждение выше — пофайловые вопросы
-    # отключаем, чтобы ВСЕ найденные изменения гарантированно ушли в слепок и откат.
+    # -f / -r already had a global confirmation above — per-file prompts
+    # are disabled so that ALL found changes are guaranteed a snapshot and revert.
     untracked, processed = snapshot_pipeline(
         scan, snap, uid, gid,
         clean_original=args.smart,
         interactive=(interactive and not is_force and not is_revert))
 
-    # --- Режим -r: только откат, без sync и без возврата файлов ---
+    # --- -r mode: revert only, no sync and no file restore ---
     if is_revert:
-        # snapshot_pipeline уже откатил modified к HEAD и убрал untracked в слепок.
-        # Дополнительно восстанавливаем удалённые из дерева файлы к HEAD.
+        # snapshot_pipeline already reverted modified files to HEAD and moved untracked aside.
+        # Additionally restore files deleted from the tree to HEAD.
         reverted_deleted = 0
         for repo_rel, data in scan.items():
             repo_abs = ROOT_DIR / repo_rel if repo_rel else ROOT_DIR
@@ -1137,7 +1138,7 @@ def main():
                         target.write_bytes(head_data)
                         reverted_deleted += 1
         if reverted_deleted:
-            console.print(f"[green]✓ Восстановлено удалённых файлов: {reverted_deleted}[/green]")
+            console.print(f"[green]✓ Restored deleted files: {reverted_deleted}[/green]")
         n_mod = sum(1 for s in processed.values() if s == "ok")
         n_untracked = len(untracked)
         write_manifest(snap, mode + "+revert", scan, processed,
@@ -1145,46 +1146,46 @@ def main():
                         "removed_untracked": n_untracked,
                         "reverted_deleted": reverted_deleted})
         fix_permissions(BAK_ROOT, uid, gid)
-        console.print(f"\n[bold green]✨ Откат завершён (без sync):[/] {snap.root}\n"
-                      f"  Откачено изменённых: {n_mod}, убрано новых: {n_untracked}, "
-                      f"восстановлено удалённых: {reverted_deleted}.\n"
-                      f"  Всё сохранено в слепке; вернуть можно через -c.")
+        console.print(f"\n[bold green]✨ Revert finished (no sync):[/] {snap.root}\n"
+                      f"  Reverted modified: {n_mod}, removed new: {n_untracked}, "
+                      f"restored deleted: {reverted_deleted}.\n"
+                      f"  Everything is saved in the snapshot; restore via -c.")
         return
 
-    # --- Режим -d: только слепок, возвращаем изменения в дерево ---
+    # --- -d mode: snapshot only, restore changes to the tree ---
     if args.diff:
         restored = restore_modified_from_snapshot(snap, uid, gid)
         restored += restore_new_files(snap, uid, gid)
         write_manifest(snap, mode + "+diff", scan, processed,
                        {"restored_to_tree": restored})
         fix_permissions(BAK_ROOT, uid, gid)
-        console.print(f"\n[bold green]✨ Слепок готов:[/] {snap.root}\n"
-                      f"  Изменённые файлы возвращены в дерево ({restored} шт.). Sync не выполнялся.")
+        console.print(f"\n[bold green]✨ Snapshot ready:[/] {snap.root}\n"
+                      f"  Modified files restored to the tree ({restored}). Sync was not run.")
         return
 
     # --- repo sync ---
     sync_rc = run_repo_sync(args.jobs, force=args.forcesync)
     if sync_rc != 0:
-        console.print("\n[bold red]❌ Сбой repo sync![/bold red]")
-        if not interactive or safe_confirm("Вернуть изменения из снимка обратно в дерево?", True):
+        console.print("\n[bold red]❌ repo sync failed![/bold red]")
+        if not interactive or safe_confirm("Restore changes from the snapshot back into the tree?", True):
             restored = restore_modified_from_snapshot(snap, uid, gid)
             restored += restore_new_files(snap, uid, gid)
-            console.print(f"[yellow]Восстановлено файлов: {restored}[/yellow]")
+            console.print(f"[yellow]Restored files: {restored}[/yellow]")
         write_manifest(snap, mode, scan, processed, {"sync_rc": sync_rc})
         sys.exit(1)
 
-    # --- Возврат новых файлов (force sync их не трогает, но мы их убирали) ---
+    # --- Return new files (force sync does not touch them, but we moved them aside) ---
     restored_new = restore_new_files(snap, uid, gid)
     if restored_new:
-        console.print(f"[green]✓ Возвращено новых файлов: {restored_new}[/green]")
+        console.print(f"[green]✓ Returned new files: {restored_new}[/green]")
 
-    # --- Применение патчей (кроме --forcesync) ---
+    # --- Apply patches (except --forcesync) ---
     apply_results: Dict[str, List[Tuple[str, str]]] = {}
     if args.forcesync:
-        console.print("[bold yellow]! --forcesync: патчи НЕ применяются. "
-                      f"Слепок сохранён: {snap.root} (применить можно через -c)[/bold yellow]")
+        console.print("[bold yellow]! --forcesync: patches are NOT applied. "
+                      f"Snapshot saved: {snap.root} (apply via -c)[/bold yellow]")
     else:
-        console.print("\n[bold yellow]--> Применение сохранённых патчей к обновлённому дереву...[/bold yellow]")
+        console.print("\n[bold yellow]--> Applying saved patches to the updated tree...[/bold yellow]")
         apply_results = apply_patches_from_dir(snap.patches, snap, uid, gid)
         print_apply_summary(apply_results)
 
@@ -1195,10 +1196,10 @@ def main():
 
     failed = len(apply_results.get("failed", []))
     if failed == 0:
-        console.print("\n[bold green]✨ Синхронизация завершена успешно![/bold green]\n")
+        console.print("\n[bold green]✨ Sync completed successfully![/bold green]\n")
     else:
-        console.print(f"\n[bold red]⚠️ Готово, но {failed} патч(ей) не применились — "
-                      "разберите конфликты вручную (см. вывод выше).[/bold red]\n")
+        console.print(f"\n[bold red]⚠️ Done, but {failed} patch(es) failed to apply — "
+                      "resolve the conflicts manually (see output above).[/bold red]\n")
     sys.exit(0 if failed == 0 else 1)
 
 
