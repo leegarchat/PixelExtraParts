@@ -42,12 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.RadioSelectionGroup
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
@@ -121,17 +119,6 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Xposed warning
-                if (AppConfig.IS_XPOSED) {
-                    item {
-                        ExpandableWarningCard(
-                            title = dynamicStringResource(R.string.magnifier_xposed_warning_title),
-                            text = dynamicStringResource(R.string.magnifier_xposed_warning_desc),
-                            modifier = Modifier.padding(bottom = 0.dp)
-                        )
-                    }
-                }
-
                 item {
                     MagnifierSection()
                 }

@@ -1,7 +1,5 @@
 package org.pixel.customparts
 
-import org.pixel.customparts.AppConfig.IS_XPOSED
-
 object SettingsKeys {
 
     const val SATURATION_ENABLED = "pixelparts_saturation_enabled"
@@ -13,6 +11,9 @@ object SettingsKeys {
     const val AUTO_HBM_DISABLE_TIME = "pixelparts_auto_hbm_disable_time"
     const val AUTO_HBM_ORIGINAL_BRIGHTNESS = "pixelparts_auto_hbm_original_brightness"
     const val AUTO_HBM_ACTIVE = "pixelparts_auto_hbm_active"
+    const val AUTO_HBM_ACTIVE_SINCE = "pixelparts_auto_hbm_active_since"
+    const val AUTO_HBM_ORIGINAL_SYSTEM_BRIGHTNESS = "pixelparts_auto_hbm_original_system_brightness"
+    const val AUTO_HBM_LAST_SYSTEM_BRIGHTNESS = "pixelparts_auto_hbm_last_system_brightness"
     const val AUTO_HBM_LAST_LUX = "pixelparts_auto_hbm_last_lux"
     const val AUTO_HBM_LAST_BRIGHTNESS = "pixelparts_auto_hbm_last_brightness"
     const val AUTO_HBM_SMOOTH_RAMP_ENABLED = "pixelparts_auto_hbm_smooth_ramp_enabled"
@@ -26,6 +27,11 @@ object SettingsKeys {
     const val AUTO_HBM_MODE = "pixelparts_auto_hbm_mode"
     const val AUTO_HBM_PERMANENT = "pixelparts_auto_hbm_permanent"
     const val AUTO_HBM_BRIGHTNESS_LOCK = "pixelparts_auto_hbm_brightness_lock"
+
+    const val AUTO_LOCK_ENABLED = "pixelparts_auto_lock_enabled"
+    const val AUTO_LOCK_TIMEOUT_SECONDS = "pixelparts_auto_lock_timeout_seconds"
+    const val AUTO_LOCK_MODE = "pixelparts_auto_lock_mode"
+    const val AUTO_LOCK_PAUSE_MEDIA = "pixelparts_auto_lock_pause_media"
 
     const val HBM_MODE_AUTO = 0
     const val HBM_MODE_PERMANENT = 1
@@ -62,32 +68,9 @@ object SettingsKeys {
     const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
 
 
-    val isPineOverride: Boolean
-        get() {
-            if (!IS_XPOSED) return false
-            return try {
-                val activityThreadClass = Class.forName("android.app.ActivityThread")
-                val currentApplicationMethod = activityThreadClass.getMethod("currentApplication")
-                val context = currentApplicationMethod.invoke(null) as? android.content.Context
-                if (context != null) {
-                    android.provider.Settings.Global.getInt(
-                        context.contentResolver,
-                        "pixelparts_xposed_to_pine",
-                        0
-                    ) == 1
-                } else {
-                    false
-                }
-            } catch (e: Exception) {
-                false
-            }
-        }
-
-    internal val suffix: String
-        get() {
-            if (isPineOverride) return "_pine"
-            return if (IS_XPOSED) "_xposed" else "_pine"
-        }
+    // Pine-only runtime: all suffixed keys use "_pine".
+    // The legacy "_xposed" suffix is still stripped when reading stored keys.
+    internal const val suffix: String = "_pine"
     
     val BATTERY_INFO_ENABLE: String
         get() = "pixelparts_battery_info_enable" + suffix
@@ -249,9 +232,6 @@ object SettingsKeys {
         get() = "launcher_padding_dots_x" + suffix
 
 
-    val DOZE_DOUBLE_TAP_HOOK: String
-        get() = "doze_double_tap_hook" + suffix
-
     val LAUNCHER_DT2S_ENABLED: String
         get() = "launcher_dt2s_enabled" + suffix
 
@@ -356,7 +336,6 @@ object SettingsKeys {
     val SHADE_BLUR_MIN_RADIUS_PX: String
         get() = "shade_blur_min_radius_px" + suffix
 
-    const val DOZE_DOUBLE_TAP_TIMEOUT = "doze_double_tap_timeout"
     const val LAUNCHER_DT2S_TIMEOUT = "launcher_dt2s_timeout"
     const val LAUNCHER_DT2S_SLOP = "launcher_dt2s_slop"
 
@@ -415,11 +394,10 @@ object SettingsKeys {
     val DISABLE_PREDICTIVE_BACK_ANIM: String
         get() = "disable_predictive_back_anim" + suffix
 
-    // Double Tap to Wake (DTW) — privileged system_app sensor-based implementation
+    // Double Tap to Wake (DTW) — framework-backed sensor implementation
     const val DTW_ENABLED = "pixelparts_dtw_enabled"
     const val DTW_TAP_COUNT = "pixelparts_dtw_tap_count"          // 1..3
     const val DTW_TAP_TIMEOUT_MS = "pixelparts_dtw_tap_timeout_ms"  // 100..2000
-    const val DTW_PROXIMITY_CHECK = "pixelparts_dtw_proximity_check" // bool
     const val DTW_COORDINATE_CHECK = "pixelparts_dtw_coordinate_check" // bool
-    const val DTW_MAX_DISTANCE_DP = "pixelparts_dtw_max_distance_dp" // 10..1000
+    const val DTW_MAX_DISTANCE_DP = "pixelparts_dtw_max_distance_dp" // 10..500
 }

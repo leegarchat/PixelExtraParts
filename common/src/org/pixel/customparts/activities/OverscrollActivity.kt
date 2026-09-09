@@ -39,8 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.pixel.customparts.AppConfig
-import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.RadioSelectionGroup
 import org.pixel.customparts.ui.SliderSettingFloat
@@ -48,7 +46,6 @@ import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.services.OverscrollTileService
-import org.pixel.customparts.ui.ModuleStatus
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
@@ -90,7 +87,6 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
     var infoDialogText by remember { mutableStateOf<String?>(null) }
-    var showXposedInactiveDialog by remember { mutableStateOf(false) }
     var infoDialogVideo by remember { mutableStateOf<String?>(null) }
     var isMasterEnabled by remember { mutableStateOf(OverscrollManager.isMasterEnabled(context)) }
     var profiles by remember { mutableStateOf(OverscrollManager.getSavedProfiles(context)) }
@@ -138,19 +134,6 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
     val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
-
-    if (showXposedInactiveDialog) {
-        AlertDialog(
-            onDismissRequest = { showXposedInactiveDialog = false },
-            title = { Text(dynamicStringResource(R.string.os_dialog_xposed_title)) },
-            text = { Text(dynamicStringResource(R.string.os_dialog_xposed_msg)) },
-            confirmButton = {
-                TextButton(onClick = { showXposedInactiveDialog = false }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -205,35 +188,18 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-            if (AppConfig.IS_XPOSED) {
-                item {
-                    ExpandableWarningCard(
-                        title = dynamicStringResource(R.string.overscroll_xposed_warning_title),
-                        text = dynamicStringResource(R.string.overscroll_xposed_warning_desc)
-                    )
-                }
-            }
             item(key = "master_switch", contentType = "switch_card") {
-                val titleStr = dynamicStringResource(
-                    if (AppConfig.IS_XPOSED) R.string.os_label_master_xposed else R.string.os_label_master_native
-                )
-                val descStr = dynamicStringResource(
-                    if (AppConfig.IS_XPOSED) R.string.os_desc_master_xposed else R.string.os_desc_master_native
-                )
+                val titleStr = dynamicStringResource(R.string.os_label_master_native)
+                val descStr = dynamicStringResource(R.string.os_desc_master_native)
 
 
                 MasterSwitchCard(
                     title = titleStr,
                     isChecked = isMasterEnabled,
                     onCheckedChange = { checked ->
-                        if (checked && AppConfig.IS_XPOSED && !ModuleStatus.isModuleActive()) {
-                            showXposedInactiveDialog = true
-                            isMasterEnabled = false
-                        } else {
-                            isMasterEnabled = checked
-                            scope.launch { OverscrollManager.setMasterEnabled(context, checked) }
-                            onSettingChanged()
-                        }
+                        isMasterEnabled = checked
+                        scope.launch { OverscrollManager.setMasterEnabled(context, checked) }
+                        onSettingChanged()
                     },
                     onInfoClick = {
                         infoDialogTitle = titleStr
@@ -1065,8 +1031,8 @@ private fun ScaleGroup(
         onExpandChange = onExpandChange
     ) {
         val scope = rememberCoroutineScope()
-        // IMPORTANT: Calculate suffix here to ensure UI matches current environment (Pine/Xposed)
-        val suffix = if (AppConfig.IS_XPOSED) "_xposed" else "_pine"
+        // Pine runtime suffix for all overscroll keys.
+        val suffix = "_pine"
 
         val modeKey = "${prefix}_mode$suffix"
         var mode by remember(refreshKey) {

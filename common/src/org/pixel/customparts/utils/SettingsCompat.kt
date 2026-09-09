@@ -2,7 +2,6 @@ package org.pixel.customparts.utils
 
 import android.content.Context
 import android.provider.Settings
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.SettingsKeys
 
 
@@ -72,7 +71,6 @@ object SettingsCompat {
         "launcher_padding_search",
         "launcher_padding_dots",
         "launcher_padding_dots_x",
-        "doze_double_tap_hook",
         "launcher_dt2s_enabled",
         "overscroll_enabled",
         "status_bar_use_app_icons",
@@ -109,8 +107,7 @@ object SettingsCompat {
     }
 
     private fun activeRuntimeSuffix(): String {
-        if (SettingsKeys.isPineOverride) return PINE_INJECT_SUFFIX
-        return if (AppConfig.IS_XPOSED) XPOSED_SUFFIX else PINE_INJECT_SUFFIX
+        return PINE_INJECT_SUFFIX
     }
 
     @JvmStatic

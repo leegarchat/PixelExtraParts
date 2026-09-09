@@ -29,11 +29,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.R
 import org.pixel.customparts.utils.LauncherIconController
 import org.pixel.customparts.utils.restartSystemUI
-import org.pixel.customparts.utils.runRootCommand
 import org.pixel.customparts.utils.dynamicStringResource
 
 val REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING = 96.dp
@@ -439,30 +437,24 @@ private fun StaggeredMenuItem(
 }
 
 private fun performRebootLauncher(context: Context) {
-    if (AppConfig.IS_XPOSED) {
-        runRootCommand("am force-stop com.google.android.apps.nexuslauncher")
-    } else {
-        try {
-            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            am.forceStopPackage("com.google.android.apps.nexuslauncher")
-            am.forceStopPackage("com.android.launcher3")
-            am.forceStopPackage("com.google.android.apps.pixel.launcher")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    // Privileged system app: use platform force-stop, no root needed.
+    try {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        am.forceStopPackage("com.google.android.apps.nexuslauncher")
+        am.forceStopPackage("com.android.launcher3")
+        am.forceStopPackage("com.google.android.apps.pixel.launcher")
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
 fun performRebootSystem(context: Context) {
-    if (AppConfig.IS_XPOSED) {
-        runRootCommand("svc power reboot")
-    } else {
-        try {
-            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            pm.reboot(null)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    // Privileged system app: use PowerManager reboot, no root needed.
+    try {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        pm.reboot(null)
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 

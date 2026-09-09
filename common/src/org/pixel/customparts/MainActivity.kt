@@ -196,12 +196,6 @@ fun MainDashboard() {
         }
     }
 
-    val showTestThings = remember {
-        try {
-            Settings.Global.getInt(context.contentResolver, "pixelparts_test_things", 0) == 1
-        } catch (_: Throwable) { false }
-    }
-
     val addonSearchEntries = addonSearchRootEntries
         .flatMap { it.flattenAddonTree() }
         .distinctBy { it.addonId + ":" + it.rawId }
@@ -235,32 +229,30 @@ fun MainDashboard() {
                 onClick = { context.startActivity(Intent(context, OverscrollActivity::class.java)) }
             )
         )
-        if (!AppConfig.IS_XPOSED) {
-            add(
-                MainDashboardSearchItem(
-                    title = dynamicStringResource(R.string.display_title),
-                    subtitle = dynamicStringResource(R.string.display_desc),
-                    section = dynamicStringResource(R.string.main_header_system),
-                    keywords = "display color theme palette screen " + internalStringIndex.categoryText("display"),
-                    icon = Icons.Rounded.Palette,
-                    iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
-                )
+        add(
+            MainDashboardSearchItem(
+                title = dynamicStringResource(R.string.display_title),
+                subtitle = dynamicStringResource(R.string.display_desc),
+                section = dynamicStringResource(R.string.main_header_system),
+                keywords = "display color theme palette screen " + internalStringIndex.categoryText("display"),
+                icon = Icons.Rounded.Palette,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
             )
-            add(
-                MainDashboardSearchItem(
-                    title = dynamicStringResource(R.string.app_icons_title),
-                    subtitle = dynamicStringResource(R.string.app_icons_summary),
-                    section = dynamicStringResource(R.string.main_header_system),
-                    keywords = "icons icon manager shapes tint apps " + internalStringIndex.categoryText("app_icons"),
-                    icon = Icons.Rounded.Apps,
-                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    onClick = { context.startActivity(Intent(context, AppIconsActivity::class.java)) }
-                )
+        )
+        add(
+            MainDashboardSearchItem(
+                title = dynamicStringResource(R.string.app_icons_title),
+                subtitle = dynamicStringResource(R.string.app_icons_summary),
+                section = dynamicStringResource(R.string.main_header_system),
+                keywords = "icons icon manager shapes tint apps " + internalStringIndex.categoryText("app_icons"),
+                icon = Icons.Rounded.Apps,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = { context.startActivity(Intent(context, AppIconsActivity::class.java)) }
             )
-        }
+        )
         add(
             MainDashboardSearchItem(
                 title = dynamicStringResource(R.string.sysui_settings_title),
@@ -299,34 +291,18 @@ fun MainDashboard() {
                 )
             )
         }
-        if (!AppConfig.IS_XPOSED || showTestThings) {
-            add(
-                MainDashboardSearchItem(
-                    title = dynamicStringResource(R.string.addon_title),
-                    subtitle = dynamicStringResource(R.string.addon_desc),
-                    section = dynamicStringResource(R.string.main_header_system),
-                    keywords = "addons modules extensions hooks " + internalStringIndex.categoryText("addons"),
-                    icon = Icons.Rounded.Extension,
-                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    onClick = { context.startActivity(Intent(context, AddonManagerActivity::class.java)) }
-                )
+        add(
+            MainDashboardSearchItem(
+                title = dynamicStringResource(R.string.addon_title),
+                subtitle = dynamicStringResource(R.string.addon_desc),
+                section = dynamicStringResource(R.string.main_header_system),
+                keywords = "addons modules extensions hooks " + internalStringIndex.categoryText("addons"),
+                icon = Icons.Rounded.Extension,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = { context.startActivity(Intent(context, AddonManagerActivity::class.java)) }
             )
-        }
-        if (showTestThings) {
-            add(
-                MainDashboardSearchItem(
-                    title = dynamicStringResource(R.string.test_things_title),
-                    subtitle = dynamicStringResource(R.string.test_things_desc),
-                    section = dynamicStringResource(R.string.test_things_title),
-                    keywords = "test debug experimental " + internalStringIndex.categoryText("test"),
-                    icon = Icons.Rounded.Science,
-                    iconContainerColor = MaterialTheme.colorScheme.errorContainer,
-                    iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
-                    onClick = { context.startActivity(Intent(context, TestActivity::class.java)) }
-                )
-            )
-        }
+        )
         addonSearchEntries.forEach { entry ->
             add(
                 MainDashboardSearchItem(
@@ -502,29 +478,27 @@ fun MainDashboard() {
 
                 item {
                     SettingsGroupCard(title = dynamicStringResource(R.string.main_header_system)) {
-                        if (!AppConfig.IS_XPOSED) {
-                            MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.display_title),
-                                subtitle = dynamicStringResource(R.string.display_desc),
-                                icon = Icons.Rounded.Palette,
-                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
-                            )
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.display_title),
+                            subtitle = dynamicStringResource(R.string.display_desc),
+                            icon = Icons.Rounded.Palette,
+                            iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            onClick = { context.startActivity(Intent(context, DisplaySettingsActivity::class.java)) }
+                        )
 
-                            HorizontalDivider()
+                        HorizontalDivider()
 
-                            MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.app_icons_title),
-                                subtitle = dynamicStringResource(R.string.app_icons_summary),
-                                icon = Icons.Rounded.Apps,
-                                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                onClick = { context.startActivity(Intent(context, AppIconsActivity::class.java)) }
-                            )
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.app_icons_title),
+                            subtitle = dynamicStringResource(R.string.app_icons_summary),
+                            icon = Icons.Rounded.Apps,
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = { context.startActivity(Intent(context, AppIconsActivity::class.java)) }
+                        )
 
-                            HorizontalDivider()
-                        }
+                        HorizontalDivider()
 
                         MainMenuNavigationRow(
                             title = dynamicStringResource(R.string.sysui_settings_title),
@@ -559,18 +533,16 @@ fun MainDashboard() {
                             )
                         }
 
-                        if (!AppConfig.IS_XPOSED || showTestThings) {
-                            HorizontalDivider()
+                        HorizontalDivider()
 
-                            MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.addon_title),
-                                subtitle = dynamicStringResource(R.string.addon_desc),
-                                icon = Icons.Rounded.Extension,
-                                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                onClick = { context.startActivity(Intent(context, AddonManagerActivity::class.java)) }
-                            )
-                        }
+                        MainMenuNavigationRow(
+                            title = dynamicStringResource(R.string.addon_title),
+                            subtitle = dynamicStringResource(R.string.addon_desc),
+                            icon = Icons.Rounded.Extension,
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = { context.startActivity(Intent(context, AddonManagerActivity::class.java)) }
+                        )
 
                         // Addon entries for "system" group
                         addonSystemEntries.forEach { entry ->
@@ -642,21 +614,6 @@ fun MainDashboard() {
                     }
                 }
 
-                // Test Things — visible only when pixelparts_test_things == 1
-                if (showTestThings) {
-                    item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.test_things_title)) {
-                            MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.test_things_title),
-                                subtitle = dynamicStringResource(R.string.test_things_desc),
-                                icon = Icons.Rounded.Science,
-                                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
-                                iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                onClick = { context.startActivity(Intent(context, TestActivity::class.java)) }
-                            )
-                        }
-                    }
-                }
             }
 
             // Fixed at collapsed top-bar height (64dp + status bar).

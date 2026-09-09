@@ -17,6 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.material.icons.filled.Refresh
@@ -42,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import org.pixel.customparts.R
-import org.pixel.customparts.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -193,7 +194,8 @@ fun SliderSetting(
     onInfoClick: ((String, String, String?) -> Unit)? = null,
     onValueChangeFinished: (() -> Unit)? = null,
     showDefaultButton: Boolean = true,
-    inputRange: IntRange? = null
+    inputRange: IntRange? = null,
+    showValueBelow: Boolean = false
 ) {
     SliderSettingFloat(
         title = title,
@@ -210,7 +212,9 @@ fun SliderSetting(
         onInfoClick = onInfoClick,
         onValueChangeFinished = onValueChangeFinished,
         showDefaultButton = showDefaultButton,
-        inputRange = inputRange?.let { it.first.toFloat()..it.last.toFloat() }
+        inputRange = inputRange?.let { it.first.toFloat()..it.last.toFloat() },
+        stepSize = 1f,
+        showValueBelow = showValueBelow
     )
 }
 
@@ -230,7 +234,9 @@ fun SliderSettingFloat(
     onInfoClick: ((String, String, String?) -> Unit)? = null,
     onValueChangeFinished: (() -> Unit)? = null,
     showDefaultButton: Boolean = true,
-    inputRange: ClosedFloatingPointRange<Float>? = null
+    inputRange: ClosedFloatingPointRange<Float>? = null,
+    stepSize: Float = if (isInteger) 1f else 0.01f,
+    showValueBelow: Boolean = false
 ) {
     var showManualInput by remember { mutableStateOf(false) }
     val contentAlpha = if (enabled) 1f else 0.4f
@@ -247,31 +253,45 @@ fun SliderSettingFloat(
             .clickable(enabled = enabled) { showManualInput = true }
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
-        ) {
+        if (showValueBelow) {
+            // Title only at top
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
             )
-            
-            Text(
-                text = formattedValue,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1
-            )
+        } else {
+            // Title + value in a row (default)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                )
+
+                Text(
+                    text = formattedValue,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+            }
         }
-        
+
         Spacer(Modifier.height(8.dp))
 
+        // Slider row: [default] [←] [slider] [→] [info]
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (showDefaultButton) {
                 IconButton(
@@ -287,7 +307,25 @@ fun SliderSettingFloat(
                     )
                 }
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(4.dp))
+            }
+
+            // Left arrow
+            IconButton(
+                onClick = {
+                    val newValue = (value - stepSize).coerceIn(range.start, range.endInclusive)
+                    onValueChange(newValue)
+                    onValueChangeFinished?.invoke()
+                },
+                enabled = enabled && value > range.start,
+                modifier = Modifier.size(32.dp).alpha(contentAlpha)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowLeft,
+                    contentDescription = "Decrease",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
             Slider(
@@ -299,8 +337,26 @@ fun SliderSettingFloat(
                 onValueChangeFinished = onValueChangeFinished
             )
 
+            // Right arrow
+            IconButton(
+                onClick = {
+                    val newValue = (value + stepSize).coerceIn(range.start, range.endInclusive)
+                    onValueChange(newValue)
+                    onValueChangeFinished?.invoke()
+                },
+                enabled = enabled && value < range.endInclusive,
+                modifier = Modifier.size(32.dp).alpha(contentAlpha)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowRight,
+                    contentDescription = "Increase",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
             if (onInfoClick != null && infoText != null) {
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(4.dp))
                 IconButton(
                     onClick = { onInfoClick(title, infoText, videoResName) },
                     modifier = Modifier.size(32.dp)
@@ -313,6 +369,19 @@ fun SliderSettingFloat(
                     )
                 }
             }
+        }
+
+        // Value below slider (when showValueBelow is true)
+        if (showValueBelow) {
+            Text(
+                text = formattedValue,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth().alpha(contentAlpha).padding(top = 4.dp),
+                textAlign = TextAlign.Center
+            )
         }
     }
 
@@ -628,12 +697,9 @@ fun InfoDialog(
 
                             isNetworkSource = true
                             
-                            val targetDir = if (!AppConfig.IS_XPOSED) {
-                                val extCache = context.externalCacheDir
-                                extCache ?: context.cacheDir
-                            } else {
-                                context.cacheDir
-                            }
+                            // System_ext app: cache videos on external cache when available.
+                            val extCache = context.externalCacheDir
+                            val targetDir = extCache ?: context.cacheDir
                             
                             val cacheFile = File(targetDir, "$videoResName.mp4")
 
@@ -662,9 +728,7 @@ fun InfoDialog(
                                             }
                                         }
                                         
-                                        if (!AppConfig.IS_XPOSED) {
-                                            cacheFile.setReadable(true, false)
-                                        }
+                                        cacheFile.setReadable(true, false)
                                     }
                                     
                                     if (cacheFile.exists() && cacheFile.length() > 0) {
@@ -869,25 +933,5 @@ fun ExpandableSettingsGroupCard(
     }
 }
 
-object ModuleStatus {
-    fun isModuleActive(): Boolean {
-        try {
-            // Check Settings.Global directly via reflection to avoid context issues or hidden structure
-            val activityThreadClass = Class.forName("android.app.ActivityThread")
-            val currentApplicationMethod = activityThreadClass.getMethod("currentApplication")
-            val context = currentApplicationMethod.invoke(null) as? android.content.Context
-            
-            if (context != null) {
-                val value = android.provider.Settings.Global.getInt(
-                    context.contentResolver, 
-                    "pixelparts_xposed_to_pine", 
-                    0
-                )
-                if (value == 1) return true
-            }
-        } catch (e: Exception) {
-            // ignore
-        }
-        return false
-    }
-}
+
+

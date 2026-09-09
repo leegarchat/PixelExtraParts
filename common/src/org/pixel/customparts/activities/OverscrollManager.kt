@@ -12,7 +12,6 @@ import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 
 data class SavedProfile(val name: String, val jsonData: JSONObject)
@@ -22,9 +21,8 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 
 object OverscrollManager {
 
-    // Автоматический выбор суффикса среды
-    private val SUFFIX: String
-        get() = if (AppConfig.IS_XPOSED) "_xposed" else "_pine"
+    // Pine-only runtime suffix (legacy "_xposed" keys are still read via stripSuffix).
+    private const val SUFFIX: String = "_pine"
 
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"
     const val KEY_ACTIVE_PROFILE = "overscroll_active_profile_name"

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.TouchApp
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,7 +43,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.pixel.customparts.AppConfig
 import org.pixel.customparts.MainMenuNavigationRow
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
@@ -121,8 +121,7 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (!AppConfig.IS_XPOSED) {
-                    item {
+                item {
                         SettingsGroupCard(title = dynamicStringResource(R.string.display_section_screen)) {
                             MainMenuNavigationRow(
                                 title = dynamicStringResource(R.string.saturation_title),
@@ -154,9 +153,19 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                                 iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                                 onClick = { context.startActivity(Intent(context, DtwSettingsActivity::class.java)) }
                             )
+
+                            HorizontalDivider()
+
+                            MainMenuNavigationRow(
+                                title = dynamicStringResource(R.string.auto_lock_title),
+                                subtitle = dynamicStringResource(R.string.auto_lock_summary),
+                                icon = Icons.Rounded.Timer,
+                                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+                                iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                onClick = { context.startActivity(Intent(context, AutoLockSettingsActivity::class.java)) }
+                            )
                         }
                     }
-                }
             }
 
             TopBarBlurOverlay(
