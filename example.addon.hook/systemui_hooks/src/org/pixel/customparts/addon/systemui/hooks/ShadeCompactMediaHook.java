@@ -1360,23 +1360,53 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			}
 			if (!foundAny) return;
 
-			float headerSpan = maxBottom - minY;
-			if (headerSpan <= 0f) return;
-			float shiftUp = Math.max(0f, headerSpan + VERY_COMPACT_SHIFT_ADJUST_PX);
-			int shrinkBy = Math.max(0, Math.round(shiftUp));
-			if (shiftUp <= 0f || shrinkBy <= 0) return;
+		float headerSpan = maxBottom - minY;
+		if (headerSpan <= 0f) return;
 
-			// 2) Shift everything below the header up.
-			for (Object ws : widgetStates.values()) {
-				if (ws == null) continue;
-				try {
-					float y = XposedHelpers.getFloatField(ws, "y");
-					if (y >= maxBottom - 0.5f) {
-						XposedHelpers.setFloatField(ws, "y", y - shiftUp);
-					}
-				} catch (Throwable ignored) {
-				}
+		// 2) Shift everything below the header up so the topmost content lands
+		// exactly where the header was (minY). This absorbs any natural gap
+		// between the header bottom and the content top, which a plain
+		// headerSpan shift would preserve as an empty strip.
+		float minShiftedY = Float.MAX_VALUE;
+		for (Map.Entry<Object, Object> entry : widgetStates.entrySet()) {
+			Object ws = entry.getValue();
+			if (ws == null) continue;
+			if (headerIds.contains(entry.getKey())) continue;
+			boolean skip = false;
+			try {
+				if (XposedHelpers.getBooleanField(ws, "gone")) skip = true;
+				else if (XposedHelpers.getIntField(ws, "height") <= 0) skip = true;
+			} catch (Throwable ignored) {
+				skip = false;
 			}
+			if (skip) continue;
+			try {
+				float y = XposedHelpers.getFloatField(ws, "y");
+				if (y >= maxBottom - 0.5f && y < minShiftedY) {
+					minShiftedY = y;
+				}
+			} catch (Throwable ignored) {
+			}
+		}
+		float shiftUp;
+		if (minShiftedY != Float.MAX_VALUE) {
+			shiftUp = Math.max(0f, (minShiftedY - minY) + VERY_COMPACT_SHIFT_ADJUST_PX);
+		} else {
+			shiftUp = Math.max(0f, headerSpan + VERY_COMPACT_SHIFT_ADJUST_PX);
+		}
+		int shrinkBy = Math.max(0, Math.round(shiftUp));
+		if (shiftUp <= 0f || shrinkBy <= 0) return;
+
+		for (Object ws : widgetStates.values()) {
+			if (ws == null) continue;
+			try {
+				float y = XposedHelpers.getFloatField(ws, "y");
+				if (y >= maxBottom - 0.5f) {
+					XposedHelpers.setFloatField(ws, "y", y - shiftUp);
+				}
+			} catch (Throwable ignored) {
+			}
+		}
 
 			// 3) Reduce overall view height and keep backgrounds consistent.
 			int newHeight = -1;
