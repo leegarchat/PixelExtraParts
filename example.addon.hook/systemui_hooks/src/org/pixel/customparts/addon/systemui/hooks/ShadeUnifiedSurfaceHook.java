@@ -212,7 +212,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                         if (newAlpha > 1.0f) newAlpha = 1.0f;
                                         param.args[0] = newAlpha;
                                     }
-                                } else if (name != null && (name.contains("behind") || "back_scrim".equals(name))) {
+                                } else if (name != null && (name.contains("behind"))) {
                                     if (sMainAlphaOverrideActive) {
                                         float alphaVal = sCfgMainScrimAlpha;
                                         if (alphaVal >= 0 && param.args[0] instanceof Float) {
@@ -267,7 +267,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                     if ("notifications_scrim".equals(name) && sNotifTintOverrideActive) {
                         int newColor = (sysAlpha << 24) | (sCfgNotifScrimTint & 0x00FFFFFF);
                         param.args[colorArgIndex] = newColor;
-                    } else if (name != null && (name.contains("behind") || "back_scrim".equals(name)) && sMainTintOverrideActive) {
+                    } else if (name != null && (name.contains("behind")) && sMainTintOverrideActive) {
                         int newColor = (sysAlpha << 24) | (sCfgMainScrimTint & 0x00FFFFFF);
                         param.args[colorArgIndex] = newColor;
                     }
@@ -292,8 +292,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         try {
             Class<?> scrimViewClass = XposedHelpers.findClass(SCRIM_VIEW_CLASS, classLoader);
 
+            // NOTE: ScrimView has no setScrimColor() method (only setTint/setViewAlpha),
+            // so hooking it by name always threw and skipped the enforcement hooks below.
+            // Dead hook removed; setTint + update-method enforcement cover recoloring.
             Set<XC_MethodHook.Unhook> u1 = XposedBridge.hookAllMethods(scrimViewClass, "setTint", recolorCallback);
-            Set<XC_MethodHook.Unhook> u2 = XposedBridge.hookAllMethods(scrimViewClass, "setScrimColor", recolorCallback);
 
             // Hook any other update methods to ensure our tint survives internal re-draw triggers
             String[] extraMethods = {"setColors", "updateColorWithTint", "updateColors"};
@@ -303,7 +305,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                 } catch (Throwable ignored) { }
             }
 
-            log("ScrimView colour hooks total: setTint=" + u1.size() + " setScrimColor=" + u2.size());
+            log("ScrimView colour hooks total: setTint=" + u1.size());
         } catch (Throwable t) {
             logError("Failed to hook ScrimView colour", t);
         }
@@ -451,7 +453,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             String name = getScrimName(scrimView);
             if ("notifications_scrim".equals(name) && sNotifTintOverrideActive) {
                 forceScrimBaseColor(scrimView, sCfgNotifScrimTint);
-            } else if (name != null && (name.contains("behind") || "back_scrim".equals(name)) && sMainTintOverrideActive) {
+            } else if (name != null && (name.contains("behind")) && sMainTintOverrideActive) {
                 forceScrimBaseColor(scrimView, sCfgMainScrimTint);
             }
         } catch (Throwable t) {

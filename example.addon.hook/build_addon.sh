@@ -36,7 +36,7 @@ check_java_version() {
     local version
     local major
     raw="$(java -version 2>&1 | head -n 1)"
-    version="$(echo "$raw" | sed -E 's/.*"([0-9]+)(\.[0-9]+\.[0-9_]+)?".*/\1/')"
+    version="$(echo "$raw" | sed -E 's/.*version "([0-9]+).*/\1/')"
     if [[ ! "$version" =~ ^[0-9]+$ ]]; then
         echo "Error: could not determine Java version from string: $raw"
         return 1

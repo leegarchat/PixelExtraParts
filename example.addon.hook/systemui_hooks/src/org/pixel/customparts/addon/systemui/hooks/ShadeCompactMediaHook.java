@@ -74,7 +74,8 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 	};
 
 	// Fine-tune: after collapsing header, remaining content was slightly too high.
-	// Reduce the upward shift by this many pixels to match native-looking centering.
+	// Reduce the upward shift by this many pixels to match native-looking centering
+	// (negative = shift content up by headerSpan + this value, i.e. 20px less).
 	private static final float VERY_COMPACT_SHIFT_ADJUST_PX = -20f;
 
 	// When SystemUI loads constraint sets, we pair the expanded ConstraintSet instance with
@@ -100,6 +101,20 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			"com.android.systemui.util.animation.TransitionLayoutController";
 
 	private static final ThreadLocal<TransitionInfo> sTransitionInfo = new ThreadLocal<>();
+
+	// Runtime config-change tracking. MediaViewController caches TransitionViewStates
+	// and the native isCompactMode is read once, so flipping compact/hide/alpha at
+	// runtime without a refresh serves stale states (mixed expanded/collapsed geometry
+	// during interpolation = black player bar). The flip is detected in the
+	// setCurrentState capture hook and the controller gets one refreshState(): the sig
+	// is stored BEFORE refreshing, so the re-entrant setCurrentState() from
+	// refreshState() is a no-op (no recursion). Checks are throttled because
+	// setCurrentState() fires per animation frame (settings reads are binder IPC).
+	private static final Map<Object, String> sLastConfigSig =
+			Collections.synchronizedMap(new WeakHashMap<>());
+	private static final Map<Object, Long> sLastConfigCheckMs =
+			Collections.synchronizedMap(new WeakHashMap<>());
+	private static final long CONFIG_CHECK_THROTTLE_MS = 500L;
 
 	private static volatile boolean sLoggedLocationConstants = false;
 
@@ -525,62 +540,14 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 				}
 			}
 
-			// 2) Scene container path: obtainSceneContainerViewState() selects expanded vs collapsed
-			// based on MediaHostState.expansion > 0. For compact mode, force expansion=0 just for
-			// the duration of this call.
-			Set<XC_MethodHook.Unhook> sceneHooks = XposedBridge.hookAllMethods(
-					controllerClass,
-					"obtainSceneContainerViewState",
-					new XC_MethodHook() {
-						@Override
-						protected void beforeHookedMethod(MethodHookParam param) {
-							try {
-								if (param.args == null || param.args.length == 0) return;
-								Object state = param.args[0];
-								if (state == null) return;
+		// NOTE: there is no scene-container override here. The guessed
+		// obtainSceneContainerViewState() method does not exist in SystemUI
+		// (legacy TransitionLayout path is the only one), so that hook was dead
+		// code and has been removed.
 
-								Context ctx = getControllerContext(param.thisObject);
-								if (ctx == null) return;
-								if (!isCompactEnabled(ctx)) return;
-
-								try {
-									float old = XposedHelpers.getFloatField(state, "expansion");
-									param.setObjectExtra("_pine_old_expansion", old);
-									XposedHelpers.setFloatField(state, "expansion", 0f);
-								} catch (Throwable ignored) {
-								}
-							} catch (Throwable t) {
-								logError("obtainSceneContainerViewState pre-hook failed", t);
-							}
-						}
-
-						@Override
-						protected void afterHookedMethod(MethodHookParam param) {
-							try {
-								if (param.args != null && param.args.length > 0) {
-									Object state = param.args[0];
-									if (state != null) {
-										Object oldObj = param.getObjectExtra("_pine_old_expansion");
-										if (oldObj instanceof Float) {
-											try {
-												XposedHelpers.setFloatField(state, "expansion", (Float) oldObj);
-											} catch (Throwable ignored) {
-											}
-										}
-									}
-								}
-							} catch (Throwable t) {
-								logError("obtainSceneContainerViewState post-hook failed", t);
-							}
-						}
-					}
-			);
-
-			log("MediaViewController compact hooks installed (constraintSetForExpansion="
-					+ (csHooks == null ? 0 : csHooks.size())
-					+ ", constraintSetForExpansionFallback=" + csFallbackHooks
-					+ ", obtainSceneContainerViewState=" + (sceneHooks == null ? 0 : sceneHooks.size())
-					+ ")");
+		log("MediaViewController compact hooks installed (constraintSetForExpansion="
+				+ (csHooks == null ? 0 : csHooks.size())
+				+ ", constraintSetForExpansionFallback=" + csFallbackHooks + ")");
 		} catch (Throwable t) {
 			logError("Failed to hook MediaViewController for compact mode", t);
 		}
@@ -630,6 +597,7 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 								@Override
 								protected void afterHookedMethod(MethodHookParam param) {
 									sTransitionInfo.remove();
+									maybeRefreshOnConfigChange(param.thisObject);
 								}
 							}
 					);
@@ -696,6 +664,62 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			log("TransitionLayoutController setState hide hooks installed (methods hooked=" + hooked + ")");
 		} catch (Throwable t) {
 			logError("Failed to hook TransitionLayoutController.setState for hide", t);
+		}
+	}
+
+	private String playerConfigSig(Context context) {
+		Mode mode = getMode(context);
+		boolean hideExpand = false;
+		boolean hideNotify = false;
+		boolean hideLock = false;
+		try {
+			hideExpand = isSettingEnabled(context, KEY_HIDE_EXPAND, false);
+		} catch (Throwable ignored) {
+		}
+		try {
+			hideNotify = isSettingEnabled(context, KEY_HIDE_NOTIFY, false);
+		} catch (Throwable ignored) {
+		}
+		try {
+			hideLock = isSettingEnabled(context, KEY_HIDE_LOCKSCREEN, false);
+		} catch (Throwable ignored) {
+		}
+		int alphaBucket = 100;
+		try {
+			alphaBucket = Math.round(getPlayerAlpha(context) * 100f);
+		} catch (Throwable ignored) {
+		}
+		return mode.name() + "|" + (hideExpand ? "1" : "0") + (hideNotify ? "1" : "0")
+				+ (hideLock ? "1" : "0") + "|" + alphaBucket;
+	}
+
+	private void maybeRefreshOnConfigChange(Object controller) {
+		if (controller == null) return;
+		try {
+			Context context = getControllerContext(controller);
+			if (context == null) return;
+			long now = android.os.SystemClock.uptimeMillis();
+			Long lastCheck = sLastConfigCheckMs.get(controller);
+			if (lastCheck != null && (now - lastCheck.longValue()) < CONFIG_CHECK_THROTTLE_MS) return;
+			sLastConfigCheckMs.put(controller, now);
+			String sig = playerConfigSig(context);
+			String prev = sLastConfigSig.get(controller);
+			if (prev == null) {
+				// First sight: the viewStates cache is empty anyway, states compute
+				// fresh with the current mode. Just record, no refresh needed.
+				sLastConfigSig.put(controller, sig);
+				return;
+			}
+			if (sig.equals(prev)) return;
+			sLastConfigSig.put(controller, sig);
+			try {
+				XposedHelpers.callMethod(controller, "refreshState");
+				log("CompactMedia: config changed (" + prev + " -> " + sig + "), refreshed controller");
+			} catch (Throwable t) {
+				logError("CompactMedia: refreshState on config change failed", t);
+			}
+		} catch (Throwable t) {
+			logError("CompactMedia: config change check failed", t);
 		}
 	}
 
@@ -1265,7 +1289,7 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 
 			float headerSpan = maxBottom - minY;
 			if (headerSpan <= 0f) return;
-			float shiftUp = Math.max(0f, headerSpan - VERY_COMPACT_SHIFT_ADJUST_PX);
+			float shiftUp = Math.max(0f, headerSpan + VERY_COMPACT_SHIFT_ADJUST_PX);
 			int shrinkBy = Math.max(0, Math.round(shiftUp));
 			if (shiftUp <= 0f || shrinkBy <= 0) return;
 
