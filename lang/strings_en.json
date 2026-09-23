@@ -554,5 +554,13 @@
   "addon_active_apps_title": "Active Apps",
   "addon_active_apps_desc": "%d app(s) with active hooks",
   "addon_active_apps_empty": "No active hooks",
-  "addon_active_apps_modules": "%d module(s)"
+  "addon_active_apps_modules": "%d module(s)",
+  "addon_tile_add": "Add tile",
+  "addon_tile_bind": "Bind tile",
+  "addon_tile_name": "Tile name",
+  "addon_tile_setting": "Setting",
+  "addon_tile_long_press": "Long press",
+  "addon_tile_configurable": "Configurable tile",
+  "addon_tile_not_added": "Not added",
+  "addon_tile_slot": "Slot %1$d"
 }

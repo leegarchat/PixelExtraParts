@@ -554,5 +554,13 @@
   "addon_active_apps_title": "Активные приложения",
   "addon_active_apps_desc": "%d приложение(й) с активными хуками",
   "addon_active_apps_empty": "Нет активных хуков",
-  "addon_active_apps_modules": "%d модуль(ей)"
+  "addon_active_apps_modules": "%d модуль(ей)",
+  "addon_tile_add": "Добавить тайл",
+  "addon_tile_bind": "Привязать тайл",
+  "addon_tile_name": "Название плитки",
+  "addon_tile_setting": "Настройка",
+  "addon_tile_long_press": "Долгое нажатие",
+  "addon_tile_configurable": "Настраиваемая плитка",
+  "addon_tile_not_added": "Не добавлена",
+  "addon_tile_slot": "Слот %1$d"
 }

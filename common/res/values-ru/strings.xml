@@ -1311,6 +1311,16 @@
     <string name="addon_update_failed">Ошибка обновления</string>
     <string name="addon_delete_data_update_confirm">Удалить обновление из data для "%s"?\n\nСистемный аддон останется установленным.</string>
 
+    <!-- Addon Manager: QS tile binding -->
+    <string name="addon_tile_add">Добавить тайл</string>
+    <string name="addon_tile_bind">Привязать тайл</string>
+    <string name="addon_tile_name">Название плитки</string>
+    <string name="addon_tile_setting">Настройка</string>
+    <string name="addon_tile_long_press">Долгое нажатие</string>
+    <string name="addon_tile_configurable">Настраиваемая плитка</string>
+    <string name="addon_tile_not_added">Не добавлена</string>
+    <string name="addon_tile_slot">Слот %1$d</string>
+
     <!-- Addon Manager: Active Apps -->
     <string name="addon_active_apps_title">Активные приложения</string>
     <string name="addon_active_apps_desc">%d приложение(й) с активными хуками</string>

@@ -3589,7 +3589,7 @@ private fun TileBindingControl(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (isBound) "Slot $boundSlot" else if (setting.tileConfigurable) "Настраиваемая плитка" else "Не добавлена",
+                    if (isBound) dynamicStringResource(R.string.addon_tile_slot, boundSlot) else if (setting.tileConfigurable) dynamicStringResource(R.string.addon_tile_configurable) else dynamicStringResource(R.string.addon_tile_not_added),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isBound) accent else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -3613,7 +3613,7 @@ private fun TileBindingControl(
                 OutlinedTextField(
                     value = tileTitle,
                     onValueChange = { tileTitle = it },
-                    label = { Text("Название плитки") },
+                    label = { Text(dynamicStringResource(R.string.addon_tile_name)) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -3627,7 +3627,7 @@ private fun TileBindingControl(
                         value = selectedTarget?.label.orEmpty(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Настройка") },
+                        label = { Text(dynamicStringResource(R.string.addon_tile_setting)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = targetMenuExpanded) },
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
@@ -3664,7 +3664,7 @@ private fun TileBindingControl(
                             value = selectedActivityLabel,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Долгое нажатие") },
+                            label = { Text(dynamicStringResource(R.string.addon_tile_long_press)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = activityMenuExpanded) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
@@ -3716,7 +3716,7 @@ private fun TileBindingControl(
                 ) {
                     Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Добавить тайл")
+                    Text(dynamicStringResource(R.string.addon_tile_add))
                 }
             }
         } else {
@@ -3735,7 +3735,7 @@ private fun TileBindingControl(
             ) {
                 Icon(Icons.Rounded.Link, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Привязать тайл")
+                Text(dynamicStringResource(R.string.addon_tile_bind))
             }
         }
     }

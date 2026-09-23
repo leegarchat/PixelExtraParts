@@ -1322,6 +1322,16 @@
     <string name="addon_update_failed">Update failed</string>
     <string name="addon_delete_data_update_confirm">Remove data update for \"%s\"?\n\nThe system addon will remain installed.</string>
 
+    <!-- Addon Manager: QS tile binding -->
+    <string name="addon_tile_add">Add tile</string>
+    <string name="addon_tile_bind">Bind tile</string>
+    <string name="addon_tile_name">Tile name</string>
+    <string name="addon_tile_setting">Setting</string>
+    <string name="addon_tile_long_press">Long press</string>
+    <string name="addon_tile_configurable">Configurable tile</string>
+    <string name="addon_tile_not_added">Not added</string>
+    <string name="addon_tile_slot">Slot %1$d</string>
+
     <!-- Addon Manager: Active Apps -->
     <string name="addon_active_apps_title">Active Apps</string>
     <string name="addon_active_apps_desc">%d app(s) with active hooks</string>
