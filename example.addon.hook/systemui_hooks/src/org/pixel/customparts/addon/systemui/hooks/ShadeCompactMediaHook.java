@@ -73,10 +73,12 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			"background",
 	};
 
-	// Fine-tune: after collapsing header, remaining content was slightly too high.
-	// Reduce the upward shift by this many pixels to match native-looking centering
-	// (negative = shift content up by headerSpan + this value, i.e. 20px less).
-	private static final float VERY_COMPACT_SHIFT_ADJUST_PX = -20f;
+	// Fine-tune for the header collapse (HEADER_ONLY / Mini modes): extra pixels
+	// added to the upward shift. Exact close is 0 (content lands where the header
+	// was); negative leaves an empty background strip on top, positive clips
+	// content under the top edge. Empirically: -20 left a visible top gap,
+	// so keep 0 (knob retained for optical tuning).
+	private static final float VERY_COMPACT_SHIFT_ADJUST_PX = 0f;
 
 	// When SystemUI loads constraint sets, we pair the expanded ConstraintSet instance with
 	// the collapsed instance, then later swap expanded->collapsed at calculateViewState time.
