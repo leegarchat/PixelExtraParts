@@ -694,7 +694,6 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 	}
 
 	private void maybeRefreshOnConfigChange(Object controller) {
-		if (controller == null) return;
 		try {
 			Context context = getControllerContext(controller);
 			if (context == null) return;
@@ -712,6 +711,7 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			}
 			if (sig.equals(prev)) return;
 			sLastConfigSig.put(controller, sig);
+			clearCarouselSizes(controller);
 			try {
 				XposedHelpers.callMethod(controller, "refreshState");
 				log("CompactMedia: config changed (" + prev + " -> " + sig + "), refreshed controller");
@@ -720,6 +720,25 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			}
 		} catch (Throwable t) {
 			logError("CompactMedia: config change check failed", t);
+		}
+	}
+
+	// Drop stale per-location carousel measurements. updateViewStateSize() pins the
+	// container to Math.max(cached carousel size, fresh state): after flipping to a
+	// smaller layout the old expanded height would stick and leave an empty gap at
+	// the top (content is bottom-anchored, backgrounds fill from y=0). Clearing here
+	// lets refreshState() apply the fresh size; hosts re-measure and repopulate.
+	private void clearCarouselSizes(Object controller) {
+		if (controller == null) return;
+		try {
+			Object manager = XposedHelpers.getObjectField(controller, "mediaHostStatesManager");
+			if (manager == null) return;
+			Object sizes = XposedHelpers.getObjectField(manager, "carouselSizes");
+			if (sizes instanceof Map) {
+				((Map<?, ?>) sizes).clear();
+			}
+		} catch (Throwable t) {
+			logError("CompactMedia: clear carouselSizes failed", t);
 		}
 	}
 
