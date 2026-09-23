@@ -3,7 +3,7 @@
     "name": "SystemUI Hooks",
     "author": "LeeGarChat",
     "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
     "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/systemui_hooks.json",

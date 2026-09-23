@@ -281,11 +281,37 @@ public class NotificationIconShapeHook extends BaseSystemUIHook {
                     },
                     new IntentFilter(ICON_RELOAD_ACTION),
                     Context.RECEIVER_EXPORTED);
+            observeShapeKeysOnce(receiverContext);
         } catch (Throwable t) {
             synchronized (NotificationIconShapeHook.class) {
                 reloadReceiverRegistered = false;
             }
             logHookWarning("Unable to register notification icon reload receiver", t);
+        }
+    }
+
+    // Runtime updates without SystemUI restart: any shape/tint setting change
+    // purges the provider caches (fresh icons pick the new config up on next
+    // fetch; the json map itself is mtime-checked on every lookup).
+    private void observeShapeKeysOnce(Context context) {
+        String[] keys = {
+                KEY_APP_ICONS_ENABLED,
+                KEY_NOTIFICATION_STRETCH_SHAPE,
+                KEY_NOTIFICATION_REMOVE_SHAPE,
+                KEY_NOTIFICATION_SHAPE_SCALE,
+                KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_MODE,
+                KEY_APP_ICONS_SHAPE_BACKGROUND_TINT_COLOR,
+                KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_MODE,
+                KEY_APP_ICONS_SHAPE_FOREGROUND_TINT_COLOR,
+        };
+        for (String key : keys) {
+            observeExactSettingOnce(context, key, new Runnable() {
+                @Override
+                public void run() {
+                    resetShapeOverrideCache();
+                    purgeProviderCache();
+                }
+            });
         }
     }
 

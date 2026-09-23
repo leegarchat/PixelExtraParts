@@ -154,14 +154,26 @@ public abstract class BaseSystemUIHook {
         if (context == null || baseKey == null || onChange == null) {
             return;
         }
-        final String resolvedKey;
+        String resolvedKey;
         try {
             resolvedKey = resolveKey(baseKey);
         } catch (Throwable ignored) {
             return;
         }
+        observeExactSettingOnce(context, resolvedKey, onChange);
+    }
+
+    /**
+     * Same as {@link #observeSettingOnce}, but the key is used verbatim (no
+     * {@code _pine} suffix handling) for hooks that read raw Global keys.
+     */
+    protected void observeExactSettingOnce(
+            Context context, String fullKey, final Runnable onChange) {
+        if (context == null || fullKey == null || fullKey.isEmpty() || onChange == null) {
+            return;
+        }
         synchronized (sObservedSettingKeys) {
-            if (!sObservedSettingKeys.add(resolvedKey)) {
+            if (!sObservedSettingKeys.add(fullKey)) {
                 return;
             }
         }
@@ -169,7 +181,7 @@ public abstract class BaseSystemUIHook {
             Context app = context.getApplicationContext();
             final Context observerContext = (app != null) ? app : context;
             observerContext.getContentResolver().registerContentObserver(
-                    Settings.Global.getUriFor(resolvedKey),
+                    Settings.Global.getUriFor(fullKey),
                     false,
                     new ContentObserver(new Handler(Looper.getMainLooper())) {
                         @Override
@@ -182,7 +194,7 @@ public abstract class BaseSystemUIHook {
                     });
         } catch (Throwable ignored) {
             synchronized (sObservedSettingKeys) {
-                sObservedSettingKeys.remove(resolvedKey);
+                sObservedSettingKeys.remove(fullKey);
             }
         }
     }

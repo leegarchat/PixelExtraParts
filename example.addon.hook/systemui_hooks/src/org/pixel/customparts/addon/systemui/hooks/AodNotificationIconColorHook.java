@@ -12,6 +12,9 @@ import android.widget.ImageView;
 import java.util.ArrayList;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
@@ -26,6 +29,11 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
     private static final String EXTRA_IS_NOTIFICATION_ICON = "pixelparts_aod_is_notification_icon";
     private static final String EXTRA_ICON_MODE_APPLIED = "pixelparts_notification_icon_mode_applied";
     private static final String EXTRA_RESTORING_ICON_MODE = "pixelparts_notification_icon_mode_restoring";
+
+    // Every notification icon view ever seen (weak: views die with their notifications).
+    // Lets setting flips re-apply to existing icons at runtime, no restart needed.
+    private static final Map<Object, Boolean> sSeenIcons =
+            Collections.synchronizedMap(new WeakHashMap<Object, Boolean>());
 
     @Override
     public String getHookId() {
@@ -325,8 +333,57 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
         if (!(iconView instanceof ImageView) || !isNotificationIcon(iconView)) {
             return false;
         }
+        trackIconView(iconView);
         Context context = ((ImageView) iconView).getContext();
+        observeIconKeysOnce(context);
         return shouldUseAppIconSetting(context, shouldUseAodSettings(iconView));
+    }
+
+    private void trackIconView(Object iconView) {
+        if (iconView == null) {
+            return;
+        }
+        try {
+            sSeenIcons.put(iconView, Boolean.TRUE);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    // Runtime updates without SystemUI restart: any icon-mode key change
+    // re-applies (or restores) the mode on all live notification icons.
+    private void observeIconKeysOnce(Context context) {
+        String[] keys = {
+                KEY_AOD_FULL_COLOR_ICONS,
+                KEY_AOD_USE_APP_ICONS,
+                KEY_AOD_MONOCHROME_ICONS,
+                KEY_STATUS_BAR_USE_APP_ICONS,
+                KEY_STATUS_BAR_MONOCHROME_ICONS,
+        };
+        for (String key : keys) {
+            observeSettingOnce(context, key, new Runnable() {
+                @Override
+                public void run() {
+                    reapplyAllIconModes();
+                }
+            });
+        }
+    }
+
+    private void reapplyAllIconModes() {
+        java.util.List<Object> snapshot;
+        synchronized (sSeenIcons) {
+            snapshot = new ArrayList<Object>(sSeenIcons.keySet());
+        }
+        for (Object iconView : snapshot) {
+            if (iconView == null) {
+                continue;
+            }
+            try {
+                forceNotificationIconMode(iconView, true);
+            } catch (Throwable t) {
+                logHookWarning("re-apply icon mode failed", t);
+            }
+        }
     }
 
     private boolean shouldUseAppIconSetting(Context context, boolean useAodSettings) {

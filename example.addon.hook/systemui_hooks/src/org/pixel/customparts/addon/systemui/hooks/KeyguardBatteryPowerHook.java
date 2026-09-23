@@ -274,7 +274,36 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
 
             resetAveragingWindow();
 
+            observeBatteryKeysOnce(context);
+
             mSettingsLoaded = true;
+        }
+    }
+
+    // Runtime updates without SystemUI restart: any battery key change drops the
+    // cached config so the next indication compute reloads it.
+    private void observeBatteryKeysOnce(Context context) {
+        String[] keys = {
+                KEY_BATTERY_INFO_ENABLE_BASE,
+                KEY_SHOW_WATTAGE_BASE,
+                KEY_SHOW_VOLTAGE_BASE,
+                KEY_SHOW_CURRENT_BASE,
+                KEY_SHOW_TEMP_BASE,
+                KEY_SHOW_PERCENT_BASE,
+                KEY_SHOW_STANDARD_STRING_BASE,
+                KEY_SHOW_CUSTOM_SYMBOL_BASE,
+                KEY_CUSTOM_SYMBOL_BASE,
+                KEY_REFRESH_INTERVAL_MS_BASE,
+                KEY_AVERAGE_MODE_BASE,
+        };
+        for (String key : keys) {
+            final String baseKey = getKey(key);
+            observeExactSettingOnce(context, baseKey, new Runnable() {
+                @Override
+                public void run() {
+                    mSettingsLoaded = false;
+                }
+            });
         }
     }
 
