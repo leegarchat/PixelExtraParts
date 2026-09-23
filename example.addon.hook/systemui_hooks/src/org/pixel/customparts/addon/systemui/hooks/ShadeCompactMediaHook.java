@@ -711,16 +711,70 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			}
 			if (sig.equals(prev)) return;
 			sLastConfigSig.put(controller, sig);
-			clearCarouselSizes(controller);
-			try {
-				XposedHelpers.callMethod(controller, "refreshState");
-				log("CompactMedia: config changed (" + prev + " -> " + sig + "), refreshed controller");
-			} catch (Throwable t) {
-				logError("CompactMedia: refreshState on config change failed", t);
-			}
+			refreshAllControllers(controller, prev + " -> " + sig);
 		} catch (Throwable t) {
 			logError("CompactMedia: config change check failed", t);
 		}
+	}
+
+	// Refresh every MediaViewController sharing the manager, not just the one
+	// whose setCurrentState fired. Carousel height is max() across all controllers
+	// (updateCarouselDimensions), so a single stale-expanded controller (dormant
+	// player, second session) would pin the old expanded height forever and leave
+	// an empty gap on top of the fresh collapsed player. Dormant controllers have
+	// no bound view: their refreshState() only recomputes caches and returns early.
+	private void refreshAllControllers(Object controller, String change) {
+		if (controller == null) return;
+		Object manager = null;
+		try {
+			manager = XposedHelpers.getObjectField(controller, "mediaHostStatesManager");
+		} catch (Throwable t) {
+			logError("CompactMedia: get mediaHostStatesManager failed", t);
+		}
+		if (manager == null) {
+			try {
+				XposedHelpers.callMethod(controller, "refreshState");
+			} catch (Throwable t) {
+				logError("CompactMedia: refreshState on config change failed", t);
+			}
+			return;
+		}
+		clearCarouselSizes(manager);
+		int refreshed = 0;
+		try {
+			Object controllers = XposedHelpers.getObjectField(manager, "controllers");
+			// Copy: the set may change while we refresh (player add/remove).
+			java.util.List<Object> snapshot = null;
+			if (controllers instanceof java.util.Collection) {
+				snapshot = new java.util.ArrayList<Object>((java.util.Collection<?>) controllers);
+			} else if (controllers instanceof Iterable) {
+				snapshot = new java.util.ArrayList<Object>();
+				for (Object c : (Iterable<?>) controllers) snapshot.add(c);
+			}
+			if (snapshot != null) {
+				for (Object c : snapshot) {
+					if (c == null) continue;
+					try {
+						XposedHelpers.callMethod(c, "refreshState");
+						refreshed++;
+					} catch (Throwable t) {
+						logError("CompactMedia: refreshState failed for a controller", t);
+					}
+				}
+			}
+		} catch (Throwable t) {
+			logError("CompactMedia: enumerate controllers failed", t);
+		}
+		if (refreshed == 0) {
+			try {
+				XposedHelpers.callMethod(controller, "refreshState");
+				refreshed = 1;
+			} catch (Throwable t) {
+				logError("CompactMedia: refreshState on config change failed", t);
+			}
+		}
+		log("CompactMedia: config changed (" + change + "), refreshed "
+				+ refreshed + " controller(s)");
 	}
 
 	// Drop stale per-location carousel measurements. updateViewStateSize() pins the
@@ -728,11 +782,9 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 	// smaller layout the old expanded height would stick and leave an empty gap at
 	// the top (content is bottom-anchored, backgrounds fill from y=0). Clearing here
 	// lets refreshState() apply the fresh size; hosts re-measure and repopulate.
-	private void clearCarouselSizes(Object controller) {
-		if (controller == null) return;
+	private void clearCarouselSizes(Object manager) {
+		if (manager == null) return;
 		try {
-			Object manager = XposedHelpers.getObjectField(controller, "mediaHostStatesManager");
-			if (manager == null) return;
 			Object sizes = XposedHelpers.getObjectField(manager, "carouselSizes");
 			if (sizes instanceof Map) {
 				((Map<?, ?>) sizes).clear();
