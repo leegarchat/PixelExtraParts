@@ -46,11 +46,13 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
 
             int iconStyleHooks = hookAodIconStyleMethods(classLoader, statusBarIconViewClass);
             int drawableHooks = hookAodDrawableLoaders(classLoader, statusBarIconViewClass);
+            int bindHooks = hookNotificationBindPath(classLoader, statusBarIconViewClass);
             int updateColorHooks = hookStatusBarIconViewUpdateIconColor(statusBarIconViewClass);
             int darkChangedHooks = hookStatusBarIconViewOnDarkChanged(statusBarIconViewClass);
 
             log("Hooked notification app icon colors: iconStyleHooks=" + iconStyleHooks
                     + " drawableHooks=" + drawableHooks
+                    + " bindHooks=" + bindHooks
                     + " updateColorHooks=" + updateColorHooks
                     + " darkChangedHooks=" + darkChangedHooks);
         } catch (Throwable t) {
@@ -87,38 +89,44 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
     }
 
     private int hookIconManagerSetIcon(ClassLoader classLoader, Class<?> statusBarIconViewClass) {
+        // Current tree (A16): setIcon(entry, descriptor, view), overloads for
+        // NotificationEntry and BundleEntry. The old 6-arg
+        // (entry, descriptor, view, boolean, boolean, boolean) overload this
+        // scan was written for is gone, so match the live signature instead.
+        int count = 0;
         try {
             Class<?> iconManagerClass = XposedHelpers.findClass(
                     "com.android.systemui.statusbar.notification.icon.IconManager",
                     classLoader);
-            int count = 0;
+            Class<?> statusBarIconClass;
+            try {
+                statusBarIconClass = XposedHelpers.findClass(
+                        "com.android.internal.statusbar.StatusBarIcon", classLoader);
+            } catch (Throwable t) {
+                logHookWarning("StatusBarIcon class unavailable for IconManager hook", t);
+                return 0;
+            }
             for (Method method : iconManagerClass.getDeclaredMethods()) {
                 Class<?>[] parameterTypes = method.getParameterTypes();
-                if (Void.TYPE.equals(method.getReturnType())
-                        && parameterTypes.length == 6
-                        && statusBarIconViewClass.isAssignableFrom(parameterTypes[2])
-                        && Boolean.TYPE.equals(parameterTypes[3])
-                        && Boolean.TYPE.equals(parameterTypes[4])
-                        && Boolean.TYPE.equals(parameterTypes[5])) {
-                    count += hookMethod(method, new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            Object iconView = param.args[2];
-                            if (shouldUseAppIcon(iconView)) {
-                                param.args[3] = Boolean.TRUE;
-                                markIconModeApplied(iconView);
-                            }
-                        }
-
-                        @Override
-                        protected void afterHookedMethod(MethodHookParam param) {
-                            Object iconView = param.args[2];
-                            if (shouldUseAppIcon(iconView)) {
-                                forceNotificationIconMode(iconView, true);
-                            }
-                        }
-                    });
+                if (!Void.TYPE.equals(method.getReturnType())
+                        || parameterTypes.length != 3
+                        || !statusBarIconClass.isAssignableFrom(parameterTypes[1])
+                        || !statusBarIconViewClass.isAssignableFrom(parameterTypes[2])) {
+                    continue;
                 }
+                count += hookMethod(method, new XC_MethodHook() {
+                    @Override
+                    protected void afterHookedMethod(MethodHookParam param) {
+                        Object iconView = param.args[2];
+                        if (shouldUseAppIcon(iconView)) {
+                            markIconModeApplied(iconView);
+                            forceNotificationIconMode(iconView, true);
+                        }
+                    }
+                });
+            }
+            if (count == 0) {
+                log("IconManager.setIcon: no 3-arg overload matched");
             }
             return count;
         } catch (Throwable t) {
@@ -127,36 +135,84 @@ public class AodNotificationIconColorHook extends BaseSystemUIHook {
         }
     }
 
-    private int hookAodDrawableLoaders(ClassLoader classLoader, Class<?> statusBarIconViewClass) {
+    /**
+     * Deterministic bind path (current tree): IconManager.setIcon() ->
+     * StatusBarIconView.set() -> updateDrawable(false) -> getIcon().
+     * Hooking set() covers the initial bind, so app icons apply immediately
+     * instead of only after a later updateIconColor/onDarkChanged.
+     */
+    private int hookNotificationBindPath(ClassLoader classLoader, Class<?> statusBarIconViewClass) {
+        int count = 0;
         Class<?> statusBarIconClass;
         try {
-            statusBarIconClass = XposedHelpers.findClass("com.android.internal.statusbar.StatusBarIcon", classLoader);
+            statusBarIconClass = XposedHelpers.findClass(
+                    "com.android.internal.statusbar.StatusBarIcon", classLoader);
         } catch (Throwable t) {
-            logHookWarning("StatusBarIcon class unavailable for notification drawable hook", t);
+            logHookWarning("StatusBarIcon class unavailable for bind hook", t);
             return 0;
         }
-
-        int count = 0;
-        for (Method method : statusBarIconViewClass.getDeclaredMethods()) {
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            if (Drawable.class.isAssignableFrom(method.getReturnType())
-                    && parameterTypes.length == 2
-                    && Context.class.isAssignableFrom(parameterTypes[0])
-                    && statusBarIconClass.isAssignableFrom(parameterTypes[1])) {
-                count += hookMethod(method, new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        if (!shouldUseAppIcon(param.thisObject)) {
-                            return;
-                        }
-                        Drawable appIcon = loadApplicationIcon((Context) param.args[0], param.args[1]);
-                        if (appIcon != null) {
-                            markIconModeApplied(param.thisObject);
-                            param.setResult(appIcon);
-                        }
+        try {
+            Method setMethod = statusBarIconViewClass.getDeclaredMethod("set", statusBarIconClass);
+            count += hookMethod(setMethod, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam param) {
+                    Object iconView = param.thisObject;
+                    if (shouldUseAppIcon(iconView)) {
+                        markIconModeApplied(iconView);
+                        forceNotificationIconMode(iconView, true);
                     }
-                });
-            }
+                }
+            });
+        } catch (Throwable t) {
+            logHookWarning("StatusBarIconView.set hook unavailable", t);
+        }
+        return count;
+    }
+
+    private int hookAodDrawableLoaders(ClassLoader classLoader, Class<?> statusBarIconViewClass) {
+        // Funnel for every bind: StatusBarIconView.set() -> updateDrawable()
+        // -> getIcon(StatusBarIcon) [-> getIcon(Context, Context, StatusBarIcon)].
+        // Swapping the drawable at the source: no monochrome flicker, immediate.
+        int count = 0;
+        try {
+            java.util.Set<XC_MethodHook.Unhook> unhooks = XposedBridge.hookAllMethods(
+                    statusBarIconViewClass, "getIcon", new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                if (!shouldUseAppIcon(param.thisObject)) {
+                                    return;
+                                }
+                                Context context = null;
+                                Object statusBarIcon = null;
+                                if (param.args != null) {
+                                    for (Object arg : param.args) {
+                                        if (context == null && arg instanceof Context) {
+                                            context = (Context) arg;
+                                        } else if (statusBarIcon == null
+                                                && arg != null
+                                                && "com.android.internal.statusbar.StatusBarIcon"
+                                                        .equals(arg.getClass().getName())) {
+                                            statusBarIcon = arg;
+                                        }
+                                    }
+                                }
+                                if (context == null) {
+                                    context = ((ImageView) param.thisObject).getContext();
+                                }
+                                Drawable appIcon = loadApplicationIcon(context, statusBarIcon);
+                                if (appIcon != null) {
+                                    markIconModeApplied(param.thisObject);
+                                    param.setResult(appIcon);
+                                }
+                            } catch (Throwable t) {
+                                logHookWarning("getIcon app-icon swap failed", t);
+                            }
+                        }
+                    });
+            count += (unhooks == null ? 0 : unhooks.size());
+        } catch (Throwable t) {
+            logHookWarning("StatusBarIconView.getIcon hook unavailable", t);
         }
         return count;
     }
