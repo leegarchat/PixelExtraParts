@@ -1,7 +1,10 @@
 package org.pixel.customparts.addon.systemui.hooks;
 
 import android.content.Context;
+import android.database.ContentObserver;
 import android.graphics.Color;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Log;
@@ -9,6 +12,17 @@ import android.util.Log;
 public abstract class BaseSystemUIHook {
     private static final String PINE_SUFFIX = "_pine";
     private static final String XPOSED_SUFFIX = "_xposed";
+
+    /**
+     * Master switch for all shade/QS tweaks (settings key {@code shade_tweaks_enabled}).
+     * Hooks install unconditionally and gate on this at runtime, so no SystemUI
+     * restart is needed to (de)activate. Cached + ContentObserver-invalidated:
+     * hot paths pay no binder IPC after the first read.
+     */
+    protected static final String KEY_SHADE_TWEAKS_ENABLED = "shade_tweaks_enabled";
+    private static volatile Boolean sShadeTweaksEnabledCache;
+    private static final java.util.Set<String> sObservedSettingKeys =
+            java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
     protected static final int USER_CURRENT = -2;
 
     protected ClassLoader hostClassLoader;
@@ -108,6 +122,69 @@ public abstract class BaseSystemUIHook {
             return key.substring(0, key.length() - XPOSED_SUFFIX.length()) + PINE_SUFFIX;
         }
         return key + PINE_SUFFIX;
+    }
+
+    /**
+     * Master switch for shade/QS tweaks. Cached after the first read, invalidated
+     * via ContentObserver, so hot paths stay IPC-free. Unknown context falls back
+     * to enabled (never brick the UI when the context is unavailable).
+     */
+    protected boolean isShadeTweaksEnabled(Context context) {
+        Boolean cached = sShadeTweaksEnabledCache;
+        if (cached != null) {
+            return cached.booleanValue();
+        }
+        boolean enabled = isSettingEnabled(context, KEY_SHADE_TWEAKS_ENABLED, true);
+        sShadeTweaksEnabledCache = enabled;
+        observeSettingOnce(context, KEY_SHADE_TWEAKS_ENABLED, new Runnable() {
+            @Override
+            public void run() {
+                sShadeTweaksEnabledCache = null;
+            }
+        });
+        return enabled;
+    }
+
+    /**
+     * Registers a ContentObserver for a Global setting exactly once per process.
+     * Lets hooks react to setting changes at runtime without polling and without
+     * restarting SystemUI.
+     */
+    protected void observeSettingOnce(Context context, String baseKey, final Runnable onChange) {
+        if (context == null || baseKey == null || onChange == null) {
+            return;
+        }
+        final String resolvedKey;
+        try {
+            resolvedKey = resolveKey(baseKey);
+        } catch (Throwable ignored) {
+            return;
+        }
+        synchronized (sObservedSettingKeys) {
+            if (!sObservedSettingKeys.add(resolvedKey)) {
+                return;
+            }
+        }
+        try {
+            Context app = context.getApplicationContext();
+            final Context observerContext = (app != null) ? app : context;
+            observerContext.getContentResolver().registerContentObserver(
+                    Settings.Global.getUriFor(resolvedKey),
+                    false,
+                    new ContentObserver(new Handler(Looper.getMainLooper())) {
+                        @Override
+                        public void onChange(boolean selfChange) {
+                            try {
+                                onChange.run();
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    });
+        } catch (Throwable ignored) {
+            synchronized (sObservedSettingKeys) {
+                sObservedSettingKeys.remove(resolvedKey);
+            }
+        }
     }
 
     protected static int userHandleIdentifier(UserHandle userHandle) {

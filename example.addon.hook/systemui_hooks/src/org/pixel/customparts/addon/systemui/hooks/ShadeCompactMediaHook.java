@@ -171,22 +171,9 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 			sAppContext = (app != null) ? app : context;
 		}
 
-		// Important: hide flags must work even when compact mode is OFF (mode=0).
-		boolean anyHide = false;
-		try {
-			anyHide = isSettingEnabled(context, KEY_HIDE_EXPAND, false)
-					|| isSettingEnabled(context, KEY_HIDE_NOTIFY, false)
-					|| isSettingEnabled(context, KEY_HIDE_LOCKSCREEN, false);
-		} catch (Throwable ignored) {
-		}
-
-		boolean alphaActive = false;
-		try {
-			alphaActive = Math.abs(getPlayerAlpha(context) - 1f) > 0.001f;
-		} catch (Throwable ignored) {
-		}
-
-		return anyHide || alphaActive || getMode(context) != Mode.OFF;
+		// Always installed: every path below re-reads settings live (plus the
+		// master shade toggle), so no SystemUI restart is needed to (de)activate.
+		return true;
 	}
 
 	private float getPlayerAlpha(Context context) {
@@ -207,6 +194,7 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 	@SuppressWarnings("unchecked")
 	private void applyPlayerBackgroundAlpha(Context context, Object transitionViewState) {
 		if (context == null || transitionViewState == null) return;
+		if (!isShadeTweaksEnabled(context)) return;
 		float alpha = getPlayerAlpha(context);
 		if (Math.abs(alpha - 1f) < 0.001f) return;
 		try {
@@ -848,7 +836,7 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 	}
 
 	private boolean isHiddenForLocation(Context context, int location) {
-		if (context == null) return false;
+		if (context == null || !isShadeTweaksEnabled(context)) return false;
 		// In landscape the QS panel uses a dual-pane layout where TransitionLayout text views
 		// are recreated mid-rotation and may have null Layout objects. Applying hide logic in
 		// this state causes a NullPointerException in applyCurrentState(). Skip hiding entirely
@@ -1032,6 +1020,9 @@ public class ShadeCompactMediaHook extends BaseSystemUIHook {
 
 	private Mode getMode(Context context) {
 		if (context == null) return Mode.OFF;
+		// Master shade toggle: OFF forces stock behavior at runtime (folded into
+		// the mode so the config-sig refresh also fires on master flips).
+		if (!isShadeTweaksEnabled(context)) return Mode.OFF;
 
 		int modeValue = 0;
 

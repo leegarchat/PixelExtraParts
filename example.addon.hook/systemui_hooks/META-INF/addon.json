@@ -227,6 +227,20 @@
             "priority": 490,
             "settings": [
                 {
+                    "key": "shade_tweaks_enabled_pine",
+                    "title": "Shade tweaks",
+                    "description": "Master switch for all shade and QS tweaks below. Turn off to restore stock behavior without restarting SystemUI.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true
+                },
+                {
+                    "key": "shade_tweaks_master_divider",
+                    "type": "dashed_line",
+                    "thickness": 1,
+                    "color": "#338BDDED"
+                },
+                {
                     "key": "systemui_qs_header_group",
                     "type": "group",
                     "title": "QS header",
@@ -664,6 +678,11 @@
                     "subtitle": "Медиаплеер, шторка уведомлений и затемнения",
                     "settings": [
                         {
+                            "key": "shade_tweaks_enabled_pine",
+                            "title": "Твики шторки",
+                            "description": "Главный переключатель всех твиков шторки и QS ниже. Выключите, чтобы вернуть стоковое поведение без рестарта SystemUI."
+                        },
+                        {
                             "key": "systemui_media_group",
                             "title": "Медиаплеер QS",
                             "description": "Видимость, прозрачность и компактное расположение медиаплеера.",
@@ -903,6 +922,11 @@
                     "title": "Benachrichtigungsfeld und QS",
                     "subtitle": "Media player, shade surface and scrim",
                     "settings": [
+                        {
+                            "key": "shade_tweaks_enabled_pine",
+                            "title": "Shade-Tweaks",
+                            "description": "Hauptschalter für alle Shade- und QS-Anpassungen unten. Ausschalten stellt das Standardverhalten ohne SystemUI-Neustart wieder her."
+                        },
                         {
                             "key": "systemui_media_group",
                             "title": "QS media player",
@@ -1144,6 +1168,11 @@
                     "subtitle": "Media player, shade surface and scrim",
                     "settings": [
                         {
+                            "key": "shade_tweaks_enabled_pine",
+                            "title": "Ajustements du panneau",
+                            "description": "Interrupteur général pour tous les ajustements du panneau et des QS ci-dessous. Désactivez pour revenir au comportement par défaut sans redémarrer SystemUI."
+                        },
+                        {
                             "key": "systemui_media_group",
                             "title": "QS media player",
                             "description": "Media player visibility, opacity and compact layout.",
@@ -1383,6 +1412,11 @@
                     "title": "Шторка і QS",
                     "subtitle": "Media player, shade surface and scrim",
                     "settings": [
+                        {
+                            "key": "shade_tweaks_enabled_pine",
+                            "title": "Твіки шторки",
+                            "description": "Головний перемикач усіх твіків шторки та QS нижче. Вимкніть, щоб повернути стокову поведінку без перезапуску SystemUI."
+                        },
                         {
                             "key": "systemui_media_group",
                             "title": "QS media player",

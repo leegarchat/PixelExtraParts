@@ -60,7 +60,8 @@ public class ShadeDateCalendarHook extends BaseSystemUIHook {
             @Override
             public void onClick(View view) {
                 Context context = view != null ? view.getContext() : null;
-                if (isSettingEnabled(context, KEY_DATE_OPENS_CALENDAR, false)) {
+                if (isShadeTweaksEnabled(context)
+                        && isSettingEnabled(context, KEY_DATE_OPENS_CALENDAR, false)) {
                     launchCalendar(controller, context);
                 } else {
                     launchClock(controller, context);
