@@ -144,7 +144,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                 float delta = 1.0f - originalScale;
                                 float newDelta = delta * (zoomIntensity / 100f);
                                 float newScale = 1.0f - newDelta;
-                                
+
+                                // Stock only ever produces scales in (0, 1].
+                                // Extreme zoom settings (UI allows -200..400)
+                                // would otherwise push negative or >1 scales
+                                // into the renderer — clamp to the valid range.
+                                if (newScale < 0f) newScale = 0f;
+                                else if (newScale > 1f) newScale = 1f;
+
                                 param.args[scaleIndex] = newScale;
                             }
                         }
