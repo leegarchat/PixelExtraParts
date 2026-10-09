@@ -176,6 +176,7 @@ import com.android.server.credentials.CredentialManagerService;
 import com.android.server.criticalevents.CriticalEventLog;
 import com.android.server.devicepolicy.DevicePolicyManagerService;
 import com.android.server.devicestate.DeviceStateManagerService;
+import com.android.server.display.AutoAODService;
 import com.android.server.display.DisplayManagerService;
 import com.android.server.display.FreeformService;
 import com.android.server.display.color.ColorDisplayService;
@@ -301,6 +302,7 @@ import com.android.server.testharness.TestHarnessModeService;
 import com.android.server.textclassifier.TextClassificationManagerService;
 import com.android.server.textservices.TextServicesManagerService;
 import com.android.server.texttospeech.TextToSpeechManagerService;
+import com.android.server.theme.ThemeEngineManagerService;
 import com.android.server.theming.ThemeManagerService;
 import com.android.server.timedetector.GnssTimeUpdateService;
 import com.android.server.timedetector.NetworkTimeUpdateService;
@@ -1460,6 +1462,10 @@ public final class SystemServer implements Dumpable {
         mSystemServiceManager.startService(new OverlayManagerService(mSystemContext));
         t.traceEnd();
 
+        t.traceBegin("StartThemeEngineManagerService");
+        mSystemServiceManager.startService(ThemeEngineManagerService.class);
+        t.traceEnd();
+
         t.traceBegin("InitVBMetaDigest");
         try {
             android.security.trickystore.AttestationUtils.initBootHash();
@@ -2275,6 +2281,12 @@ public final class SystemServer implements Dumpable {
             }
             t.traceEnd();
 
+            // CustomDeviceConfigService must run before services that read boot-time
+            // DeviceConfig flags.
+            t.traceBegin("StartCustomDeviceConfigService");
+            mSystemServiceManager.startService(CustomDeviceConfigService.class);
+            t.traceEnd();
+
             t.traceBegin("StartNetworkManagementService");
             try {
                 networkManagement = NetworkManagementService.create(context);
@@ -2978,10 +2990,11 @@ public final class SystemServer implements Dumpable {
                 t.traceEnd();
             }
 
-            // CustomDeviceConfigService
-            t.traceBegin("StartCustomDeviceConfigService");
-            mSystemServiceManager.startService(CustomDeviceConfigService.class);
-            t.traceEnd();
+            if (context.getResources().getBoolean(R.bool.config_dozeAlwaysOnDisplayAvailable)) {
+                t.traceBegin("AutoAODService");
+                mSystemServiceManager.startService(AutoAODService.class);
+                t.traceEnd();
+            }
         }
 
         t.traceBegin("StartMediaProjectionManager");
