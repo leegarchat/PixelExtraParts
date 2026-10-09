@@ -130,20 +130,35 @@ public class LauncherActivityInfo {
      * @return The drawable associated with the activity.
      */
     public Drawable getIcon(int density) {
-        ComponentName cn = null;
+        ComponentName ppCn = null;
         try {
-            cn = getComponentName();
-            if (cn != null) {
+            ppCn = getComponentName();
+            if (ppCn != null) {
                 final int targetDensity = density != 0
                         ? density : mContext.getResources().getDisplayMetrics().densityDpi;
                 final Drawable pixelPartsIcon = ApplicationPackageManager
-                        .loadPixelPartsIconOverride(mContext, cn.getPackageName(), targetDensity);
+                        .loadPixelPartsIconOverride(mContext, ppCn.getPackageName(), targetDensity);
                 if (pixelPartsIcon != null) {
                     return pixelPartsIcon;
                 }
             }
         } catch (Exception e) {
             android.util.Log.d("LauncherActivityInfo", "Launcher icon override failed", e);
+        }
+
+        try {
+            ComponentName cn = getComponentName();
+            final Resources resources = mPm.getResourcesForApplication(
+                    getActivityInfo().applicationInfo);
+            if (cn != null && resources != null) {
+                Drawable themedIcon = resources.getIconPackOverride(
+                        cn.getPackageName(), cn.getClassName(), density);
+                if (themedIcon != null) {
+                    return themedIcon;
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.d("LauncherActivityInfo", "Icon pack override failed", e);
         }
 
         // TODO: Go through LauncherAppsService
