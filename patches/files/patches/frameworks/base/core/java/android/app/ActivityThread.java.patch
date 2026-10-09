@@ -17,7 +17,7 @@
      /** @hide */
      public static final String TAG = "ActivityThread";
  
-@@ -8339,6 +8347,65 @@
+@@ -8343,6 +8351,65 @@
                  throw new RuntimeException(
                      "Exception thrown in onCreate() of " + data.instrumentationName, e);
              }
