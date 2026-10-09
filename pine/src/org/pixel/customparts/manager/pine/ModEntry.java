@@ -10,9 +10,18 @@ public class ModEntry {
     private static final String TAG = "PineInject";
 
     public static void init() {
-        // LSPlant native backend (Dobby + ART symbol resolver inside liblsplant.so).
-        // The Xposed-compat shim (de.robv.android.xposed.*) talks to it through
-        // LsplantBridge; hook files are unchanged.
+        // LSPlant native backend: official liblsplant.so (LGPL-3.0) plus our
+        // liblspbridge.so glue (Dobby inline backend + libart ELF resolver).
+        // The Xposed-compat shim (de.robv.android.xposed.*) talks to it
+        // through LsplantBridge; hook files are unchanged.
+        try {
+            System.loadLibrary("lsplant");
+            System.loadLibrary("dobby");
+            System.loadLibrary("lspbridge");
+        } catch (Throwable t) {
+            Log.e(TAG, "Failed to load LSPlant native libs", t);
+            return;
+        }
         if (!LsplantBridge.init()) {
             Log.e(TAG, "LSPlant backend unavailable, hooks disabled");
             return;

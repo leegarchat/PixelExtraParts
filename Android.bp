@@ -179,6 +179,42 @@ cc_prebuilt_library_shared {
     installable: true,
 }
 
+// LSPlant backend (replaces libpine): official 6.4 core (LGPL-3.0,
+// source https://github.com/LSPosed/LSPlant) + Dobby inline backend
+// (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
+cc_prebuilt_library_shared {
+    name: "liblsplant",
+    srcs: ["pine/libs/lsplant/arm64-v8a/liblsplant.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
+    system_ext_specific: false,
+    installable: true,
+}
+
+cc_prebuilt_library_shared {
+    name: "libdobby",
+    srcs: ["pine/libs/lsplant/arm64-v8a/libdobby.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
+    system_ext_specific: false,
+    installable: true,
+}
+
+cc_prebuilt_library_shared {
+    name: "liblspbridge",
+    srcs: ["pine/libs/lsplant/arm64-v8a/liblspbridge.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
+    system_ext_specific: false,
+    installable: true,
+}
+
 
 cc_prebuilt_binary {
     name: "aapt2_pixelparts",
