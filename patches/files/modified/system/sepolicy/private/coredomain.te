@@ -48,7 +48,6 @@ neverallow {
     -apexd
     -ueventd
     -vold
-    # PixelExtraParts mod:
     -system_app
 } sysfs_leds:file *;
 ')
