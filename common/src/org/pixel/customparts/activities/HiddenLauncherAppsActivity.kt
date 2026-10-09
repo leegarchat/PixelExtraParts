@@ -590,10 +590,10 @@ private suspend fun loadHiddenLauncherApps(context: Context): HiddenLauncherApps
         val manager = context.getSystemService(AxSandboxManager::class.java)
         val packageManager = context.packageManager
         val hiddenPackages = runCatching {
-            manager?.getHiddenPackages()?.toSet().orEmpty()
+            manager?.getHiddenPackages(context.userId)?.toSet().orEmpty()
         }.getOrDefault(emptySet())
         val packageNames = (runCatching {
-            manager?.getLockablePackages().orEmpty()
+            manager?.getLockablePackages(context.userId).orEmpty()
         }.getOrDefault(emptyList()).ifEmpty {
             loadLaunchablePackages(packageManager)
         } + hiddenPackages).distinct()
@@ -634,8 +634,8 @@ private suspend fun setPackageHidden(
 ): Boolean = withContext(Dispatchers.IO) {
     val manager = context.getSystemService(AxSandboxManager::class.java) ?: return@withContext false
     runCatching {
-        manager.setPackageHidden(packageName, hidden)
-        manager.isPackageHidden(packageName) == hidden
+        manager.setPackageHidden(packageName, hidden, context.userId)
+        manager.isPackageHidden(packageName, context.userId) == hidden
     }.getOrDefault(false)
 }
 
