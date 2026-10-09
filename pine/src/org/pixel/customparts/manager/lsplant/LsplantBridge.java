@@ -1,0 +1,143 @@
+package org.pixel.customparts.manager.lsplant;
+
+import android.util.Log;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import de.robv.android.xposed.XposedBridge;
+
+/**
+ * Java side of the LSPlant hook backend.
+ *
+ * <p>Replaces {@code top.canyie.pine.Pine}: one LSPlant native hook per
+ * {@link Member}, dispatching to the Xposed callback chain held by
+ * {@link XposedBridge}. Hook files are untouched — they keep talking
+ * {@code de.robv.android.xposed.*}.
+ *
+ * <p>The matching native library ({@code liblsplant.so}) provides
+ * {@code nativeDoHook}/{@code nativeUnHook}/{@code nativeDeoptimize} with
+ * JNI names derived from this class, plus a {@code JNI_OnLoad} that runs
+ * {@code lsplant::Init} (Dobby backend + libart symbol resolver).
+ */
+public final class LsplantBridge {
+    private static final String TAG = "LsplantBridge";
+    private static final String LIB_NAME = "lsplant";
+
+    private static volatile boolean libraryLoaded;
+    private static volatile boolean initOk;
+
+    /** Member -> native backup (Method, or Constructor for <init> targets). */
+    private static final Map<Member, Object> backups = new ConcurrentHashMap<>();
+
+    private LsplantBridge() {
+    }
+
+    /**
+     * Loads {@code liblsplant.so} (once per process). Returns true when the
+     * native backend is usable. Never throws.
+     */
+    public static synchronized boolean init() {
+        if (initOk) {
+            return true;
+        }
+        if (!libraryLoaded) {
+            try {
+                System.loadLibrary(LIB_NAME);
+                libraryLoaded = true;
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to load liblsplant.so", t);
+                return false;
+            }
+        }
+        try {
+            initOk = nativeInit();
+        } catch (Throwable t) {
+            Log.e(TAG, "LSPlant native init failed", t);
+            initOk = false;
+        }
+        return initOk;
+    }
+
+    /**
+     * Installs (or reuses) the LSPlant hook for {@code method} and records the
+     * native backup for {@link #invokeBackup}. The per-method dispatcher is
+     * created on first hook and shared by every {@code XC_MethodHook} that
+     * {@link XposedBridge} chains onto the same member.
+     *
+     * @return true when the method is (now) hooked through LSPlant.
+     */
+    public static boolean hookMember(Member method,
+            de.robv.android.xposed.XposedBridge.LSPlantDispatcher dispatcher) {
+        if (!init()) {
+            return false;
+        }
+        try {
+            Object backup = nativeDoHook(method, dispatcher, dispatcher.getCallbackMethod());
+            if (backup == null) {
+                Log.e(TAG, "LSPlant hook failed for " + method);
+                return false;
+            }
+            backups.putIfAbsent(method, backup);
+            dispatcher.attachBackup(backups.get(method));
+            return true;
+        } catch (Throwable t) {
+            Log.e(TAG, "LSPlant hook threw for " + method, t);
+            return false;
+        }
+    }
+
+    /**
+     * Calls the original implementation of an LSPlant-hooked member, mirroring
+     * {@code XposedBridge.invokeOriginalMethod} semantics.
+     */
+    public static Object invokeBackup(Member method, Object thisObject, Object[] args)
+            throws Throwable {
+        Object backup = backups.get(method);
+        if (backup == null) {
+            throw new IllegalStateException("No LSPlant backup for " + method);
+        }
+        try {
+            if (backup instanceof Constructor) {
+                return ((Constructor<?>) backup).newInstance(args);
+            }
+            return ((Method) backup).invoke(thisObject, args);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw e.getCause() != null ? e.getCause() : e;
+        }
+    }
+
+    /** Best-effort deopt of a (usually caller) method; never throws. */
+    public static void deoptimize(Member method) {
+        if (method == null || !init()) {
+            return;
+        }
+        try {
+            nativeDeoptimize(method);
+        } catch (Throwable t) {
+            Log.w(TAG, "LSPlant deoptimize failed for " + method + ": " + t);
+        }
+    }
+
+    // ---- JNI (implemented in liblsplant.so glue) ----
+
+    /** Runs {@code lsplant::Init} state check; true when hooking is usable. */
+    private static native boolean nativeInit();
+
+    /**
+     * Mirrors {@code lsplant::Hook(env, target, hooker, callback)}.
+     *
+     * @return backup method object (invoke it to run the original), or null.
+     */
+    private static native Object nativeDoHook(Object target, Object hooker, Object callback);
+
+    /** Mirrors {@code lsplant::UnHook}. */
+    @SuppressWarnings("unused")
+    private static native boolean nativeUnHook(Object target);
+
+    /** Mirrors {@code lsplant::Deoptimize}. */
+    private static native void nativeDeoptimize(Object method);
+}

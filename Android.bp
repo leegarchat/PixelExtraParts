@@ -191,6 +191,7 @@ cc_prebuilt_binary {
 
 java_library {
     name: "PineInject",
+    // Xposed-compat shim over the LSPlant backend (replaces pine jars)
     srcs: [
         // Общий интерфейс IHookEnvironment
         "pine/src/org/pixel/customparts/core/**/*.kt",
@@ -198,17 +199,22 @@ java_library {
         // Общие хуки (код реализации)
         "pine/src/org/pixel/customparts/hooks/**/*.kt",
         "pine/src/org/pixel/customparts/hooks/**/*.java",
-        // Pine-специфичный менеджер
+        // Менеджер инъекции (движок-независимый + LSPlant-бэкенд)
         "pine/src/org/pixel/customparts/manager/pine/**/*.kt",
-        "pine/src/org/pixel/customparts/manager/pine/**/*.java"
+        "pine/src/org/pixel/customparts/manager/pine/**/*.java",
+        "pine/src/org/pixel/customparts/manager/lsplant/**/*.kt",
+        "pine/src/org/pixel/customparts/manager/lsplant/**/*.java",
+        // Xposed-совместимый слой поверх LSPlant
+        "pine/src/de/robv/android/xposed/**/*.java",
+        "pine/src/top/canyie/pine/xposed/PineXposed.java",
+        // Затенённый commons-lang для XposedHelpers
+        "pine/src/external/org/apache/commons/lang3/**/*.java"
     ],
     installable: true,
     libs: [
         "framework",
     ],
     static_libs: [
-        "pine-core-jar",
-        "pine-xposed-jar",
         "kotlin-stdlib",
     ],
     kotlincflags: ["-Xjvm-default=all"],
