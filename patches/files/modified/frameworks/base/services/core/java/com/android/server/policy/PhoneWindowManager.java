@@ -522,7 +522,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private boolean mHasFeatureHdmiCec;
 
     // Double-tap-to-doze
-    private boolean mDoubleTapToWake;
     private boolean mDoubleTapToDoze;
     private boolean mNativeDoubleTapToDozeAvailable;
 
@@ -594,8 +593,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     // finish sleeping
     // 2. group 1 to start waking, and then group 2 to also start waking before group 1 could
     // finish waking
-    volatile int mPendingSleepingGroup;
-    volatile int mPendingWakeupGroup;
+    volatile int mPendingSleepingGroup = Display.INVALID_DISPLAY_GROUP;
+    volatile int mPendingWakeupGroup = Display.INVALID_DISPLAY_GROUP;
     volatile boolean mRecentsVisible;
     volatile boolean mNavBarVirtualKeyHapticFeedbackEnabled = true;
     volatile boolean mPictureInPictureVisible;
@@ -1821,7 +1820,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void appSwitchPress() {
-        if (!keyguardOn() && mAppSwitchPressAction != Action.NOTHING) {
+        if (canPerformKeyAction(mAppSwitchPressAction)) {
             if (mAppSwitchPressAction != Action.APP_SWITCH) {
                 cancelPreloadRecentApps();
             }
@@ -1835,7 +1834,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void appSwitchLongPress() {
-        if (!keyguardOn() && mAppSwitchLongPressAction != Action.NOTHING) {
+        if (canPerformKeyAction(mAppSwitchLongPressAction)) {
             if (mAppSwitchLongPressAction != Action.APP_SWITCH) {
                 cancelPreloadRecentApps();
             }
@@ -1851,7 +1850,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void assistPress() {
-        if (!keyguardOn() && mAssistPressAction != Action.NOTHING) {
+        if (canPerformKeyAction(mAssistPressAction)) {
             if (mAssistPressAction != Action.APP_SWITCH) {
                 cancelPreloadRecentApps();
             }
@@ -1866,7 +1865,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     private void assistLongPress() {
-        if (!keyguardOn() && mAssistLongPressAction != Action.NOTHING) {
+        if (canPerformKeyAction(mAssistLongPressAction)) {
             if (mAssistLongPressAction != Action.APP_SWITCH) {
                 cancelPreloadRecentApps();
             }
@@ -2371,6 +2370,22 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mInputManager.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
     }
 
+    private boolean canPerformKeyAction(Action action) {
+        switch (action) {
+            case NOTHING:
+                return false;
+            case PLAY_PAUSE_MUSIC:
+                return true;
+            case LAUNCH_CAMERA:
+            case SLEEP:
+            case SCREENSHOT:
+            case PARTIAL_SCREENSHOT:
+                return isScreenOn();
+            default:
+                return !keyguardOn();
+        }
+    }
+
     private void performKeyAction(Action action, KeyEvent event) {
         // By default, pass INVOCATION_TYPE_UNKNOWN to launch assistant.
         performKeyAction(action, event, AssistUtils.INVOCATION_TYPE_UNKNOWN);
@@ -2422,6 +2437,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 break;
             case PARTIAL_SCREENSHOT:
                 takeScreenshot(TAKE_SCREENSHOT_SELECTED_REGION, SCREENSHOT_KEY_OTHER);
+                if (keyguardOn()) {
+                    dismissKeyguardLw(null, null);
+                }
                 notifyKeyGestureCompleted(event, KeyGestureEvent.KEY_GESTURE_TYPE_TAKE_SCREENSHOT);
                 break;
             case TORCH:
@@ -2471,7 +2489,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
 
         boolean handleHomeButton(IBinder focusedToken, KeyEvent event) {
-            final boolean keyguardOn = keyguardOn();
             final int repeatCount = event.getRepeatCount();
             final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
             final boolean canceled = event.isCanceled();
@@ -2559,8 +2576,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     preloadRecentApps();
                 }
             } else if (longPress) {
-                if (!keyguardOn && !mHomeConsumed &&
-                        mHomeLongPressAction != Action.NOTHING) {
+                if (!mHomeConsumed && canPerformKeyAction(mHomeLongPressAction)) {
                     if (mHomeLongPressAction != Action.APP_SWITCH) {
                         cancelPreloadRecentApps();
                     }
@@ -3506,8 +3522,6 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 org.lineageos.platform.internal.R.integer.config_deviceHardwareWakeKeys);
 
         // Double-tap-to-doze
-        mDoubleTapToWake = Settings.Secure.getInt(resolver,
-                Settings.Secure.DOUBLE_TAP_TO_WAKE, 0) == 1;
         mDoubleTapToDoze = Settings.System.getInt(resolver,
                 Settings.System.DOZE_TRIGGER_DOUBLETAP, 0) == 1;
 
@@ -5614,7 +5628,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         KeyGestureEvent.KEY_GESTURE_TYPE_WAKEUP);
                 result &= ~ACTION_PASS_TO_USER;
                 // Double-tap-to-doze
-                if (mDoubleTapToWake && mDoubleTapToDoze && !mNativeDoubleTapToDozeAvailable) {
+                if (mDoubleTapToDoze && !mNativeDoubleTapToDozeAvailable) {
                     isWakeKey = false;
                     if (!down) {
                         mContext.sendBroadcast(new Intent("com.android.systemui.doze.pulse"));
