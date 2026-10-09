@@ -1184,6 +1184,7 @@ bool ThermalHelperImpl::fillCurrentTemperatures(bool filterType, bool filterCall
                                                 TemperatureType type,
                                                 std::vector<Temperature> *temperatures) {
     std::vector<Temperature> ret;
+    bool has_matching_sensor = false;
     for (const auto &name_info_pair : sensor_info_map_) {
         Temperature temp;
         if (name_info_pair.second.is_hidden) {
@@ -1196,6 +1197,7 @@ bool ThermalHelperImpl::fillCurrentTemperatures(bool filterType, bool filterCall
             continue;
         }
 
+        has_matching_sensor = true;
         const auto status = readTemperature(name_info_pair.first, &temp, false);
         if (status == SensorReadStatus::OKAY) {
             ret.emplace_back(std::move(temp));
@@ -1205,13 +1207,14 @@ bool ThermalHelperImpl::fillCurrentTemperatures(bool filterType, bool filterCall
         }
     }
     *temperatures = ret;
-    return ret.size() > 0;
+    return !has_matching_sensor || !ret.empty();
 }
 
 bool ThermalHelperImpl::fillTemperatureThresholds(
         bool filterType, TemperatureType type,
         std::vector<TemperatureThreshold> *thresholds) const {
     std::vector<TemperatureThreshold> ret;
+    bool has_matching_sensor = false;
     for (const auto &name_info_pair : sensor_info_map_) {
         TemperatureThreshold temp;
         if (name_info_pair.second.is_hidden) {
@@ -1220,6 +1223,7 @@ bool ThermalHelperImpl::fillTemperatureThresholds(
         if (filterType && name_info_pair.second.type != type) {
             continue;
         }
+        has_matching_sensor = true;
         if (readTemperatureThreshold(name_info_pair.first, &temp)) {
             ret.emplace_back(std::move(temp));
         } else {
@@ -1228,17 +1232,19 @@ bool ThermalHelperImpl::fillTemperatureThresholds(
         }
     }
     *thresholds = ret;
-    return ret.size() > 0;
+    return !has_matching_sensor || !ret.empty();
 }
 
 bool ThermalHelperImpl::fillCurrentCoolingDevices(
         bool filterType, CoolingType type, std::vector<CoolingDevice> *cooling_devices) const {
     std::vector<CoolingDevice> ret;
+    bool has_matching_device = false;
     for (const auto &name_info_pair : cooling_device_info_map_) {
         CoolingDevice value;
         if (filterType && name_info_pair.second.type != type) {
             continue;
         }
+        has_matching_device = true;
         if (readCoolingDevice(name_info_pair.first, &value)) {
             ret.emplace_back(std::move(value));
         } else {
@@ -1246,7 +1252,7 @@ bool ThermalHelperImpl::fillCurrentCoolingDevices(
         }
     }
     *cooling_devices = ret;
-    return ret.size() > 0;
+    return !has_matching_device || !ret.empty();
 }
 
 ThrottlingSeverity ThermalHelperImpl::getSeverityReference(std::string_view sensor_name) {
