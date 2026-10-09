@@ -1,6 +1,6 @@
 --- a/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java
 +++ b/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java
-@@ -864,6 +864,9 @@
+@@ -865,6 +865,9 @@
              params.installFlags &= ~PackageManager.INSTALL_ALLOW_DOWNGRADE;
          }
  
@@ -10,7 +10,7 @@
          if (mDisableVerificationForUid != INVALID_UID) {
              if (callingUid == mDisableVerificationForUid) {
                  params.installFlags |= PackageManager.INSTALL_DISABLE_VERIFICATION;
-@@ -873,9 +876,11 @@
+@@ -874,9 +877,11 @@
              }
              // Reset the field as this is a one-off request.
              mDisableVerificationForUid = INVALID_UID;
@@ -24,7 +24,7 @@
              params.installFlags &= ~PackageManager.INSTALL_DISABLE_VERIFICATION;
          }
  
-@@ -1130,9 +1135,12 @@
+@@ -1133,9 +1138,12 @@
              }
          }
  
