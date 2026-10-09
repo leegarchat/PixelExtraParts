@@ -149,7 +149,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                 // Extreme zoom settings (UI allows -200..400)
                                 // would otherwise push negative or >1 scales
                                 // into the renderer — clamp to the valid range.
-                                if (newScale < 0f) newScale = 0f;
+                                // Lower bound is strictly positive: an exact
+                                // 0.0 scale downsamples to a 0px surface and
+                                // kills SystemUI natively (no Java trace).
+                                if (newScale < 0.0625f) newScale = 0.0625f;
                                 else if (newScale > 1f) newScale = 1f;
 
                                 param.args[scaleIndex] = newScale;
