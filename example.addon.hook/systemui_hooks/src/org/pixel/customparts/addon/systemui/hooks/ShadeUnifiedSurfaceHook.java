@@ -41,7 +41,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static final String KEY_SHADE_MAIN_SCRIM_TINT_ENABLED = "shade_main_scrim_tint_enabled";
 
     private static final int DEFAULT_SHADE_BLUR_INTENSITY_PERCENT = 100;
-    private static final int DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT = 100;
+    private static final int DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT = 0;
     private static final int MAIN_SCRIM_MAX_PERCENT = 138;
     private static final int NOTIF_SCRIM_MAX_PERCENT = 201;
     
@@ -169,36 +169,41 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Bidirectional zoom curve around the stock scale. UI range is -1000..1000,
-     * 100 means stock (identity). The slider is a scale factor in percent of
-     * stock: below 100 pushes the scale down (zoom-in, enlarged picture),
-     * above 100 pulls it up toward 1.0 (zoom-out, sharper surface).
+     * Bidirectional zoom curve around STOCK. UI range is -1000..1000,
+     * 0 means stock (identity passthrough).
      *
+     * Stock shrinks the background as the shade opens (scale 1.0 gliding
+     * down by the pushback factor), so:
      * <ul>
-     *   <li>zoom &lt; 100: push the scale down, floored at 1/16 — an exact
-     *   0.0 scale downsamples to a 0px surface and kills SystemUI natively
-     *   (no Java trace). -1000 lands exactly on the floor (max enlarge).</li>
-     *   <li>zoom &gt; 100: pull the scale back toward 1.0; +1000 lands
-     *   exactly on 1.0 (fully sharp). Stock only ever produces scales in
-     *   (0, 1], so this side can only undo the stock zoom-out.</li>
+     *   <li>zoom &gt; 0: amplify the shrinking — push the scale down below
+     *   stock, floored at 1/16. An exact 0.0 scale downsamples to a 0px
+     *   surface and kills SystemUI natively (no Java trace), hence the
+     *   floor. +1000 = max shrink.</li>
+     *   <li>zoom &lt; 0: reverse — push the scale up above stock toward
+     *   enlarge, capped at ENLARGE_CAP. Stock headroom to 1.0 is only ~5%
+     *   (pushback 0.05/0.025), so a visible enlarge needs scales above 1.0;
+     *   edge mirroring up there is masked by the blur itself. -1000 lands
+     *   exactly on the cap.</li>
      * </ul>
      */
+    private static final float ENLARGE_CAP = 2.0f;
+
     private float applyZoomCurve(float originalScale, int zoomIntensity) {
-        if (zoomIntensity >= 100) {
-            float t = (zoomIntensity - 100) / 900f; // 0..1 across 100..1000
+        if (zoomIntensity >= 0) {
+            float t = zoomIntensity / 1000f; // 0..1 across 0..1000
             if (t < 0f) t = 0f;
             else if (t > 1f) t = 1f;
-            float newScale = originalScale + (1.0f - originalScale) * t;
-            if (newScale > 1f) newScale = 1f;
-            else if (newScale < 0.0625f) newScale = 0.0625f;
+            float newScale = originalScale - (originalScale - 0.0625f) * t;
+            if (newScale < 0.0625f) newScale = 0.0625f;
+            else if (newScale > ENLARGE_CAP) newScale = ENLARGE_CAP;
             return newScale;
         }
-        float t = (100 - zoomIntensity) / 1100f; // 0..1 across 100..-1000
+        float t = (-zoomIntensity) / 1000f; // 0..1 across 0..-1000
         if (t < 0f) t = 0f;
         else if (t > 1f) t = 1f;
-        float newScale = originalScale - (originalScale - 0.0625f) * t;
-        if (newScale < 0.0625f) newScale = 0.0625f;
-        else if (newScale > 1f) newScale = 1f;
+        float newScale = originalScale + (ENLARGE_CAP - originalScale) * t;
+        if (newScale > ENLARGE_CAP) newScale = ENLARGE_CAP;
+        else if (newScale < 0.0625f) newScale = 0.0625f;
         return newScale;
     }
 
