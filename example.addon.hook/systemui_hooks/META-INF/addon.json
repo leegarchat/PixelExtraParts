@@ -373,7 +373,7 @@
                         {
                             "key": "shade_zoom_intensity_pine",
                             "title": "Zoom intensity",
-                            "description": "Surface zoom while pulling the shade. 100 = stock. Above zooms in, below zooms out (-1000 = fully sharp). Applies live.",
+                            "description": "Surface zoom while pulling the shade. 100 = stock. Below zooms in (enlarges the background, -1000 = max), above zooms out (+1000 = fully sharp). Applies live.",
                             "type": "int",
                             "provider": "global",
                             "default": 100,

@@ -160,33 +160,35 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     /**
      * Bidirectional zoom curve around the stock scale. UI range is -1000..1000,
-     * 100 means stock (identity).
+     * 100 means stock (identity). The slider is a scale factor in percent of
+     * stock: below 100 pushes the scale down (zoom-in, enlarged picture),
+     * above 100 pulls it up toward 1.0 (zoom-out, sharper surface).
      *
      * <ul>
-     *   <li>zoom &ge; 100: push the scale down (stronger zoom), floored at
-     *   1/16 — an exact 0.0 scale downsamples to a 0px surface and kills
-     *   SystemUI natively (no Java trace).</li>
-     *   <li>zoom &lt; 100: pull the scale back toward 1.0 (zoom-out, sharper
-     *   surface); -1000 lands exactly on 1.0. This is why negative zoom used
-     *   to look "broken": the old code clamped everything above stock to 1.0
-     *   with no gradation.</li>
+     *   <li>zoom &lt; 100: push the scale down, floored at 1/16 — an exact
+     *   0.0 scale downsamples to a 0px surface and kills SystemUI natively
+     *   (no Java trace). -1000 lands exactly on the floor (max enlarge).</li>
+     *   <li>zoom &gt; 100: pull the scale back toward 1.0; +1000 lands
+     *   exactly on 1.0 (fully sharp). Stock only ever produces scales in
+     *   (0, 1], so this side can only undo the stock zoom-out.</li>
      * </ul>
-     * Stock only ever produces scales in (0, 1], output stays in [1/16, 1].
      */
     private float applyZoomCurve(float originalScale, int zoomIntensity) {
         if (zoomIntensity >= 100) {
-            float delta = 1.0f - originalScale;
-            float newScale = 1.0f - delta * (zoomIntensity / 100f);
-            if (newScale < 0.0625f) newScale = 0.0625f;
-            else if (newScale > 1f) newScale = 1f;
+            float t = (zoomIntensity - 100) / 900f; // 0..1 across 100..1000
+            if (t < 0f) t = 0f;
+            else if (t > 1f) t = 1f;
+            float newScale = originalScale + (1.0f - originalScale) * t;
+            if (newScale > 1f) newScale = 1f;
+            else if (newScale < 0.0625f) newScale = 0.0625f;
             return newScale;
         }
         float t = (100 - zoomIntensity) / 1100f; // 0..1 across 100..-1000
         if (t < 0f) t = 0f;
         else if (t > 1f) t = 1f;
-        float newScale = originalScale + (1.0f - originalScale) * t;
-        if (newScale > 1f) newScale = 1f;
-        else if (newScale < 0.0625f) newScale = 0.0625f;
+        float newScale = originalScale - (originalScale - 0.0625f) * t;
+        if (newScale < 0.0625f) newScale = 0.0625f;
+        else if (newScale > 1f) newScale = 1f;
         return newScale;
     }
 
