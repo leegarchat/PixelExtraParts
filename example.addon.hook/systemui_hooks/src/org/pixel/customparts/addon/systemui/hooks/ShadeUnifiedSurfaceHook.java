@@ -105,6 +105,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         volatile float output = -1f; // -1 = never engaged: anchor only
         volatile float vel;          // satellite velocity (inertia)
         volatile long lastMs;
+        volatile int lastRadius = -1; // previous frame radius (fresh-open detect)
     }
 
     // Gravity follower: the smoothed scale is a satellite attracted to the
@@ -117,7 +118,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static final float G_REF = 0.09f;    // pull scale at slider 1000
     private static final float G_SOFT = 0.015f;  // softening (peaks ~0.12 out)
     private static final float G_DAMP = 0.86f;   // velocity retention (inertia)
-    private static final float G_VMAX = 0.15f;   // cruise backstop per frame
+    private static final float G_VMAX = 0.08f;   // cruise backstop per frame
     private static final float G_EPS = 0.0015f;  // arrival snap band
     // Fallback window key when applyBlur gets a null root.
     private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
@@ -276,18 +277,24 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Gravity step toward the target. Unset state, or a closed shade
-     * (radius 0 = no blur layer on screen), anchors to the live stock value
-     * with dead stop so there is never an entry jump and a half-finished
-     * glide can never poison the next open. Retargeting just redirects the
-     * one satellite — there are no parallel flows to interrupt. Returns the
-     * scale to apply and advances the stored state.
+     * Gravity step toward the target. Unset state, closed shade (radius 0 =
+     * no blur layer on screen), or the first frame of a fresh open anchors
+     * to the live stock value with dead stop so there is never an entry jump
+     * and a half-finished glide can never poison the next open. Retargeting
+     * just redirects the one satellite — there are no parallel flows to
+     * interrupt. Returns the scale to apply and advances the stored state.
      */
     private float smoothScale(float target, float original, int radius, Object window) {
         long now = android.os.SystemClock.uptimeMillis();
         SmoothState st = smoothStateFor(window);
+        int prevRadius = st.lastRadius;
+        st.lastRadius = radius;
         float x = st.output;
-        if (x < 0f || radius == 0) {
+        // Unset, closed shade (no blur layer on screen), or the first frame
+        // of a fresh open: anchor to live stock. Zero touch downstream, so
+        // there is never an entry jump and a half-finished glide can never
+        // poison the next open.
+        if (x < 0f || radius == 0 || (prevRadius == 0 && radius > 0)) {
             st.output = original;
             st.vel = 0f;
             st.lastMs = now;

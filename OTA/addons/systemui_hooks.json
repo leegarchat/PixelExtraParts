@@ -1,6 +1,6 @@
 {
-    "version": "2.2.13",
+    "version": "2.2.14",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Follower fixed: step never exceeds remaining gap, overshoot impossible, no judder",
+    "changelog": "Simulator-verified: fresh-open anchor, tighter cruise cap, exact entry",
     "info": "SystemUI hooks for PixelExtraParts"
 }
