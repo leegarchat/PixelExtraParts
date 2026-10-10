@@ -44,6 +44,11 @@ public final class LsplantBridge {
         if (initOk) {
             return true;
         }
+        // Pine parity: Pine disabled the hidden-API blacklist process-wide.
+        // Without this, hooks running with a modern targetSdk (e.g. GCam on
+        // API 37) get "using reflection: denied" on platform hidden methods
+        // (observed: CameraMetadataNative.set for the torch hook).
+        exemptHiddenApi();
         if (!libraryLoaded) {
             try {
                 System.loadLibrary(LIB_NAME);
@@ -119,6 +124,21 @@ public final class LsplantBridge {
             nativeDeoptimize(method);
         } catch (Throwable t) {
             Log.w(TAG, "LSPlant deoptimize failed for " + method + ": " + t);
+        }
+    }
+
+    /**
+     * Process-wide hidden-API exemption ({@code "L"} = everything), mirroring
+     * what Pine did at startup. Reflection-safe across releases.
+     */
+    private static void exemptHiddenApi() {
+        try {
+            Class<?> vmRuntime = Class.forName("dalvik.system.VMRuntime");
+            Object runtime = vmRuntime.getDeclaredMethod("getRuntime").invoke(null);
+            vmRuntime.getDeclaredMethod("setHiddenApiExemptions", String[].class)
+                    .invoke(runtime, (Object) new String[]{"L"});
+        } catch (Throwable t) {
+            Log.w(TAG, "Hidden-API exemption failed: " + t);
         }
     }
 
