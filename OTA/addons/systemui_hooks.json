@@ -1,6 +1,6 @@
 {
-    "version": "2.2.16",
+    "version": "2.2.17",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Self-driven convergence loop: arrives at X after stock goes quiet",
+    "changelog": "Loop scheduling diagnostics (one-shot payload log)",
     "info": "SystemUI hooks for PixelExtraParts"
 }

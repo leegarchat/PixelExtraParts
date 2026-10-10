@@ -166,6 +166,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // (plus a 5s watchdog).
     private static final int LOOP_TICKS_MAX = 300;
     private static volatile boolean sInSelfDrive;
+    private static volatile boolean sPayloadLogged;
     private static final Object sLoopLock = new Object();
     private static boolean sLoopScheduled; // guarded by sLoopLock
     private static volatile android.view.Choreographer.FrameCallback sLoopCb;
@@ -344,6 +345,16 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (st.blurUtils == null && param.thisObject != null) {
                             st.blurUtils = param.thisObject;
                             st.applyMethod = resolveApplyBlur(st.blurUtils);
+                        }
+                        if (!sPayloadLogged) {
+                            sPayloadLogged = true;
+                            Object a2 = (param.args.length >= 3) ? param.args[2] : null;
+                            android.util.Log.d("ShadeUnifiedSurfaceHook",
+                                    "payload: argsLen=" + param.args.length
+                                    + " arg2=" + String.valueOf(a2)
+                                    + " opaqueKnown=" + st.opaqueKnown
+                                    + " applyMethod=" + (st.applyMethod != null)
+                                    + " windowFallback=" + (window == SMOOTH_FALLBACK_WINDOW));
                         }
                         if (radiusEff == 0) st.loopOn = false;
 
