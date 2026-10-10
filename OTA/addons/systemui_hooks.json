@@ -1,6 +1,6 @@
 {
-    "version": "2.2.14",
+    "version": "2.2.15",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Simulator-verified: fresh-open anchor, tighter cruise cap, exact entry",
+    "changelog": "Timer-based follower: identical feel at 60Hz and 120Hz (simulator-proven parity)",
     "info": "SystemUI hooks for PixelExtraParts"
 }

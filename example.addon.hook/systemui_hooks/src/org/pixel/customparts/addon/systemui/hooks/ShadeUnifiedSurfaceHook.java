@@ -108,18 +108,20 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         volatile int lastRadius = -1; // previous frame radius (fresh-open detect)
     }
 
-    // Gravity follower: the smoothed scale is a satellite attracted to the
-    // moving target. Pull peaks mid-range and eases to zero at the target
+    // Gravity follower, TIMER-based (seconds): identical feel at 60Hz and
+    // 120Hz. The smoothed scale is a satellite attracted to the moving
+    // target. Pull peaks mid-range and eases to zero at the target
     // (softened gravity), velocity gives inertia, and a step never exceeds
     // the remaining gap — arrival is exact with no overshoot, no orbit and
     // no judder, even on a static target. The slider sets gravity strength
     // (0 = off = direct tracking); reverse works identically (symmetric by
     // construction), including the glide back to 0 zoom.
-    private static final float G_REF = 0.09f;    // pull scale at slider 1000
-    private static final float G_SOFT = 0.015f;  // softening (peaks ~0.12 out)
-    private static final float G_DAMP = 0.86f;   // velocity retention (inertia)
-    private static final float G_VMAX = 0.08f;   // cruise backstop per frame
-    private static final float G_EPS = 0.0015f;  // arrival snap band
+    private static final float G_SI_REF = 85f;    // gravity scale at slider 1000
+    private static final float G_SOFT = 0.015f;   // softening (peaks ~0.12 out)
+    private static final float DAMP_LAMBDA = 12f; // air friction (1/s)
+    private static final float VMAX_S = 4f;       // cruise backstop (units/s)
+    private static final float G_EPS = 0.0015f;   // arrival snap band
+    private static final float DTS_MAX = 0.12f;   // integrator clamp (s)
     // Fallback window key when applyBlur gets a null root.
     private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
 
@@ -315,20 +317,22 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             st.lastMs = now;
             return target;
         }
-        long dt = now - st.lastMs;
-        if (dt < 0) dt = 0;
-        // Frame-rate compensation, bounded: bursts advance a little, long
-        // gaps don't explode the integrator.
-        float kdt = Math.max(0.25f, Math.min(2f, dt / 16.7f));
+        long rawDt = now - st.lastMs;
+        // Wall-clock integration (seconds): identical feel at 60Hz and 120Hz.
+        // Bursts hold, long gaps are clamped so the integrator can never
+        // explode.
+        float dts = rawDt / 1000f;
+        if (dts < 0f) dts = 0f;
+        else if (dts > DTS_MAX) dts = DTS_MAX;
         // Signed pull: strong mid-range, easing to zero at the target.
-        float pull = (s / 1000f) * G_REF * r / (dist * dist + G_SOFT) * kdt;
-        float v = (st.vel + pull) * G_DAMP;
+        float pull = (s / 1000f) * G_SI_REF * r / (dist * dist + G_SOFT);
+        float v = (st.vel + pull * dts) * (float) Math.exp(-DAMP_LAMBDA * dts);
         // Never step further than the remaining gap (overshoot impossible),
-        // never faster than cruise backstop.
-        float vmax = Math.min(dist, G_VMAX);
+        // never faster than the cruise backstop.
+        float vmax = Math.min(dist / Math.max(dts, 1e-4f), VMAX_S);
         if (v > vmax) v = vmax;
         else if (v < -vmax) v = -vmax;
-        float nx = x + v;
+        float nx = x + v * dts;
         st.output = nx;
         st.vel = v;
         st.lastMs = now;
