@@ -269,7 +269,133 @@ void* SearchFileSymtab(const char* path, std::string_view prefix) {
 
 }  // namespace
 
+// ---- File-based resolver (primary): parse the on-disk ELF ----------
+// Deterministic: table locations from file offsets, symbol RVAs rebased by
+// the runtime load bias from dl_iterate_phdr. Bounded by the file size;
+// no hash-table walks at all (linear scan over .dynsym).
+
+namespace {
+
+struct FileImage {
+    const char* base = nullptr;
+    size_t size = 0;
+    int fd = -1;
+};
+
+bool MapFile(const char* path, FileImage* out) {
+    int fd = open(path, O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        return false;
+    }
+    struct stat st;
+    if (fstat(fd, &st) != 0 || st.st_size < static_cast<off_t>(sizeof(ElfW(Ehdr)))) {
+        close(fd);
+        return false;
+    }
+    void* map = mmap(nullptr, static_cast<size_t>(st.st_size), PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == MAP_FAILED) {
+        close(fd);
+        return false;
+    }
+    out->base = static_cast<const char*>(map);
+    out->size = static_cast<size_t>(st.st_size);
+    out->fd = fd;
+    return true;
+}
+
+void UnmapFile(FileImage* img) {
+    if (img->base != nullptr) {
+        munmap(const_cast<char*>(img->base), img->size);
+        img->base = nullptr;
+    }
+    if (img->fd >= 0) {
+        close(img->fd);
+        img->fd = -1;
+    }
+}
+
+template <typename T>
+const T* At(const FileImage& img, size_t off) {
+    if (off + sizeof(T) > img.size) {
+        return nullptr;
+    }
+    return reinterpret_cast<const T*>(img.base + off);
+}
+
+// Runtime load bias of an already-loaded library (0 when absent).
+uintptr_t LoadedBias(const char* substr) {
+    LibAddrs lib;
+    if (!FindLib(substr, &lib)) {
+        return 0;
+    }
+    return lib.bias;
+}
+
+// Linear scan of .dynsym from the FILE. Returns RVA (not rebased).
+bool ScanFileDynsym(const char* path, std::string_view prefix, bool exact,
+                    uint32_t* rva_out) {
+    FileImage img;
+    if (!MapFile(path, &img)) {
+        return false;
+    }
+    bool ok = false;
+    const ElfW(Ehdr)* eh = At<ElfW(Ehdr)>(img, 0);
+    if (eh != nullptr && memcmp(eh->e_ident, ELFMAG, SELFMAG) == 0 && eh->e_shoff != 0 &&
+        eh->e_shentsize == sizeof(ElfW(Shdr))) {
+        for (int i = 0; i < eh->e_shnum; ++i) {
+            const ElfW(Shdr)* sh = At<ElfW(Shdr)>(img, eh->e_shoff + i * sizeof(ElfW(Shdr)));
+            if (sh == nullptr) {
+                break;
+            }
+            if (sh->sh_type != SHT_DYNSYM) {
+                continue;
+            }
+            const ElfW(Shdr)* strsh = At<ElfW(Shdr)>(img, eh->e_shoff +
+                                                          sh->sh_link * sizeof(ElfW(Shdr)));
+            if (strsh == nullptr || strsh->sh_type != SHT_STRTAB) {
+                break;
+            }
+            size_t count = sh->sh_size / sizeof(ElfW(Sym));
+            for (size_t s = 1; s < count; ++s) {
+                const ElfW(Sym)* sym = At<ElfW(Sym)>(img, sh->sh_offset + s * sizeof(ElfW(Sym)));
+                if (sym == nullptr) {
+                    break;
+                }
+                if (sym->st_shndx == SHN_UNDEF || sym->st_value == 0) {
+                    continue;
+                }
+                if (ELF64_ST_BIND(sym->st_info) == STB_LOCAL) {
+                    continue;
+                }
+                size_t strtab_end = strsh->sh_offset + strsh->sh_size;
+                if (strsh->sh_offset + sym->st_name >= strtab_end) {
+                    continue;
+                }
+                const char* name = img.base + strsh->sh_offset + sym->st_name;
+                // Bounded compare: never read past the strtab end.
+                size_t maxlen = strtab_end - (strsh->sh_offset + sym->st_name);
+                size_t namelen = strnlen(name, maxlen);
+                bool hit = exact ? (namelen == prefix.size() &&
+                                    memcmp(name, prefix.data(), namelen) == 0)
+                                 : (namelen >= prefix.size() &&
+                                    memcmp(name, prefix.data(), prefix.size()) == 0);
+                if (hit) {
+                    *rva_out = static_cast<uint32_t>(sym->st_value);
+                    ok = true;
+                    break;
+                }
+            }
+            break;  // first .dynsym wins
+        }
+    }
+    UnmapFile(&img);
+    return ok;
+}
+
+}  // namespace
+
 void* ResolveExact(const char* lib_name, const char* symbol) {
+    // Fast path: already-resolved exported symbols.
     void* handle = dlopen(lib_name, RTLD_NOLOAD | RTLD_NOW);
     if (handle != nullptr) {
         void* sym = dlsym(handle, symbol);
@@ -278,10 +404,30 @@ void* ResolveExact(const char* lib_name, const char* symbol) {
             return sym;
         }
     }
+    // Deterministic path: file .dynsym scan + load bias.
+    {
+        LibAddrs lib;
+        if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
+            uint32_t rva = 0;
+            if (ScanFileDynsym(lib.path, symbol, true, &rva) && rva != 0) {
+                return reinterpret_cast<void*>(lib.bias + rva);
+            }
+        }
+    }
     return SearchLoaded(lib_name, symbol, true);
 }
 
 void* ResolvePrefix(const char* lib_name, std::string_view prefix) {
+    // Deterministic path first: file .dynsym scan + load bias.
+    {
+        LibAddrs lib;
+        if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
+            uint32_t rva = 0;
+            if (ScanFileDynsym(lib.path, prefix, false, &rva) && rva != 0) {
+                return reinterpret_cast<void*>(lib.bias + rva);
+            }
+        }
+    }
     void* hit = SearchLoaded(lib_name, prefix, false);
     if (hit != nullptr) {
         return hit;
