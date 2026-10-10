@@ -15,6 +15,7 @@
 
 #include "art_elf.h"
 #include "dobby.h"
+#include <android/log.h>
 #include "lsplant.hpp"
 
 namespace {
@@ -33,9 +34,28 @@ bool InlineUnhooker(void* func) {
     return DobbyDestroy(func) == 0;
 }
 
+// ART 17 removed ClassLinker::FixupStaticTrampolines* (all 3 overloads).
+// LSPlant 6.4 requires hooking them at Init and aborts without them, yet
+// NOTHING on ART 17 calls them either. Stand in with a hookable no-op so
+// Init proceeds: Dobby patches the stub (never executed), RegisterNative
+// and the rest of Init run normally.
+extern "C" void lsp_fixup_stub(void) {}
+
 void* ArtResolver(std::string_view symbol) {
+    {
+        std::string name(symbol);
+        __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
+                            "ArtResolver request: %s", name.c_str());
+    }
     // Exact lookup: fast path first (may be called with heap std::string).
     std::string name(symbol);
+    if (name == "_ZN3art11ClassLinker22FixupStaticTrampolinesEPNS_6ThreadENS_6ObjPtrINS_6mirror5ClassEEE" ||
+        name == "_ZN3art11ClassLinker22FixupStaticTrampolinesENS_6ObjPtrINS_6mirror5ClassEEE" ||
+        name == "_ZN3art11ClassLinker22FixupStaticTrampolinesEPNS_6mirror5ClassE") {
+        __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
+                            "ArtResolver: stub stand-in for removed %s", name.c_str());
+        return reinterpret_cast<void*>(lsp_fixup_stub);
+    }
     void* addr = artelf::ResolveExact(kLibArt, name.c_str());
     if (addr != nullptr) {
         return addr;
