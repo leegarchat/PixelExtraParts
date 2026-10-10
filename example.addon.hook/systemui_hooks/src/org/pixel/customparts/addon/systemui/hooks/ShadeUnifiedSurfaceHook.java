@@ -103,11 +103,15 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private static final class SmoothState {
         volatile float output = -1f; // -1 = never engaged: anchor only
+        volatile float prevTarget = -1f; // -1 = unknown (treat as settled)
         volatile long lastMs;
     }
 
-    // Jerk stabilizer: exponential chase (tau = smoothMs/3) plus a hard
-    // per-frame cap. smoothMs <= 0 disables it (direct target).
+    // Target travel per ms regarded as settled (pauses, holds, turnarounds).
+    private static final float V_QUIET_PER_MS = 0.0025f;
+    // Fast settle when settled: kills the lag error in a couple of frames,
+    // so wiggle extremes always land on the true X instead of accumulating.
+    private static final float TAU_QUIET_MS = 20f;
     private static final float SMOOTH_EPS = 0.0015f;
     // Fallback window key when applyBlur gets a null root.
     private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
@@ -293,8 +297,21 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             return target;
         }
         long dt = now - st.lastMs;
-        float alpha = (dt <= 0) ? 0f
-                : 1f - (float) Math.exp(-dt / (smoothMs / 3f));
+        float tau = smoothMs / 3f;
+        float alpha;
+        if (dt <= 0) {
+            alpha = 0f;
+        } else {
+            // Adaptive: settled target (pause/hold/turnaround) converges fast
+            // so the true X is never lost; moving target glides.
+            float prev = st.prevTarget;
+            float v = (prev < 0f) ? 0f : Math.abs(target - prev) / dt;
+            if (v < V_QUIET_PER_MS) {
+                float quietTau = Math.min(TAU_QUIET_MS, tau);
+                tau = quietTau;
+            }
+            alpha = 1f - (float) Math.exp(-dt / tau);
+        }
         float next = current + (target - current) * alpha;
         // Hard per-frame cap: full travel spread over smoothMs at 60fps.
         // Bounds every visible jump even when frames are sparse; a resting
@@ -305,6 +322,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         else if (step < -stepCap) next = current - stepCap;
         else if (Math.abs(target - next) < SMOOTH_EPS) next = target;
         st.output = next;
+        st.prevTarget = target;
         st.lastMs = now;
         return next;
     }

@@ -1,6 +1,6 @@
 {
-    "version": "2.2.10",
+    "version": "2.2.11",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Return leg fixed: closed shade forgets half-finished glide, re-entry anchors fresh",
+    "changelog": "Adaptive chase: true X restored at pauses and turnarounds, no error buildup on wiggle",
     "info": "SystemUI hooks for PixelExtraParts"
 }
