@@ -5,6 +5,7 @@
 #include <elf.h>
 #include <fcntl.h>
 #include <link.h>
+#include <android/log.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -105,21 +106,16 @@ bool ParseDynamic(const ElfW(Dyn)* dyn, uintptr_t bias, DynSym* out) {
                 out->chain = out->bucket + 2 + out->nbucket;
                 break;
             case DT_GNU_HASH: {
-                const uint32_t* h = reinterpret_cast<const uint32_t*>(v);
-                out->gnu_nbucket = h[0];
-                out->gnu_symoffset = h[1];
-                out->gnu_maskwords = h[2];
-                out->gnu_shift2 = h[3];
-                out->gnu_bloom = reinterpret_cast<const ElfW(Addr)*>(
-                    reinterpret_cast<uintptr_t>(h) + 16 +
-                    out->gnu_maskwords * sizeof(ElfW(Addr)));
+                const uint8_t* base =
+                    reinterpret_cast<const uint8_t*>(v);
+                out->gnu_nbucket = reinterpret_cast<const uint32_t*>(base)[0];
+                out->gnu_symoffset = reinterpret_cast<const uint32_t*>(base)[1];
+                out->gnu_maskwords = reinterpret_cast<const uint32_t*>(base)[2];
+                out->gnu_shift2 = reinterpret_cast<const uint32_t*>(base)[3];
+                // Layout: header(16) | bloom(maskwords*Addr) | buckets | chain.
+                out->gnu_bloom = reinterpret_cast<const ElfW(Addr)*>(base + 16);
                 out->gnu_bucket = reinterpret_cast<const uint32_t*>(
-                    reinterpret_cast<uintptr_t>(h) + 16 +
-                    out->gnu_maskwords * sizeof(ElfW(Addr)));
-                // NOTE: bloom sits between header and buckets; bucket base
-                // skips header(16) + bloom(maskwords words).
-                out->gnu_bucket = reinterpret_cast<const uint32_t*>(
-                    reinterpret_cast<uintptr_t>(out->gnu_bloom) +
+                    base + 16 +
                     out->gnu_maskwords * sizeof(ElfW(Addr)));
                 out->gnu_chain = out->gnu_bucket + out->gnu_nbucket;
                 break;
@@ -455,21 +451,238 @@ void* GuardedSearchLoaded(const char* lib_name, std::string_view prefix, bool ex
     return hit;
 }
 
-// File scan with retries: right after boot, apex files may not be visible
-// in the process mount namespace yet (ENOENT for a short window).
-bool ScanFileWithRetry(const char* path, std::string_view prefix, bool exact,
-                       uint32_t* rva_out) {
-    for (int i = 0; i < 5; ++i) {
-        if (ScanFileDynsym(path, prefix, exact, rva_out)) {
-            return true;
+// ---- Single file index ----------------------------------------------
+// .symtab/.dynsym of libart are mmap'd ONCE per process; every later query
+// scans mapped memory (µs–ms). Previously each miss did open+mmap+linear
+// scan+munmap (+100ms sleeps on retry) — ~300ms × 16 hidden symbols.
+
+struct FileIndex {
+    bool ready = false;
+    bool opened = false;  // open attempted (apex-visibility retry only here)
+    const char* base = nullptr;
+    size_t size = 0;
+    uintptr_t bias = 0;
+    const ElfW(Shdr)* shdrs = nullptr;
+    int shnum = 0;
+};
+
+FileIndex& Index() {
+    static FileIndex idx;
+    return idx;
+}
+
+bool EnsureIndex(const char* lib_name) {
+    FileIndex& ix = Index();
+    if (ix.ready) return true;
+    LibAddrs lib;
+    if (!FindLib(lib_name, &lib) || lib.path == nullptr || lib.bias == 0) {
+        return false;
+    }
+    ix.bias = lib.bias;
+    // Open with retries: right after boot, apex files may not be visible
+    // in the process mount namespace yet (ENOENT for a short window).
+    int fd = -1;
+    for (int i = 0; i < 5 && fd < 0; ++i) {
+        fd = open(lib.path, O_RDONLY | O_CLOEXEC);
+        if (fd < 0) {
+            struct timespec ts = {0, 100 * 1000 * 1000};
+            nanosleep(&ts, nullptr);
         }
-        struct timespec ts = {0, 100 * 1000 * 1000};
-        nanosleep(&ts, nullptr);
+    }
+    ix.opened = true;
+    if (fd < 0) return false;
+    struct stat st;
+    void* map = MAP_FAILED;
+    if (fstat(fd, &st) == 0 && st.st_size > static_cast<off_t>(sizeof(ElfW(Ehdr)))) {
+        map = mmap(nullptr, static_cast<size_t>(st.st_size), PROT_READ,
+                   MAP_PRIVATE, fd, 0);
+    }
+    close(fd);
+    if (map == MAP_FAILED) return false;
+    auto* eh = static_cast<const ElfW(Ehdr)*>(map);
+    if (memcmp(eh->e_ident, ELFMAG, SELFMAG) != 0 || eh->e_shoff == 0 ||
+        eh->e_shentsize != sizeof(ElfW(Shdr))) {
+        munmap(map, static_cast<size_t>(st.st_size));
+        return false;
+    }
+    ix.base = static_cast<const char*>(map);
+    ix.size = static_cast<size_t>(st.st_size);
+    ix.shdrs = reinterpret_cast<const ElfW(Shdr)*>(ix.base + eh->e_shoff);
+    ix.shnum = eh->e_shnum;
+    ix.ready = true;
+    return true;
+}
+
+// Scan indexed sections (DYNSYM then SYMTAB) for prefix/exact. No IO.
+bool ScanIndex(std::string_view prefix, bool exact, uint32_t* rva_out) {
+    FileIndex& ix = Index();
+    for (int pass = 0; pass < 2; ++pass) {
+        const unsigned want = (pass == 0) ? SHT_DYNSYM : SHT_SYMTAB;
+        for (int i = 0; i < ix.shnum; ++i) {
+            const ElfW(Shdr)& sh = ix.shdrs[i];
+            if (sh.sh_type != want) continue;
+            if (sh.sh_link >= (uint32_t)ix.shnum) break;
+            const ElfW(Shdr)& strsh = ix.shdrs[sh.sh_link];
+            if (strsh.sh_type != SHT_STRTAB) break;
+            size_t count = sh.sh_size / sizeof(ElfW(Sym));
+            for (size_t s = 1; s < count; ++s) {
+                if (sh.sh_offset + (s + 1) * sizeof(ElfW(Sym)) > ix.size) break;
+                const ElfW(Sym)* sym = reinterpret_cast<const ElfW(Sym)*>(
+                    ix.base + sh.sh_offset + s * sizeof(ElfW(Sym)));
+                if (sym->st_shndx == SHN_UNDEF || sym->st_value == 0) continue;
+                size_t strtab_end = strsh.sh_offset + strsh.sh_size;
+                if (strtab_end > ix.size ||
+                    strsh.sh_offset + sym->st_name >= strtab_end) {
+                    continue;
+                }
+                const char* name = ix.base + strsh.sh_offset + sym->st_name;
+                size_t maxlen = strtab_end - (strsh.sh_offset + sym->st_name);
+                size_t namelen = strnlen(name, maxlen);
+                bool hit = exact ? (namelen == prefix.size() &&
+                                    memcmp(name, prefix.data(), namelen) == 0)
+                                 : (namelen >= prefix.size() &&
+                                    memcmp(name, prefix.data(), prefix.size()) == 0);
+                if (hit) {
+                    *rva_out = static_cast<uint32_t>(sym->st_value);
+                    return true;
+                }
+            }
+            break;  // first section of this type only
+        }
     }
     return false;
 }
 
 }  // namespace
+
+// ---- Per-process table cache -----------------------------------------
+// Parsing libart's tables once: every further query is an in-memory walk
+// (µs–ms) instead of mmap + 100k linear scan + retries per symbol (was
+// ~180ms × ~25 symbols ≈ 4-5s of every injected launch).
+
+namespace {
+
+struct CachedLib {
+    bool ready = false;
+    uintptr_t bias = 0;
+    DynSym ds;
+    size_t symcount = 0;
+};
+
+CachedLib& LibCache() {
+    static CachedLib cache;
+    return cache;
+}
+
+int g_cacheHits = 0;
+int g_cacheMiss = 0;
+
+uint32_t GnuHashStr(const char* name) {
+    uint32_t h = 5381;
+    while (*name) h += (h << 5) + (uint8_t)*name++;
+    return h;
+}
+
+bool EnsureCached(const char* lib_name) {
+    CachedLib& c = LibCache();
+    if (c.ready) return true;
+    WalkGuard guard;
+    if (!guard.installed) return false;
+    bool ok = false;
+    g_walk_armed = true;
+    if (sigsetjmp(g_walk_jmp, 1) == 0) {
+        LibAddrs lib;
+        if (FindLib(lib_name, &lib) && lib.dynamic && ParseDynamic(lib.dynamic,
+                                                                   lib.bias,
+                                                                   &c.ds)) {
+            c.bias = lib.bias;
+            c.symcount = c.ds.nbucket != 0 ? SysvSymCount(c.ds)
+                                           : GnuSymCount(c.ds);
+            c.ready = c.symcount > 0;
+            ok = c.ready;
+        }
+    }
+    g_walk_armed = false;
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "art cache: ready=%d symcount=%zu hits=%d miss=%d",
+                        c.ready, c.symcount, g_cacheHits, g_cacheMiss);
+    return ok;
+}
+
+// Exact lookup via GNU hash (falls back to linear scan without it).
+void* CachedExact(const CachedLib& c, const char* symbol) {
+    if (c.ds.gnu_nbucket != 0 && c.ds.gnu_bucket != nullptr) {
+        uint32_t h = GnuHashStr(symbol);
+        uint32_t n = c.ds.gnu_bucket[h % c.ds.gnu_nbucket];
+        for (int guard = 0; n != 0 && guard < 1000000; ++guard) {
+            if (n < c.ds.gnu_symoffset) break;
+            uint32_t idx = n - c.ds.gnu_symoffset;
+            uint32_t chain = c.ds.gnu_chain[idx];
+            const ElfW(Sym)& s = c.ds.syms[n];
+            if (((chain ^ h) >> 1) == 0 && s.st_shndx != SHN_UNDEF &&
+                s.st_value != 0 &&
+                ELF64_ST_BIND(s.st_info) != STB_LOCAL &&
+                strcmp(SymName(c.ds, n), symbol) == 0) {
+                return reinterpret_cast<void*>(c.bias + s.st_value);
+            }
+            if (chain & 1) break;
+            ++n;
+        }
+        return nullptr;
+    }
+    for (size_t i = 1; i < c.symcount; ++i) {
+        const ElfW(Sym)& s = c.ds.syms[i];
+        if (s.st_shndx == SHN_UNDEF || s.st_value == 0 ||
+            ELF64_ST_BIND(s.st_info) == STB_LOCAL) {
+            continue;
+        }
+        if (strcmp(SymName(c.ds, i), symbol) == 0) {
+            return reinterpret_cast<void*>(c.bias + s.st_value);
+        }
+    }
+    return nullptr;
+}
+
+void* CachedScan(const CachedLib& c, std::string_view prefix, bool exact) {
+    for (size_t i = 1; i < c.symcount; ++i) {
+        const ElfW(Sym)& s = c.ds.syms[i];
+        if (s.st_shndx == SHN_UNDEF || s.st_value == 0 ||
+            ELF64_ST_BIND(s.st_info) == STB_LOCAL) {
+            continue;
+        }
+        const char* name = SymName(c.ds, i);
+        bool hit = exact ? (prefix == name)
+                         : (strncmp(name, prefix.data(), prefix.size()) == 0);
+        if (hit) {
+            return reinterpret_cast<void*>(c.bias + s.st_value);
+        }
+    }
+    return nullptr;
+}
+
+void* CachedLookup(const char* lib_name, std::string_view key, bool exact) {
+    if (!EnsureCached(lib_name)) return nullptr;
+    CachedLib& c = LibCache();
+    WalkGuard guard;
+    if (!guard.installed) return nullptr;
+    void* hit = nullptr;
+    g_walk_armed = true;
+    if (sigsetjmp(g_walk_jmp, 1) == 0) {
+        hit = exact ? CachedExact(c, std::string(key).c_str())
+                    : CachedScan(c, key, false);
+    }
+    g_walk_armed = false;
+    return hit;
+}
+
+}  // namespace
+
+void LogCacheStats() {
+    CachedLib& c = LibCache();
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "art cache: ready=%d symcount=%zu hits=%d miss=%d",
+                        c.ready, c.symcount, g_cacheHits, g_cacheMiss);
+}
 
 void* ResolveExact(const char* lib_name, const char* symbol) {
     // Fast path: already-resolved exported symbols.
@@ -481,29 +694,34 @@ void* ResolveExact(const char* lib_name, const char* symbol) {
             return sym;
         }
     }
-    // Deterministic path: file .dynsym/.symtab scan + load bias,
-    // with retries for the early-boot apex-visibility window.
-    {
-        LibAddrs lib;
-        if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
-            uint32_t rva = 0;
-            if (ScanFileWithRetry(lib.path, symbol, true, &rva) && rva != 0) {
-                return reinterpret_cast<void*>(lib.bias + rva);
-            }
+    // Cached path: in-memory tables parsed once per process (µs per query).
+    if (void* hit = CachedLookup(lib_name, symbol, true)) {
+        ++g_cacheHits;
+        return hit;
+    }
+    ++g_cacheMiss;
+    // Indexed file scan (mapped once, scanned in memory).
+    if (EnsureIndex(lib_name)) {
+        uint32_t rva = 0;
+        if (ScanIndex(symbol, true, &rva) && rva != 0) {
+            return reinterpret_cast<void*>(Index().bias + rva);
         }
     }
     return GuardedSearchLoaded(lib_name, symbol, true);
 }
 
 void* ResolvePrefix(const char* lib_name, std::string_view prefix) {
-    // Deterministic path first: file scan + load bias, with retries.
-    {
-        LibAddrs lib;
-        if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
-            uint32_t rva = 0;
-            if (ScanFileWithRetry(lib.path, prefix, false, &rva) && rva != 0) {
-                return reinterpret_cast<void*>(lib.bias + rva);
-            }
+    // Cached path first: in-memory linear scan, no file IO.
+    if (void* hit = CachedLookup(lib_name, prefix, false)) {
+        ++g_cacheHits;
+        return hit;
+    }
+    ++g_cacheMiss;
+    // Indexed file scan (mapped once, scanned in memory).
+    if (EnsureIndex(lib_name)) {
+        uint32_t rva = 0;
+        if (ScanIndex(prefix, false, &rva) && rva != 0) {
+            return reinterpret_cast<void*>(Index().bias + rva);
         }
     }
     void* hit = GuardedSearchLoaded(lib_name, prefix, false);

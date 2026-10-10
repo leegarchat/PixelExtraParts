@@ -505,12 +505,8 @@ bool InlineUnhooker(void* func) {
 extern "C" void lsp_fixup_stub(void) {}
 
 void* ArtResolver(std::string_view symbol) {
-    {
-        std::string name(symbol);
-        __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
-                            "ArtResolver request: %s", name.c_str());
-    }
-    // Exact lookup: fast path first (may be called with heap std::string).
+    // NOTE: no per-request logging here — Init fires ~25 queries and logd
+    // overhead was measurable. Only the stub stand-in logs (once per boot).
     std::string name(symbol);
     if (name == "_ZN3art11ClassLinker22FixupStaticTrampolinesEPNS_6ThreadENS_6ObjPtrINS_6mirror5ClassEEE" ||
         name == "_ZN3art11ClassLinker22FixupStaticTrampolinesENS_6ObjPtrINS_6mirror5ClassEEE" ||
@@ -552,7 +548,18 @@ bool EnsureInit(JNIEnv* env) {
         .art_symbol_resolver = ArtResolver,
         .art_symbol_prefix_resolver = ArtPrefixResolver,
     };
+    g_init_ok = false;
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
     g_init_ok = g_engine.Init(env, info);
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    long ms = (t1.tv_sec - t0.tv_sec) * 1000 +
+              (t1.tv_nsec - t0.tv_nsec) / 1000000;
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "engine Init %s in %ldms (bound to %s, foreign=%d)",
+                        g_init_ok ? "ok" : "FAILED", ms,
+                        g_engine.origin.c_str(), g_engine.foreign);
+    artelf::LogCacheStats();
     if (!g_init_ok) {
         __android_log_print(ANDROID_LOG_ERROR, "LsplantBridge",
                             "engine Init failed (bound to %s, foreign=%d)",

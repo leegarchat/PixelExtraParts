@@ -17,4 +17,7 @@ void* ResolveExact(const char* lib_name, const char* symbol);
 // loaded image first, then .symtab of the on-disk file. Returns nullptr.
 void* ResolvePrefix(const char* lib_name, std::string_view prefix);
 
+// One-line cache statistics for diagnostics (ready/symcount/hits/miss).
+void LogCacheStats();
+
 }  // namespace artelf
