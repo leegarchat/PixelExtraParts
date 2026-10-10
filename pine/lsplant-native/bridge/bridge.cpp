@@ -78,13 +78,6 @@ bool EnsureInit(JNIEnv* env) {
         .inline_unhooker = InlineUnhooker,
         .art_symbol_resolver = ArtResolver,
         .art_symbol_prefix_resolver = ArtPrefixResolver,
-        // Unique generated names: another LSPlant instance (Vector/LSPosed)
-        // may live in the same process with default "LSPHooker_" names —
-        // identical generated classes would collide at link time.
-        .generated_class_name = "PXLSPHooker_",
-        .generated_source_name = "PXLSP",
-        .generated_field_name = "pxhooker",
-        .generated_method_name = "pxcallback_{target}",
     };
     g_init_ok = lsplant::Init(env, info);
     return g_init_ok;
