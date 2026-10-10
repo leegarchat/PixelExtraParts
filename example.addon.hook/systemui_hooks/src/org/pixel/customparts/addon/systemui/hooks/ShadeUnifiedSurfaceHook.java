@@ -8,7 +8,6 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook;
@@ -27,7 +26,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private static final String KEY_SHADE_BLUR_INTENSITY = "shade_blur_intensity";
     private static final String KEY_SHADE_ZOOM_INTENSITY = "shade_zoom_intensity";
-    private static final String KEY_SHADE_DISABLE_SCALE_THRESHOLD = "shade_disable_scale_threshold";
+    // Master on/off for the zoom path. Replaces the old
+    // "shade_disable_scale_threshold" int slider (removed): OFF forces the
+    // blur scale to 1.0 (no zoom, sharp surface), ON applies zoom intensity.
+    private static final String KEY_SHADE_ZOOM_ENABLED = "shade_zoom_enabled";
 
     // New keys
     private static final String KEY_SHADE_NOTIF_SCRIM_ALPHA = "shade_notif_scrim_alpha";
@@ -39,7 +41,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private static final int DEFAULT_SHADE_BLUR_INTENSITY_PERCENT = 100;
     private static final int DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT = 100;
-    private static final int DEFAULT_DISABLE_SCALE_THRESHOLD = 40;
     private static final int MAIN_SCRIM_MAX_PERCENT = 138;
     private static final int NOTIF_SCRIM_MAX_PERCENT = 201;
     
@@ -50,11 +51,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static final String SCRIM_VIEW_CLASS =
         "com.android.systemui.scrim.ScrimView";
 
-    // Static config model: settings are read once per SystemUI process start.
+    // Static config model: settings are read ONCE per SystemUI process start
+    // (onInit). No ContentObservers, no provider reads on hot paths — changing
+    // any shade setting requires a SystemUI restart to take effect.
     private static volatile boolean sConfigLoaded;
+    private static volatile boolean sCfgShadeTweaksEnabled = true;
     private static volatile int sCfgBlurIntensity = DEFAULT_SHADE_BLUR_INTENSITY_PERCENT;
     private static volatile int sCfgZoomIntensity = DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT;
-    private static volatile int sCfgDisableScaleThreshold = DEFAULT_DISABLE_SCALE_THRESHOLD;
+    private static volatile boolean sCfgZoomEnabled = true;
     private static volatile int sCfgNotifScrimAlpha = DEFAULT_SCRIM_ALPHA;
     private static volatile int sCfgNotifScrimTint = DEFAULT_SCRIM_TINT;
     private static volatile int sCfgMainScrimAlpha = DEFAULT_SCRIM_ALPHA;
@@ -62,7 +66,8 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     // Fast-path flags (avoid any extra math/branching in default mode).
     private static volatile boolean sBlurRadiusScalingActive;
-    private static volatile boolean sBlurScaleAdjustmentActive;
+    private static volatile boolean sZoomForceOffActive;
+    private static volatile boolean sZoomScalingActive;
     private static volatile boolean sNotifAlphaOverrideActive;
     private static volatile boolean sMainAlphaOverrideActive;
     private static volatile boolean sNotifTintOverrideActive;
@@ -72,7 +77,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static volatile boolean sIsKeyguardState;
 
     // Reflection caches for hot paths
-    private static volatile Method sGetContextMethod;
     private static volatile Field sScrimNameField;
     private static volatile Field sGroupHeaderField;
     private static volatile Field sTintColorField;
@@ -123,41 +127,21 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         int scaleIndex = resolveApplyBlurScaleArgIndex(param.args);
                         if (scaleIndex == -1) return;
 
-                        Context app = getCurrentApplication();
-                        ensureConfigLoaded(app);
-                        if (!sConfigLoaded || !sBlurScaleAdjustmentActive) return;
-                        if (!isShadeTweaksEnabled(app)) return;
+                        // Load-once config: no provider reads here (hot path runs every frame).
+                        if (!sConfigLoaded || !sCfgShadeTweaksEnabled) return;
 
-                        int intensityPercent = sCfgBlurIntensity;
-                        int disableScaleThreshold = sCfgDisableScaleThreshold;
-
-                        if (intensityPercent > 0 && intensityPercent < disableScaleThreshold) {
-                            param.args[scaleIndex] = 1.0f; 
-                        } else if (intensityPercent > 0) {
-                            int zoomIntensity = sCfgZoomIntensity;
-                            
-                            if (zoomIntensity != 100) {
-                                Object argScale = param.args[scaleIndex];
-                                if (!(argScale instanceof Float)) return;
-                                
-                                float originalScale = (Float) argScale;
-                                float delta = 1.0f - originalScale;
-                                float newDelta = delta * (zoomIntensity / 100f);
-                                float newScale = 1.0f - newDelta;
-
-                                // Stock only ever produces scales in (0, 1].
-                                // Extreme zoom settings (UI allows -200..400)
-                                // would otherwise push negative or >1 scales
-                                // into the renderer — clamp to the valid range.
-                                // Lower bound is strictly positive: an exact
-                                // 0.0 scale downsamples to a 0px surface and
-                                // kills SystemUI natively (no Java trace).
-                                if (newScale < 0.0625f) newScale = 0.0625f;
-                                else if (newScale > 1f) newScale = 1f;
-
-                                param.args[scaleIndex] = newScale;
-                            }
+                        if (sZoomForceOffActive) {
+                            param.args[scaleIndex] = 1.0f;
+                            return;
                         }
+                        if (!sZoomScalingActive) return;
+
+                        int zoomIntensity = sCfgZoomIntensity;
+                        Object argScale = param.args[scaleIndex];
+                        if (!(argScale instanceof Float)) return;
+
+                        float originalScale = (Float) argScale;
+                        param.args[scaleIndex] = applyZoomCurve(originalScale, zoomIntensity);
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }
@@ -168,6 +152,38 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         } catch (Throwable t) {
             logError("Failed to hook BlurUtils", t);
         }
+    }
+
+    /**
+     * Bidirectional zoom curve around the stock scale. UI range is -1000..1000,
+     * 100 means stock (identity).
+     *
+     * <ul>
+     *   <li>zoom &ge; 100: push the scale down (stronger zoom), floored at
+     *   1/16 — an exact 0.0 scale downsamples to a 0px surface and kills
+     *   SystemUI natively (no Java trace).</li>
+     *   <li>zoom &lt; 100: pull the scale back toward 1.0 (zoom-out, sharper
+     *   surface); -1000 lands exactly on 1.0. This is why negative zoom used
+     *   to look "broken": the old code clamped everything above stock to 1.0
+     *   with no gradation.</li>
+     * </ul>
+     * Stock only ever produces scales in (0, 1], output stays in [1/16, 1].
+     */
+    private float applyZoomCurve(float originalScale, int zoomIntensity) {
+        if (zoomIntensity >= 100) {
+            float delta = 1.0f - originalScale;
+            float newScale = 1.0f - delta * (zoomIntensity / 100f);
+            if (newScale < 0.0625f) newScale = 0.0625f;
+            else if (newScale > 1f) newScale = 1f;
+            return newScale;
+        }
+        float t = (100 - zoomIntensity) / 1100f; // 0..1 across 100..-1000
+        if (t < 0f) t = 0f;
+        else if (t > 1f) t = 1f;
+        float newScale = originalScale + (1.0f - originalScale) * t;
+        if (newScale > 1f) newScale = 1f;
+        else if (newScale < 0.0625f) newScale = 0.0625f;
+        return newScale;
     }
 
     private void hookScrimControllerState(ClassLoader classLoader) {
@@ -210,10 +226,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         @Override
                         protected void beforeHookedMethod(MethodHookParam param) {
                             try {
-                                Context hookCtx = getContextFromHookObject(param.thisObject);
-                                if (!sConfigLoaded) ensureConfigLoaded(hookCtx);
-                                if (!sConfigLoaded) return;
-                                if (!isShadeTweaksEnabled(hookCtx)) return;
+                                if (!sConfigLoaded || !sCfgShadeTweaksEnabled) return;
                                 if (!sNotifAlphaOverrideActive && !sMainAlphaOverrideActive) return;
 
                                 String name = getScrimName(param.thisObject);
@@ -262,10 +275,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) {
                 try {
-                    Context hookCtx = getContextFromHookObject(param.thisObject);
-                    if (!sConfigLoaded) ensureConfigLoaded(hookCtx);
-                    if (!sConfigLoaded || sIsKeyguardState) return;
-                    if (!isShadeTweaksEnabled(hookCtx)) return;
+                    if (!sConfigLoaded || sIsKeyguardState || !sCfgShadeTweaksEnabled) return;
                     if (!sNotifTintOverrideActive && !sMainTintOverrideActive) return;
 
                     int colorArgIndex = -1;
@@ -341,10 +351,8 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                     Object radiusObj = param.args[param.args.length - 1];
                                     if (!(radiusObj instanceof Integer)) return;
 
-                                    Context app = getCurrentApplication();
-                                    ensureConfigLoaded(app);
-                                    if (!sConfigLoaded || !sBlurRadiusScalingActive) return;
-                                    if (!isShadeTweaksEnabled(app)) return;
+                                    if (!sConfigLoaded || !sCfgShadeTweaksEnabled) return;
+                                    if (!sBlurRadiusScalingActive) return;
 
                                     int intensityPercent = sCfgBlurIntensity;
 
@@ -377,9 +385,12 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             Context ctx = (context != null) ? context : getCurrentApplication();
             if (ctx == null) return;
 
+            boolean master = isSettingEnabled(ctx, KEY_SHADE_TWEAKS_ENABLED, true);
             int blur = getIntSetting(ctx, KEY_SHADE_BLUR_INTENSITY, DEFAULT_SHADE_BLUR_INTENSITY_PERCENT);
             int zoom = getIntSetting(ctx, KEY_SHADE_ZOOM_INTENSITY, DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT);
-            int threshold = getIntSetting(ctx, KEY_SHADE_DISABLE_SCALE_THRESHOLD, DEFAULT_DISABLE_SCALE_THRESHOLD);
+            // New boolean switch; legacy int threshold key (if still stored)
+            // maps to OFF only when it explicitly disabled zoom before.
+            boolean zoomEnabled = isSettingEnabled(ctx, KEY_SHADE_ZOOM_ENABLED, true);
 
             int notifAlpha = getIntSetting(ctx, KEY_SHADE_NOTIF_SCRIM_ALPHA, DEFAULT_SCRIM_ALPHA);
             int notifTint = getIntSetting(ctx, KEY_SHADE_NOTIF_SCRIM_TINT, DEFAULT_SCRIM_TINT);
@@ -388,69 +399,33 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             int mainTint = getIntSetting(ctx, KEY_SHADE_MAIN_SCRIM_TINT, DEFAULT_SCRIM_TINT);
             boolean mainTintEnabled = isSettingEnabled(ctx, KEY_SHADE_MAIN_SCRIM_TINT_ENABLED, false);
 
+            sCfgShadeTweaksEnabled = master;
             sCfgBlurIntensity = blur;
             sCfgZoomIntensity = zoom;
-            sCfgDisableScaleThreshold = threshold;
+            sCfgZoomEnabled = zoomEnabled;
             sCfgNotifScrimAlpha = notifAlpha;
             sCfgNotifScrimTint = notifTint;
             sCfgMainScrimAlpha = mainAlpha;
             sCfgMainScrimTint = mainTint;
 
             sBlurRadiusScalingActive = (blur != DEFAULT_SHADE_BLUR_INTENSITY_PERCENT);
-            sBlurScaleAdjustmentActive = (blur > 0 && blur < threshold) || (blur > 0 && zoom != DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT);
+            sZoomForceOffActive = (blur > 0 && !zoomEnabled);
+            sZoomScalingActive = (blur > 0 && zoomEnabled && zoom != DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT);
             sNotifAlphaOverrideActive = (notifAlpha >= 0);
             sMainAlphaOverrideActive = (mainAlpha >= 0);
             sNotifTintOverrideActive = notifTintEnabled;
             sMainTintOverrideActive = mainTintEnabled;
 
             sConfigLoaded = true;
-            observeShadeKeysOnce(ctx);
-            log("Shade config loaded: blur=" + blur + "% zoom=" + zoom
-                    + "% threshold=" + threshold
+            // NOTE: intentionally no ContentObservers here. Shade settings are
+            // snapshot at SystemUI start; changes require a SystemUI restart.
+            // Per-frame provider reads caused shade jank (see history).
+            log("Shade config loaded (restart-required): master=" + master
+                    + " blur=" + blur + "% zoom=" + zoom
+                    + "% zoomEnabled=" + zoomEnabled
                     + " notifAlpha=" + notifAlpha + " mainAlpha=" + mainAlpha
                     + " notifTint=" + notifTint + "(en=" + notifTintEnabled + ")"
                     + " mainTint=" + mainTint + "(en=" + mainTintEnabled + ")");
-        }
-    }
-
-    // Runtime updates without SystemUI restart: any shade key change drops the
-    // cached config so the next frame reloads it.
-    private void observeShadeKeysOnce(Context context) {
-        String[] keys = {
-                KEY_SHADE_BLUR_INTENSITY,
-                KEY_SHADE_ZOOM_INTENSITY,
-                KEY_SHADE_DISABLE_SCALE_THRESHOLD,
-                KEY_SHADE_NOTIF_SCRIM_ALPHA,
-                KEY_SHADE_NOTIF_SCRIM_TINT,
-                KEY_SHADE_NOTIF_SCRIM_TINT_ENABLED,
-                KEY_SHADE_MAIN_SCRIM_ALPHA,
-                KEY_SHADE_MAIN_SCRIM_TINT,
-                KEY_SHADE_MAIN_SCRIM_TINT_ENABLED,
-        };
-        for (String key : keys) {
-            final String k = key;
-            observeSettingOnce(context, k, new Runnable() {
-                @Override
-                public void run() {
-                    sConfigLoaded = false;
-                }
-            });
-        }
-    }
-
-    private Context getContextFromHookObject(Object obj) {
-        if (obj == null) return null;
-        try {
-            Method method = sGetContextMethod;
-            if (method == null) {
-                method = obj.getClass().getMethod("getContext");
-                method.setAccessible(true);
-                sGetContextMethod = method;
-            }
-            Object ctx = method.invoke(obj);
-            return (ctx instanceof Context) ? (Context) ctx : null;
-        } catch (Throwable ignored) {
-            return null;
         }
     }
 
@@ -490,9 +465,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private void applyTintEnforcement(Object scrimView) {
         try {
-            if (!sConfigLoaded || sIsKeyguardState) return;
-            Context hookCtx = (scrimView instanceof View) ? ((View) scrimView).getContext() : null;
-            if (!isShadeTweaksEnabled(hookCtx)) return;
+            if (!sConfigLoaded || sIsKeyguardState || !sCfgShadeTweaksEnabled) return;
             boolean anyTint = sNotifTintOverrideActive || sMainTintOverrideActive;
             if (!anyTint) return;
 
@@ -630,10 +603,8 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         @Override
                         protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) {
                             try {
-                                Context hookCtx = getContextFromHookObject(param.thisObject);
-                                if (!sConfigLoaded) ensureConfigLoaded(hookCtx);
-                                if (!sConfigLoaded || !sNotifAlphaOverrideActive) return;
-                                if (!isShadeTweaksEnabled(hookCtx)) return;
+                                if (!sConfigLoaded || !sCfgShadeTweaksEnabled) return;
+                                if (!sNotifAlphaOverrideActive) return;
                                 int alphaVal = sCfgNotifScrimAlpha;
                                 
                                 if (alphaVal >= 0) {

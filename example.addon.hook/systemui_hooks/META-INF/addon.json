@@ -3,7 +3,7 @@
     "name": "SystemUI Hooks",
     "author": "LeeGarChat",
     "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
     "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/systemui_hooks.json",
@@ -351,7 +351,7 @@
                     "key": "systemui_shade_surface_group",
                     "type": "group",
                     "title": "Shade surface",
-                    "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                    "description": "Blur and zoom while opening the shade. Changes apply after a SystemUI restart.",
                     "mode": "inline",
                     "icon": "Rounded.BlurOn",
                     "iconType": "app",
@@ -373,26 +373,22 @@
                         {
                             "key": "shade_zoom_intensity_pine",
                             "title": "Zoom intensity",
-                            "description": "Wallpaper or surface zoom intensity while pulling the shade.",
+                            "description": "Surface zoom while pulling the shade. 100 = stock. Above zooms in, below zooms out (-1000 = fully sharp). Needs SystemUI restart.",
                             "type": "int",
                             "provider": "global",
                             "default": 100,
-                            "min": -200,
-                            "max": 400,
+                            "min": -1000,
+                            "max": 1000,
                             "step": 10,
                             "unit": "%"
                         },
                         {
-                            "key": "shade_disable_scale_threshold_pine",
-                            "title": "Scale-disable threshold",
-                            "description": "Shade progress threshold where scale transforms are disabled.",
-                            "type": "int",
+                            "key": "shade_zoom_enabled_pine",
+                            "title": "Enable zoom",
+                            "description": "Master switch for the zoom path. Off forces a sharp surface (no zoom). Needs SystemUI restart.",
+                            "type": "switch",
                             "provider": "global",
-                            "default": 40,
-                            "min": 0,
-                            "max": 400,
-                            "step": 10,
-                            "unit": "%"
+                            "default": true
                         }
                     ]
                 },
@@ -730,7 +726,7 @@
                         {
                             "key": "systemui_shade_surface_group",
                             "title": "Поверхность шторки",
-                            "description": "Blur, zoom и порог отключения scale при раскрытии шторки.",
+                            "description": "Blur и zoom шторки. Применяется после перезапуска SystemUI.",
                             "settings": [
                                 {
                                     "key": "shade_blur_intensity_pine",
@@ -741,8 +737,8 @@
                                     "title": "Интенсивность zoom"
                                 },
                                 {
-                                    "key": "shade_disable_scale_threshold_pine",
-                                    "title": "Порог отключения scale"
+                                    "key": "shade_zoom_enabled_pine",
+                                    "title": "Включить zoom"
                                 }
                             ]
                         },
@@ -975,7 +971,7 @@
                         {
                             "key": "systemui_shade_surface_group",
                             "title": "Shade surface",
-                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "description": "Blur and zoom while opening the shade. Changes apply after a SystemUI restart.",
                             "settings": [
                                 {
                                     "key": "shade_blur_intensity_pine",
@@ -986,8 +982,8 @@
                                     "title": "Zoom intensity"
                                 },
                                 {
-                                    "key": "shade_disable_scale_threshold_pine",
-                                    "title": "Scale-disable threshold"
+                                    "key": "shade_zoom_enabled_pine",
+                                    "title": "Zoom aktivieren"
                                 }
                             ]
                         },
@@ -1220,7 +1216,7 @@
                         {
                             "key": "systemui_shade_surface_group",
                             "title": "Shade surface",
-                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "description": "Blur and zoom while opening the shade. Changes apply after a SystemUI restart.",
                             "settings": [
                                 {
                                     "key": "shade_blur_intensity_pine",
@@ -1231,8 +1227,8 @@
                                     "title": "Zoom intensity"
                                 },
                                 {
-                                    "key": "shade_disable_scale_threshold_pine",
-                                    "title": "Scale-disable threshold"
+                                    "key": "shade_zoom_enabled_pine",
+                                    "title": "Activer le zoom"
                                 }
                             ]
                         },
@@ -1465,7 +1461,7 @@
                         {
                             "key": "systemui_shade_surface_group",
                             "title": "Shade surface",
-                            "description": "Blur, zoom and scale-disable threshold while opening the shade.",
+                            "description": "Blur and zoom while opening the shade. Changes apply after a SystemUI restart.",
                             "settings": [
                                 {
                                     "key": "shade_blur_intensity_pine",
@@ -1476,8 +1472,8 @@
                                     "title": "Zoom intensity"
                                 },
                                 {
-                                    "key": "shade_disable_scale_threshold_pine",
-                                    "title": "Scale-disable threshold"
+                                    "key": "shade_zoom_enabled_pine",
+                                    "title": "Увімкнути zoom"
                                 }
                             ]
                         },

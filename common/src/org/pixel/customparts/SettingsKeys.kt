@@ -304,9 +304,9 @@ object SettingsKeys {
     val SHADE_ZOOM_INTENSITY: String
         get() = "shade_zoom_intensity" + suffix
 
-    /** Scale disable threshold in percent (default 40). */
-    val SHADE_DISABLE_SCALE_THRESHOLD: String
-        get() = "shade_disable_scale_threshold" + suffix
+    /** Shade zoom master switch (default true; OFF forces sharp surface). */
+    val SHADE_ZOOM_ENABLED: String
+        get() = "shade_zoom_enabled" + suffix
 
     /** Notification Scrim Alpha (0-100, -1 = default). */
     val SHADE_NOTIF_SCRIM_ALPHA: String
