@@ -1,0 +1,6 @@
+{
+    "version": "2.0.1",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/settings_icon_style_override.jar",
+    "changelog": "Updater endpoint moved to lineage-24.0 OTA",
+    "info": "Keeps Settings icon colors and uses the global adaptive icon mask for shape."
+}

@@ -1,0 +1,6 @@
+{
+    "version": "2.0.1",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/ambient_extend_hook.jar",
+    "changelog": "Updater endpoint moved to lineage-24.0 OTA",
+    "info": "AOD timeout, ambient Smart Pixels, and extra Doze dimming for SystemUI."
+}

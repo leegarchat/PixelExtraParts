@@ -3,7 +3,7 @@
     "name": "Icon Manager Settings UI",
     "author": "LeeGarChat",
     "description": "Settings-only addon UI for Icon Manager advanced controls.",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "enabled": true,
     "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/icon_manager_settings.json",
     "backgroundMode": "gradient",

@@ -89,6 +89,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // applyBlur() scale arg index cache: -2 unknown, -1 absent, >=0 actual index
     private static volatile int sApplyBlurScaleArgIndex = -2;
 
+    // One-shot fire marker for live diagnostics (does the shade blur path
+    // reach our applyBlur hook at all?).
+    private static volatile boolean sZoomFireLogged;
+
     @Override
     public String getHookId() {
         return "ShadeUnifiedSurfaceHook";
@@ -145,7 +149,13 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (!(argScale instanceof Float)) return;
 
                         float originalScale = (Float) argScale;
-                        param.args[scaleIndex] = applyZoomCurve(originalScale, zoomIntensity);
+                        float newScale = applyZoomCurve(originalScale, zoomIntensity);
+                        if (!sZoomFireLogged) {
+                            sZoomFireLogged = true;
+                            log("BlurUtils#applyBlur FIRED scale=" + originalScale
+                                    + " -> " + newScale + " (zoom=" + zoomIntensity + "%)");
+                        }
+                        param.args[scaleIndex] = newScale;
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }

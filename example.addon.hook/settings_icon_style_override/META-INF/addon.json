@@ -4,7 +4,7 @@
     "name": "Settings Icon Style Override",
     "author": "LeeGarChat",
     "description": "Keeps Settings icon colors and uses the global adaptive icon mask for shape.",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "targetPackages": [
         "com.android.settings"
     ],

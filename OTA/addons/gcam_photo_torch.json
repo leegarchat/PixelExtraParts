@@ -1,0 +1,6 @@
+{
+    "version": "2.0.1",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/gcam_photo_torch.jar",
+    "changelog": "Updater endpoint moved to lineage-24.0 OTA",
+    "info": "Adds a persistent Torch choice to Google Camera photo flash controls."
+}

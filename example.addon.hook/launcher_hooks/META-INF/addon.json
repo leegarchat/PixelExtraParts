@@ -4,7 +4,7 @@
     "name": "Pixel Launcher Settings",
     "author": "LeeGarChat",
     "description": "Nexus Launcher layout, drawer, icons and recents customization moved to an addon.",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "targetPackages": [
         "com.google.android.apps.nexuslauncher"
     ],

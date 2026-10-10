@@ -1,0 +1,6 @@
+{
+    "version": "2.2.2",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/launcher_hooks.jar",
+    "changelog": "Updater endpoint moved to lineage-24.0 OTA",
+    "info": "Nexus Launcher layout, drawer, icons and recents customization moved to an addon."
+}

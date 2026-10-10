@@ -1,0 +1,6 @@
+{
+    "version": "2.0.1",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/ims_carrier_config.jar",
+    "changelog": "Updater endpoint moved to lineage-24.0 OTA",
+    "info": "Settings-only IMS controls that write Pixel IMS flags and apply CarrierConfig overrides through the system API."
+}
