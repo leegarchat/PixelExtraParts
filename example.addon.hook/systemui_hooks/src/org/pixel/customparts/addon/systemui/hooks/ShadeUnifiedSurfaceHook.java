@@ -185,9 +185,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
                         float originalScale0 = resolveFloatArg(param.args, scaleIndex);
                         if (originalScale0 < 0f) return;
+                        // applyBlur radius (args[1] in every overload), -1 if unknown.
+                        int radiusEff = -1;
+                        if (param.args.length >= 2 && param.args[1] instanceof Integer) {
+                            radiusEff = (Integer) param.args[1];
+                        }
 
                         if (sZoomForceOffActive) {
-                            param.args[scaleIndex] = smoothScale(1.0f, originalScale0, window);
+                            param.args[scaleIndex] = smoothScale(1.0f, originalScale0, radiusEff, window);
                             return;
                         }
 
@@ -199,7 +204,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                             // engaged) pass through untouched.
                             if (smoothCurrent(window) < 0f
                                     || smoothCurrent(window) == originalScale) return;
-                            param.args[scaleIndex] = smoothScale(originalScale, originalScale, window);
+                            param.args[scaleIndex] = smoothScale(originalScale, originalScale, radiusEff, window);
                             return;
                         }
 
@@ -208,15 +213,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         // while the shade is actually open (orig < 1); a closed
                         // shade keeps radius 0 (no cost, nothing to show).
                         // applyBlur radius is args[1] in every overload.
-                        if (originalScale < 1.0f && param.args.length >= 2
-                                && param.args[1] instanceof Integer
-                                && ((Integer) param.args[1]) == 0) {
+                        if (originalScale < 1.0f && radiusEff == 0) {
                             param.args[1] = 1;
+                            radiusEff = 1;
                         }
 
                         int zoomIntensity = sCfgZoomIntensity;
                         float target = applyZoomCurve(originalScale, zoomIntensity);
-                        param.args[scaleIndex] = smoothScale(target, originalScale, window);
+                        param.args[scaleIndex] = smoothScale(target, originalScale, radiusEff, window);
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }
@@ -262,17 +266,22 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Eased scale toward the target. Unset state anchors to the live stock
-     * value (what's actually on screen) so there's never an entry jump;
-     * stale state resumes from the stored value (also what's on screen).
+     * Eased scale toward the target. Unset state, or a closed shade
+     * (radius 0 = no blur layer on screen), anchors to the live stock value
+     * so there is never an entry jump and a half-finished exit glide can
+     * never poison the next open. Otherwise chases from the stored position.
      * smoothMs <= 0 bypasses easing entirely. Returns the scale to apply and
      * advances the stored state.
      */
-    private float smoothScale(float target, float original, Object window) {
+    private float smoothScale(float target, float original, int radius, Object window) {
         long now = android.os.SystemClock.uptimeMillis();
         SmoothState st = smoothStateFor(window);
         float current = st.output;
-        if (current < 0f) {
+        // Closed shade (radius 0 = no blur layer on screen) or never engaged:
+        // forget any half-finished glide and anchor to live stock. A frozen
+        // mid-glide would otherwise poison the next open. Zero touch here —
+        // there is nothing visible to ease.
+        if (current < 0f || radius == 0) {
             st.output = original;
             st.lastMs = now;
             return original;

@@ -1,6 +1,6 @@
 {
-    "version": "2.2.9",
+    "version": "2.2.10",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Per-window stabilizers: no cross-stream races, switch continues from current",
+    "changelog": "Return leg fixed: closed shade forgets half-finished glide, re-entry anchors fresh",
     "info": "SystemUI hooks for PixelExtraParts"
 }
