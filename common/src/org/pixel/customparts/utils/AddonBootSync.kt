@@ -41,7 +41,16 @@ object AddonBootSync {
             enabledTargets
                 .filter { it != IGNORED_PACKAGE && it !in builtinWhitelist }
                 .forEach { packageName ->
-                    Settings.Global.putInt(context.contentResolver, INJECT_PREFIX + packageName, 1)
+                    // Never resurrect an explicit per-app block: a stored 0
+                    // means the user disabled injection for this package
+                    // (ActivityThread skips it entirely — no dex, no native).
+                    val key = INJECT_PREFIX + packageName
+                    val cur = try {
+                        Settings.Global.getInt(context.contentResolver, key, -1)
+                    } catch (_: Throwable) { -1 }
+                    if (cur != 0) {
+                        Settings.Global.putInt(context.contentResolver, key, 1)
+                    }
                 }
 
             Log.d(TAG, "Boot sync indexed ${descriptors.size} addon(s), whitelisted ${enabledTargets.size} target(s)")

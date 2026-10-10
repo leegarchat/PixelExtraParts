@@ -360,7 +360,17 @@ public class AddonLoader {
     public static void syncWhitelist(Context context) {
         Set<String> allTargets = getAllAddonTargetPackages(context);
         for (String pkg : allTargets) {
-            addToInjectionWhitelist(context, pkg);
+            // Respect explicit per-app blocks (stored 0): boot/app sync must
+            // never re-enable a package the user excluded. ActivityThread
+            // treats 0 as "do not inject at all".
+            boolean blocked = false;
+            try {
+                blocked = Settings.Global.getInt(
+                    context.getContentResolver(), INJECT_PREFIX + pkg, -1) == 0;
+            } catch (Throwable ignored) {}
+            if (!blocked) {
+                addToInjectionWhitelist(context, pkg);
+            }
         }
         Log.d(TAG, "Whitelist synced: " + allTargets.size() + " packages");
     }
