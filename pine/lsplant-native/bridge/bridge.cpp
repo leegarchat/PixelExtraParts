@@ -104,21 +104,50 @@ int CollectCb(dl_phdr_info* info, size_t, void* data) {
 // process (observed SEGV_ACCERR in launcher), pread just returns an error.
 
 #include <elf.h>
-#include <fcntl.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-int g_memFd = -1;
+// Direct reads of foreign mappings can fault (guard pages, racing munmap —
+// the launcher ACCERR). Scope a SIGSEGV/SIGBUS guard per candidate library;
+// ART's own handlers are saved and restored, never replaced permanently.
+// (/proc/self/mem is not openable by app processes, so pread is out.)
+sigjmp_buf g_probeJmp;
+bool g_probeArmed = false;
+
+void ProbeFaultHandler(int) {
+    if (g_probeArmed) siglongjmp(g_probeJmp, 1);
+}
+
+struct ProbeGuard {
+    struct sigaction oldSegv, oldBus;
+    bool installed = false;
+    ProbeGuard() {
+        struct sigaction act;
+        memset(&act, 0, sizeof(act));
+        act.sa_handler = ProbeFaultHandler;
+        sigemptyset(&act.sa_mask);
+        act.sa_flags = SA_RESETHAND;
+        if (sigaction(SIGSEGV, &act, &oldSegv) == 0 &&
+            sigaction(SIGBUS, &act, &oldBus) == 0) {
+            installed = true;
+        }
+    }
+    void restore() {
+        if (installed) {
+            sigaction(SIGSEGV, &oldSegv, nullptr);
+            sigaction(SIGBUS, &oldBus, nullptr);
+            installed = false;
+        }
+    }
+    ~ProbeGuard() { restore(); }
+};
 
 bool SafeRead(uintptr_t addr, void* buf, size_t len) {
-    if (g_memFd < 0 || len == 0 || len > (1u << 20)) return false;
-    size_t off = 0;
-    while (off < len) {
-        ssize_t r =
-            pread(g_memFd, (char*)buf + off, len - off, (off_t)(addr + off));
-        if (r <= 0) return false;
-        off += (size_t)r;
-    }
+    if (len == 0 || len > (1u << 20)) return false;
+    memcpy(buf, reinterpret_cast<void*>(addr), len);
     return true;
 }
 
@@ -290,16 +319,67 @@ void* MemElfLookup(const MemElf& e, const char* name) {
 // foreign engine); the header page must be readable.
 bool ProbeForeignEngineMaps(EngineApi& out) {
     FILE* f = fopen("/proc/self/maps", "r");
-    if (!f) return false;
-    g_memFd = open("/proc/self/mem", O_RDONLY);
-    if (g_memFd < 0) {
-        fclose(f);
+    if (!f) {
+        __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                            "probe maps: cannot open /proc/self/maps");
         return false;
     }
     bool found = false;
     char line[1024];
     std::string lastPath;
+    uintptr_t lastBase = 0;
+    int linesScanned = 0, dataSeen = 0;
+    auto tryBind = [&](const std::string& p, uintptr_t base) {
+        if (IsOwnLib(p)) return;
+        // Candidate origins only: zygisk/modules live under /data,
+        // file-less engines under memfd.
+        bool candidate = (p.compare(0, 6, "/data/") == 0) ||
+                         (p.compare(0, 7, "/memfd:") == 0);
+        if (!candidate) return;
+        if (base == 0) return;
+        dataSeen++;
+        // Guarded: a racing munmap/guard page must skip the lib, not kill us.
+        ProbeGuard guard;
+        if (!guard.installed) return;
+        g_probeArmed = true;
+        if (sigsetjmp(g_probeJmp, 1) == 0) {
+            MemElf elf;
+            if (MemElfOpen(base, elf)) {
+                EngineApi api;
+                api.handle = reinterpret_cast<void*>(base);
+                api.origin = p + " (mem)";
+                api.foreign = true;
+                api.Init = reinterpret_cast<decltype(api.Init)>(
+                    MemElfLookup(elf, kSymInit));
+                api.Hook = reinterpret_cast<decltype(api.Hook)>(
+                    MemElfLookup(elf, kSymHook));
+                api.UnHook = reinterpret_cast<decltype(api.UnHook)>(
+                    MemElfLookup(elf, kSymUnHook));
+                api.Deoptimize = reinterpret_cast<decltype(api.Deoptimize)>(
+                    MemElfLookup(elf, kSymDeoptimize));
+                api.DobbyHook = reinterpret_cast<decltype(api.DobbyHook)>(
+                    MemElfLookup(elf, kSymDobbyHook));
+                api.DobbyDestroy =
+                    reinterpret_cast<decltype(api.DobbyDestroy)>(
+                        MemElfLookup(elf, kSymDobbyDestroy));
+                if (api.valid()) {
+                    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                                        "bound foreign LSPlant engine: %s",
+                                        p.c_str());
+                    out = api;
+                    found = true;
+                }
+            }
+        } else {
+            // Fault inside the parse (SA_RESETHAND already reverted our
+            // handler to default) — put ART's handlers back explicitly and
+            // skip the library.
+            guard.restore();
+        }
+        g_probeArmed = false;
+    };
     while (fgets(line, sizeof(line), f)) {
+        linesScanned++;
         uintptr_t start = 0;
         char perms[5] = "";
         char path[768] = "";
@@ -310,51 +390,30 @@ bool ProbeForeignEngineMaps(EngineApi& out) {
         std::string p = path;
         while (!p.empty() && (p[0] == ' ' || p[0] == '\t')) p.erase(0, 1);
         if (p.empty() || p[0] == '[') {
+            if (!lastPath.empty()) tryBind(lastPath, lastBase);
             lastPath.clear();
+            if (found) break;
             continue;
         }
-        if (p == lastPath) continue;  // one base per library file
-        lastPath = p;
-        if (IsOwnLib(p)) continue;
-        // Candidate origins only: zygisk/modules live under /data,
-        // file-less engines under memfd.
-        bool candidate = (p.compare(0, 6, "/data/") == 0) ||
-                         (p.compare(0, 7, "/memfd:") == 0);
-        if (!candidate) continue;
-        // Header page must be mapped readable (guard pages fault on access).
-        if (perms[0] != 'r') continue;
-        MemElf elf;
-        if (!MemElfOpen(start, elf)) continue;
-        EngineApi api;
-        api.handle = reinterpret_cast<void*>(start);
-        api.origin = p + " (mem)";
-        api.foreign = true;
-        api.Init = reinterpret_cast<decltype(api.Init)>(
-            MemElfLookup(elf, kSymInit));
-        api.Hook = reinterpret_cast<decltype(api.Hook)>(
-            MemElfLookup(elf, kSymHook));
-        api.UnHook = reinterpret_cast<decltype(api.UnHook)>(
-            MemElfLookup(elf, kSymUnHook));
-        api.Deoptimize = reinterpret_cast<decltype(api.Deoptimize)>(
-            MemElfLookup(elf, kSymDeoptimize));
-        api.DobbyHook = reinterpret_cast<decltype(api.DobbyHook)>(
-            MemElfLookup(elf, kSymDobbyHook));
-        api.DobbyDestroy = reinterpret_cast<decltype(api.DobbyDestroy)>(
-            MemElfLookup(elf, kSymDobbyDestroy));
-        if (api.valid()) {
-            __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
-                                "bound foreign LSPlant engine: %s", p.c_str());
-            fclose(f);
-            close(g_memFd);
-            g_memFd = -1;
-            out = api;
-            found = true;
-            return true;
+        if (p != lastPath) {
+            if (!lastPath.empty()) tryBind(lastPath, lastBase);
+            if (found) break;
+            lastPath = p;
+            // Base = lowest mapping of the file (header lives there even
+            // when the first line is an executable segment).
+            lastBase = (perms[0] == 'r') ? start : 0;
+            continue;
+        }
+        // Same file: keep the minimum readable start as the base.
+        if (perms[0] == 'r' && (lastBase == 0 || start < lastBase)) {
+            lastBase = start;
         }
     }
+    if (!found && !lastPath.empty()) tryBind(lastPath, lastBase);
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "probe maps: scanned=%d dataCandidates=%d",
+                        linesScanned, dataSeen);
     fclose(f);
-    close(g_memFd);
-    g_memFd = -1;
     return found;
 }
 
