@@ -72,7 +72,7 @@
     <string name="app_icons_module_enabled_title">Подмена иконок</string>
     <string name="app_icons_module_enabled_summary">Включает иконки через фреймворк и хук Pixel Launcher</string>
     <string name="app_icons_launcher_only_title">Только Launcher</string>
-    <string name="app_icons_launcher_only_summary">Оставляет включённым только Pine/Xposed хук лаунчера</string>
+    <string name="app_icons_launcher_only_summary">Оставляет включённым только LSPlant/Xposed хук лаунчера</string>
     <string name="app_icons_advanced_settings_title">Расширенные</string>
     <string name="app_icons_advanced_settings_summary">Форма, уведомления и поведение лаунчера</string>
     <string name="app_icons_system_stretch_shape_title">Форма в Настройках</string>
@@ -1241,7 +1241,7 @@
     <string name="anim_param_interpolator">Интерполятор</string>
 
     <!-- Addon Manager -->
-    <string name="addon_title">Аддоны Pine</string>
+    <string name="addon_title">Аддоны LSPlant</string>
     <string name="addon_desc">Управление внешними модулями хуков</string>
     <string name="addon_count">Модулей установлено: %d</string>
     <string name="addon_active_count">Активно: %1$d из %2$d</string>
@@ -1338,4 +1338,47 @@
     <string name="rotation_anim_constructor_hide">Скрыть</string>
     <string name="rotation_anim_constructor_show_xml">Показать XML</string>
     <string name="rotation_anim_constructor_hide_xml">Скрыть XML</string>
+
+    <string name="anim_compile_dialog_compiling">Сборка темы анимации</string>
+    <string name="anim_compile_dialog_installing">Установка темы анимации</string>
+    <string name="anim_compile_dialog_success">Тема установлена</string>
+    <string name="anim_compile_dialog_error">Не удалось собрать тему</string>
+    <string name="anim_compile_dialog_cancelled">Сборка темы отменена</string>
+    <string name="anim_compile_dialog_progress">Готово: %1$d%%</string>
+    <string name="anim_compile_dialog_cancel">Отмена</string>
+    <string name="anim_compile_dialog_ok">ОК</string>
+    <string name="addon_export_settings_title">Только настройки</string>
+    <string name="addon_export_settings_desc">Экспорт текущих значений ключей в JSON</string>
+    <string name="addon_export_module_title">JAR модуля</string>
+    <string name="addon_export_module_desc">Экспорт файла модуля аддона</string>
+    <string name="rotation_anim_title">Анимация поворота</string>
+    <string name="rotation_anim_subtitle">Настройка стиля анимации поворота экрана</string>
+    <string name="rotation_anim_current">Текущая: %s</string>
+    <string name="rotation_anim_reset">Сбросить по умолчанию</string>
+    <string name="rotation_anim_builtin_title">Встроенные стили</string>
+    <string name="rotation_anim_custom_title">Пользовательские темы</string>
+    <string name="rotation_anim_no_themes">Нет установленных пользовательских тем</string>
+    <string name="rotation_anim_import_title">Импорт темы</string>
+    <string name="rotation_anim_style_name">Имя стиля</string>
+    <string name="rotation_anim_exit_file">Анимация выхода</string>
+    <string name="rotation_anim_enter_file">Анимация входа</string>
+    <string name="rotation_anim_no_file">Файл не выбран</string>
+    <string name="rotation_anim_compile_btn">Собрать и установить</string>
+    <string name="rotation_anim_log_title">Журнал сборки</string>
+    <string name="rotation_anim_active">Активно</string>
+    <string name="rotation_anim_apply">Применить</string>
+    <string name="rotation_anim_delete">Удалить</string>
+    <string name="rotation_anim_delete_confirm">Подтвердить удаление</string>
+    <string name="rotation_anim_cancel">Отмена</string>
+    <string name="rotation_anim_preview">Предпросмотр</string>
+    <string name="rotation_anim_default">По умолчанию</string>
+    <string name="rotation_anim_custom">Пользовательский APK</string>
+    <string name="rotation_style_windows_phone">Windows Phone</string>
+    <string name="rotation_style_win10_11">Windows 10/11</string>
+    <string name="rotation_style_cube">Куб</string>
+    <string name="rotation_style_zoom">Масштаб</string>
+    <string name="rotation_style_slide">Слайд</string>
+    <string name="rotation_style_flip">Переворот</string>
+    <string name="rotation_style_fade">Затухание</string>
+    <string name="rotation_style_bounce">Отскок</string>
 </resources>

@@ -71,7 +71,7 @@
     <string name="app_icons_module_enabled_title">Icon replacements</string>
     <string name="app_icons_module_enabled_summary">Enables framework-wide icons and the Pixel Launcher hook</string>
     <string name="app_icons_launcher_only_title">Launcher only</string>
-    <string name="app_icons_launcher_only_summary">Keeps only the Pine/Xposed launcher hook enabled</string>
+    <string name="app_icons_launcher_only_summary">Keeps only the LSPlant/Xposed launcher hook enabled</string>
     <string name="app_icons_advanced_settings_title">Advanced</string>
     <string name="app_icons_advanced_settings_summary">Shape, notification, and launcher behavior</string>
     <string name="app_icons_system_stretch_shape_title">Settings shape</string>
@@ -1248,7 +1248,7 @@
     <string name="anim_param_interpolator">Interpolator</string>
 
     <!-- Addon Manager -->
-    <string name="addon_title">Pine Addons</string>
+    <string name="addon_title">LSPlant Addons</string>
     <string name="addon_desc">Manage external hook modules</string>
     <string name="addon_count">%d module(s) installed</string>
     <string name="addon_active_count">Active: %1$d of %2$d</string>
