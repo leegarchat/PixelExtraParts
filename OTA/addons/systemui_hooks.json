@@ -1,6 +1,6 @@
 {
-    "version": "2.2.17",
+    "version": "2.2.18",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Loop scheduling diagnostics (one-shot payload log)",
+    "changelog": "BlurUtils overload shape detection (3-arg ROMs): convergence loop engages everywhere",
     "info": "SystemUI hooks for PixelExtraParts"
 }

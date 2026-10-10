@@ -90,8 +90,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static volatile Field sDrawableField;
     private static volatile boolean sDrawableFieldResolved;
 
-    // applyBlur() scale arg index cache: -2 unknown, -1 absent, >=0 actual index
-    private static volatile int sApplyBlurScaleArgIndex = -2;
+    // applyBlur() overload shape: 0 unknown, 3 = (root, radius, scale),
+    // 4 = (root, radius, opaque, scale). Detected once per process — the
+    // flashed ROM may lag the tree (opaque was added later).
+    private static volatile int sApplyBlurShape;
 
     // Per-window smoother states: every blur client window (shade, keyguard,
     // dreams...) runs its own chase from its own current position, so
@@ -166,24 +168,30 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // (plus a 5s watchdog).
     private static final int LOOP_TICKS_MAX = 300;
     private static volatile boolean sInSelfDrive;
-    private static volatile boolean sPayloadLogged;
     private static final Object sLoopLock = new Object();
     private static boolean sLoopScheduled; // guarded by sLoopLock
     private static volatile android.view.Choreographer.FrameCallback sLoopCb;
 
     private static Method resolveApplyBlur(Object blurUtils) {
         try {
+            Method three = null;
             for (Method m : blurUtils.getClass().getMethods()) {
-                if (m.getName().equals("applyBlur")
-                        && m.getParameterTypes().length == 4) return m;
+                if (!m.getName().equals("applyBlur")) continue;
+                int n = m.getParameterTypes().length;
+                if (n == 4) return m;
+                if (n == 3) three = m;
             }
+            return three;
         } catch (Throwable ignored) { }
         return null;
     }
 
     private static void scheduleLoop(Object window, SmoothState st,
             float out, float target, int radiusEff) {
-        if (radiusEff > 0 && st.opaqueKnown && st.applyMethod != null
+        // 3-arg shape needs no opaque; 4-arg shape requires the cached one.
+        boolean canDrive = st.applyMethod != null
+                && (sApplyBlurShape != 4 || st.opaqueKnown);
+        if (radiusEff > 0 && canDrive
                 && window != SMOOTH_FALLBACK_WINDOW
                 && Math.abs(out - target) >= G_EPS) {
             if (!st.loopOn) {
@@ -247,7 +255,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                     }
                     sInSelfDrive = true;
                     try {
-                        st.applyMethod.invoke(st.blurUtils, w, st.radius, st.opaque, out);
+                        if (sApplyBlurShape == 4 && st.opaqueKnown) {
+                            st.applyMethod.invoke(st.blurUtils, w, st.radius, st.opaque, out);
+                        } else if (sApplyBlurShape == 3) {
+                            st.applyMethod.invoke(st.blurUtils, w, st.radius, out);
+                        } else {
+                            st.loopOn = false;
+                            continue;
+                        }
                     } finally {
                         sInSelfDrive = false;
                     }
@@ -345,16 +360,6 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (st.blurUtils == null && param.thisObject != null) {
                             st.blurUtils = param.thisObject;
                             st.applyMethod = resolveApplyBlur(st.blurUtils);
-                        }
-                        if (!sPayloadLogged) {
-                            sPayloadLogged = true;
-                            Object a2 = (param.args.length >= 3) ? param.args[2] : null;
-                            android.util.Log.d("ShadeUnifiedSurfaceHook",
-                                    "payload: argsLen=" + param.args.length
-                                    + " arg2=" + String.valueOf(a2)
-                                    + " opaqueKnown=" + st.opaqueKnown
-                                    + " applyMethod=" + (st.applyMethod != null)
-                                    + " windowFallback=" + (window == SMOOTH_FALLBACK_WINDOW));
                         }
                         if (radiusEff == 0) st.loopOn = false;
 
@@ -831,21 +836,24 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     private int resolveApplyBlurScaleArgIndex(Object[] args) {
-        int cached = sApplyBlurScaleArgIndex;
-        if (cached >= 0) {
-            if (args.length > cached && args[cached] instanceof Float) return cached;
-        } else if (cached == -1) {
+        int shape = sApplyBlurShape;
+        if (shape == 4) {
+            if (args.length > 3 && args[3] instanceof Float) return 3;
             return -1;
         }
-
-        int resolved = -1;
-        if (args.length >= 4 && args[3] instanceof Float) {
-            resolved = 3;
-        } else if (args.length >= 3 && args[2] instanceof Float) {
-            resolved = 2;
+        if (shape == 3) {
+            if (args.length > 2 && args[2] instanceof Float) return 2;
+            return -1;
         }
-        sApplyBlurScaleArgIndex = resolved;
-        return resolved;
+        if (args.length >= 4 && args[3] instanceof Float) {
+            sApplyBlurShape = 4;
+            return 3;
+        }
+        if (args.length >= 3 && args[2] instanceof Float) {
+            sApplyBlurShape = 3;
+            return 2;
+        }
+        return -1;
     }
 
     private void applyTintEnforcement(Object scrimView) {
