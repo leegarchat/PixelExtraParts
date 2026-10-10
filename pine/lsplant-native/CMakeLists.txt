@@ -12,6 +12,9 @@
 cmake_minimum_required(VERSION 3.22)
 project(pixel_lspbridge)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # --- Dobby (inline hook backend, Apache-2.0): official Vector-shipped
 # binary (source incompatible with NDK r29 clang); headers kept for API.
 add_library(dobby_static SHARED IMPORTED)

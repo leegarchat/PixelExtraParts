@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 
+#include "type_traits.hpp"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-partial-specialization"
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
@@ -16,15 +18,6 @@
     void operator=(const TypeName &) = delete
 
 namespace lsplant {
-template <class, template <class, class...> class>
-struct is_instance : public std::false_type {};
-
-template <class... Ts, template <class, class...> class U>
-struct is_instance<U<Ts...>, U> : public std::true_type {};
-
-template <class T, template <class, class...> class U>
-inline constexpr bool is_instance_v = is_instance<T, U>::value;
-
 template <typename T>
 concept JObject = std::is_base_of_v<std::remove_pointer_t<_jobject>, std::remove_pointer_t<T>>;
 
@@ -64,8 +57,6 @@ public:
     ScopedLocalRef<T> clone() const {
         return ScopedLocalRef<T>(env_, (T)env_->NewLocalRef(local_ref_));
     }
-
-    operator T() const { return local_ref_; }
 
     ScopedLocalRef &operator=(ScopedLocalRef &&s) noexcept {
         reset(s.release());
@@ -118,11 +109,11 @@ public:
 };
 
 template <typename T, typename U>
-concept ScopeOrRaw = std::is_convertible_v<T, U> ||
-    (is_instance_v<std::decay_t<T>, ScopedLocalRef>
-         &&std::is_convertible_v<typename std::decay_t<T>::BaseType, U>) ||
-    (std::is_same_v<std::decay_t<T>, JObjectArrayElement>
-        &&std::is_convertible_v<jobject, U>);
+concept ScopeOrRaw =
+    std::is_convertible_v<T, U> ||
+    (is_instance_v<std::decay_t<T>, ScopedLocalRef> &&
+     std::is_convertible_v<typename std::decay_t<T>::BaseType, U>) ||
+    (std::is_same_v<std::decay_t<T>, JObjectArrayElement> && std::is_convertible_v<jobject, U>);
 
 template <typename T>
 concept ScopeOrClass = ScopeOrRaw<T, jclass>;
@@ -133,10 +124,11 @@ concept ScopeOrObject = ScopeOrRaw<T, jobject>;
 inline ScopedLocalRef<jstring> ClearException(JNIEnv *env) {
     if (auto exception = env->ExceptionOccurred()) {
         env->ExceptionClear();
-        static jclass log = (jclass)env->NewGlobalRef(env->FindClass("android/util/Log"));
+        jclass log = (jclass)env->FindClass("android/util/Log");
         static jmethodID toString = env->GetStaticMethodID(
             log, "getStackTraceString", "(Ljava/lang/Throwable;)Ljava/lang/String;");
         auto str = (jstring)env->CallStaticObjectMethod(log, toString, exception);
+        env->DeleteLocalRef(log);
         env->DeleteLocalRef(exception);
         return {env, str};
     }
@@ -186,8 +178,7 @@ public:
     JUTFString(const ScopedLocalRef<jstring> &jstr)
         : JUTFString(jstr.env_, jstr.local_ref_, nullptr) {}
 
-    JUTFString(JNIEnv *env, jstring jstr, const char *default_cstr)
-        : env_(env), jstr_(jstr) {
+    JUTFString(JNIEnv *env, jstring jstr, const char *default_cstr) : env_(env), jstr_(jstr) {
         if (env_ && jstr_)
             cstr_ = env_->GetStringUTFChars(jstr, nullptr);
         else
@@ -234,8 +225,8 @@ private:
 };
 
 template <typename Func, typename... Args>
-requires(std::is_function_v<Func>)
-    [[maybe_unused]] inline auto JNI_SafeInvoke(JNIEnv *env, Func JNIEnv::*f, Args &&...args) {
+    requires(std::is_function_v<Func>)
+[[maybe_unused]] inline auto JNI_SafeInvoke(JNIEnv *env, Func JNIEnv::*f, Args &&...args) {
     struct finally {
         finally(JNIEnv *env) : env_(env) {}
 
@@ -514,6 +505,13 @@ template <ScopeOrClass Class>
                           isStatic);
 }
 
+template <ScopeOrClass Class>
+[[maybe_unused]] inline auto JNI_ToReflectedField(JNIEnv *env, Class &&clazz, jfieldID field,
+                                                   jboolean isStatic = JNI_FALSE) {
+    return JNI_SafeInvoke(env, &JNIEnv::ToReflectedField, std::forward<Class>(clazz), field,
+                          isStatic);
+}
+
 // functions to method
 
 // virtual methods
@@ -675,81 +673,74 @@ template <ScopeOrClass Class, typename... Args>
 // non-virtual methods
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualVoidMethod(JNIEnv *env, Object &&obj,
-                                                              Class &&clazz, jmethodID method,
-                                                              Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualVoidMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                          jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualVoidMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualObjectMethod(JNIEnv *env, Object &&obj,
-                                                                Class &&clazz, jmethodID method,
-                                                                Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualObjectMethod(JNIEnv *env, Object &&obj,
+                                                            Class &&clazz, jmethodID method,
+                                                            Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualObjectMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualBooleanMethod(JNIEnv *env, Object &&obj,
-                                                                 Class &&clazz, jmethodID method,
-                                                                 Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualBooleanMethod(JNIEnv *env, Object &&obj,
+                                                             Class &&clazz, jmethodID method,
+                                                             Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualBooleanMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualByteMethod(JNIEnv *env, Object &&obj,
-                                                              Class &&clazz, jmethodID method,
-                                                              Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualByteMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                          jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualByteMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualCharMethod(JNIEnv *env, Object &&obj,
-                                                              Class &&clazz, jmethodID method,
-                                                              Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualCharMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                          jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualCharMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualShortMethod(JNIEnv *env, Object &&obj,
-                                                               Class &&clazz, jmethodID method,
-                                                               Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualShortMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                           jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualShortMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualIntMethod(JNIEnv *env, Object &&obj,
-                                                             Class &&clazz, jmethodID method,
-                                                             Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualIntMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                         jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualIntMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualLongMethod(JNIEnv *env, Object &&obj,
-                                                              Class &&clazz, jmethodID method,
-                                                              Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualLongMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                          jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualLongMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualFloatMethod(JNIEnv *env, Object &&obj,
-                                                               Class &&clazz, jmethodID method,
-                                                               Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualFloatMethod(JNIEnv *env, Object &&obj, Class &&clazz,
+                                                           jmethodID method, Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualFloatMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
 
 template <ScopeOrObject Object, ScopeOrClass Class, typename... Args>
-[[maybe_unused]] inline auto JNI_CallCallNonvirtualDoubleMethod(JNIEnv *env, Object &&obj,
-                                                                Class &&clazz, jmethodID method,
-                                                                Args &&...args) {
+[[maybe_unused]] inline auto JNI_CallNonvirtualDoubleMethod(JNIEnv *env, Object &&obj,
+                                                            Class &&clazz, jmethodID method,
+                                                            Args &&...args) {
     return JNI_SafeInvoke(env, &JNIEnv::CallNonvirtualDoubleMethod, std::forward<Object>(obj),
                           std::forward<Class>(clazz), method, std::forward<Args>(args)...);
 }
@@ -778,6 +769,12 @@ template <ScopeOrObject Object, ScopeOrClass Class>
                           std::forward<Class>(clazz));
 }
 
+template <ScopeOrObject Object1, ScopeOrObject Object2>
+[[maybe_unused]] inline auto JNI_IsSameObject(JNIEnv *env, Object1 &&a, Object2 &&b) {
+    return JNI_SafeInvoke(env, &JNIEnv::IsSameObject, std::forward<Object1>(a),
+                          std::forward<Object2>(b));
+}
+
 template <ScopeOrObject Object>
 [[maybe_unused]] inline auto JNI_NewGlobalRef(JNIEnv *env, Object &&x) {
     return (decltype(UnwrapScope(std::forward<Object>(x))))env->NewGlobalRef(
@@ -785,8 +782,9 @@ template <ScopeOrObject Object>
 }
 
 template <typename U, typename T>
-[[maybe_unused]] inline auto JNI_Cast(ScopedLocalRef<T> &&x) requires(
-    std::is_convertible_v<T, _jobject *>) {
+[[maybe_unused]] inline auto JNI_Cast(ScopedLocalRef<T> &&x)
+    requires(std::is_convertible_v<T, _jobject *>)
+{
     return ScopedLocalRef<U>(std::move(x));
 }
 
@@ -904,9 +902,7 @@ public:
         reset(local_ref);
     }
 
-    ScopedLocalRef(ScopedLocalRef &&s) noexcept {
-        *this = std::move(s);
-    }
+    ScopedLocalRef(ScopedLocalRef &&s) noexcept { *this = std::move(s); }
 
     template <JObject U>
     ScopedLocalRef(ScopedLocalRef<U> &&s) noexcept : ScopedLocalRef(s.env_, (T)s.release()) {}
@@ -956,8 +952,6 @@ public:
     }
 
     T get() const { return local_ref_; }
-
-    explicit operator T() const { return local_ref_; }
 
     JArrayUnderlyingType<T> &operator[](size_t index) {
         modified_ = true;
@@ -1036,9 +1030,8 @@ class JObjectArrayElement {
         return JNI_SafeInvoke(env_, &JNIEnv::GetObjectArrayElement, array_, i_);
     }
 
-    explicit JObjectArrayElement(JNIEnv * env, jobjectArray array, int i, size_t size) :
-            env_(env), array_(array), i_(i), size_(size),
-            item_(obtain()) {}
+    explicit JObjectArrayElement(JNIEnv *env, jobjectArray array, int i, size_t size)
+        : env_(env), array_(array), i_(i), size_(size), item_(obtain()) {}
 
     JObjectArrayElement &operator++() {
         ++i_;
@@ -1052,36 +1045,41 @@ class JObjectArrayElement {
         return *this;
     }
 
-    JObjectArrayElement operator++(int) {
-        return JObjectArrayElement(env_, array_, i_ + 1, size_);
-    }
+    JObjectArrayElement operator++(int) { return JObjectArrayElement(env_, array_, i_ + 1, size_); }
 
-    JObjectArrayElement operator--(int) {
-        return JObjectArrayElement(env_, array_, i_ - 1, size_);
-    }
+    JObjectArrayElement operator--(int) { return JObjectArrayElement(env_, array_, i_ - 1, size_); }
 
 public:
-    JObjectArrayElement(JObjectArrayElement&& s): env_(s.env_), array_(s.array_), i_(s.i_), size_(s.size_), item_(std::move(s.item_)) {}
+    JObjectArrayElement(JObjectArrayElement &&s)
+        : env_(s.env_), array_(s.array_), i_(s.i_), size_(s.size_), item_(std::move(s.item_)) {}
 
-    operator ScopedLocalRef<jobject>& () & {
-        return item_;
-    }
+    operator ScopedLocalRef<jobject> &() & { return item_; }
 
-    operator ScopedLocalRef<jobject>&& () && {
-        return std::move(item_);
-    }
+    operator ScopedLocalRef<jobject> &&() && { return std::move(item_); }
 
-    JObjectArrayElement& operator=(JObjectArrayElement&& s) {
+    JObjectArrayElement &operator=(JObjectArrayElement &&s) {
         reset(s.item_.release());
         return *this;
     }
 
-    JObjectArrayElement& operator=(const JObjectArrayElement& s) {
+    JObjectArrayElement &operator=(const JObjectArrayElement &s) {
         reset(env_->NewLocalRef(s.item_.get()));
         return *this;
     }
 
-    JObjectArrayElement& operator=(jobject s) {
+    template<JObject T>
+    JObjectArrayElement &operator=(ScopedLocalRef<T> &&s) {
+        reset(s.release());
+        return *this;
+    }
+
+    template<JObject T>
+    JObjectArrayElement &operator=(const ScopedLocalRef<T> &s) {
+        reset(s.clone());
+        return *this;
+    }
+
+    JObjectArrayElement &operator=(jobject s) {
         reset(env_->NewLocalRef(s));
         return *this;
     }
@@ -1091,13 +1089,7 @@ public:
         JNI_SafeInvoke(env_, &JNIEnv::SetObjectArrayElement, array_, i_, item_);
     }
 
-    ScopedLocalRef<jobject> clone() const {
-        return item_.clone();
-    }
-
-    operator jobject() const {
-        return item_;
-    }
+    ScopedLocalRef<jobject> clone() const { return item_.clone(); }
 
     jobject get() const { return item_.get(); }
 
@@ -1106,16 +1098,17 @@ public:
     jobject operator->() const { return item_.get(); }
 
     jobject operator*() const { return item_.get(); }
+
 private:
     JNIEnv *env_;
     jobjectArray array_;
     int i_;
     int size_;
     ScopedLocalRef<jobject> item_;
-    JObjectArrayElement(const JObjectArrayElement&) = delete;
+    JObjectArrayElement(const JObjectArrayElement &) = delete;
 };
 
-template<>
+template <>
 class ScopedLocalRef<jobjectArray> {
 public:
     class Iterator {
@@ -1123,6 +1116,7 @@ public:
 
         Iterator(JObjectArrayElement &&e) : e_(std::move(e)) {}
         Iterator(JNIEnv *env, jobjectArray array, int i, size_t size) : e_(env, array, i, size) {}
+
     public:
         auto &operator*() { return e_; }
 
@@ -1138,17 +1132,14 @@ public:
             return *this;
         }
 
-        Iterator operator++(int) {
-            return Iterator(e_++);
-        }
+        Iterator operator++(int) { return Iterator(e_++); }
 
-        Iterator operator--(int) {
-            return Iterator(e_--);
-        }
+        Iterator operator--(int) { return Iterator(e_--); }
 
         bool operator==(const Iterator &other) const { return other.e_.i_ == e_.i_; }
 
         bool operator!=(const Iterator &other) const { return other.e_.i_ != e_.i_; }
+
     private:
         JObjectArrayElement e_;
     };
@@ -1161,7 +1152,9 @@ public:
             return JNI_SafeInvoke(env_, &JNIEnv::GetObjectArrayElement, array_, i_);
         }
 
-        ConstIterator(JNIEnv * env, jobjectArray array, int i, int size) : env_(env), array_(array), i_(i), size_(size), item_(obtain()) {}
+        ConstIterator(JNIEnv *env, jobjectArray array, int i, int size)
+            : env_(env), array_(array), i_(i), size_(size), item_(obtain()) {}
+
     public:
         auto &operator*() { return item_; }
 
@@ -1179,19 +1172,16 @@ public:
             return *this;
         }
 
-        ConstIterator operator++(int) {
-            return ConstIterator(env_, array_, i_ + 1, size_);
-        }
+        ConstIterator operator++(int) { return ConstIterator(env_, array_, i_ + 1, size_); }
 
-        ConstIterator operator--(int) {
-            return ConstIterator(env_, array_, i_ - 1, size_);
-        }
+        ConstIterator operator--(int) { return ConstIterator(env_, array_, i_ - 1, size_); }
 
         bool operator==(const ConstIterator &other) const { return other.i_ == i_; }
 
         bool operator!=(const ConstIterator &other) const { return other.i_ != i_; }
+
     private:
-        JNIEnv* env_;
+        JNIEnv *env_;
         jobjectArray array_;
         int i_;
         int size_;
@@ -1210,18 +1200,17 @@ public:
 
     auto cend() const { return ConstIterator(env_, local_ref_, size_, size_); }
 
-    ScopedLocalRef(JNIEnv *env, jobjectArray local_ref) noexcept: env_(env), local_ref_(nullptr) {
+    ScopedLocalRef(JNIEnv *env, jobjectArray local_ref) noexcept : env_(env), local_ref_(nullptr) {
         reset(local_ref);
     }
 
-    ScopedLocalRef(ScopedLocalRef &&s) noexcept {
-        *this = std::move(s);
-    }
+    ScopedLocalRef(ScopedLocalRef &&s) noexcept { *this = std::move(s); }
 
-    template<JObject U>
-    ScopedLocalRef(ScopedLocalRef<U> &&s) noexcept : ScopedLocalRef(s.env_, (jobjectArray) s.release()) {}
+    template <JObject U>
+    ScopedLocalRef(ScopedLocalRef<U> &&s) noexcept
+        : ScopedLocalRef(s.env_, (jobjectArray)s.release()) {}
 
-    explicit ScopedLocalRef(JNIEnv *env) noexcept: ScopedLocalRef(env, jobjectArray {nullptr}) {}
+    explicit ScopedLocalRef(JNIEnv *env) noexcept : ScopedLocalRef(env, jobjectArray{nullptr}) {}
 
     ~ScopedLocalRef() { env_->DeleteLocalRef(release()); }
 
@@ -1246,7 +1235,7 @@ public:
     jobjectArray get() const { return local_ref_; }
 
     JObjectArrayElement operator[](size_t index) {
-        return JObjectArrayElement(env_, local_ref_, index, JNI_SafeInvoke(env_, &JNIEnv::GetObjectArrayElement, local_ref_, index));
+        return JObjectArrayElement(env_, local_ref_, index, size_);
     }
 
     const ScopedLocalRef<jobject> operator[](size_t index) const {
@@ -1271,7 +1260,7 @@ public:
 
     operator bool() const { return local_ref_; }
 
-    template<JObject U>
+    template <JObject U>
     friend class ScopedLocalRef;
 
     friend class JUTFString;

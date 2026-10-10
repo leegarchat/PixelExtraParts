@@ -2,8 +2,10 @@
 
 #include <jni.h>
 
-#include <string_view>
+#include <cstdint>
 #include <functional>
+#include <span>
+#include <string_view>
 
 /// \namespace lsplant
 namespace lsplant {
@@ -40,14 +42,24 @@ struct InitInfo {
     /// \note It should be able to resolve symbols from both .dynsym and .symtab.
     using ArtSymbolPrefixResolver = std::function<void *(std::string_view symbol_prefix)>;
 
+    /// \brief Type of memory allocator for executable code.
+    /// In \ref std::function form, but it MUST NOT have a capture list.<br>
+    /// \p data is the executable code data to be allocated and copied.<br>
+    /// \p return is the absolute address in the memory that points to the executable code.
+    /// It should be null if the allocation fails.
+    using MemoryAllocator = std::function<void *(std::span<const uint8_t> data)>;
+    /// \brief Type of memory recycler for executable code.
+    /// In \ref std::function form, but it MUST NOT have a capture list.<br>
+    /// \p memory is the start address of the memory previously allocated by \ref MemoryAllocator.
+    using MemoryRecycler = std::function<void(void *memory)>;
+
     /// \brief The inline hooker function. Must not be null.
     InlineHookFunType inline_hooker;
     /// \brief The inline unhooker function. Must not be null.
     InlineUnhookFunType inline_unhooker;
     /// \brief The symbol resolver to \p libart.so. Must not be null.
     ArtSymbolResolver art_symbol_resolver;
-
-    /// \brief The symbol prefix resolver to \p libart.so. May be null.
+    /// \brief The symbol prefix resolver to \p libart.so. Must not be null.
     ArtSymbolPrefixResolver art_symbol_prefix_resolver;
 
     /// \brief The generated class name. Must not be empty. It contains a field and a method
@@ -57,9 +69,16 @@ struct InitInfo {
     std::string_view generated_source_name = "LSP";
     /// \brief The generated field name. Must not be empty.
     std::string_view generated_field_name = "hooker";
-    /// \brief The generated class name. Must not be emtpy. If {target} is set,
+    /// \brief The generated class name. Must not be empty. If {target} is set,
     /// it will follows the name of the target.
     std::string_view generated_method_name = "{target}";
+
+    /// \brief The memory allocator for executable code. May be null.
+    /// If provided, it will be used to allocate memory for trampolines.
+    MemoryAllocator executable_memory_allocator;
+    /// \brief The memory recycler for executable code. May be null.
+    /// It must be non-null if \p executable_memory_allocator is provided.
+    MemoryRecycler executable_memory_recycler;
 };
 
 /// \brief Initialize LSPlant for the proceeding hook.
@@ -111,7 +130,7 @@ struct InitInfo {
 /// call on this function with the same \p target_method does not guarantee only one will success.
 /// If you call this with different \p hooker_object on the same target_method simultaneously, the
 /// behavior is undefined.
-/// \note The behavior of getting the \ref jmethodID of the backup method is undfined.
+/// \note The behavior of getting the \ref jmethodID of the backup method is undefined.
 [[nodiscard, maybe_unused, gnu::visibility("default")]] jobject Hook(JNIEnv *env,
                                                                      jobject target_method,
                                                                      jobject hooker_object,
@@ -179,5 +198,5 @@ struct InitInfo {
 /// \return Indicate whether the operation has succeed.
 [[nodiscard, maybe_unused, gnu::visibility("default")]] bool MakeDexFileTrusted(JNIEnv *env,
                                                                                 jobject cookie);
-}  // namespace v1
+}  // namespace v2
 }  // namespace lsplant
