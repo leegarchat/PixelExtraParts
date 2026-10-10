@@ -9,15 +9,39 @@ import org.pixel.customparts.core.IHookEnvironment;
 public class PineEnvironment implements IHookEnvironment {
 
     private static final String TAG_PREFIX = "PineInject";
-    private static final String SUFFIX = "_pine";
+    private static final String ACTIVE_SUFFIX = "_lsplant";
+    private static final String LEGACY_PINE_SUFFIX = "_pine";
     private static final String XPOSED_SUFFIX = "_xposed";
 
-    private String resolveKey(String key) {
-        if (key.endsWith(SUFFIX)) return key;
-        if (key.endsWith(XPOSED_SUFFIX)) {
-            return key.substring(0, key.length() - XPOSED_SUFFIX.length()) + SUFFIX;
+    private String stripSuffix(String key) {
+        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX}) {
+            if (key.endsWith(s)) {
+                return key.substring(0, key.length() - s.length());
+            }
         }
-        return key + SUFFIX;
+        return key;
+    }
+
+    private String resolveKey(String key) {
+        // Canonical (write) form; reads go through readStringAny() fallback.
+        return stripSuffix(key) + ACTIVE_SUFFIX;
+    }
+
+    /** Read-through: new key, then legacy keys. Null when nothing stored. */
+    private String readStringAny(android.content.ContentResolver resolver, String key) {
+        String base = stripSuffix(key);
+        String[] candidates = new String[]{
+                base + ACTIVE_SUFFIX, base + LEGACY_PINE_SUFFIX, base + XPOSED_SUFFIX};
+        for (String candidate : candidates) {
+            try {
+                String value = android.provider.Settings.Global.getString(resolver, candidate);
+                if (value != null) {
+                    return value;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
     }
 
     @Override
@@ -36,11 +60,12 @@ public class PineEnvironment implements IHookEnvironment {
     @Override
     public int getInt(Context context, String key, int def) {
         if (context == null) return def;
-        String finalKey = resolveKey(key);
         try {
-            return Settings.Global.getInt(context.getContentResolver(), finalKey, def);
+            String raw = readStringAny(context.getContentResolver(), key);
+            if (raw == null) return def;
+            return Integer.parseInt(raw.trim());
         } catch (Throwable t) {
-            logError("Env", "Failed to read int setting " + finalKey, t);
+            logError("Env", "Failed to read int setting " + key, t);
             return def;
         }
     }
@@ -48,34 +73,29 @@ public class PineEnvironment implements IHookEnvironment {
     @Override
     public float getFloat(Context context, String key, float def) {
         if (context == null) return def;
-        String finalKey = resolveKey(key);
         try {
-            return Settings.Global.getFloat(context.getContentResolver(), finalKey, def);
-        } catch (Throwable t) {
-            // Фолбэк: пробуем прочитать как int и поделить на 100 (для совместимости со старыми твиками)
+            String raw = readStringAny(context.getContentResolver(), key);
+            if (raw == null) return def;
             try {
-                int intValue = Settings.Global.getInt(
-                        context.getContentResolver(),
-                        finalKey,
-                        (int) (def * 100)
-                );
-                return intValue / 100f;
-            } catch (Throwable inner) {
-                logError("Env", "Failed to read float setting " + finalKey, inner);
-                return def;
+                return Float.parseFloat(raw.trim());
+            } catch (NumberFormatException e) {
+                // Фолбэк: int, поделённый на 100 (для совместимости со старыми твиками)
+                return Integer.parseInt(raw.trim()) / 100f;
             }
+        } catch (Throwable t) {
+            logError("Env", "Failed to read float setting " + key, t);
+            return def;
         }
     }
 
     @Override
     public String getString(Context context, String key, String def) {
         if (context == null) return def;
-        String finalKey = resolveKey(key);
         try {
-            String val = Settings.Global.getString(context.getContentResolver(), finalKey);
+            String val = readStringAny(context.getContentResolver(), key);
             return val != null ? val : def;
         } catch (Throwable t) {
-            logError("Env", "Failed to read string setting " + finalKey, t);
+            logError("Env", "Failed to read string setting " + key, t);
             return def;
         }
     }

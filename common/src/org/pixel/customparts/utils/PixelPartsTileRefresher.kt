@@ -13,7 +13,8 @@ import org.pixel.customparts.services.SaturationTileService
 import org.pixel.customparts.services.ThermalManagerTileService
 
 object PixelPartsTileRefresher {
-    private const val PINE_SUFFIX = "_pine"
+    private const val LEGACY_PINE_SUFFIX = "_pine"
+    private const val ACTIVE_SUFFIX = "_lsplant"
     private const val XPOSED_SUFFIX = "_xposed"
     private const val DYNAMIC_ADDON_TILE_COUNT = 40
 
@@ -102,6 +103,6 @@ object PixelPartsTileRefresher {
     }
 
     private fun normalizeKey(key: String): String {
-        return key.removeSuffix(PINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
+        return key.removeSuffix(ACTIVE_SUFFIX).removeSuffix(LEGACY_PINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
     }
 }

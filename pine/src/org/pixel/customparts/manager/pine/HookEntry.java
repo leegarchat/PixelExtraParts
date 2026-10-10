@@ -99,7 +99,7 @@ public class HookEntry {
         
         EdgeEffectHookWrapper edgeHook = new EdgeEffectHookWrapper();
         // Настройка полей напрямую, так как apply в Java нет
-        edgeHook.setKeySuffix("_pine"); 
+        edgeHook.setKeySuffix("_lsplant"); 
         edgeHook.setUseGlobalSettings(true);
         hooks.add(edgeHook);
 

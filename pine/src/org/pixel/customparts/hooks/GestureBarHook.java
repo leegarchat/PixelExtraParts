@@ -134,6 +134,7 @@ public class GestureBarHook extends BaseHook {
         };
         for (String key : keys) {
             registerSettingUri(appContext, observer, key);
+            registerSettingUri(appContext, observer, key + "_lsplant");
             registerSettingUri(appContext, observer, key + "_pine");
             registerSettingUri(appContext, observer, key + "_xposed");
         }

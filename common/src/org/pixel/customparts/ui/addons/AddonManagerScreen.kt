@@ -412,7 +412,59 @@ private val BUILTIN_WHITELIST = setOf(
 // Settings provider read/write helpers
 // =====================================================================
 
+// =====================================================================
+// Engine-rename key compat: canonical "_lsplant" suffix for writes, with
+// read-through fallback to legacy "_pine"/"_xposed" values so user settings
+// survive the update. Applies to GLOBAL hook keys only; other providers
+// and unsuffixed keys pass through untouched.
+private const val ACTIVE_HOOK_SUFFIX = "_lsplant"
+private val LEGACY_HOOK_SUFFIXES = listOf("_pine", "_xposed")
+
+private fun stripHookSuffix(key: String): String {
+    var base = key
+    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
+        if (base.endsWith(s)) {
+            base = base.removeSuffix(s)
+            break
+        }
+    }
+    return base
+}
+
+private fun writeKeyForHookSettings(provider: SettingProvider, key: String): String {
+    if (provider != SettingProvider.GLOBAL) return key
+    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
+        if (key.endsWith(s)) return stripHookSuffix(key) + ACTIVE_HOOK_SUFFIX
+    }
+    return key
+}
+
+private fun readKeyCandidates(provider: SettingProvider, key: String): List<String> {
+    if (provider != SettingProvider.GLOBAL) return listOf(key)
+    val stripped = stripHookSuffix(key)
+    var hasSuffix = false
+    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
+        if (key.endsWith(s)) {
+            hasSuffix = true
+            break
+        }
+    }
+    if (!hasSuffix) return listOf(key)
+    return (listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES).map { stripped + it }
+}
+
+private fun readGlobalStringAny(context: Context, key: String): String? {
+    for (candidate in readKeyCandidates(SettingProvider.GLOBAL, key)) {
+        try {
+            val value = Settings.Global.getString(context.contentResolver, candidate)
+            if (value != null) return value
+        } catch (_: Throwable) { }
+    }
+    return null
+}
+
 private fun readSettingString(context: Context, provider: SettingProvider, key: String): String? {
+    if (provider == SettingProvider.GLOBAL) return readGlobalStringAny(context, key)
     return try {
         when (provider) {
             SettingProvider.GLOBAL -> Settings.Global.getString(context.contentResolver, key)
@@ -425,7 +477,7 @@ private fun readSettingString(context: Context, provider: SettingProvider, key: 
 private fun writeSettingString(context: Context, provider: SettingProvider, key: String, value: String) {
     try {
         when (provider) {
-            SettingProvider.GLOBAL -> Settings.Global.putString(context.contentResolver, key, value)
+            SettingProvider.GLOBAL -> Settings.Global.putString(context.contentResolver, writeKeyForHookSettings(provider, key), value)
             SettingProvider.SYSTEM -> Settings.System.putString(context.contentResolver, key, value)
             SettingProvider.SECURE -> Settings.Secure.putString(context.contentResolver, key, value)
         }
@@ -434,6 +486,9 @@ private fun writeSettingString(context: Context, provider: SettingProvider, key:
 }
 
 private fun readSettingInt(context: Context, provider: SettingProvider, key: String, default: Int): Int {
+    if (provider == SettingProvider.GLOBAL) {
+        return readGlobalStringAny(context, key)?.toIntOrNull() ?: default
+    }
     return try {
         when (provider) {
             SettingProvider.GLOBAL -> Settings.Global.getInt(context.contentResolver, key, default)
@@ -446,7 +501,7 @@ private fun readSettingInt(context: Context, provider: SettingProvider, key: Str
 private fun writeSettingInt(context: Context, provider: SettingProvider, key: String, value: Int) {
     try {
         when (provider) {
-            SettingProvider.GLOBAL -> Settings.Global.putInt(context.contentResolver, key, value)
+            SettingProvider.GLOBAL -> Settings.Global.putInt(context.contentResolver, writeKeyForHookSettings(provider, key), value)
             SettingProvider.SYSTEM -> Settings.System.putInt(context.contentResolver, key, value)
             SettingProvider.SECURE -> Settings.Secure.putInt(context.contentResolver, key, value)
         }
@@ -455,6 +510,9 @@ private fun writeSettingInt(context: Context, provider: SettingProvider, key: St
 }
 
 private fun readSettingFloat(context: Context, provider: SettingProvider, key: String, default: Float): Float {
+    if (provider == SettingProvider.GLOBAL) {
+        return readGlobalStringAny(context, key)?.toFloatOrNull() ?: default
+    }
     return try {
         when (provider) {
             SettingProvider.GLOBAL -> Settings.Global.getFloat(context.contentResolver, key, default)
@@ -467,7 +525,7 @@ private fun readSettingFloat(context: Context, provider: SettingProvider, key: S
 private fun writeSettingFloat(context: Context, provider: SettingProvider, key: String, value: Float) {
     try {
         when (provider) {
-            SettingProvider.GLOBAL -> Settings.Global.putFloat(context.contentResolver, key, value)
+            SettingProvider.GLOBAL -> Settings.Global.putFloat(context.contentResolver, writeKeyForHookSettings(provider, key), value)
             SettingProvider.SYSTEM -> Settings.System.putFloat(context.contentResolver, key, value)
             SettingProvider.SECURE -> Settings.Secure.putFloat(context.contentResolver, key, value)
         }

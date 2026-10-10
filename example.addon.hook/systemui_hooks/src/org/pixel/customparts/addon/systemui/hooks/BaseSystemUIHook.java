@@ -10,7 +10,8 @@ import android.provider.Settings;
 import android.util.Log;
 
 public abstract class BaseSystemUIHook {
-    private static final String PINE_SUFFIX = "_pine";
+    private static final String ACTIVE_SUFFIX = "_lsplant";
+    private static final String LEGACY_PINE_SUFFIX = "_pine";
     private static final String XPOSED_SUFFIX = "_xposed";
 
     /**
@@ -66,7 +67,7 @@ public abstract class BaseSystemUIHook {
             return defaultValue;
         }
         try {
-            return Settings.Global.getInt(context.getContentResolver(), resolveKey(key), defaultValue ? 1 : 0) != 0;
+            return Settings.Global.getInt(context.getContentResolver(), resolveKeyForRead(context, key), defaultValue ? 1 : 0) != 0;
         } catch (Throwable ignored) {
             return defaultValue;
         }
@@ -76,7 +77,7 @@ public abstract class BaseSystemUIHook {
         if (context == null) {
             return defaultValue;
         }
-        String resolvedKey = resolveKey(key);
+        String resolvedKey = resolveKeyForRead(context, key);
         try {
             return Settings.Global.getInt(context.getContentResolver(), resolvedKey, defaultValue);
         } catch (Throwable ignored) {
@@ -93,7 +94,7 @@ public abstract class BaseSystemUIHook {
             return defaultValue;
         }
         try {
-            return Settings.Global.getFloat(context.getContentResolver(), resolveKey(key), defaultValue);
+            return Settings.Global.getFloat(context.getContentResolver(), resolveKeyForRead(context, key), defaultValue);
         } catch (Throwable ignored) {
             return defaultValue;
         }
@@ -104,24 +105,50 @@ public abstract class BaseSystemUIHook {
             return defaultValue;
         }
         try {
-            String value = Settings.Global.getString(context.getContentResolver(), resolveKey(key));
+            String value = Settings.Global.getString(context.getContentResolver(), resolveKeyForRead(context, key));
             return value != null ? value : defaultValue;
         } catch (Throwable ignored) {
             return defaultValue;
         }
     }
 
+    private static String stripSuffix(String key) {
+        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX}) {
+            if (key.endsWith(s)) {
+                return key.substring(0, key.length() - s.length());
+            }
+        }
+        return key;
+    }
+
     protected String resolveKey(String key) {
+        // Canonical (write) form; reads go through resolveKeyForRead() fallback.
         if (key == null || key.isEmpty()) {
             return key;
         }
-        if (key.endsWith(PINE_SUFFIX)) {
-            return key;
+        return stripSuffix(key) + ACTIVE_SUFFIX;
+    }
+
+    /**
+     * Read-through fallback: new key first, then legacy keys, so settings
+     * stored under "_pine" keep working after the engine rename.
+     */
+    protected String resolveKeyForRead(Context context, String key) {
+        if (key == null || key.isEmpty() || context == null) {
+            return resolveKey(key);
         }
-        if (key.endsWith(XPOSED_SUFFIX)) {
-            return key.substring(0, key.length() - XPOSED_SUFFIX.length()) + PINE_SUFFIX;
+        String base = stripSuffix(key);
+        String[] candidates = new String[]{
+                base + ACTIVE_SUFFIX, base + LEGACY_PINE_SUFFIX, base + XPOSED_SUFFIX};
+        for (String candidate : candidates) {
+            try {
+                if (Settings.Global.getString(context.getContentResolver(), candidate) != null) {
+                    return candidate;
+                }
+            } catch (Throwable ignored) {
+            }
         }
-        return key + PINE_SUFFIX;
+        return base + ACTIVE_SUFFIX;
     }
 
     /**

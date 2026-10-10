@@ -16,7 +16,11 @@ import org.pixel.customparts.SettingsKeys
 
 
 object SettingsCompat {
-    private const val PINE_INJECT_SUFFIX = "_pine"
+    // Canonical suffix for new writes. Legacy "_pine" (and ancient "_xposed")
+    // values keep working through read-through fallback below, so user
+    // settings survive the engine rename without any migration step.
+    private const val ACTIVE_SUFFIX = "_lsplant"
+    private const val LEGACY_PINE_SUFFIX = "_pine"
     private const val XPOSED_SUFFIX = "_xposed"
 
     
@@ -103,11 +107,29 @@ object SettingsCompat {
     }
 
     private fun stripRuntimeSuffix(key: String): String {
-        return key.removeSuffix(PINE_INJECT_SUFFIX).removeSuffix(XPOSED_SUFFIX)
+        return key.removeSuffix(ACTIVE_SUFFIX).removeSuffix(LEGACY_PINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
     }
 
     private fun activeRuntimeSuffix(): String {
-        return PINE_INJECT_SUFFIX
+        return ACTIVE_SUFFIX
+    }
+
+    /** Raw read: new key first, then legacy keys. Null when nothing is stored. */
+    private fun getRawString(context: Context, baseKey: String): String? {
+        val resolver = context.contentResolver
+        val stripped = stripRuntimeSuffix(baseKey)
+        val candidates = if (isSuffixedKey(stripped)) {
+            listOf(ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX).map { stripped + it }
+        } else {
+            listOf(stripped)
+        }
+        for (candidate in candidates) {
+            try {
+                val value = Settings.Global.getString(resolver, candidate)
+                if (value != null) return value
+            } catch (_: Throwable) { }
+        }
+        return null
     }
 
     @JvmStatic
@@ -144,17 +166,17 @@ object SettingsCompat {
 
     @JvmStatic
     fun getInt(context: Context, key: String, defaultValue: Int): Int {
-        return Settings.Global.getInt(context.contentResolver, key(key), defaultValue)
+        return getRawString(context, key)?.toIntOrNull() ?: defaultValue
     }
 
     @JvmStatic
     fun getFloat(context: Context, key: String, defaultValue: Float): Float {
-        return Settings.Global.getFloat(context.contentResolver, key(key), defaultValue)
+        return getRawString(context, key)?.toFloatOrNull() ?: defaultValue
     }
 
     @JvmStatic
     fun getString(context: Context, key: String, defaultValue: String?): String? {
-        return Settings.Global.getString(context.contentResolver, key(key)) ?: defaultValue
+        return getRawString(context, key) ?: defaultValue
     }
 
     @JvmStatic

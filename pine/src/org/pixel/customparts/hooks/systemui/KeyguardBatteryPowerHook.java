@@ -31,6 +31,29 @@ public class KeyguardBatteryPowerHook extends BaseHook {
         return base + mSuffix;
     }
 
+    /**
+     * Read-through fallback for the engine rename: active "_lsplant" key
+     * first, then the hook's configured suffix, then legacy ones — user
+     * settings stored under "_pine"/"_xposed" keep working.
+     */
+    private String getKeyForRead(android.content.ContentResolver cr, String base) {
+        java.util.LinkedHashSet<String> candidates = new java.util.LinkedHashSet<>();
+        candidates.add(base + "_lsplant");
+        candidates.add(base + mSuffix);
+        candidates.add(base + "_pine");
+        candidates.add(base + "_xposed");
+        for (String candidate : candidates) {
+            try {
+                if (android.provider.Settings.System.getString(cr, candidate) != null ||
+                        android.provider.Settings.Global.getString(cr, candidate) != null) {
+                    return candidate;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return base + "_lsplant";
+    }
+
     private static final String KEY_BATTERY_INFO_ENABLE_BASE = "pixelparts_battery_info_enable";
     private static final String KEY_SHOW_WATTAGE_BASE = "pixelparts_battery_info_show_wattage";
     private static final String KEY_SHOW_VOLTAGE_BASE = "pixelparts_battery_info_show_voltage";
@@ -261,7 +284,7 @@ public class KeyguardBatteryPowerHook extends BaseHook {
             mShowCustomSymbol = isSettingEnabled(context, KEY_SHOW_CUSTOM_SYMBOL_BASE, true);
             mAverageModeEnabled = isSettingEnabled(context, KEY_AVERAGE_MODE_BASE, false);
 
-            String symbol = getSystemString(context.getContentResolver(), getKey(KEY_CUSTOM_SYMBOL_BASE));
+            String symbol = getSystemString(context.getContentResolver(), getKeyForRead(context.getContentResolver(), KEY_CUSTOM_SYMBOL_BASE));
             if (TextUtils.isEmpty(symbol)) symbol = "⚡";
             mCustomSymbol = symbol;
 

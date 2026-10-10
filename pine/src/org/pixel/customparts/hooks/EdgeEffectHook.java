@@ -22,15 +22,41 @@ import de.robv.android.xposed.XposedHelpers;
 
 public class EdgeEffectHook {
     private static final String TAG = "PixelPartsOverscroll";
-    private static String sKeySuffix = "_xposed";
+    private static String sKeySuffix = "_lsplant";
     public static void configure(boolean useGlobal, String suffix) {
         if (!useGlobal) {
             Log.w(TAG, "Settings.Secure is no longer supported. Forcing Settings.Global.");
         }
         sKeySuffix = suffix;
     }
+    private static String stripSuffix(String key) {
+        return key.replaceAll("_(xposed|pine|lsplant)$", "");
+    }
+
     private static String resolveKey(String key) {
-        String base = key.replaceAll("_(xposed|pine)$", "");
+        // Canonical (write) form; reads go through resolveKeyForRead() fallback.
+        return stripSuffix(key) + sKeySuffix;
+    }
+
+    /**
+     * Read-through fallback: active suffix first, then legacy ones, so
+     * settings stored under "_pine"/"_xposed" keep working after the rename.
+     */
+    private static String resolveKeyForRead(Context ctx, String key) {
+        if (ctx == null) {
+            return resolveKey(key);
+        }
+        String base = stripSuffix(key);
+        for (String suffix : new String[]{sKeySuffix, "_pine", "_xposed"}) {
+            String candidate = base + suffix;
+            try {
+                if (android.provider.Settings.Global.getString(
+                        ctx.getContentResolver(), candidate) != null) {
+                    return candidate;
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return base + sKeySuffix;
     }
 
@@ -1296,7 +1322,7 @@ public class EdgeEffectHook {
     private static float getFloatSetting(Context ctx, String key, float def) {
         if (ctx == null) return def;
         try {
-            String resolved = resolveKey(key);
+            String resolved = resolveKeyForRead(ctx, key);
             return Settings.Global.getFloat(ctx.getContentResolver(), resolved, def);
         } catch (Exception ignored) { return def; }
     }
@@ -1304,7 +1330,7 @@ public class EdgeEffectHook {
     private static int getIntSetting(Context ctx, String key, int def) {
         if (ctx == null) return def;
         try {
-            String resolved = resolveKey(key);
+            String resolved = resolveKeyForRead(ctx, key);
             return Settings.Global.getInt(ctx.getContentResolver(), resolved, def);
         } catch (Exception ignored) { return def; }
     }
@@ -1312,7 +1338,7 @@ public class EdgeEffectHook {
     private static String getStringSetting(Context ctx, String key) {
         if (ctx == null) return null;
         try {
-            String resolved = resolveKey(key);
+            String resolved = resolveKeyForRead(ctx, key);
             return Settings.Global.getString(ctx.getContentResolver(), resolved);
         } catch (Exception ignored) { return null; }
     }
