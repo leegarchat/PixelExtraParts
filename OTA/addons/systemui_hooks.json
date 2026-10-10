@@ -1,6 +1,6 @@
 {
-    "version": "2.2.8",
+    "version": "2.2.9",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Stabilizer along whole travel + exit, smooth-ms slider, zoom alive at blur 0",
+    "changelog": "Per-window stabilizers: no cross-stream races, switch continues from current",
     "info": "SystemUI hooks for PixelExtraParts"
 }

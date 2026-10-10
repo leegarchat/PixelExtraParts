@@ -93,14 +93,47 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // applyBlur() scale arg index cache: -2 unknown, -1 absent, >=0 actual index
     private static volatile int sApplyBlurScaleArgIndex = -2;
 
+    // Per-window smoother states: every blur client window (shade, keyguard,
+    // dreams...) runs its own chase from its own current position, so
+    // concurrent streams never fight over one shared value. Switching
+    // windows interrupts nothing: the idle stream's state just waits.
+    // Weak keys — dead windows are GC'd, no manual eviction needed.
+    private static final java.util.WeakHashMap<Object, SmoothState> sSmoothStates =
+            new java.util.WeakHashMap<>();
+
+    private static final class SmoothState {
+        volatile float output = -1f; // -1 = never engaged: anchor only
+        volatile long lastMs;
+    }
+
     // Jerk stabilizer: exponential chase (tau = smoothMs/3) plus a hard
-    // per-frame cap, so sparse mid-fling frames glide along the whole travel
-    // instead of snapping. Slow drags track with a small lag; fast flings
-    // glide over ~smoothMs. sCfgSmoothMs <= 0 disables it (direct target).
-    // -1 = never engaged (anchor to live stock, zero touch downstream).
+    // per-frame cap. smoothMs <= 0 disables it (direct target).
     private static final float SMOOTH_EPS = 0.0015f;
-    private static volatile float sSmoothScale = -1f;
-    private static volatile long sSmoothLastMs;
+    // Fallback window key when applyBlur gets a null root.
+    private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
+
+    private static SmoothState smoothStateFor(Object window) {
+        synchronized (sSmoothStates) {
+            SmoothState st = sSmoothStates.get(window);
+            if (st == null) {
+                st = new SmoothState();
+                sSmoothStates.put(window, st);
+            }
+            return st;
+        }
+    }
+
+    private static float smoothCurrent(Object window) {
+        synchronized (sSmoothStates) {
+            SmoothState st = sSmoothStates.get(window);
+            return (st != null) ? st.output : -1f;
+        }
+    }
+
+    private static Object smoothWindowKey(Object[] args) {
+        if (args != null && args.length > 0 && args[0] != null) return args[0];
+        return SMOOTH_FALLBACK_WINDOW;
+    }
 
     @Override
     public String getHookId() {
@@ -141,6 +174,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
                         int scaleIndex = resolveApplyBlurScaleArgIndex(param.args);
                         if (scaleIndex == -1) return;
+                        // Per-window stabilizer: concurrent blur clients never
+                        // share one chase value.
+                        Object window = smoothWindowKey(param.args);
 
                         Context app = getCurrentApplication();
                         ensureConfigLoaded(app);
@@ -151,7 +187,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (originalScale0 < 0f) return;
 
                         if (sZoomForceOffActive) {
-                            param.args[scaleIndex] = smoothScale(1.0f, originalScale0);
+                            param.args[scaleIndex] = smoothScale(1.0f, originalScale0, window);
                             return;
                         }
 
@@ -161,8 +197,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                             // Zoom just disengaged mid-glide: ease back to stock
                             // instead of snapping. Pure-stock frames (never
                             // engaged) pass through untouched.
-                            if (sSmoothScale < 0f || sSmoothScale == originalScale) return;
-                            param.args[scaleIndex] = smoothScale(originalScale, originalScale);
+                            if (smoothCurrent(window) < 0f
+                                    || smoothCurrent(window) == originalScale) return;
+                            param.args[scaleIndex] = smoothScale(originalScale, originalScale, window);
                             return;
                         }
 
@@ -179,7 +216,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
                         int zoomIntensity = sCfgZoomIntensity;
                         float target = applyZoomCurve(originalScale, zoomIntensity);
-                        param.args[scaleIndex] = smoothScale(target, originalScale);
+                        param.args[scaleIndex] = smoothScale(target, originalScale, window);
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }
@@ -231,21 +268,22 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
      * smoothMs <= 0 bypasses easing entirely. Returns the scale to apply and
      * advances the stored state.
      */
-    private float smoothScale(float target, float original) {
+    private float smoothScale(float target, float original, Object window) {
         long now = android.os.SystemClock.uptimeMillis();
-        float current = sSmoothScale;
+        SmoothState st = smoothStateFor(window);
+        float current = st.output;
         if (current < 0f) {
-            sSmoothScale = original;
-            sSmoothLastMs = now;
+            st.output = original;
+            st.lastMs = now;
             return original;
         }
         int smoothMs = sCfgSmoothMs;
         if (smoothMs <= 0) {
-            sSmoothScale = target;
-            sSmoothLastMs = now;
+            st.output = target;
+            st.lastMs = now;
             return target;
         }
-        long dt = now - sSmoothLastMs;
+        long dt = now - st.lastMs;
         float alpha = (dt <= 0) ? 0f
                 : 1f - (float) Math.exp(-dt / (smoothMs / 3f));
         float next = current + (target - current) * alpha;
@@ -257,8 +295,8 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         if (step > stepCap) next = current + stepCap;
         else if (step < -stepCap) next = current - stepCap;
         else if (Math.abs(target - next) < SMOOTH_EPS) next = target;
-        sSmoothScale = next;
-        sSmoothLastMs = now;
+        st.output = next;
+        st.lastMs = now;
         return next;
     }
 
