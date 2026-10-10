@@ -9,7 +9,7 @@
         "com.google.android.GoogleCamera"
     ],
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/gcam_photo_torch.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/gcam_photo_torch.json",
     "accent": "#FFD18B",
     "backgroundMode": "gradient",
     "backgroundAlpha": 60,

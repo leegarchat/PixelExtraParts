@@ -9,7 +9,7 @@
         "com.android.settings"
     ],
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/settings_icon_style_override.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/settings_icon_style_override.json",
     "accent": "#67DDF7",
     "backgroundMode": "gradient",
     "backgroundAlpha": 45,

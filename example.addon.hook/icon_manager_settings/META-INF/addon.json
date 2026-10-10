@@ -5,7 +5,7 @@
     "description": "Settings-only addon UI for Icon Manager advanced controls.",
     "version": "2.0.0",
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/icon_manager_settings.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/icon_manager_settings.json",
     "backgroundMode": "gradient",
     "backgroundAlpha": 48,
     "backgroundGradientSteps": [

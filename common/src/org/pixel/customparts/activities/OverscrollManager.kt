@@ -345,7 +345,7 @@ object OverscrollManager {
 
     // ── Network configs from GitHub ──
 
-    private const val GITHUB_API_URL = "https://api.github.com/repos/leegarchat/PixelExtraParts/contents/overscroll.configs"
+    private const val GITHUB_API_URL = "https://api.github.com/repos/leegarchat/PixelExtraParts/contents/overscroll.configs?ref=lineage-24.0"
     
     data class NetworkConfig(val name: String, val downloadUrl: String)
 

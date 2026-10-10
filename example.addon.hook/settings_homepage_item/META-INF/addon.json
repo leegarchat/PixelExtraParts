@@ -9,7 +9,7 @@
         "com.android.settings"
     ],
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/settings_homepage_item.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/settings_homepage_item.json",
     "accent": "#7EE3B4",
     "backgroundMode": "gradient",
     "backgroundAlpha": 45,

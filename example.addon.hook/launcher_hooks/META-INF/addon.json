@@ -9,7 +9,7 @@
         "com.google.android.apps.nexuslauncher"
     ],
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/launcher_hooks.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/launcher_hooks.json",
     "backgroundMode": "gradient",
     "backgroundAlpha": 52,
     "backgroundGradientSteps": [

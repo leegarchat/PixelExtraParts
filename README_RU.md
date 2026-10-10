@@ -36,7 +36,7 @@ grep -rn "android.hardware.thermal-service.pixel" device/<vendor>/<codename>/  #
 
 ```bash
 # Клон СТРОГО в этот путь:
-git clone https://github.com/leegarchat/PixelExtraParts.git packages/apps/PixelExtraParts
+git clone -b lineage-24.0 https://github.com/leegarchat/PixelExtraParts.git packages/apps/PixelExtraParts
 ```
 
 В device/product makefile, **до** `inherit-product`:

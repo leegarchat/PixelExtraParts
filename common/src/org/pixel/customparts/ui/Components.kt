@@ -684,7 +684,7 @@ fun InfoDialog(
                             isLoading = true
                             isError = false
                             
-                            val webUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/lineage-24.0/VideoSample/$videoResName.mp4"
+                            val webUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/VideoSample/$videoResName.mp4"
                             
                             
                             val resId = context.resources.getIdentifier(videoResName, "raw", context.packageName)

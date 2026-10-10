@@ -9,7 +9,7 @@
         "com.android.systemui"
     ],
     "enabled": true,
-    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/heads/testing/OTA/addons/ambient_extend_hook.json",
+    "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/ambient_extend_hook.json",
     "accent": "#64D8FF",
     "backgroundMode": "gradient",
     "backgroundAlpha": 70,
