@@ -131,6 +131,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static final float G_SOFT = 0.015f;   // softening (peaks ~0.12 out)
     private static final float DAMP_LAMBDA = 12f; // air friction (1/s)
     private static final float VMAX_S = 4f;       // cruise backstop (units/s)
+    private static final float STEP_ABS = 0.09f;   // absolute step backstop per frame
     private static final float G_EPS = 0.0015f;   // arrival snap band
     private static final float DTS_MAX = 0.12f;   // integrator clamp (s)
     // Fallback window key when applyBlur gets a null root.
@@ -496,7 +497,12 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         float vmax = Math.min(dist / Math.max(dts, 1e-4f), VMAX_S);
         if (v > vmax) v = vmax;
         else if (v < -vmax) v = -vmax;
-        float nx = x + v * dts;
+        // Absolute step backstop: sparse close/fling frames must not jump
+        // further than this no matter the wall rate behind them.
+        float step = v * dts;
+        if (step > STEP_ABS) step = STEP_ABS;
+        else if (step < -STEP_ABS) step = -STEP_ABS;
+        float nx = x + step;
         st.output = nx;
         st.vel = v;
         st.lastMs = now;

@@ -1,6 +1,6 @@
 {
-    "version": "2.2.18",
+    "version": "2.2.19",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "BlurUtils overload shape detection (3-arg ROMs): convergence loop engages everywhere",
+    "changelog": "Absolute step backstop: sparse exit frames glide, no X-to-X jumps",
     "info": "SystemUI hooks for PixelExtraParts"
 }
