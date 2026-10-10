@@ -38,3 +38,7 @@ modules in `Android.bp` / `device.mk`.
   library; source available at the URL above.
 - Dobby: Apache-2.0.
 - `bridge/` + headers usage: ours.
+
+- `pine/libs/lsplant/arm64-v8a/libc++_shared.so`: NDK r29 shared STL,
+  required at runtime by the prefab liblsplant.so (the platform itself
+  carries no libc++_shared). Shipped to /system/lib64 alongside.

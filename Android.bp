@@ -205,6 +205,17 @@ cc_prebuilt_library_shared {
 }
 
 cc_prebuilt_library_shared {
+    name: "libc++_shared",
+    srcs: ["pine/libs/lsplant/arm64-v8a/libc++_shared.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
+    system_ext_specific: false,
+    installable: true,
+}
+
+cc_prebuilt_library_shared {
     name: "liblspbridge",
     srcs: ["pine/libs/lsplant/arm64-v8a/liblspbridge.so"],
     strip: {
