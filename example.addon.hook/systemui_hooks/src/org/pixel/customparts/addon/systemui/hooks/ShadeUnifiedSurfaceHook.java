@@ -176,24 +176,30 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Bidirectional zoom curve around STOCK. UI range is -1000..1000,
+     * Progress-relative zoom around STOCK. UI range is -1000..1000,
      * 0 means stock (identity passthrough).
      *
      * Stock shrinks the background as the shade opens (scale 1.0 gliding
-     * down by the pushback factor), so:
+     * down by the pushback factor). The zoom NEVER re-anchors the scale: it
+     * only scales the live stock deviation d = 1 - orig, so with the shade
+     * closed (d = 0) output is exactly stock — no entry jerk. The effect
+     * grows with shade progress from 0 to the set boundary:
      * <ul>
-     *   <li>zoom &gt; 0: amplify the shrinking — push the scale down below
-     *   stock, floored at 1/16. An exact 0.0 scale downsamples to a 0px
-     *   surface and kills SystemUI natively (no Java trace), hence the
-     *   floor. +1000 = max shrink.</li>
-     *   <li>zoom &lt; 0: reverse — push the scale up above stock toward
-     *   enlarge, capped at ENLARGE_CAP. Stock headroom to 1.0 is only ~5%
-     *   (pushback 0.05/0.025), so a visible enlarge needs scales above 1.0;
-     *   edge mirroring up there is masked by the blur itself. -1000 lands
-     *   exactly on the cap.</li>
+     *   <li>zoom &gt; 0: deepen the shrinking,
+     *   newScale = orig - PLUS_GAIN * v * d (+1000 lands on the 1/16 floor
+     *   at full open).</li>
+     *   <li>zoom &lt; 0: reverse toward enlarge,
+     *   newScale = orig + MINUS_GAIN * |v| * d (-1000 lands on ENLARGE_CAP
+     *   at full open; stock headroom alone is only ~5% pushback, hence the
+     *   gain instead of a remap).</li>
      * </ul>
+     * Output clamped to [1/16, ENLARGE_CAP]; an exact 0.0 scale downsamples
+     * to a 0px surface and kills SystemUI natively (no Java trace).
      */
     private static final float ENLARGE_CAP = 2.0f;
+    // Full-setting extra at full open: 1000 * 0.05 (max stock pushback).
+    private static final float PLUS_GAIN = 18f;   // ~0.9 extra shrink
+    private static final float MINUS_GAIN = 20f;  // ~1.0 extra enlarge
 
     private float resolveFloatArg(Object[] args, int index) {
         if (args == null || index < 0 || index >= args.length) return -1f;
@@ -228,21 +234,17 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     private float applyZoomCurve(float originalScale, int zoomIntensity) {
-        if (zoomIntensity >= 0) {
-            float t = zoomIntensity / 1000f; // 0..1 across 0..1000
-            if (t < 0f) t = 0f;
-            else if (t > 1f) t = 1f;
-            float newScale = originalScale - (originalScale - 0.0625f) * t;
+        if (zoomIntensity == 0) return originalScale;
+        float d = 1.0f - originalScale;
+        if (d < 0f) d = 0f; // closed shade or overshoot: no deviation, stock
+        float newScale;
+        if (zoomIntensity > 0) {
+            newScale = originalScale - PLUS_GAIN * (zoomIntensity / 1000f) * d;
             if (newScale < 0.0625f) newScale = 0.0625f;
-            else if (newScale > ENLARGE_CAP) newScale = ENLARGE_CAP;
-            return newScale;
+        } else {
+            newScale = originalScale + MINUS_GAIN * (-zoomIntensity / 1000f) * d;
+            if (newScale > ENLARGE_CAP) newScale = ENLARGE_CAP;
         }
-        float t = (-zoomIntensity) / 1000f; // 0..1 across 0..-1000
-        if (t < 0f) t = 0f;
-        else if (t > 1f) t = 1f;
-        float newScale = originalScale + (ENLARGE_CAP - originalScale) * t;
-        if (newScale > ENLARGE_CAP) newScale = ENLARGE_CAP;
-        else if (newScale < 0.0625f) newScale = 0.0625f;
         return newScale;
     }
 

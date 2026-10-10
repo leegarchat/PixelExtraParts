@@ -1,6 +1,6 @@
 {
-    "version": "2.2.6",
+    "version": "2.2.7",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Zoom transitions eased over fixed 300ms (jerk stabilizer)",
+    "changelog": "Zoom follows shade progress: no entry jump, effect grows 0 to boundary",
     "info": "SystemUI hooks for PixelExtraParts"
 }
