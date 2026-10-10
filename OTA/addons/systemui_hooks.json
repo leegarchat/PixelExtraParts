@@ -1,6 +1,6 @@
 {
-    "version": "2.2.15",
+    "version": "2.2.16",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Timer-based follower: identical feel at 60Hz and 120Hz (simulator-proven parity)",
+    "changelog": "Self-driven convergence loop: arrives at X after stock goes quiet",
     "info": "SystemUI hooks for PixelExtraParts"
 }
