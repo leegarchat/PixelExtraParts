@@ -31,22 +31,10 @@ int DlCallback(struct dl_phdr_info* info, size_t, void* data) {
     if (name.find(want) == std::string::npos) {
         return 0;
     }
+    // dlpi_addr is the load bias (l_addr) of ET_DYN objects like libart.so.
+    out->bias = static_cast<uintptr_t>(info->dlpi_addr);
     for (int i = 0; i < info->dlpi_phnum; ++i) {
         const auto& ph = info->dlpi_phdr[i];
-        if (ph.p_type == PT_LOAD && out->bias == 0) {
-            out->bias = info->dlpi_addr + ph.p_vaddr - ph.p_offset;
-            // Keep the lowest vaddr bias: recompute properly below.
-            out->bias = info->dlpi_addr;
-            for (int j = 0; j < info->dlpi_phnum; ++j) {
-                const auto& q = info->dlpi_phdr[j];
-                if (q.p_type == PT_LOAD) {
-                    uintptr_t b = info->dlpi_addr + q.p_vaddr - q.p_offset;
-                    if (b < out->bias) {
-                        out->bias = b;
-                    }
-                }
-            }
-        }
         if (ph.p_type == PT_DYNAMIC) {
             out->dynamic = reinterpret_cast<const ElfW(Dyn)*>(info->dlpi_addr + ph.p_vaddr);
         }
@@ -80,9 +68,24 @@ struct DynSym {
     uint32_t gnu_symoffset = 0;
 };
 
+// Relocate a DT_* address tag to a runtime address.
+//
+// Empirically linkers disagree here: glibc presents DT_SYMTAB/DT_STRTAB/
+// DT_HASH/DT_GNU_HASH already bias-inclusive in memory, while Bionic keeps
+// the raw link-time values. Disambiguate by shape: real RVAs are tiny,
+// relocated addresses are not.
+static uintptr_t RelocateAddr(uintptr_t v, uintptr_t bias) {
+    if (v != 0 && v < 0x100000) {
+        v += bias;
+    }
+    return v;
+}
+
 bool ParseDynamic(const ElfW(Dyn)* dyn, uintptr_t bias, DynSym* out) {
+    // DT_* d_ptr values of ET_DYN objects may be link-time RVAs (Bionic)
+    // or already relocated (glibc): RelocateAddr handles both.
     for (const ElfW(Dyn)* d = dyn; d->d_tag != DT_NULL; ++d) {
-        uintptr_t v = static_cast<uintptr_t>(d->d_un.d_ptr);
+        uintptr_t v = RelocateAddr(static_cast<uintptr_t>(d->d_un.d_ptr), bias);
         switch (d->d_tag) {
             case DT_SYMTAB:
                 out->syms = reinterpret_cast<const ElfW(Sym)*>(v);
@@ -102,15 +105,18 @@ bool ParseDynamic(const ElfW(Dyn)* dyn, uintptr_t bias, DynSym* out) {
                 const uint32_t* h = reinterpret_cast<const uint32_t*>(v);
                 out->gnu_nbucket = h[0];
                 out->gnu_symoffset = h[1];
-                out->gnu_bloom = reinterpret_cast<const ElfW(Addr)*>(v + 16);
-                out->gnu_bucket = reinterpret_cast<const uint32_t*>(
-                    reinterpret_cast<uintptr_t>(out->gnu_bloom) +
-                    out->gnu_maskwords * sizeof(ElfW(Addr)));
-                // maskwords is at h[2]; re-read properly:
                 out->gnu_maskwords = h[2];
                 out->gnu_shift2 = h[3];
+                out->gnu_bloom = reinterpret_cast<const ElfW(Addr)*>(
+                    reinterpret_cast<uintptr_t>(h) + 16 +
+                    out->gnu_maskwords * sizeof(ElfW(Addr)));
                 out->gnu_bucket = reinterpret_cast<const uint32_t*>(
                     reinterpret_cast<uintptr_t>(h) + 16 +
+                    out->gnu_maskwords * sizeof(ElfW(Addr)));
+                // NOTE: bloom sits between header and buckets; bucket base
+                // skips header(16) + bloom(maskwords words).
+                out->gnu_bucket = reinterpret_cast<const uint32_t*>(
+                    reinterpret_cast<uintptr_t>(out->gnu_bloom) +
                     out->gnu_maskwords * sizeof(ElfW(Addr)));
                 out->gnu_chain = out->gnu_bucket + out->gnu_nbucket;
                 break;
@@ -119,8 +125,6 @@ bool ParseDynamic(const ElfW(Dyn)* dyn, uintptr_t bias, DynSym* out) {
                 break;
         }
     }
-    // DT_* addresses in a shared object are already relocated (absolute).
-    (void) bias;
     return out->syms != nullptr && out->strs != nullptr;
 }
 
@@ -189,13 +193,18 @@ void* SearchLoaded(const char* substr, std::string_view prefix, bool exact) {
         if (ds.syms[i].st_shndx == SHN_UNDEF) {
             continue;
         }
+        if (ELF64_ST_BIND(ds.syms[i].st_info) == STB_LOCAL) {
+            continue;  // mirror dlsym: never resolve local symbols
+        }
         if (ds.syms[i].st_value == 0) {
             continue;
         }
         const char* name = SymName(ds, i);
         bool hit = exact ? (prefix == name) : (strncmp(name, prefix.data(), prefix.size()) == 0);
         if (hit) {
-            return reinterpret_cast<void*>(static_cast<uintptr_t>(ds.syms[i].st_value));
+            // st_value is always a link-time RVA (symbol table data is never
+            // relocated): the load bias applies on every libc.
+            return reinterpret_cast<void*>(lib.bias + static_cast<uintptr_t>(ds.syms[i].st_value));
         }
     }
     return nullptr;
