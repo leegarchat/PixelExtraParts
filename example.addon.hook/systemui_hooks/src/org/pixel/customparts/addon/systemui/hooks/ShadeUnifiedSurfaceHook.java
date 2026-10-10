@@ -117,6 +117,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         volatile Method applyMethod;
         volatile boolean loopOn;
         volatile int loopTicks;
+        volatile long loopStartMs;
     }
 
     // Gravity follower, TIMER-based (seconds): identical feel at 60Hz and
@@ -167,7 +168,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // BlurUtils pipeline. Our own calls pass the hook untouched via
     // sInSelfDrive. The loop stops itself on arrival, disable or close
     // (plus a 5s watchdog).
-    private static final int LOOP_TICKS_MAX = 300;
+    private static final long LOOP_MS_MAX = 20000; // wall watchdog for the loop
+    private static final float VMIN_S = 0.15f;      // loop-only minimum cruise
+    private static final float CLOSED_ORIG = 0.9995f; // cached orig at/above = shut
     private static volatile boolean sInSelfDrive;
     private static final Object sLoopLock = new Object();
     private static boolean sLoopScheduled; // guarded by sLoopLock
@@ -201,6 +204,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             }
             st.loopOn = true;
             st.loopTicks = 0;
+            st.loopStartMs = android.os.SystemClock.uptimeMillis();
             ensureLoopPosted();
         } else {
             st.loopOn = false;
@@ -239,16 +243,30 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                 synchronized (sSmoothStates) { st = sSmoothStates.get(w); }
                 if (st == null || !st.loopOn) continue;
                 try {
-                    if (++st.loopTicks > LOOP_TICKS_MAX) { st.loopOn = false; continue; }
+                    long now0 = android.os.SystemClock.uptimeMillis();
+                    if (now0 - st.loopStartMs > LOOP_MS_MAX) {
+                        android.util.Log.d("ShadeUnifiedSurfaceHook", "loop stop: watchdog");
+                        st.loopOn = false; continue;
+                    }
                     if (st.radius <= 0 || st.applyMethod == null || st.blurUtils == null) {
                         st.loopOn = false; continue;
+                    }
+                    if (st.orig >= CLOSED_ORIG) {
+                        // Shut while quiet: forget the glide, nothing visible
+                        // to ease — a stale push would resurrect blur on a
+                        // closed shade ("tries to play, then snaps to 0").
+                        st.output = st.orig;
+                        st.vel = 0f;
+                        st.loopOn = false;
+                        android.util.Log.d("ShadeUnifiedSurfaceHook", "loop stop: shut");
+                        continue;
                     }
                     float target = sZoomForceOffActive ? 1.0f
                             : sZoomScalingActive ? applyZoomCurve(st.orig, sCfgZoomIntensity)
                             : st.orig;
                     if (!sZoomForceOffActive && !sZoomScalingActive) { st.loopOn = false; continue; }
                     long now = android.os.SystemClock.uptimeMillis();
-                    float out = smoothScale(target, st.orig, st.radius, w, now);
+                    float out = smoothScale(target, st.orig, st.radius, w, now, VMIN_S);
                     if (Math.abs(out - target) < G_EPS) {
                         st.loopOn = false;
                         android.util.Log.d("ShadeUnifiedSurfaceHook", "convergence loop arrived");
@@ -453,6 +471,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
      * interrupt. Returns the scale to apply and advances the stored state.
      */
     private static float smoothScale(float target, float original, int radius, Object window, long now) {
+        return smoothScale(target, original, radius, window, now, 0f);
+    }
+
+    private static float smoothScale(float target, float original, int radius, Object window, long now, float vmin) {
         SmoothState st = smoothStateFor(window);
         int prevRadius = st.lastRadius;
         st.lastRadius = radius;
@@ -492,6 +514,10 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         // Signed pull: strong mid-range, easing to zero at the target.
         float pull = (s / 1000f) * G_SI_REF * r / (dist * dist + G_SOFT);
         float v = (st.vel + pull * dts) * (float) Math.exp(-DAMP_LAMBDA * dts);
+        // Loop-only minimum cruise: arrival assured however weak gravity is.
+        if (vmin > 0f && v > -vmin && v < vmin) {
+            v = (r >= 0f ? vmin : -vmin);
+        }
         // Never step further than the remaining gap (overshoot impossible),
         // never faster than the cruise backstop.
         float vmax = Math.min(dist / Math.max(dts, 1e-4f), VMAX_S);
