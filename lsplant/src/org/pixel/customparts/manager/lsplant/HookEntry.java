@@ -1,4 +1,4 @@
-package org.pixel.customparts.manager.pine;
+package org.pixel.customparts.manager.lsplant;
 
 import android.content.Context;
 import org.pixel.customparts.core.BaseHook;
@@ -21,7 +21,7 @@ public class HookEntry {
     private static final Set<String> BUILTIN_WHITELIST = new HashSet<>();
     private static final Set<String> LAUNCHER_PACKAGES = new HashSet<>();
     private static final Set<String> initializedPackages = new HashSet<>();
-    private static final IHookEnvironment environment = new PineEnvironment();
+    private static final IHookEnvironment environment = new LsplantEnvironment();
 
     static {
         LAUNCHER_PACKAGES.add(PACKAGE_NEXUS_LAUNCHER);

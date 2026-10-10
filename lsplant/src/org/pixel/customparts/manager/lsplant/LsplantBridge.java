@@ -13,7 +13,7 @@ import de.robv.android.xposed.XposedBridge;
 /**
  * Java side of the LSPlant hook backend.
  *
- * <p>Replaces {@code top.canyie.pine.Pine}: one LSPlant native hook per
+ * <p>LSPlant native hook backend: one native hook per
  * {@link Member}, dispatching to the Xposed callback chain held by
  * {@link XposedBridge}. Hook files are untouched — they keep talking
  * {@code de.robv.android.xposed.*}.
@@ -48,7 +48,7 @@ public final class LsplantBridge {
         if (initOk) {
             return true;
         }
-        // Pine parity: Pine disabled the hidden-API blacklist process-wide.
+        // LSPlant keeps the hidden-API blacklist disabled process-wide.
         // Without this, hooks running with a modern targetSdk (e.g. GCam on
         // API 37) get "using reflection: denied" on platform hidden methods
         // (observed: CameraMetadataNative.set for the torch hook).
@@ -144,8 +144,8 @@ public final class LsplantBridge {
     }
 
     /**
-     * Process-wide hidden-API exemption ({@code "L"} = everything), mirroring
-     * what Pine did at startup. Reflection-safe across releases.
+     * Process-wide hidden-API exemption ({@code "L"} = everything), as the
+     * previous engine did at startup. Reflection-safe across releases.
      */
     private static void exemptHiddenApi() {
         try {

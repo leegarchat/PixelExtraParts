@@ -190,8 +190,8 @@ OUT_DIR="$PROJECT_ROOT/out"
 BUILD_DIR="$PROJECT_ROOT/build"
 
 ANDROID_JAR="$(resolve_android_jar || true)"
-PINE_XPOSED_JAR="$SCRIPT_DIR/prebuild/pine/pine-xposed.jar"
-PINE_CORE_JAR="$SCRIPT_DIR/prebuild/pine/pine-core.jar"
+LSPLANT_XPOSED_JAR="$SCRIPT_DIR/prebuild/lsplant/pine-xposed.jar"
+LSPLANT_CORE_JAR="$SCRIPT_DIR/prebuild/lsplant/pine-core.jar"
 XPOSED_API_JAR="$SCRIPT_DIR/prebuild/xposed/api-82.jar"
 CORE_SRC="$SCRIPT_DIR/prebuild/IAddonHook.java"
 
@@ -215,11 +215,11 @@ else
 fi
 
 if [[ "$SETTINGS_ONLY" == "false" ]]; then
-    if [[ ! -f "$PINE_XPOSED_JAR" ]]; then
-        echo "  Warning: $PINE_XPOSED_JAR not found (compilation may fail if using Pine/Xposed API)."
+    if [[ ! -f "$LSPLANT_XPOSED_JAR" ]]; then
+        echo "  Warning: $LSPLANT_XPOSED_JAR not found (compilation may fail if using LSPlant/Xposed API)."
     fi
-    if [[ ! -f "$PINE_CORE_JAR" ]]; then
-        echo "  Warning: $PINE_CORE_JAR not found (compilation may fail if using Pine Core classes)."
+    if [[ ! -f "$LSPLANT_CORE_JAR" ]]; then
+        echo "  Warning: $LSPLANT_CORE_JAR not found (compilation may fail if using LSPlant Core classes)."
     fi
     if [[ ! -f "$XPOSED_API_JAR" ]]; then
         echo "  Warning: $XPOSED_API_JAR not found (compilation may fail if using Xposed API)."
@@ -262,8 +262,8 @@ else
 
     echo "  [2/4] Compiling addon sources..."
     ADDON_CP="$ANDROID_JAR:$BUILD_DIR/stubs"
-    [[ -f "$PINE_XPOSED_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_XPOSED_JAR"
-    [[ -f "$PINE_CORE_JAR" ]] && ADDON_CP="$ADDON_CP:$PINE_CORE_JAR"
+    [[ -f "$LSPLANT_XPOSED_JAR" ]] && ADDON_CP="$ADDON_CP:$LSPLANT_XPOSED_JAR"
+    [[ -f "$LSPLANT_CORE_JAR" ]] && ADDON_CP="$ADDON_CP:$LSPLANT_CORE_JAR"
     [[ -f "$XPOSED_API_JAR" ]] && ADDON_CP="$ADDON_CP:$XPOSED_API_JAR"
 
     find "$SRC_DIR" -name "*.java" > "$BUILD_DIR/sources.txt"
@@ -277,8 +277,8 @@ else
 
     # d8 needs --lib android.jar for correct type resolution.
     D8_CP_ARGS=()
-    [[ -f "$PINE_XPOSED_JAR" ]] && D8_CP_ARGS+=(--classpath "$PINE_XPOSED_JAR")
-    [[ -f "$PINE_CORE_JAR" ]]   && D8_CP_ARGS+=(--classpath "$PINE_CORE_JAR")
+    [[ -f "$LSPLANT_XPOSED_JAR" ]] && D8_CP_ARGS+=(--classpath "$LSPLANT_XPOSED_JAR")
+    [[ -f "$LSPLANT_CORE_JAR" ]]   && D8_CP_ARGS+=(--classpath "$LSPLANT_CORE_JAR")
     [[ -f "$XPOSED_API_JAR" ]]  && D8_CP_ARGS+=(--classpath "$XPOSED_API_JAR")
 
     # Feed d8 with a single jar, it's more stable for inner classes.

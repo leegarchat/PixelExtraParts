@@ -1,9 +1,9 @@
-# Pine Addon Development Guide
+# LSPlant Addon Development Guide
 
 Инструментарий для создания Xposed-совместимых аддонов (хуков) в виде автономных DEX JAR-файлов.
 Эти аддоны динамически загружаются менеджером **CustomParts / PixelParts** без модификации системного образа.
 
-Менеджер использует фреймворк [Pine](https://github.com/nickilicious/nickiliciousPine) — нативную
+Менеджер использует движок [LSPlant](https://github.com/LSPosed/LSPlant) — нативную
 реализацию ART-хукинга, обёрнутую Xposed-совместимым API (`XposedHelpers`, `XC_MethodHook` и т.д.).
 
 ---
@@ -17,7 +17,7 @@
 5. [Настройки аддона (Settings UI)](#-настройки-аддона-auto-generated-ui)
 6. [Генератор Activity UI (main\[\])](#-генератор-activity-ui-main)
 7. [Компиляция и сборка](#-компиляция-и-сборка)
-8. [Архитектура менеджера Pine](#-архитектура-менеджера-pine)
+8. [Архитектура менеджера LSPlant](#-архитектура-менеджера-lsplant)
 9. [Жизненный цикл аддона](#-жизненный-цикл-аддона-от-jar-до-хука)
 10. [Settings.Global — флаги и конфигурация](#-settingsglobal--флаги-и-конфигурация)
 11. [Управление целевыми пакетами (Scope)](#-управление-целевыми-пакетами-scope)
@@ -59,8 +59,8 @@ example.addon.hook/              ← Вы здесь
 ├── prebuild/                    # Предсобранные зависимости
 │   ├── android.jar              #   Android API stubs
 │   ├── IAddonHook.java          #   Интерфейс аддона (компилируется при сборке)
-│   ├── pine/
-│   │   ├── pine-core.jar        #   Pine ART hooking core
+│   ├── lsplant/
+│   │   ├── pine-core.jar        #   LSPlant ART hooking core
 │   │   └── pine-xposed.jar      #   Xposed compatibility layer
 │   ├── xposed/
 │   │   ├── api-82.jar            #   Xposed API (XposedHelpers, XC_MethodHook...)
@@ -84,10 +84,10 @@ example.addon.hook/              ← Вы здесь
     └── out/                     #   Сюда попадёт итоговый .jar
 ```
 
-### Менеджер Pine (родительский каталог `../`)
+### Менеджер LSPlant (родительский каталог `../`)
 
 ```text
-../xposed-pine/src/org/pixel/customparts/
+../xposed-lsplant/src/org/pixel/customparts/
 ├── core/
 │   ├── IAddonHook.java          # Интерфейс, который реализует ваш аддон
 │   ├── IHookEnvironment.java    # Абстракция чтения настроек + логирования
@@ -99,11 +99,11 @@ example.addon.hook/              ← Вы здесь
 │   ├── systemui/
 │   └── ...
 └── manager/
-    ├── pine/
-    │   ├── ModEntry.java        # Точка входа: загрузка libpine.so → HookEntry.init()
+    ├── lsplant/
+    │   ├── ModEntry.java        # Точка входа: загрузка liblspbridge.so → HookEntry.init()
     │   ├── HookEntry.java       # Роутер: встроенные хуки + AddonLoader
     │   ├── AddonLoader.java     # Сканер/загрузчик addon JAR-файлов
-    │   └── PineEnvironment.java # Реализация IHookEnvironment для Pine
+    │   └── LsplantEnvironment.java # Реализация IHookEnvironment для LSPlant
     └── xposed/
         ├── XposedInit.kt        # Альтернативный путь через LSPosed/Xposed
         └── XposedEnvironment.kt
@@ -385,7 +385,7 @@ void handleLoadPackage(Context context, ClassLoader classLoader, String packageN
 
 ### Доступный API для хукинга
 
-Pine предоставляет полноценный Xposed-совместимый слой. Вы можете использовать:
+LSPlant предоставляет полноценный Xposed-совместимый слой. Вы можете использовать:
 
 ```java
 // Хук метода (before/after)
@@ -683,7 +683,7 @@ boolean enabled = Settings.Global.getInt(
 Если версия выше установленной, кнопка `Check updates` превратится в `Update`. Для системного аддона обновление
 ставится в `/data/pixelparts/addons/<id>.jar` и отображается в системном блоке как обновлённая версия.
 Кнопка удаления у такого системного аддона удаляет только data-обновление; системная копия остаётся.
-Pine runtime уже индексирует `/system_ext` перед `/data`, поэтому data-версия с тем же `id` перекрывает системную.
+LSPlant runtime уже индексирует `/system_ext` перед `/data`, поэтому data-версия с тем же `id` перекрывает системную.
 
 ### Почему внутри менеджера есть DexClassLoader
 
@@ -1008,7 +1008,7 @@ ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build_addon.sh my_hook
 - `android.jar` — Android API stubs
 - `build/stubs/` — скомпилированный `IAddonHook.class`
 - `pine-xposed.jar` — Xposed compatibility (XposedHelpers, XC_MethodHook...)
-- `pine-core.jar` — Pine core
+- `pine-core.jar` — LSPlant core
 - `api-82.jar` — Xposed API
 
 ### Структура выходного JAR
@@ -1032,7 +1032,7 @@ my_addon.jar
 
 ---
 
-## Архитектура менеджера Pine
+## Архитектура менеджера LSPlant
 
 ### Общая схема
 
@@ -1040,7 +1040,7 @@ my_addon.jar
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Android System (ART)                         │
 │                                                                 │
-│  ┌───────────────┐    libpine.so     ┌────────────────────────┐ │
+│  ┌───────────────┐    liblspbridge.so ┌────────────────────────┐ │
 │  │  Целевой      │  ◄──────────────  │  ModEntry.init()       │ │
 │  │  процесс      │                   │  (внедряется в каждый  │ │
 │  │  (Settings,   │                   │   процесс из whitelist)│ │
@@ -1086,11 +1086,11 @@ my_addon.jar
 #### ModEntry.java — Точка входа
 
 Внедряется в каждый целевой процесс через системный патч ActivityThread.
-Загружает `libpine.so`, получает `Application` context текущего процесса и вызывает `HookEntry.init()`.
+Загружает `liblspbridge.so`, получает `Application` context текущего процесса и вызывает `HookEntry.init()`.
 
 ```
 ModEntry.init()
-  → System.load("libpine.so")
+  → System.loadLibrary("lspbridge")
   → app = ActivityThread.currentApplication()
   → HookEntry.init(app, classLoader, packageName)
 ```
@@ -1143,10 +1143,10 @@ if (hasAddons) {
 6. Сохранить в loadedAddons map
 ```
 
-#### PineEnvironment.java — Чтение настроек
+#### LsplantEnvironment.java — Чтение настроек
 
 Автоматически добавляет суффикс `_pine` ко всем ключам `Settings.Global`.
-Это позволяет встроенным хукам иметь отдельные настройки для Pine- и Xposed-среды.
+Это позволяет встроенным хукам иметь отдельные настройки для LSPlant- и Xposed-среды.
 
 ```java
 // Реальный ключ = baseKey + "_pine"
@@ -1257,7 +1257,7 @@ if (hasAddons) {
 pixel_extra_parts_inject_package_{package_name} = 1
 ```
 
-Это сигнал для системного патча `ActivityThread` о том, что в данный процесс нужно инжектировать Pine.
+Это сигнал для системного патча `ActivityThread` о том, что в данный процесс нужно инжектировать LSPlant.
 
 > Пакеты из встроенного whitelist (Launcher, SystemUI) уже инжектируются всегда.
 > Флаги нужны только для **дополнительных** пакетов, таргетируемых аддонами.
@@ -1316,7 +1316,7 @@ adb shell su -c "rm /data/pixelparts/addons/my_addon.jar"
 | Проблема                                                | Решение                                                                                                                                                                                                   |
 | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Unsupported class file major version`                        | Используйте Java 11 `--release 11` (скрипт делает это автоматически). Убедитесь, что `d8.jar` и `android.jar` из `prebuild/` совместимы. |
-| Ошибка компиляции: класс не найден | Проверьте, что `prebuild/pine/` и `prebuild/xposed/` содержат нужные JAR.                                                                                                         |
+| Ошибка компиляции: класс не найден | Проверьте, что `prebuild/lsplant/` и `prebuild/xposed/` содержат нужные JAR.                                                                                                         |
 | Аддон не отображается в UI                  | Проверьте:`.jar` в `/data/pixelparts/addons/`, `META-INF/addon.json` внутри JAR корректен, `entryClass` указывает на существующий класс.            |
 | Аддон отображается, но не работает | Проверьте: аддон включён, целевой пакет в scope, флаг whitelist установлен. Посмотрите `logcat \| grep AddonLoader`.                                  |
 | `ClassNotFoundException` в runtime                           | `entryClass` в `addon.json` не совпадает с реальным полным именем класса.                                                                                             |
@@ -1329,7 +1329,7 @@ adb shell su -c "rm /data/pixelparts/addons/my_addon.jar"
 
 ```bash
 # Логи загрузки аддонов
-adb logcat -s AddonLoader PineInject HookEntry
+adb logcat -s AddonLoader LsplantInject HookEntry
 
 # Проверить установленные аддоны
 adb shell ls -la /data/pixelparts/addons/

@@ -1,4 +1,4 @@
-package org.pixel.customparts.manager.pine;
+package org.pixel.customparts.manager.lsplant;
 
 import android.content.Context;
 import android.provider.Settings;
@@ -6,15 +6,15 @@ import android.util.Log;
 
 import org.pixel.customparts.core.IHookEnvironment;
 
-public class PineEnvironment implements IHookEnvironment {
+public class LsplantEnvironment implements IHookEnvironment {
 
-    private static final String TAG_PREFIX = "PineInject";
+    private static final String TAG_PREFIX = "LsplantInject";
     private static final String ACTIVE_SUFFIX = "_lsplant";
-    private static final String LEGACY_PINE_SUFFIX = "_pine";
+    private static final String LEGACY_ENGINE_SUFFIX = "_pine";
     private static final String XPOSED_SUFFIX = "_xposed";
 
     private String stripSuffix(String key) {
-        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX}) {
+        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_ENGINE_SUFFIX, XPOSED_SUFFIX}) {
             if (key.endsWith(s)) {
                 return key.substring(0, key.length() - s.length());
             }
@@ -31,7 +31,7 @@ public class PineEnvironment implements IHookEnvironment {
     private String readStringAny(android.content.ContentResolver resolver, String key) {
         String base = stripSuffix(key);
         String[] candidates = new String[]{
-                base + ACTIVE_SUFFIX, base + LEGACY_PINE_SUFFIX, base + XPOSED_SUFFIX};
+                base + ACTIVE_SUFFIX, base + LEGACY_ENGINE_SUFFIX, base + XPOSED_SUFFIX};
         for (String candidate : candidates) {
             try {
                 String value = android.provider.Settings.Global.getString(resolver, candidate);

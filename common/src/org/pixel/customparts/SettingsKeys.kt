@@ -68,7 +68,7 @@ object SettingsKeys {
     const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
 
 
-    // Pine-only runtime: all suffixed keys use "_pine".
+    // LSPlant-only runtime: all suffixed keys use "_pine".
     // The legacy "_xposed" suffix is still stripped when reading stored keys.
     internal const val suffix: String = "_pine"
     

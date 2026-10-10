@@ -20,7 +20,7 @@ object SettingsCompat {
     // values keep working through read-through fallback below, so user
     // settings survive the engine rename without any migration step.
     private const val ACTIVE_SUFFIX = "_lsplant"
-    private const val LEGACY_PINE_SUFFIX = "_pine"
+    private const val LEGACY_ENGINE_SUFFIX = "_pine"
     private const val XPOSED_SUFFIX = "_xposed"
 
     
@@ -107,7 +107,7 @@ object SettingsCompat {
     }
 
     private fun stripRuntimeSuffix(key: String): String {
-        return key.removeSuffix(ACTIVE_SUFFIX).removeSuffix(LEGACY_PINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
+        return key.removeSuffix(ACTIVE_SUFFIX).removeSuffix(LEGACY_ENGINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
     }
 
     private fun activeRuntimeSuffix(): String {
@@ -119,7 +119,7 @@ object SettingsCompat {
         val resolver = context.contentResolver
         val stripped = stripRuntimeSuffix(baseKey)
         val candidates = if (isSuffixedKey(stripped)) {
-            listOf(ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX).map { stripped + it }
+            listOf(ACTIVE_SUFFIX, LEGACY_ENGINE_SUFFIX, XPOSED_SUFFIX).map { stripped + it }
         } else {
             listOf(stripped)
         }

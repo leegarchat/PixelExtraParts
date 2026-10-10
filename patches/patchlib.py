@@ -325,7 +325,7 @@ class NewFilePatch(BasePatch):
 
 class ActivityThreadInjectPatch(BasePatch):
     id = "framework-activity-thread-injection"
-    title = "Inject PixelExtraParts Pine loader into ActivityThread"
+    title = "Inject PixelExtraParts LSPlant loader into ActivityThread"
     target = "frameworks/base/core/java/android/app/ActivityThread.java"
     source_path = "packages/apps/PixelExtraParts/patches/files/modified/frameworks/base/core/java/android/app/ActivityThread.java"
     constants_start = "    // --- [PixelParts] CONSTANTS ---"

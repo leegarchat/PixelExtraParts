@@ -13,7 +13,7 @@ $ScriptDir = $PSScriptRoot
 $env:JAVA_TOOL_OPTIONS = "-Dfile.encoding=UTF-8"
 
 function Show-Help {
-    Write-Host "Builds a Pine addon module into a DEX JAR for Windows."
+    Write-Host "Builds a LSPlant addon module into a DEX JAR for Windows."
     Write-Host ""
     Write-Host "Usage:"
     Write-Host "  .\build_addon.ps1 <ADDON_NAME> [PROJECT_PATH]"
@@ -50,8 +50,8 @@ $OutDir   = Join-Path $ProjectRoot "out"
 $BuildDir = Join-Path $ProjectRoot "build"
 
 # Dependency paths
-$PineXposedJar = Join-Path $ScriptDir "prebuild\pine\pine-xposed.jar"
-$PineCoreJar   = Join-Path $ScriptDir "prebuild\pine\pine-core.jar"
+$LsplantXposedJar = Join-Path $ScriptDir "prebuild\lsplant\pine-xposed.jar"
+$LsplantCoreJar   = Join-Path $ScriptDir "prebuild\lsplant\pine-core.jar"
 $XposedApiJar  = Join-Path $ScriptDir "prebuild\xposed\api-82.jar"
 $CoreSrc       = Join-Path $ScriptDir "prebuild\IAddonHook.java"
 
@@ -108,8 +108,8 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host "  [2/4] Compiling addon sources..."
 # В Windows разделитель classpath — это точка с запятой (;)
 $AddonCp = "$AndroidJar;$BuildDir\stubs"
-if (Test-Path $PineXposedJar) { $AddonCp += ";$PineXposedJar" }
-if (Test-Path $PineCoreJar) { $AddonCp += ";$PineCoreJar" }
+if (Test-Path $LsplantXposedJar) { $AddonCp += ";$LsplantXposedJar" }
+if (Test-Path $LsplantCoreJar) { $AddonCp += ";$LsplantCoreJar" }
 if (Test-Path $XposedApiJar) { $AddonCp += ";$XposedApiJar" }
 
 # Get list of Java files
@@ -127,8 +127,8 @@ if ($SrcFiles) {
 
 Write-Host "  [3/4] Converting to DEX..."
 $D8Args = @("--lib", $AndroidJar)
-if (Test-Path $PineXposedJar) { $D8Args += "--classpath"; $D8Args += $PineXposedJar }
-if (Test-Path $PineCoreJar) { $D8Args += "--classpath"; $D8Args += $PineCoreJar }
+if (Test-Path $LsplantXposedJar) { $D8Args += "--classpath"; $D8Args += $LsplantXposedJar }
+if (Test-Path $LsplantCoreJar) { $D8Args += "--classpath"; $D8Args += $LsplantCoreJar }
 if (Test-Path $XposedApiJar) { $D8Args += "--classpath"; $D8Args += $XposedApiJar }
 
 $ClassesJar = "$BuildDir\classes_tmp.jar"

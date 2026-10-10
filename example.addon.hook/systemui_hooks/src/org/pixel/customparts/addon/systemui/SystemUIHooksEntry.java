@@ -35,7 +35,7 @@ public class SystemUIHooksEntry implements IAddonHook {
 
     @Override
     public String getDescription() {
-        return "SystemUI Pine hooks and settings.";
+        return "SystemUI LSPlant hooks and settings.";
     }
 
     @Override

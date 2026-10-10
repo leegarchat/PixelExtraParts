@@ -43,7 +43,7 @@
 +    // [CUSTOM INJECTION START] - Pixel Extra Parts: Magnifier Customization
 +    // =========================================================================================
 +
-+    // Settings Keys (Pine — hardcoded suffix for system/framework build)
++    // Settings Keys (LSPlant — hardcoded legacy suffix for system/framework build)
 +    private static final String KEY_ENABLED   = "magnifier_custom_enabled_pine";
 +    private static final String KEY_ZOOM      = "magnifier_custom_zoom_pine";
 +    private static final String KEY_SIZE      = "magnifier_custom_size_pine";

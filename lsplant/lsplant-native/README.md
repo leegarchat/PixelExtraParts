@@ -1,9 +1,9 @@
-# LSPlant native backend (replaces Pine's libpine.so)
+# LSPlant native backend (JNI glue + engine binding)
 
 ## Why
-Pine's native engine (last upstream: Nov 2025, Android 15-era ART
+LSPlant native engine (last upstream: Nov 2025, Android 15-era ART
 assumptions) crashes randomly on Android 17 ART: native deaths in every
-hooked process, including inside Pine's own bridge. Upstream Pine is
+hooked process, including inside LSPlant own bridge. Upstream LSPlant is
 dormant; the Tine fork author states the GC problem can only be mitigated,
 never cured in that design. LSPosed/LSPlant is maintained (Android 5-17)
 and resolves ART symbols dynamically instead of hardcoding layouts.
@@ -29,7 +29,7 @@ Needs NDK r28+ (tested r29), CMake 3.28+, ninja:
 
 ## Install into prebuilts
 After a successful build + device soak test, copy the three .so files to
-`pine/libs/lsplant/arm64-v8a/` (liblsplant.so, libdobby.so,
+`lsplant/libs/lsplant/arm64-v8a/` (liblsplant.so, libdobby.so,
 liblspbridge.so) — they ship to `/system/lib64` via `cc_prebuilt_*`
 modules in `Android.bp` / `device.mk`.
 
@@ -39,6 +39,6 @@ modules in `Android.bp` / `device.mk`.
 - Dobby: Apache-2.0.
 - `bridge/` + headers usage: ours.
 
-- `pine/libs/lsplant/arm64-v8a/libc++_shared.so`: NDK r29 shared STL,
+- `lsplant/libs/lsplant/arm64-v8a/libc++_shared.so`: NDK r29 shared STL,
   required at runtime by the prefab liblsplant.so (the platform itself
   carries no libc++_shared). Shipped to /system/lib64 alongside.

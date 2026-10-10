@@ -21,7 +21,7 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 
 object OverscrollManager {
 
-    // Pine-only runtime suffix (legacy "_xposed" keys are still read via stripSuffix).
+    // LSPlant-only runtime suffix (legacy "_xposed" keys are still read via stripSuffix).
     private const val SUFFIX: String = "_pine"
 
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"

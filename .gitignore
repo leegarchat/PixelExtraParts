@@ -18,5 +18,5 @@ rule.gemini.md
 kilo.jsondocs/dtw-architecture-research.md
 
 # LSPlant native build staging (NDK cmake out dir + ad-hoc probes)
-/pine/lsplant-native/out/
-/pine/lsplant-native/bridge/resolve_test.cpp
+/lsplant/lsplant-native/out/
+/lsplant/lsplant-native/bridge/resolve_test.cpp

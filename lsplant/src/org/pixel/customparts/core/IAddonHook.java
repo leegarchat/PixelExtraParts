@@ -22,7 +22,7 @@ import java.util.Set;
  *      "enabled": true
  *    }
  *
- * The addon can use Pine's Xposed compatibility layer (XposedHelpers, XC_MethodHook, etc.)
+ * The addon can use LSPlant Xposed compatibility layer (XposedHelpers, XC_MethodHook, etc.)
  */
 public interface IAddonHook {
 

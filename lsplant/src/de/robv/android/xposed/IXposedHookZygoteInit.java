@@ -21,7 +21,7 @@ public interface IXposedHookZygoteInit extends IXposedMod {
 
 	/** Data holder for {@link #initZygote}. */
 	final class StartupParam {
-		// Pine changed: Constructor of class StartupParam is public.
+		// LSPlant changed: Constructor of class StartupParam is public.
 		public StartupParam() {}
 
 		/** The path to the module's APK. */

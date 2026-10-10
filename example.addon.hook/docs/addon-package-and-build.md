@@ -95,8 +95,8 @@ The script prefers local prebuilds:
 
 - `prebuild/android.jar`
 - `prebuild/sdk/d8.jar`
-- `prebuild/pine/pine-xposed.jar`
-- `prebuild/pine/pine-core.jar`
+- `prebuild/lsplant/pine-xposed.jar`
+- `prebuild/lsplant/pine-core.jar`
 - `prebuild/xposed/api-82.jar`
 
 ## JSON Validation

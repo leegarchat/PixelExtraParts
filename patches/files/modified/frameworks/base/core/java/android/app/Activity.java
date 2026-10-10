@@ -10434,7 +10434,7 @@ public class Activity extends ContextThemeWrapper
     private static final class CustomTransitionHelper {
         private static final String TAG = "CustomTransition";
 
-        // Settings.Global keys (_pine suffix = native/system build)
+        // Settings.Global keys (legacy _pine suffix = native/system build)
         private static final String KEY_OPEN = "activity_open_transition_pine";
         private static final String KEY_CLOSE = "activity_close_transition_pine";
         private static final String KEY_CUSTOM_PACKAGE =

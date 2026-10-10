@@ -82,8 +82,8 @@ Check imports. Runtime addons can compile against:
 
 - `android.jar`
 - `prebuild/IAddonHook.java`
-- `prebuild/pine/pine-xposed.jar`
-- `prebuild/pine/pine-core.jar`
+- `prebuild/lsplant/pine-xposed.jar`
+- `prebuild/lsplant/pine-core.jar`
 - `prebuild/xposed/api-82.jar`
 
-Do not import app-only classes from Pixel Extra Parts unless they are intentionally present in the target process. The stable addon interface is `IAddonHook` plus Android and Pine/Xposed APIs.
+Do not import app-only classes from Pixel Extra Parts unless they are intentionally present in the target process. The stable addon interface is `IAddonHook` plus Android and LSPlant/Xposed APIs.

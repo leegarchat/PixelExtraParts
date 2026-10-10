@@ -2,7 +2,7 @@
 
 **English** | [Русский](README_RU.md)
 
-A system customization package for Android ROMs built from source: a privileged settings app (`org.pixel.customparts`), runtime hooks via Pine injection, thermal profiles, source snapshot patches, and an external addon SDK.
+A system customization package for Android ROMs built from source: a privileged settings app (`org.pixel.customparts`), runtime hooks via LSPlant injection, thermal profiles, source snapshot patches, and an external addon SDK.
 
 > How it works under the hood (architecture, hooks, settings, patcher, thermal, sepolicy) is a separate document: **[docs/PROJECT.md](docs/PROJECT.md)**. This file covers integration and maintenance only.
 
@@ -58,8 +58,8 @@ $(call inherit-product, packages/apps/PixelExtraParts/device.mk)
 
 What `device.mk` does on its own:
 
-- adds to `PRODUCT_PACKAGES`: the `PixelCustomPartsSystem` app, `init.pixelextraparts.rc`, `PineInject`, `libpine`, and 8 addons;
-- allowlists artifact paths (`system_ext/etc/pixelparts/addons/*.jar`, `system/framework/PineInject.jar`, `system/lib64/libpine.so`, etc.);
+- adds to `PRODUCT_PACKAGES`: the `PixelCustomPartsSystem` app, `init.pixelextraparts.rc`, `LsplantInject`, `liblsplant`, `liblspbridge`, and 8 addons;
+- allowlists artifact paths (`system_ext/etc/pixelparts/addons/*.jar`, `system/framework/LsplantInject.jar`, `system/lib64/liblsplant.so`, `system/lib64/liblspbridge.so`, etc.);
 - runs the thermal config generator and includes `ThermalConfigCopyRules.mk`;
 - includes `sepolicy/vendor` and `sepolicy/system_ext/{public,private}`.
 
@@ -145,7 +145,7 @@ If the build fails with `neverallow ... violated by allow ...` — **first** run
 
 ```bash
 lunch <target>
-m PixelCustomPartsSystem PineInject libpine
+m PixelCustomPartsSystem LsplantInject liblsplant liblspbridge
 ```
 
 - Manual update of the built APK on a device: `./pep_update.sh install` / `./pep_update.sh uninstall` (needs `adb root`, userdebug).
@@ -205,4 +205,4 @@ Short version; details — [docs/PROJECT.md](docs/PROJECT.md):
 
 ## License
 
-Project code plus several Android/Pine integration artifacts — check upstream files and imported prebuilts before redistributing binaries outside your ROM workflow.
+Project code plus several Android/LSPlant integration artifacts — check upstream files and imported prebuilts before redistributing binaries outside your ROM workflow.

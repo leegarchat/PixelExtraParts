@@ -31,8 +31,8 @@ set "META_DIR=%PROJECT_ROOT%\META-INF"
 set "OUT_DIR=%PROJECT_ROOT%\out"
 set "BUILD_DIR=%PROJECT_ROOT%\build"
 
-set "PINE_XPOSED_JAR=%SCRIPT_DIR%\prebuild\pine\pine-xposed.jar"
-set "PINE_CORE_JAR=%SCRIPT_DIR%\prebuild\pine\pine-core.jar"
+set "LSPLANT_XPOSED_JAR=%SCRIPT_DIR%\prebuild\lsplant\pine-xposed.jar"
+set "LSPLANT_CORE_JAR=%SCRIPT_DIR%\prebuild\lsplant\pine-core.jar"
 set "XPOSED_API_JAR=%SCRIPT_DIR%\prebuild\xposed\api-82.jar"
 set "CORE_SRC=%SCRIPT_DIR%\prebuild\IAddonHook.java"
 
@@ -72,8 +72,8 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 echo   [2/4] Compiling addon sources...
 :: Windows classpath separator is a semicolon (;)
 set "ADDON_CP=%ANDROID_JAR%;%BUILD_DIR%\stubs"
-if exist "%PINE_XPOSED_JAR%" set "ADDON_CP=%ADDON_CP%;%PINE_XPOSED_JAR%"
-if exist "%PINE_CORE_JAR%" set "ADDON_CP=%ADDON_CP%;%PINE_CORE_JAR%"
+if exist "%LSPLANT_XPOSED_JAR%" set "ADDON_CP=%ADDON_CP%;%LSPLANT_XPOSED_JAR%"
+if exist "%LSPLANT_CORE_JAR%" set "ADDON_CP=%ADDON_CP%;%LSPLANT_CORE_JAR%"
 if exist "%XPOSED_API_JAR%" set "ADDON_CP=%ADDON_CP%;%XPOSED_API_JAR%"
 
 dir /s /b "%SRC_DIR%\*.java" > "%BUILD_DIR%\sources.txt" 2>nul
@@ -84,8 +84,8 @@ for %%i in ("%BUILD_DIR%\sources.txt") do if %%~zi gtr 0 (
 
 echo   [3/4] Converting to DEX...
 set "D8_CP_ARGS="
-if exist "%PINE_XPOSED_JAR%" set D8_CP_ARGS=!D8_CP_ARGS! --classpath "%PINE_XPOSED_JAR%"
-if exist "%PINE_CORE_JAR%" set D8_CP_ARGS=!D8_CP_ARGS! --classpath "%PINE_CORE_JAR%"
+if exist "%LSPLANT_XPOSED_JAR%" set D8_CP_ARGS=!D8_CP_ARGS! --classpath "%LSPLANT_XPOSED_JAR%"
+if exist "%LSPLANT_CORE_JAR%" set D8_CP_ARGS=!D8_CP_ARGS! --classpath "%LSPLANT_CORE_JAR%"
 if exist "%XPOSED_API_JAR%" set D8_CP_ARGS=!D8_CP_ARGS! --classpath "%XPOSED_API_JAR%"
 
 set "CLASSES_JAR=%BUILD_DIR%\classes_tmp.jar"
@@ -113,7 +113,7 @@ echo.
 exit /b 0
 
 :SHOW_HELP
-echo Builds a Pine addon module into a DEX JAR for Windows.
+echo Builds a LSPlant addon module into a DEX JAR for Windows.
 echo.
 echo Usage:
 echo   build_addon.bat ^<ADDON_NAME^> [PROJECT_PATH]

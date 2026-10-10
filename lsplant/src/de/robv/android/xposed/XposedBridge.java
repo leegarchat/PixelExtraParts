@@ -17,17 +17,17 @@ import java.util.Set;
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam;
 
 import org.pixel.customparts.manager.lsplant.LsplantBridge;
-import top.canyie.pine.xposed.PineXposed;
+import org.pixel.customparts.manager.lsplant.LsplantXposed;
 
 /**
  * This class contains most of Xposed's central logic, such as initialization and callbacks used by
  * the native side. It also includes methods to add new hooks.
  */
 public final class XposedBridge {
-	// LSPlant backend: Pine engine calls removed.
+	// LSPlant backend: previous engine calls removed.
 	/*package*/ static final Object[] EMPTY_OBJECT_ARRAY = {};
 
-	// Pine added: New API for querying supported features
+	// LSPlant added: New API for querying supported features
 	private static String[] sSupportedFeatures = new String[0];
 
 	/**
@@ -39,7 +39,7 @@ public final class XposedBridge {
 	public static final ClassLoader BOOTCLASSLOADER = ClassLoader.getSystemClassLoader();
 
 	/** @hide */
-	public static final String TAG = PineXposed.TAG;
+	public static final String TAG = LsplantXposed.TAG;
 
 	/** @deprecated Use {@link #getXposedVersion()} instead. */
 	@Deprecated
@@ -48,12 +48,13 @@ public final class XposedBridge {
 	// built-in handlers
 	private static final Map<Member, CopyOnWriteSortedSet<XC_MethodHook>> sHookedMethodCallbacks = new HashMap<>();
 
-	// Pine changed: Move sLoadedPackageCallbacks to PineXposed.
+	// LSPlant changed: Move sLoadedPackageCallbacks to LsplantXposed.
 	// /*package*/ static final CopyOnWriteSortedSet<XC_LoadPackage> sLoadedPackageCallbacks = new CopyOnWriteSortedSet<>();
 
 	private static HookProvider hookProvider = HookProvider.LSPLANT;
 
 	public interface HookProvider {
+		/** Routes to the LSPlant backend. */
 		HookProvider LSPLANT = new HookProvider() {
 			@Override
 			public void hook(Member method, CopyOnWriteSortedSet<XC_MethodHook> callbacks) {
@@ -74,8 +75,6 @@ public final class XposedBridge {
 				}
 			}
 		};
-		/** Kept for source compatibility; routes to the LSPlant backend. */
-		HookProvider PINE = LSPLANT;
 		void hook(Member method, CopyOnWriteSortedSet<XC_MethodHook> callbacks);
 		Object invokeOriginal(Member method, Object thisObject, Object[] args) throws
 				NullPointerException, IllegalAccessException, IllegalArgumentException, InvocationTargetException;
@@ -90,7 +89,7 @@ public final class XposedBridge {
 		return XPOSED_BRIDGE_VERSION;
 	}
 
-	// Pine added
+	// Added
 	public static void setXposedVersion(int version) {
 		XPOSED_BRIDGE_VERSION = version;
 	}
@@ -103,7 +102,7 @@ public final class XposedBridge {
 		hookProvider = provider;
 	}
 
-	// Pine added: New API for querying supported features
+	// Added: New API for querying supported features
 	public static boolean isFeatureSupported(String featureName) {
 		for (String f : sSupportedFeatures) {
 			if (f.equalsIgnoreCase(featureName)) return true;
@@ -171,7 +170,7 @@ public final class XposedBridge {
 		if (!(hookMethod instanceof Method) && !(hookMethod instanceof Constructor<?>)) {
 			throw new IllegalArgumentException("Only methods and constructors can be hooked: " + hookMethod.toString());
 		}
-		// Pine changed: We can hook interfaces' non-abstract methods
+		// LSPlant changed: We can hook interfaces' non-abstract methods
 		/*else if (hookMethod.getDeclaringClass().isInterface()) {
 			throw new IllegalArgumentException("Cannot hook interfaces: " + hookMethod.toString());
 		}*/ else if (Modifier.isAbstract(hookMethod.getModifiers())) {
@@ -251,13 +250,13 @@ public final class XposedBridge {
 		return unhooks;
 	}
 
-	// Pine changed: removed handleHookedMethod(), it be implemented in Handler.class
-	// Pine changed: removed hookXxx(), it be implemented in PineXposed.class
+	// LSPlant changed: removed handleHookedMethod(), it be implemented in Handler.class
+	// LSPlant changed: removed hookXxx(), it is implemented in LsplantXposed.class
 
 	/**
 	 * Basically the same as {@link Method#invoke}, but calls the original method
 	 * as it was before the interception by Xposed. Also, access permissions are not checked.
-	 * If the given method is not hooked, the behavior is undefined, Pine does not guarantee this
+	 * If the given method is not hooked, the behavior is undefined and not guaranteed
 	 * will always work and may crash on other Xposed framework implementations.
 	 *
 	 * <p class="caution">There are very few cases where this method is needed. A common mistake is
@@ -289,7 +288,7 @@ public final class XposedBridge {
 	// LSPlant changed: per-method dispatch lives here (single native
 	// replacement runs the full before/original/after chain inline, so no
 	// CallFrame pairing needed). Same package => same access rights the
-	// old Pine Handler had.
+	// the old engine Handler had.
 	/** @hide */
 	public static final class LSPlantDispatcher {
 		private final Member method;
@@ -412,7 +411,7 @@ public final class XposedBridge {
 
 	/** @hide */
 	public static final class CopyOnWriteSortedSet<E> {
-		// Pine changed: Use Pine.EMPTY_OBJECT_ARRAY
+		// LSPlant changed: Use EMPTY_OBJECT_ARRAY
 		private transient volatile Object[] elements = XposedBridge.EMPTY_OBJECT_ARRAY;
 
 		@SuppressWarnings("UnusedReturnValue")

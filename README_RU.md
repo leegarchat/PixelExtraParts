@@ -2,7 +2,7 @@
 
 **Русский** | [English](README.md)
 
-Системный пакет кастомизации для Android ROM, собираемых из исходников: привилегированное приложение настроек (`org.pixel.customparts`), runtime-хуки через Pine-инжекцию, термопрофили, снапшот-патчи исходников и SDK внешних аддонов.
+Системный пакет кастомизации для Android ROM, собираемых из исходников: привилегированное приложение настроек (`org.pixel.customparts`), runtime-хуки через LSPlant-инжекцию, термопрофили, снапшот-патчи исходников и SDK внешних аддонов.
 
 > Как это устроено внутри (архитектура, хуки, настройки, патчер, thermal, sepolicy) — отдельный документ: **[docs/PROJECT_RU.md](docs/PROJECT_RU.md)**. Здесь — только подключение и сопровождение.
 
@@ -58,8 +58,8 @@ $(call inherit-product, packages/apps/PixelExtraParts/device.mk)
 
 Что `device.mk` делает сам:
 
-- добавляет в `PRODUCT_PACKAGES`: приложение `PixelCustomPartsSystem`, `init.pixelextraparts.rc`, `PineInject`, `libpine` и 8 аддонов;
-- разрешает пути артефактов (`system_ext/etc/pixelparts/addons/*.jar`, `system/framework/PineInject.jar`, `system/lib64/libpine.so` и др.);
+- добавляет в `PRODUCT_PACKAGES`: приложение `PixelCustomPartsSystem`, `init.pixelextraparts.rc`, `LsplantInject`, `liblsplant`, `liblspbridge` и 8 аддонов;
+- разрешает пути артефактов (`system_ext/etc/pixelparts/addons/*.jar`, `system/framework/LsplantInject.jar`, `system/lib64/liblsplant.so`, `system/lib64/liblspbridge.so` и др.);
 - запускает генератор термоконфигов и подключает `ThermalConfigCopyRules.mk`;
 - подключает `sepolicy/vendor` и `sepolicy/system_ext/{public,private}`.
 
@@ -145,7 +145,7 @@ PRODUCT_SOONG_NAMESPACES += hardware/google/pixel/thermal
 
 ```bash
 lunch <target>
-m PixelCustomPartsSystem PineInject libpine
+m PixelCustomPartsSystem LsplantInject liblsplant liblspbridge
 ```
 
 - Ручное обновление собранного APK на устройстве: `./pep_update.sh install` / `./pep_update.sh uninstall` (нужен `adb root`, userdebug).
@@ -205,4 +205,4 @@ m PixelCustomPartsSystem PineInject libpine
 
 ## License
 
-Project code plus several Android/Pine integration artifacts — check upstream files and imported prebuilts before redistributing binaries outside your ROM workflow.
+Project code plus several Android/LSPlant integration artifacts — check upstream files and imported prebuilts before redistributing binaries outside your ROM workflow.

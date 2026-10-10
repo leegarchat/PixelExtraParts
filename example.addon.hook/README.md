@@ -1,6 +1,6 @@
 # Pixel Extra Parts Addon SDK
 
-This directory is the complete addon development kit for Pixel Extra Parts. An addon is a DEX JAR with a `META-INF/addon.json` descriptor and, optionally, Java hook code. The same package can provide Pine/Xposed-compatible runtime hooks, generated settings UI, generated activity pages, dynamic Quick Settings tiles, target-activity page injection, Settings-homepage injection, update metadata, import/export support, localized text, or any combination of those pieces.
+This directory is the complete addon development kit for Pixel Extra Parts. An addon is a DEX JAR with a `META-INF/addon.json` descriptor and, optionally, Java hook code. The same package can provide LSPlant/Xposed-compatible runtime hooks, generated settings UI, generated activity pages, dynamic Quick Settings tiles, target-activity page injection, Settings-homepage injection, update metadata, import/export support, localized text, or any combination of those pieces.
 
 The old mixed guide was kept as `README_old.md` for reference. This README is the main entry point; focused deep dives live in smaller files under `docs/`.
 
@@ -9,7 +9,7 @@ The old mixed guide was kept as `README_old.md` for reference. This README is th
 | Layer | Manifest area | What it does |
 | --- | --- | --- |
 | Identity | root fields | Stable `id`, display metadata, version, author, accent, background and update URL. |
-| Runtime hook | `entryClass`, `targetPackages` | Loads Java code into selected target packages through the Pine/Xposed-compatible runtime. |
+| Runtime hook | `entryClass`, `targetPackages` | Loads Java code into selected target packages through the LSPlant/Xposed-compatible runtime. |
 | Addon card | root `settings[]`, update/import/export | Shows the addon in the manager. Cards expose the same expandable area even without `entryClass` or settings. |
 | Generated controls | `settings[]` | Writes values to `Settings.Global`, `Settings.System`, `Settings.Secure`, or addon files. |
 | Main pages | `main[]` | Adds generated pages to Pixel Extra Parts navigation or to target activities. |
@@ -30,7 +30,7 @@ example.addon.hook/
 +-- prebuild/
 |   +-- IAddonHook.java
 |   +-- android.jar
-|   +-- pine/
+|   +-- lsplant/
 |   +-- sdk/
 |   +-- xposed/
 +-- ambient_extend_hook/
@@ -125,7 +125,7 @@ Pixel Extra Parts scans addon JARs from two locations:
 
 System addons live under `system_ext`. User or test builds can live under `/data/pixelparts/addons`.
 
-Active-copy selection is version aware. The manager, boot whitelist sync and Pine/Xposed runtime compare descriptor `version` values for duplicate addon IDs. The higher version wins. If versions are equal, the `/data` copy wins as an explicit user override. If an OTA ships a newer system addon than the stale `/data` copy, the system JAR becomes active while the old data override remains removable from the manager.
+Active-copy selection is version aware. The manager, boot whitelist sync and LSPlant/Xposed runtime compare descriptor `version` values for duplicate addon IDs. The higher version wins. If versions are equal, the `/data` copy wins as an explicit user override. If an OTA ships a newer system addon than the stale `/data` copy, the system JAR becomes active while the old data override remains removable from the manager.
 
 ## Manifest Root Fields
 

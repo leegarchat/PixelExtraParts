@@ -156,35 +156,12 @@ android_app {
     ],
 }
 
-java_import {
-    name: "pine-core-jar",
-    jars: ["pine/libs/pine/pine-core.jar"],
-    sdk_version: "current",
-}
-
-java_import {
-    name: "pine-xposed-jar",
-    jars: ["pine/libs/pine/pine-xposed.jar"],
-    sdk_version: "current",
-}
-
-cc_prebuilt_library_shared {
-    name: "libpine",
-    srcs: ["pine/libs/pine/arm64-v8a/libpine.so"],
-    strip: {
-    none: true,
-    },
-    check_elf_files: false,
-    system_ext_specific: false,
-    installable: true,
-}
-
-// LSPlant backend (replaces libpine): official 6.4 core (LGPL-3.0,
+// LSPlant backend: official core (LGPL-3.0,
 // source https://github.com/LSPosed/LSPlant) + Dobby inline backend
 // (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
 cc_prebuilt_library_shared {
     name: "liblsplant",
-    srcs: ["pine/libs/lsplant/arm64-v8a/liblsplant.so"],
+    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblsplant.so"],
     strip: {
     none: true,
     },
@@ -195,7 +172,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "libdobby",
-    srcs: ["pine/libs/lsplant/arm64-v8a/libdobby.so"],
+    srcs: ["lsplant/libs/lsplant/arm64-v8a/libdobby.so"],
     strip: {
     none: true,
     },
@@ -206,7 +183,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "libc++_shared",
-    srcs: ["pine/libs/lsplant/arm64-v8a/libc++_shared.so"],
+    srcs: ["lsplant/libs/lsplant/arm64-v8a/libc++_shared.so"],
     strip: {
     none: true,
     },
@@ -217,7 +194,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "liblspbridge",
-    srcs: ["pine/libs/lsplant/arm64-v8a/liblspbridge.so"],
+    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblspbridge.so"],
     strip: {
     none: true,
     },
@@ -237,25 +214,25 @@ cc_prebuilt_binary {
 }
 
 java_library {
-    name: "PineInject",
-    // Xposed-compat shim over the LSPlant backend (replaces pine jars)
+    name: "LsplantInject",
+    // Xposed-compat shim over the LSPlant backend
     srcs: [
         // Общий интерфейс IHookEnvironment
-        "pine/src/org/pixel/customparts/core/**/*.kt",
-        "pine/src/org/pixel/customparts/core/**/*.java",
+        "lsplant/src/org/pixel/customparts/core/**/*.kt",
+        "lsplant/src/org/pixel/customparts/core/**/*.java",
         // Общие хуки (код реализации)
-        "pine/src/org/pixel/customparts/hooks/**/*.kt",
-        "pine/src/org/pixel/customparts/hooks/**/*.java",
+        "lsplant/src/org/pixel/customparts/hooks/**/*.kt",
+        "lsplant/src/org/pixel/customparts/hooks/**/*.java",
         // Менеджер инъекции (движок-независимый + LSPlant-бэкенд)
-        "pine/src/org/pixel/customparts/manager/pine/**/*.kt",
-        "pine/src/org/pixel/customparts/manager/pine/**/*.java",
-        "pine/src/org/pixel/customparts/manager/lsplant/**/*.kt",
-        "pine/src/org/pixel/customparts/manager/lsplant/**/*.java",
+        "lsplant/src/org/pixel/customparts/manager/lsplant/**/*.kt",
+        "lsplant/src/org/pixel/customparts/manager/lsplant/**/*.java",
+        "lsplant/src/org/pixel/customparts/lsplantinject/**/*.kt",
+        "lsplant/src/org/pixel/customparts/lsplantinject/**/*.java",
         // Xposed-совместимый слой поверх LSPlant
-        "pine/src/de/robv/android/xposed/**/*.java",
-        "pine/src/top/canyie/pine/xposed/PineXposed.java",
+        "lsplant/src/de/robv/android/xposed/**/*.java",
+        
         // Затенённый commons-lang для XposedHelpers
-        "pine/src/external/org/apache/commons/lang3/**/*.java"
+        "lsplant/src/external/org/apache/commons/lang3/**/*.java"
     ],
     installable: true,
     libs: [

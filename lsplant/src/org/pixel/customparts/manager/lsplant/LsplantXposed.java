@@ -1,17 +1,16 @@
-package top.canyie.pine.xposed;
+package org.pixel.customparts.manager.lsplant;
 
 /**
  * Minimal compatibility stub kept for source compatibility.
  *
- * <p>The Pine native engine is gone (replaced by LSPlant, see
- * {@code org.pixel.customparts.manager.lsplant.LsplantBridge}). Only the
- * logging tag and the global kill-switch survive here because
- * {@code XposedBridge} references them.
+ * <p>The previous native engine is gone (replaced by LSPlant, see
+ * {@link LsplantBridge}). Only the logging tag and the global kill-switch
+ * survive here because {@code XposedBridge} references them.
  */
-public final class PineXposed {
-    public static final String TAG = "PineXposed";
+public final class LsplantXposed {
+    public static final String TAG = "LsplantXposed";
     public static boolean disableHooks = false;
 
-    private PineXposed() {
+    private LsplantXposed() {
     }
 }

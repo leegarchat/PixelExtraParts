@@ -1,4 +1,4 @@
-package org.pixel.customparts.manager.pine;
+package org.pixel.customparts.manager.lsplant;
 
 import android.content.Context;
 import android.provider.Settings;

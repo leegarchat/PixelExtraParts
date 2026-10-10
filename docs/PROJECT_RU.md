@@ -7,7 +7,7 @@
 - [0. Архитектура: как всё связано](#0-архитектура-как-всё-связано)
 - [1. Настройки: `Settings.Global` + суффикс `_pine`](#1-настройки-settingsglobal--суффикс-_pine)
 - [2. Приложение (`common/`, `system/`)](#2-приложение-common-system)
-- [3. Pine runtime (`pine/`)](#3-pine-runtime-pine)
+- [3. LSPlant runtime (`lsplant/`)](#3-lsplant-runtime-lsplant)
 - [4. Аддоны (`example.addon.hook/`)](#4-аддоны-exampleaddonhook)
 - [5. Патч-система (`patches/`)](#patch-system)
 - [6. Thermal (`ThermalConfigs/` + runtime)](#thermal-internals)
@@ -21,8 +21,8 @@
 
 ```
 ┌─ Приложение org.pixel.customparts (system_ext, platform-подпись)
-│   пишет ТОЛЬКО Settings.Global: <база>_pine ──────────────┐
-├─ PineInject.jar (system/framework)                         │
+│   пишет ТОЛЬКО Settings.Global: <база>_lsplant ────────────┐
+├─ LsplantInject.jar (system/framework)                         │
 │   инжектится патчем ActivityThread.handleBindApplication   │
 │   в процессы: systemui, nexus/pixel/launcher3 (+whitelist) │
 │   ModEntry → HookEntry → хуки читают те же ключи ──────────┘
@@ -34,7 +34,7 @@
     → vendor.thermal.config → пропатченный pixel thermal-HAL
 ```
 
-Ключевая идея: **приложение никогда не трогает чужие процессы напрямую**. Оно пишет настройки в `Settings.Global`, а код, живущий внутри SystemUI/лаунчера (Pine-хуки и аддоны), читает их оттуда. Поэтому без патчей исходников (инжекция + точки хуков) приложение собирается, но ничего не меняет.
+Ключевая идея: **приложение никогда не трогает чужие процессы напрямую**. Оно пишет настройки в `Settings.Global`, а код, живущий внутри SystemUI/лаунчера (LSPlant-хуки и аддоны), читает их оттуда. Поэтому без патчей исходников (инжекция + точки хуков) приложение собирается, но ничего не меняет.
 
 ---
 
@@ -43,8 +43,8 @@
 Всё состояние — в `Settings.Global` (`common/src/org/pixel/customparts/`).
 
 - **`SettingsKeys.kt`** (`object SettingsKeys`): часть ключей — голые `const val` (`pixelparts_saturation_*`, `AUTO_HBM_*` (~20 шт.), `pixelparts_dtw_*`, `APP_ICONS_*`, `ICON_SHAPE_*`, `LAUNCHER_DT2S_TIMEOUT/SLOP`, `LOG_SERVICE_*`, `THERMAL_TILE_PROFILE_QUEUE/_INDEX`); хуковые ключи — `val ... get() = "база" + suffix`, где `suffix = "_pine"` (группы `LAUNCHER_*`, `QS_*`, `AOD_*/STATUS_BAR_*`, `GESTURE_BAR_*` (~18), `SHADE_*`, `MAGNIFIER_CUSTOM_*`, `TWO_SHADE_HOOK`, `ACTIVITY_OPEN/CLOSE_TRANSITION`, `DISABLE_PREDICTIVE_BACK_ANIM`, `BATTERY_INFO_*`).
-- **`utils/SettingsCompat.kt`**: `PINE_INJECT_SUFFIX = "_pine"`, `XPOSED_SUFFIX = "_xposed"`, whitelist `SUFFIXED_KEY_BASES` (~60 баз). `key(base)` нормализует любой вход к `_pine`-варианту; legacy `_xposed` **только срезается при чтении, никогда не пишется**. Все put/get — `@JvmStatic` через `Settings.Global`, на каждую запись — `PixelPartsTileRefresher.requestForSetting()` (обновление QS-тайлов). Своих `ContentObserver` нет.
-- **Сторона хуков** (`pine/.../manager/pine/PineEnvironment.java`, `SUFFIX = "_pine"`): `resolveKey(k)` — `_pine` как есть, `_xposed` → заменить, иначе дописать `_pine`. Чтение тоже из `Settings.Global` (bool = `getInt != 0`, float с fallback `getInt/100f`).
+- **`utils/SettingsCompat.kt`**: `ACTIVE_SUFFIX = "_lsplant"`, `LEGACY_ENGINE_SUFFIX = "_pine"`, `XPOSED_SUFFIX = "_xposed"`, whitelist `SUFFIXED_KEY_BASES` (~60 баз). `key(base)` нормализует любой вход к `_lsplant`-варианту; legacy-значения `_pine`/`_xposed` **только читаются через fallback, никогда не пишутся**. Все put/get — `@JvmStatic` через `Settings.Global`, на каждую запись — `PixelPartsTileRefresher.requestForSetting()` (обновление QS-тайлов). Своих `ContentObserver` нет.
+- **Сторона хуков** (`lsplant/.../manager/lsplant/LsplantEnvironment.java`, `ACTIVE_SUFFIX = "_lsplant"`): `resolveKey(k)` — `_lsplant` как есть, `_pine`/`_xposed` → заменить, иначе дописать `_lsplant`. Чтение — сквозной fallback (`_lsplant` → `_pine` → `_xposed`) из `Settings.Global` (bool = `getInt != 0`, float с fallback `getInt/100f`).
 - У overscroll свой дубль суффикса в `activities/OverscrollManager.kt` (`overscroll_*_pine`, `stripSuffix()` для переносимых JSON-профилей).
 - Исключения: `AutoHbmController` также читает/пишет `Settings.System.SCREEN_BRIGHTNESS/_MODE`; `AddonBinderReapply` умеет `Secure/System/Global` по полю `provider` из addon-манифеста.
 
@@ -80,7 +80,7 @@
 | `OverscrollActivity` (+`OverscrollManager/Profiles/AppConfig`) | Физика overscroll, per-app правила, импорт/экспорт |
 | `ThermalActivity` (+`object ThermalManager`) | Legacy-экран профилей; `onBoot()` из boot-ресивера |
 | `ThermalConfigManagerActivity` (+`ThermalConfigEditorActivity`) | Менеджер/редактор JSON в `/data/pixelparts/ThermalConfigs`, per-app `map.json` |
-| `AddonManagerActivity` / `AddonPageActivity` | Хосты Pine-аддонов |
+| `AddonManagerActivity` / `AddonPageActivity` | Хосты LSPlant-аддонов |
 | `TileHandlerActivity` | Роутер долгого тапа по QS-тайлу → нужный экран |
 | `DonateActivity` | Донаты/ссылки |
 
@@ -104,14 +104,14 @@
 
 ---
 
-## 3. Pine runtime (`pine/`)
+## 3. LSPlant runtime (`lsplant/`)
 
-Исходники `PineInject.jar` + `libpine.so` (`pine/libs/pine/`: `pine-core.jar`, `pine-xposed.jar`, `arm64-v8a/armeabi-v7a/libpine*.so*`). Сборка: `Android.bp` → `java_library "PineInject"` (`core/**`, `hooks/**`, `manager/pine/**` + `pine-core-jar`, `pine-xposed-jar`).
+Исходники `LsplantInject.jar` (`lsplant/src/`: `core/**`, `hooks/**`, `manager/lsplant/**`, `lsplantinject/**`, `de/robv/android/xposed/**` + затенённый commons-lang; только `kotlin-stdlib`). Нативная сторона (`lsplant/libs/lsplant/`, `lsplant/lsplant-native/`): `liblspbridge.so` (наш JNI-клей, собирается из исходников) + пребилты `liblsplant.so` / `libdobby.so` / `libc++_shared.so`. Сборка: `Android.bp` → `java_library "LsplantInject"`.
 
 ### Цепочка загрузки
 
-1. Пропатченный `ActivityThread.handleBindApplication` (патч `frameworks/base/.../app/ActivityThread.java`, маркеры `// --- [PixelParts] INJECTION START/END`): если пакет в `PIXEL_PARTS_DEFAULT_WHITELIST` (`systemui`, `nexuslauncher`, `pixel.launcher`, `launcher3`) **или** `Settings.Global pixel_extra_parts_inject_package_<pkg> == 1` (0 — запрет; sync делает `AddonLoader.syncWhitelist()`), и существует `/system/framework/PineInject.jar` — `addDexPath` + `loadClass("org.pixel.customparts.pineinject.ModEntry").init()`. Изолированные процессы пропускаются. `system_server` (`"android"`) **никогда** не хукается (`IGNORED_PACKAGE`).
-2. `ModEntry.init()`: `PineConfig.debug=false`, `System.load("/system/lib64/libpine.so")` (fallback `/system/lib/...`), `ActivityThread.currentApplication()` → `HookEntry.init(app, cl, pkg)`.
+1. Пропатченный `ActivityThread.handleBindApplication` (патч `frameworks/base/.../app/ActivityThread.java`, маркеры `// --- [PixelParts] INJECTION START/END`): если пакет в `PIXEL_PARTS_DEFAULT_WHITELIST` (`systemui`, `nexuslauncher`, `pixel.launcher`, `launcher3`) **или** `Settings.Global pixel_extra_parts_inject_package_<pkg> == 1` (0 — запрет; sync делает `AddonLoader.syncWhitelist()`), и существует `/system/framework/LsplantInject.jar` — `addDexPath` + `loadClass("org.pixel.customparts.lsplantinject.ModEntry").init()`. Изолированные процессы пропускаются. `system_server` (`"android"`) **никогда** не хукается (`IGNORED_PACKAGE`).
+2. `ModEntry.init()`: `System.loadLibrary("lspbridge")` (сначала клей, без DT_NEEDED на движки), `LsplantBridge.init()` — биндит уже инжектированный чужой движок (Vector/LSPosed) либо грузит наши пребилты из `/system`, никогда оба сразу; затем `ActivityThread.currentApplication()` → `HookEntry.init(app, cl, pkg)`.
 3. `HookEntry.init()`: once-guard на пакет; **всегда** `initGlobalHooks()` — 4 хука во всех инжектированных процессах (`EdgeEffectHookWrapper` с `useGlobalSettings`, `MagnifierHook`, `ActivityTransitionHook`, `PredictiveBackDisableHook`, сортировка по `getPriority()` desc); лаунчер — лог + `initLauncherHooks()` (сейчас **no-op**, всё отдано аддону `launcher_hooks`); SystemUI — встроенных хуков **нет**, всё в аддоне `systemui_hooks`; прочие пакеты — только аддоны; финал — `AddonLoader.loadAndRunAddons()` при наличии.
 4. `AddonLoader` (867 строк): фаза 1 — метаданные без DEX (`<jar>.json`-override, затем `META-INF/addon.json`); версия — сравнение по сегментам, при равенстве побеждает `/data`; фаза 2 — lazy `DexClassLoader` в `addons-dex` только для `getApplicableAddons(pkg)`; сортировка по `getPriority()` desc → `handleLoadPackage()`. Scope (`pixel_addon_<id>_scope_mode` 0=default/1=custom/2=merge), `targetPackages` (пусто = wildcard `"*"`). Boot-guard только для SystemUI (3 падения за 180с → safe mode), флаг ручного рестарта `pixel_addon_manual_restart`. Данные: системные — `/data/pixelparts/system_addons_data/<id>/`, юзерские — `<jar>_data/`.
 5. Интерфейсы (`core/`): `IHookEnvironment` (isEnabled/getInt/getFloat/getString/log), `BaseHook` (приоритет, setup/init, хелперы чтения настроек), `IAddonHook` (`getId`, `getTargetPackages` — null/empty = все пакеты, `handleLoadPackage`).
@@ -154,7 +154,7 @@
 | `settings_icon_style_override` | `SettingsIconStyleOverrideHook` → `com.android.settings` |
 | `systemui_hooks` (v2.1.0) | `SystemUIHooksEntry` → systemui: 6 хуков (`KeyguardBatteryPower`, `ShadeDateCalendar`, `ShadeUnifiedSurface`, `ShadeCompactMedia`, `NotificationIconShape`, `AodNotificationIconColor`) |
 
-Эксклюзивы аддонов (нет в `pine/`): `ShadeDateCalendarHook` (`shade_date_opens_calendar`), `NativeSearchRedirectView`, базовые `BaseLauncherHook`/`BaseSystemUIHook`. Манифест `launcher_hooks` экспонирует 74 ключа, `systemui_hooks` — 47 (runtime-ключи с `_pine`).
+Эксклюзивы аддонов (нет в `lsplant/`): `ShadeDateCalendarHook` (`shade_date_opens_calendar`), `NativeSearchRedirectView`, базовые `BaseLauncherHook`/`BaseSystemUIHook`. Манифест `launcher_hooks` экспонирует 74 ключа, `systemui_hooks` — 47 (runtime-ключи с `_pine`).
 
 Формат пакета: DEX-JAR (`classes.dex` + `META-INF/addon.json`); settings-only — только `META-INF/` без dex. `addon.json`: `id*`, `entryClass` (опустить для settings-only), `name/author/description/version` (версия выбирает активную копию), `targetPackages[]` (пусто = всем), `enabled`, `settings[]` (типы `switch/toggle/checkbox/int/float/string/text/select/color/file/app_list/group/visual/tile/cmd_button/...`; `provider` global/system/secure; `storage` settings/addon_file/internal/external; `enabledIf/disabledIf`, `exclusiveGroup`, `binderOn/binderOff` для carrier-config, `icon*`), `main[]` (страницы `id/title/group/priority/targetActivity/targetSlot`), локали inline + `META-INF/addon_<lang>.json`, external override `<jar>.json`. Сборка: `./build_addon.sh <name>` (Java 11+, D8 из `prebuild/`, выход `out/*.jar`). Загрузка: `/system_ext/etc/pixelparts/addons` + `/data/pixelparts/addons`. Полная схема — `example.addon.hook/README.md` + `docs/`.
 
@@ -229,9 +229,9 @@ Checked-in снапшоты (`patches/files/`): `modified/<rel>` (изменён
 <a id="build-internals"></a>
 ## 8. Сборка
 
-`Android.bp`: `PixelCustomPartsSystem` (`android_app` из `common/src/**` + `system/src/**`, `common/res`, platform cert/privileged), `PineInject` (`java_library`: `core/**`, `hooks/**`, `manager/pine/**` + `pine-core-jar`, `pine-xposed-jar`, kotlin-stdlib), `libpine` (`cc_prebuilt_library_shared`, только arm64), `aapt2_pixelparts`/`libaapt2_pixelparts` (prebuilt `common/lib/arm64/libaapt2.so` — **только arm64**), 8 `prebuilt_etc *_addon` → `system_ext/etc/pixelparts/addons/*.jar`, `privapp_whitelist`, `init.pixelextraparts.rc`, `java_import` (`apksig-jar`, `pine-core-jar`, `pine-xposed-jar`).
+`Android.bp`: `PixelCustomPartsSystem` (`android_app` из `common/src/**` + `system/src/**`, `common/res`, platform cert/privileged), `LsplantInject` (`java_library`: `core/**`, `hooks/**`, `manager/lsplant/**`, `lsplantinject/**` + kotlin-stdlib), `liblsplant`/`libdobby`/`libc++_shared`/`liblspbridge` (`cc_prebuilt_library_shared`, только arm64), `aapt2_pixelparts`/`libaapt2_pixelparts` (prebuilt `common/lib/arm64/libaapt2.so` — **только arm64**), 8 `prebuilt_etc *_addon` → `system_ext/etc/pixelparts/addons/*.jar`, `privapp_whitelist`, `init.pixelextraparts.rc`, `java_import` (`apksig-jar`).
 
-Манифест (`system/AndroidManifest.xml`, `sharedUserId=android.uid.system`, `directBootAware`): ~150 `uses-permission`, ключевые — `WRITE_SECURE_SETTINGS`, `DEVICE_POWER`, `STATUS_BAR(_SERVICE)`, `CONTROL_DISPLAY_BRIGHTNESS`, `FOREGROUND_SERVICE_SPECIAL_USE`, `REBOOT`, `INSTALL/DELETE_PACKAGES`, `READ_LOGS`, `DUMP`; `privapp-permissions-pixelparts.xml` — 175 `<permission>` (включая `INTERACT_ACROSS_USERS`, `MANAGE_USERS`, `PACKAGE_USAGE_STATS`, `CHANGE_OVERLAY_PACKAGES`). `AppConfig`: `ENABLE_THERMALS` ← `persist.sys.pixelparts.thermal_available`, `IS_XPOSED=false` (Pine-only), `NEEDS_ROOT_ACCESS=false`.
+Манифест (`system/AndroidManifest.xml`, `sharedUserId=android.uid.system`, `directBootAware`): ~150 `uses-permission`, ключевые — `WRITE_SECURE_SETTINGS`, `DEVICE_POWER`, `STATUS_BAR(_SERVICE)`, `CONTROL_DISPLAY_BRIGHTNESS`, `FOREGROUND_SERVICE_SPECIAL_USE`, `REBOOT`, `INSTALL/DELETE_PACKAGES`, `READ_LOGS`, `DUMP`; `privapp-permissions-pixelparts.xml` — 175 `<permission>` (включая `INTERACT_ACROSS_USERS`, `MANAGE_USERS`, `PACKAGE_USAGE_STATS`, `CHANGE_OVERLAY_PACKAGES`). `AppConfig`: `ENABLE_THERMALS` ← `persist.sys.pixelparts.thermal_available`, `IS_XPOSED=false` (LSPlant-only), `NEEDS_ROOT_ACCESS=false`.
 
 ---
 

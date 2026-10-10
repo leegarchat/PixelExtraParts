@@ -7,7 +7,7 @@ A detailed walkthrough of the codebase: how the parts connect, where things live
 - [0. Architecture: how it all connects](#0-architecture-how-it-all-connects)
 - [1. Settings: `Settings.Global` + the `_pine` suffix](#1-settings-settingsglobal--the-_pine-suffix)
 - [2. The app (`common/`, `system/`)](#2-the-app-common-system)
-- [3. Pine runtime (`pine/`)](#3-pine-runtime-pine)
+- [3. LSPlant runtime (`lsplant/`)](#3-lsplant-runtime-lsplant)
 - [4. Addons (`example.addon.hook/`)](#4-addons-exampleaddonhook)
 - [5. Patch system (`patches/`)](#patch-system)
 - [6. Thermal (`ThermalConfigs/` + runtime)](#thermal-internals)
@@ -21,8 +21,8 @@ A detailed walkthrough of the codebase: how the parts connect, where things live
 
 ```
 ┌─ App org.pixel.customparts (system_ext, platform signature)
-│   writes ONLY Settings.Global: <base>_pine ────────────────┐
-├─ PineInject.jar (system/framework)                         │
+│   writes ONLY Settings.Global: <base>_lsplant ─────────────┐
+├─ LsplantInject.jar (system/framework)                         │
 │   injected by the ActivityThread.handleBindApplication     │
 │   patch into: systemui, nexus/pixel/launcher3 (+whitelist) │
 │   ModEntry → HookEntry → hooks read the same keys ─────────┘
@@ -34,7 +34,7 @@ A detailed walkthrough of the codebase: how the parts connect, where things live
     → vendor.thermal.config → patched pixel thermal HAL
 ```
 
-The core idea: **the app never touches foreign processes directly**. It writes settings to `Settings.Global`, and the code living inside SystemUI/launcher (Pine hooks and addons) reads them from there. That's why without source patches (injection + hook points) the app builds fine but changes nothing.
+The core idea: **the app never touches foreign processes directly**. It writes settings to `Settings.Global`, and the code living inside SystemUI/launcher (LSPlant hooks and addons) reads them from there. That's why without source patches (injection + hook points) the app builds fine but changes nothing.
 
 ---
 
@@ -43,8 +43,8 @@ The core idea: **the app never touches foreign processes directly**. It writes s
 All state lives in `Settings.Global` (`common/src/org/pixel/customparts/`).
 
 - **`SettingsKeys.kt`** (`object SettingsKeys`): some keys are bare `const val` (`pixelparts_saturation_*`, `AUTO_HBM_*` (~20), `pixelparts_dtw_*`, `APP_ICONS_*`, `ICON_SHAPE_*`, `LAUNCHER_DT2S_TIMEOUT/SLOP`, `LOG_SERVICE_*`, `THERMAL_TILE_PROFILE_QUEUE/_INDEX`); hook keys are `val ... get() = "base" + suffix` with `suffix = "_pine"` (groups `LAUNCHER_*`, `QS_*`, `AOD_*/STATUS_BAR_*`, `GESTURE_BAR_*` (~18), `SHADE_*`, `MAGNIFIER_CUSTOM_*`, `TWO_SHADE_HOOK`, `ACTIVITY_OPEN/CLOSE_TRANSITION`, `DISABLE_PREDICTIVE_BACK_ANIM`, `BATTERY_INFO_*`).
-- **`utils/SettingsCompat.kt`**: `PINE_INJECT_SUFFIX = "_pine"`, `XPOSED_SUFFIX = "_xposed"`, a `SUFFIXED_KEY_BASES` whitelist (~60 bases). `key(base)` normalizes any input to the `_pine` variant; legacy `_xposed` is **only stripped on read, never written**. All put/get helpers are `@JvmStatic` over `Settings.Global`, and every write triggers `PixelPartsTileRefresher.requestForSetting()` (QS tile refresh). No custom `ContentObserver`s.
-- **Hook side** (`pine/.../manager/pine/PineEnvironment.java`, `SUFFIX = "_pine"`): `resolveKey(k)` — `_pine` as is, `_xposed` → replaced, otherwise `_pine` appended. Reads also come from `Settings.Global` (bool = `getInt != 0`, float with `getInt/100f` fallback).
+- **`utils/SettingsCompat.kt`**: `ACTIVE_SUFFIX = "_lsplant"`, `LEGACY_ENGINE_SUFFIX = "_pine"`, `XPOSED_SUFFIX = "_xposed"`, a `SUFFIXED_KEY_BASES` whitelist (~60 bases). `key(base)` normalizes any input to the `_lsplant` variant; legacy `_pine`/`_xposed` values are **only read via fallback, never written**. All put/get helpers are `@JvmStatic` over `Settings.Global`, and every write triggers `PixelPartsTileRefresher.requestForSetting()` (QS tile refresh). No custom `ContentObserver`s.
+- **Hook side** (`lsplant/.../manager/lsplant/LsplantEnvironment.java`, `ACTIVE_SUFFIX = "_lsplant"`): `resolveKey(k)` — `_lsplant` as is, `_pine`/`_xposed` → replaced, otherwise `_lsplant` appended. Reads go through read-through fallback (`_lsplant` → `_pine` → `_xposed`) from `Settings.Global` (bool = `getInt != 0`, float with `getInt/100f` fallback).
 - Overscroll keeps its own suffix duplicate in `activities/OverscrollManager.kt` (`overscroll_*_pine`, `stripSuffix()` for portable JSON profiles).
 - Exceptions: `AutoHbmController` also reads/writes `Settings.System.SCREEN_BRIGHTNESS/_MODE`; `AddonBinderReapply` supports `Secure/System/Global` via the addon's manifest `provider` field.
 
@@ -80,7 +80,7 @@ Search: a `dashboardSearchItems` index (static + `flattenAddonTree()` + `flatten
 | `OverscrollActivity` (+`OverscrollManager/Profiles/AppConfig`) | Overscroll physics, per-app rules, import/export |
 | `ThermalActivity` (+`object ThermalManager`) | Legacy profile screen; `onBoot()` from the boot receiver |
 | `ThermalConfigManagerActivity` (+`ThermalConfigEditorActivity`) | JSON manager/editor in `/data/pixelparts/ThermalConfigs`, per-app `map.json` |
-| `AddonManagerActivity` / `AddonPageActivity` | Pine addon hosts |
+| `AddonManagerActivity` / `AddonPageActivity` | LSPlant addon hosts |
 | `TileHandlerActivity` | Long-press-on-QS-tile router → the right screen |
 | `DonateActivity` | Donations/links |
 
@@ -104,14 +104,14 @@ Search: a `dashboardSearchItems` index (static + `flattenAddonTree()` + `flatten
 
 ---
 
-## 3. Pine runtime (`pine/`)
+## 3. LSPlant runtime (`lsplant/`)
 
-Sources of `PineInject.jar` + `libpine.so` (`pine/libs/pine/`: `pine-core.jar`, `pine-xposed.jar`, `arm64-v8a/armeabi-v7a/libpine*.so*`). Build: `Android.bp` → `java_library "PineInject"` (`core/**`, `hooks/**`, `manager/pine/**` + `pine-core-jar`, `pine-xposed-jar`, kotlin-stdlib).
+Sources of `LsplantInject.jar` (`lsplant/src/`: `core/**`, `hooks/**`, `manager/lsplant/**`, `lsplantinject/**`, `de/robv/android/xposed/**` + shaded commons-lang; `kotlin-stdlib` only). Native side (`lsplant/libs/lsplant/`, `lsplant/lsplant-native/`): `liblspbridge.so` (our JNI glue, built from source) + `liblsplant.so` / `libdobby.so` / `libc++_shared.so` prebuilts. Build: `Android.bp` → `java_library "LsplantInject"`.
 
 ### Load chain
 
-1. Patched `ActivityThread.handleBindApplication` (patch `frameworks/base/.../app/ActivityThread.java`, markers `// --- [PixelParts] INJECTION START/END`): if the package is in `PIXEL_PARTS_DEFAULT_WHITELIST` (`systemui`, `nexuslauncher`, `pixel.launcher`, `launcher3`) **or** `Settings.Global pixel_extra_parts_inject_package_<pkg> == 1` (0 = deny; synced by `AddonLoader.syncWhitelist()`), and `/system/framework/PineInject.jar` exists — `addDexPath` + `loadClass("org.pixel.customparts.pineinject.ModEntry").init()`. Isolated processes are skipped. `system_server` (`"android"`) is **never** hooked (`IGNORED_PACKAGE`).
-2. `ModEntry.init()`: `PineConfig.debug=false`, `System.load("/system/lib64/libpine.so")` (fallback `/system/lib/...`), `ActivityThread.currentApplication()` → `HookEntry.init(app, cl, pkg)`.
+1. Patched `ActivityThread.handleBindApplication` (patch `frameworks/base/.../app/ActivityThread.java`, markers `// --- [PixelParts] INJECTION START/END`): if the package is in `PIXEL_PARTS_DEFAULT_WHITELIST` (`systemui`, `nexuslauncher`, `pixel.launcher`, `launcher3`) **or** `Settings.Global pixel_extra_parts_inject_package_<pkg> == 1` (0 = deny; synced by `AddonLoader.syncWhitelist()`), and `/system/framework/LsplantInject.jar` exists — `addDexPath` + `loadClass("org.pixel.customparts.lsplantinject.ModEntry").init()`. Isolated processes are skipped. `system_server` (`"android"`) is **never** hooked (`IGNORED_PACKAGE`).
+2. `ModEntry.init()`: `System.loadLibrary("lspbridge")` (glue first, no DT_NEEDED on engines), `LsplantBridge.init()` — binds an already-injected foreign engine (Vector/LSPosed) or loads our own `/system` prebuilts, never both; then `ActivityThread.currentApplication()` → `HookEntry.init(app, cl, pkg)`.
 3. `HookEntry.init()`: once-guard per package; **always** `initGlobalHooks()` — 4 hooks in every injected process (`EdgeEffectHookWrapper` with `useGlobalSettings`, `MagnifierHook`, `ActivityTransitionHook`, `PredictiveBackDisableHook`, sorted by `getPriority()` desc); launcher — log + `initLauncherHooks()` (currently a **no-op**, everything moved to the `launcher_hooks` addon); SystemUI — **no** built-in hooks, all in the `systemui_hooks` addon; other packages — addons only; finally `AddonLoader.loadAndRunAddons()` if any.
 4. `AddonLoader` (867 lines): phase 1 — metadata without DEX (`<jar>.json` override, then `META-INF/addon.json`); versioning — segment-wise compare, `/data` wins ties; phase 2 — lazy `DexClassLoader` into `addons-dex` only for `getApplicableAddons(pkg)`; sort by `getPriority()` desc → `handleLoadPackage()`. Scope (`pixel_addon_<id>_scope_mode` 0=default/1=custom/2=merge), `targetPackages` (empty = wildcard `"*"`). Boot guard for SystemUI only (3 crashes in 180s → safe mode), manual-restart flag `pixel_addon_manual_restart`. Data: system addons — `/data/pixelparts/system_addons_data/<id>/`, user addons — `<jar>_data/`.
 5. Interfaces (`core/`): `IHookEnvironment` (isEnabled/getInt/getFloat/getString/log), `BaseHook` (priority, setup/init, settings-read helpers), `IAddonHook` (`getId`, `getTargetPackages` — null/empty = all packages, `handleLoadPackage`).
@@ -154,7 +154,7 @@ Sources of `PineInject.jar` + `libpine.so` (`pine/libs/pine/`: `pine-core.jar`, 
 | `settings_icon_style_override` | `SettingsIconStyleOverrideHook` → `com.android.settings` |
 | `systemui_hooks` (v2.1.0) | `SystemUIHooksEntry` → systemui: 6 hooks (`KeyguardBatteryPower`, `ShadeDateCalendar`, `ShadeUnifiedSurface`, `ShadeCompactMedia`, `NotificationIconShape`, `AodNotificationIconColor`) |
 
-Addon-only extras (not in `pine/`): `ShadeDateCalendarHook` (`shade_date_opens_calendar`), `NativeSearchRedirectView`, base `BaseLauncherHook`/`BaseSystemUIHook`. The `launcher_hooks` manifest exposes 74 keys, `systemui_hooks` — 47 (runtime keys with `_pine`).
+Addon-only extras (not in `lsplant/`): `ShadeDateCalendarHook` (`shade_date_opens_calendar`), `NativeSearchRedirectView`, base `BaseLauncherHook`/`BaseSystemUIHook`. The `launcher_hooks` manifest exposes 74 keys, `systemui_hooks` — 47 (runtime keys with `_pine`).
 
 Package format: DEX-JAR (`classes.dex` + `META-INF/addon.json`); settings-only — `META-INF/` alone, no dex. `addon.json`: `id*`, `entryClass` (omit for settings-only), `name/author/description/version` (version picks the active copy), `targetPackages[]` (empty = all), `enabled`, `settings[]` (types `switch/toggle/checkbox/int/float/string/text/select/color/file/app_list/group/visual/tile/cmd_button/...`; `provider` global/system/secure; `storage` settings/addon_file/internal/external; `enabledIf/disabledIf`, `exclusiveGroup`, `binderOn/binderOff` for carrier-config, `icon*`), `main[]` pages (`id/title/group/priority/targetActivity/targetSlot`), locales inline + `META-INF/addon_<lang>.json`, external `<jar>.json` override. Build: `./build_addon.sh <name>` (Java 11+, D8 from `prebuild/`, output `out/*.jar`). Load paths: `/system_ext/etc/pixelparts/addons` + `/data/pixelparts/addons`. Full schema — `example.addon.hook/README.md` + `docs/`.
 
@@ -229,9 +229,9 @@ Base patches (`patches/files/...`): `system/sepolicy/private/domain.te` — `-sy
 <a id="build-internals"></a>
 ## 8. Build
 
-`Android.bp`: `PixelCustomPartsSystem` (`android_app` from `common/src/**` + `system/src/**`, `common/res`, platform cert/privileged), `PineInject` (`java_library`: `core/**`, `hooks/**`, `manager/pine/**` + `pine-core-jar`, `pine-xposed-jar`, kotlin-stdlib), `libpine` (`cc_prebuilt_library_shared`, arm64 only), `aapt2_pixelparts`/`libaapt2_pixelparts` (prebuilt `common/lib/arm64/libaapt2.so` — **arm64 only**), 8 `prebuilt_etc *_addon` → `system_ext/etc/pixelparts/addons/*.jar`, `privapp_whitelist`, `init.pixelextraparts.rc`, `java_import` (`apksig-jar`, `pine-core-jar`, `pine-xposed-jar`).
+`Android.bp`: `PixelCustomPartsSystem` (`android_app` from `common/src/**` + `system/src/**`, `common/res`, platform cert/privileged), `LsplantInject` (`java_library`: `core/**`, `hooks/**`, `manager/lsplant/**`, `lsplantinject/**` + kotlin-stdlib), `liblsplant`/`libdobby`/`libc++_shared`/`liblspbridge` (`cc_prebuilt_library_shared`, arm64 only), `aapt2_pixelparts`/`libaapt2_pixelparts` (prebuilt `common/lib/arm64/libaapt2.so` — **arm64 only**), 8 `prebuilt_etc *_addon` → `system_ext/etc/pixelparts/addons/*.jar`, `privapp_whitelist`, `init.pixelextraparts.rc`, `java_import` (`apksig-jar`).
 
-Manifest (`system/AndroidManifest.xml`, `sharedUserId=android.uid.system`, `directBootAware`): ~150 `uses-permission`, key ones — `WRITE_SECURE_SETTINGS`, `DEVICE_POWER`, `STATUS_BAR(_SERVICE)`, `CONTROL_DISPLAY_BRIGHTNESS`, `FOREGROUND_SERVICE_SPECIAL_USE`, `REBOOT`, `INSTALL/DELETE_PACKAGES`, `READ_LOGS`, `DUMP`; `privapp-permissions-pixelparts.xml` — 175 `<permission>` entries (including `INTERACT_ACROSS_USERS`, `MANAGE_USERS`, `PACKAGE_USAGE_STATS`, `CHANGE_OVERLAY_PACKAGES`). `AppConfig`: `ENABLE_THERMALS` ← `persist.sys.pixelparts.thermal_available`, `IS_XPOSED=false` (Pine-only), `NEEDS_ROOT_ACCESS=false`.
+Manifest (`system/AndroidManifest.xml`, `sharedUserId=android.uid.system`, `directBootAware`): ~150 `uses-permission`, key ones — `WRITE_SECURE_SETTINGS`, `DEVICE_POWER`, `STATUS_BAR(_SERVICE)`, `CONTROL_DISPLAY_BRIGHTNESS`, `FOREGROUND_SERVICE_SPECIAL_USE`, `REBOOT`, `INSTALL/DELETE_PACKAGES`, `READ_LOGS`, `DUMP`; `privapp-permissions-pixelparts.xml` — 175 `<permission>` entries (including `INTERACT_ACROSS_USERS`, `MANAGE_USERS`, `PACKAGE_USAGE_STATS`, `CHANGE_OVERLAY_PACKAGES`). `AppConfig`: `ENABLE_THERMALS` ← `persist.sys.pixelparts.thermal_available`, `IS_XPOSED=false` (LSPlant-only), `NEEDS_ROOT_ACCESS=false`.
 
 ---
 

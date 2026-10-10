@@ -1,13 +1,13 @@
-package org.pixel.customparts.pineinject;
+package org.pixel.customparts.lsplantinject;
 
 import android.app.ActivityThread;
 import android.app.Application;
 import android.util.Log;
 import org.pixel.customparts.manager.lsplant.LsplantBridge;
-import org.pixel.customparts.manager.pine.HookEntry;
+import org.pixel.customparts.manager.lsplant.HookEntry;
 
 public class ModEntry {
-    private static final String TAG = "PineInject";
+    private static final String TAG = "LsplantInject";
 
     public static void init() {
         // LSPlant backend binds at runtime: if Vector/LSPosed already injected

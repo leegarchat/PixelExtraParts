@@ -21,14 +21,14 @@ import de.robv.android.xposed.XposedHelpers;
 
 
 /**
- * Xposed/Pine implementation of EvolutionX compact QS media player mode.
+ * Xposed/LSPlant implementation of EvolutionX compact QS media player mode.
  *
  * Native logic lives in SystemUI's MediaViewController and (in non-scene mode) is essentially:
  * <pre>
  * if (isCompactMode) collapsedLayout else expandedLayout
  * </pre>
  *
- * This hook forces the same "use collapsed constraints" behavior when the Pine setting key
+ * This hook forces the same "use collapsed constraints" behavior when the LSPlant setting key
  * {@code qs_compact_player} is enabled.
  */
 public class ShadeCompactMediaHook extends BaseSystemUIHook {

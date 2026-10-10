@@ -2,7 +2,7 @@
     "id": "systemui_hooks",
     "name": "SystemUI Hooks",
     "author": "LeeGarChat",
-    "description": "Pine SystemUI hooks and generated settings for PixelExtraParts.",
+    "description": "LSPlant SystemUI hooks and generated settings for PixelExtraParts.",
     "version": "2.2.2",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
@@ -578,7 +578,7 @@
         "ru": {
             "name": "Хуки SystemUI",
             "author": "LeeGarChat",
-            "description": "Pine-хуки SystemUI и сгенерированные настройки для PixelExtraParts.",
+            "description": "LSPlant-хуки SystemUI и сгенерированные настройки для PixelExtraParts.",
             "settings": [],
             "main": [
                 {
@@ -823,7 +823,7 @@
         "de": {
             "name": "SystemUI-Hooks",
             "author": "LeeGarChat",
-            "description": "Pine-SystemUI-Hooks und generierte Einstellungen für PixelExtraParts.",
+            "description": "LSPlant-SystemUI-Hooks und generierte Einstellungen für PixelExtraParts.",
             "settings": [],
             "main": [
                 {
@@ -1068,7 +1068,7 @@
         "fr": {
             "name": "Hooks SystemUI",
             "author": "LeeGarChat",
-            "description": "Hooks Pine SystemUI et paramètres générés pour PixelExtraParts.",
+            "description": "Hooks LSPlant SystemUI et paramètres générés pour PixelExtraParts.",
             "settings": [],
             "main": [
                 {
@@ -1313,7 +1313,7 @@
         "uk": {
             "name": "Хуки SystemUI",
             "author": "LeeGarChat",
-            "description": "Pine-хуки SystemUI та згенеровані налаштування для PixelExtraParts.",
+            "description": "LSPlant-хуки SystemUI та згенеровані налаштування для PixelExtraParts.",
             "settings": [],
             "main": [
                 {

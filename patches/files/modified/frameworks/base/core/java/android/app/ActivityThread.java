@@ -8401,7 +8401,7 @@ public final class ActivityThread extends ClientTransactionHandler
                 // 3. Сама инъекция (только если shouldInject == true)
                 if (shouldInject) {
                     try {
-                        final String jarPath = "/system/framework/PineInject.jar";
+                        final String jarPath = "/system/framework/LsplantInject.jar";
                         final java.io.File jarFile = new java.io.File(jarPath);
 
                         if (jarFile.exists()) {
@@ -8412,7 +8412,7 @@ public final class ActivityThread extends ClientTransactionHandler
                                 
                                 dexLoader.addDexPath(jarPath);
 
-                                Class<?> entry = appCl.loadClass("org.pixel.customparts.pineinject.ModEntry");
+                                Class<?> entry = appCl.loadClass("org.pixel.customparts.lsplantinject.ModEntry");
                                 java.lang.reflect.Method m = entry.getDeclaredMethod("init");
                                 m.invoke(null);
                                 

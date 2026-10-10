@@ -1,7 +1,7 @@
 #!/bin/bash
 # One-shot NDK build of liblsplant.so (LSPlant + Dobby + JNI glue).
-# Output (staging): pine/lsplant-native/out/<abi>/liblsplant.so
-# Install into prebuilts (pine/libs/lsplant/) is a separate manual step.
+# Output (staging): lsplant/lsplant-native/out/<abi>/liblsplant.so
+# Install into prebuilts (lsplant/libs/lsplant/) is a separate manual step.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NDK="${ANDROID_NDK:-${ANDROID_NDK_HOME:-/opt/android-sdk/ndk/29.0.14206865}}"

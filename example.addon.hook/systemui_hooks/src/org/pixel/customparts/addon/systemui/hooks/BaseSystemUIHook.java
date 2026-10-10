@@ -11,7 +11,7 @@ import android.util.Log;
 
 public abstract class BaseSystemUIHook {
     private static final String ACTIVE_SUFFIX = "_lsplant";
-    private static final String LEGACY_PINE_SUFFIX = "_pine";
+    private static final String LEGACY_ENGINE_SUFFIX = "_pine";
     private static final String XPOSED_SUFFIX = "_xposed";
 
     /**
@@ -113,7 +113,7 @@ public abstract class BaseSystemUIHook {
     }
 
     private static String stripSuffix(String key) {
-        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_PINE_SUFFIX, XPOSED_SUFFIX}) {
+        for (String s : new String[]{ACTIVE_SUFFIX, LEGACY_ENGINE_SUFFIX, XPOSED_SUFFIX}) {
             if (key.endsWith(s)) {
                 return key.substring(0, key.length() - s.length());
             }
@@ -139,7 +139,7 @@ public abstract class BaseSystemUIHook {
         }
         String base = stripSuffix(key);
         String[] candidates = new String[]{
-                base + ACTIVE_SUFFIX, base + LEGACY_PINE_SUFFIX, base + XPOSED_SUFFIX};
+                base + ACTIVE_SUFFIX, base + LEGACY_ENGINE_SUFFIX, base + XPOSED_SUFFIX};
         for (String candidate : candidates) {
             try {
                 if (Settings.Global.getString(context.getContentResolver(), candidate) != null) {
