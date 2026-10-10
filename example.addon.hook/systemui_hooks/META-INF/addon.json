@@ -3,7 +3,7 @@
     "name": "SystemUI Hooks",
     "author": "LeeGarChat",
     "description": "LSPlant SystemUI hooks and generated settings for PixelExtraParts.",
-    "version": "2.2.7",
+    "version": "2.2.8",
     "entryClass": "org.pixel.customparts.addon.systemui.SystemUIHooksEntry",
     "enabled": true,
     "updateUrl": "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/OTA/addons/systemui_hooks.json",
@@ -373,7 +373,7 @@
                         {
                             "key": "shade_zoom_intensity_pine",
                             "title": "Zoom intensity",
-                            "description": "Surface zoom while pulling the shade. 0 = stock. Above deepens shrinking as shade opens (+1000 = max), below reverses toward enlarge (-1000 = max). No jump on entry, eased over 300ms. Applies live.",
+                            "description": "Surface zoom while pulling the shade. 0 = stock. Above deepens shrinking as shade opens (+1000 = max), below reverses toward enlarge (-1000 = max). Works even with blur at 0. Easing adjustable below. Applies live.",
                             "type": "int",
                             "provider": "global",
                             "default": 0,
@@ -389,6 +389,18 @@
                             "type": "switch",
                             "provider": "global",
                             "default": true
+                        },
+                        {
+                            "key": "shade_zoom_smooth_ms_pine",
+                            "title": "Zoom smoothing",
+                            "description": "Easing window for zoom transitions in ms. 0 = off (direct tracking). Applies live.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 300,
+                            "min": 0,
+                            "max": 1000,
+                            "step": 10,
+                            "unit": "ms"
                         }
                     ]
                 },
@@ -739,6 +751,10 @@
                                 {
                                     "key": "shade_zoom_enabled_pine",
                                     "title": "Включить zoom"
+                                },
+                                {
+                                    "key": "shade_zoom_smooth_ms_pine",
+                                    "title": "Сглаживание зума"
                                 }
                             ]
                         },
@@ -984,6 +1000,10 @@
                                 {
                                     "key": "shade_zoom_enabled_pine",
                                     "title": "Zoom aktivieren"
+                                },
+                                {
+                                    "key": "shade_zoom_smooth_ms_pine",
+                                    "title": "Zoom-Glättung"
                                 }
                             ]
                         },
@@ -1229,6 +1249,10 @@
                                 {
                                     "key": "shade_zoom_enabled_pine",
                                     "title": "Activer le zoom"
+                                },
+                                {
+                                    "key": "shade_zoom_smooth_ms_pine",
+                                    "title": "Lissage du zoom"
                                 }
                             ]
                         },
@@ -1474,6 +1498,10 @@
                                 {
                                     "key": "shade_zoom_enabled_pine",
                                     "title": "Увімкнути zoom"
+                                },
+                                {
+                                    "key": "shade_zoom_smooth_ms_pine",
+                                    "title": "Згладжування зуму"
                                 }
                             ]
                         },

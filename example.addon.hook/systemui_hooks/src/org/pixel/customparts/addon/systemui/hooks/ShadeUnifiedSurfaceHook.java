@@ -31,6 +31,8 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // "shade_disable_scale_threshold" int slider (removed): OFF forces the
     // blur scale to 1.0 (no zoom, sharp surface), ON applies zoom intensity.
     private static final String KEY_SHADE_ZOOM_ENABLED = "shade_zoom_enabled";
+    // Stabilizer window in ms (slider, 0 = off = direct target tracking).
+    private static final String KEY_SHADE_ZOOM_SMOOTH_MS = "shade_zoom_smooth_ms";
 
     // New keys
     private static final String KEY_SHADE_NOTIF_SCRIM_ALPHA = "shade_notif_scrim_alpha";
@@ -42,6 +44,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private static final int DEFAULT_SHADE_BLUR_INTENSITY_PERCENT = 100;
     private static final int DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT = 0;
+    private static final int DEFAULT_SHADE_ZOOM_SMOOTH_MS = 300;
     private static final int MAIN_SCRIM_MAX_PERCENT = 138;
     private static final int NOTIF_SCRIM_MAX_PERCENT = 201;
     
@@ -60,6 +63,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     private static volatile int sCfgBlurIntensity = DEFAULT_SHADE_BLUR_INTENSITY_PERCENT;
     private static volatile int sCfgZoomIntensity = DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT;
     private static volatile boolean sCfgZoomEnabled = true;
+    private static volatile int sCfgSmoothMs = DEFAULT_SHADE_ZOOM_SMOOTH_MS;
     private static volatile int sCfgNotifScrimAlpha = DEFAULT_SCRIM_ALPHA;
     private static volatile int sCfgNotifScrimTint = DEFAULT_SCRIM_TINT;
     private static volatile int sCfgMainScrimAlpha = DEFAULT_SCRIM_ALPHA;
@@ -89,12 +93,12 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // applyBlur() scale arg index cache: -2 unknown, -1 absent, >=0 actual index
     private static volatile int sApplyBlurScaleArgIndex = -2;
 
-    // Jerk stabilizer: output scale chases the target with a fixed slew rate
-    // covering the full travel in SMOOTH_MS. Slow shade drags pass through
-    // 1:1 (per-frame delta below the cap); fast flings/slider jumps glide
-    // over the fixed window instead of snapping. -1 = unset (snap on first
-    // frame after process start).
-    private static final float SMOOTH_MS = 300f;
+    // Jerk stabilizer: exponential chase (tau = smoothMs/3) plus a hard
+    // per-frame cap, so sparse mid-fling frames glide along the whole travel
+    // instead of snapping. Slow drags track with a small lag; fast flings
+    // glide over ~smoothMs. sCfgSmoothMs <= 0 disables it (direct target).
+    // -1 = never engaged (anchor to live stock, zero touch downstream).
+    private static final float SMOOTH_EPS = 0.0015f;
     private static volatile float sSmoothScale = -1f;
     private static volatile long sSmoothLastMs;
 
@@ -143,26 +147,39 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (!sConfigLoaded) return;
                         if (!isShadeTweaksEnabled(app)) return;
 
+                        float originalScale0 = resolveFloatArg(param.args, scaleIndex);
+                        if (originalScale0 < 0f) return;
+
                         if (sZoomForceOffActive) {
-                            param.args[scaleIndex] = smoothScale(1.0f);
+                            param.args[scaleIndex] = smoothScale(1.0f, originalScale0);
                             return;
                         }
 
-                        float originalScale = resolveFloatArg(param.args, scaleIndex);
-                        if (originalScale < 0f) return;
+                        float originalScale = originalScale0;
 
                         if (!sZoomScalingActive) {
                             // Zoom just disengaged mid-glide: ease back to stock
                             // instead of snapping. Pure-stock frames (never
                             // engaged) pass through untouched.
                             if (sSmoothScale < 0f || sSmoothScale == originalScale) return;
-                            param.args[scaleIndex] = smoothScale(originalScale);
+                            param.args[scaleIndex] = smoothScale(originalScale, originalScale);
                             return;
+                        }
+
+                        // Keep zoom alive at blur 0: without a blur layer the
+                        // scale has nothing to apply to. Force a minimal radius
+                        // while the shade is actually open (orig < 1); a closed
+                        // shade keeps radius 0 (no cost, nothing to show).
+                        // applyBlur radius is args[1] in every overload.
+                        if (originalScale < 1.0f && param.args.length >= 2
+                                && param.args[1] instanceof Integer
+                                && ((Integer) param.args[1]) == 0) {
+                            param.args[1] = 1;
                         }
 
                         int zoomIntensity = sCfgZoomIntensity;
                         float target = applyZoomCurve(originalScale, zoomIntensity);
-                        param.args[scaleIndex] = smoothScale(target);
+                        param.args[scaleIndex] = smoothScale(target, originalScale);
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }
@@ -208,26 +225,38 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Slew-rate limiter over wall-clock time: full scale travel
-     * (floor..ENLARGE_CAP) takes SMOOTH_MS. Returns the eased scale and
+     * Eased scale toward the target. Unset state anchors to the live stock
+     * value (what's actually on screen) so there's never an entry jump;
+     * stale state resumes from the stored value (also what's on screen).
+     * smoothMs <= 0 bypasses easing entirely. Returns the scale to apply and
      * advances the stored state.
      */
-    private float smoothScale(float target) {
+    private float smoothScale(float target, float original) {
         long now = android.os.SystemClock.uptimeMillis();
         float current = sSmoothScale;
         if (current < 0f) {
+            sSmoothScale = original;
+            sSmoothLastMs = now;
+            return original;
+        }
+        int smoothMs = sCfgSmoothMs;
+        if (smoothMs <= 0) {
             sSmoothScale = target;
             sSmoothLastMs = now;
             return target;
         }
         long dt = now - sSmoothLastMs;
-        if (dt < 0) dt = 0;
-        float maxStep = (ENLARGE_CAP - 0.0625f) * dt / SMOOTH_MS;
-        float d = target - current;
-        float next;
-        if (d > maxStep) next = current + maxStep;
-        else if (d < -maxStep) next = current - maxStep;
-        else next = target;
+        float alpha = (dt <= 0) ? 0f
+                : 1f - (float) Math.exp(-dt / (smoothMs / 3f));
+        float next = current + (target - current) * alpha;
+        // Hard per-frame cap: full travel spread over smoothMs at 60fps.
+        // Bounds every visible jump even when frames are sparse; a resting
+        // offset stays invisible (no motion, nothing to compare against).
+        float stepCap = (ENLARGE_CAP - 0.0625f) * 16f / smoothMs;
+        float step = next - current;
+        if (step > stepCap) next = current + stepCap;
+        else if (step < -stepCap) next = current - stepCap;
+        else if (Math.abs(target - next) < SMOOTH_EPS) next = target;
         sSmoothScale = next;
         sSmoothLastMs = now;
         return next;
@@ -428,12 +457,20 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                                     int intensityPercent = sCfgBlurIntensity;
 
                                     int base = (Integer) radiusObj;
+                                    int scaled;
                                     if (intensityPercent <= 0) {
-                                        param.args[param.args.length - 1] = 0;
-                                        return;
+                                        scaled = 0;
+                                    } else {
+                                        scaled = Math.round(base * (intensityPercent / 100f));
+                                        if (scaled < 0) scaled = 0;
                                     }
-                                    int scaled = Math.round(base * (intensityPercent / 100f));
-                                    if (scaled < 0) scaled = 0;
+                                    // Keep zoom alive at blur 0: radius 0 drops
+                                    // the blur layer and the scale with it.
+                                    // base == 0 means closed shade: keep 0
+                                    // (no cost, nothing to show).
+                                    if (scaled == 0 && base != 0 && sZoomScalingActive) {
+                                        scaled = 1;
+                                    }
 
                                     param.args[param.args.length - 1] = scaled;
                                 } catch (Throwable t) {
@@ -461,6 +498,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             // New boolean switch; legacy int threshold key (if still stored)
             // maps to OFF only when it explicitly disabled zoom before.
             boolean zoomEnabled = isSettingEnabled(ctx, KEY_SHADE_ZOOM_ENABLED, true);
+            int smoothMs = getIntSetting(ctx, KEY_SHADE_ZOOM_SMOOTH_MS, DEFAULT_SHADE_ZOOM_SMOOTH_MS);
 
             int notifAlpha = getIntSetting(ctx, KEY_SHADE_NOTIF_SCRIM_ALPHA, DEFAULT_SCRIM_ALPHA);
             int notifTint = getIntSetting(ctx, KEY_SHADE_NOTIF_SCRIM_TINT, DEFAULT_SCRIM_TINT);
@@ -472,6 +510,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             sCfgBlurIntensity = blur;
             sCfgZoomIntensity = zoom;
             sCfgZoomEnabled = zoomEnabled;
+            sCfgSmoothMs = smoothMs;
             sCfgNotifScrimAlpha = notifAlpha;
             sCfgNotifScrimTint = notifTint;
             sCfgMainScrimAlpha = mainAlpha;
@@ -479,7 +518,9 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
             sBlurRadiusScalingActive = (blur != DEFAULT_SHADE_BLUR_INTENSITY_PERCENT);
             sZoomForceOffActive = (blur > 0 && !zoomEnabled);
-            sZoomScalingActive = (blur > 0 && zoomEnabled && zoom != DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT);
+            // NOTE: no blur gate — zoom stays alive at blur 0 via the
+            // minimal-radius floor below.
+            sZoomScalingActive = (zoomEnabled && zoom != DEFAULT_SHADE_ZOOM_INTENSITY_PERCENT);
             sNotifAlphaOverrideActive = (notifAlpha >= 0);
             sMainAlphaOverrideActive = (mainAlpha >= 0);
             sNotifTintOverrideActive = notifTintEnabled;
@@ -488,7 +529,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
             sConfigLoaded = true;
             observeShadeKeysOnce(ctx);
             log("Shade config loaded: blur=" + blur + "% zoom=" + zoom
-                    + "% zoomEnabled=" + zoomEnabled
+                    + "% zoomEnabled=" + zoomEnabled + " smoothMs=" + smoothMs
                     + " notifAlpha=" + notifAlpha + " mainAlpha=" + mainAlpha
                     + " notifTint=" + notifTint + "(en=" + notifTintEnabled + ")"
                     + " mainTint=" + mainTint + "(en=" + mainTintEnabled + ")");
@@ -502,6 +543,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                 KEY_SHADE_BLUR_INTENSITY,
                 KEY_SHADE_ZOOM_INTENSITY,
                 KEY_SHADE_ZOOM_ENABLED,
+                KEY_SHADE_ZOOM_SMOOTH_MS,
                 KEY_SHADE_NOTIF_SCRIM_ALPHA,
                 KEY_SHADE_NOTIF_SCRIM_TINT,
                 KEY_SHADE_NOTIF_SCRIM_TINT_ENABLED,

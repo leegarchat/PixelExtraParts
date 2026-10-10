@@ -1,6 +1,6 @@
 {
-    "version": "2.2.7",
+    "version": "2.2.8",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Zoom follows shade progress: no entry jump, effect grows 0 to boundary",
+    "changelog": "Stabilizer along whole travel + exit, smooth-ms slider, zoom alive at blur 0",
     "info": "SystemUI hooks for PixelExtraParts"
 }
