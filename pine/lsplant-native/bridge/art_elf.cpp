@@ -9,6 +9,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
+#include <time.h>
+#include <setjmp.h>
 
 #include <string>
 
@@ -398,6 +401,76 @@ bool ScanFileDynsym(const char* path, std::string_view prefix, bool exact,
 
 }  // namespace
 
+namespace {
+
+// ---- Fault-guarded memory walk -------------------------------------
+// The in-memory table walk is a last resort: table layouts differ across
+// libc/libart builds, and a misparse must degrade to "not found", never
+// to a dead process (boot-time crash loops otherwise).
+thread_local sigjmp_buf g_walk_jmp;
+thread_local volatile bool g_walk_armed = false;
+
+void WalkSegvHandler(int) {
+    if (g_walk_armed) {
+        siglongjmp(g_walk_jmp, 1);
+    }
+}
+
+struct WalkGuard {
+    struct sigaction old_segv;
+    struct sigaction old_bus;
+    bool installed = false;
+
+    WalkGuard() {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = WalkSegvHandler;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        if (sigaction(SIGSEGV, &sa, &old_segv) == 0 &&
+            sigaction(SIGBUS, &sa, &old_bus) == 0) {
+            installed = true;
+        }
+    }
+    ~WalkGuard() {
+        if (installed) {
+            sigaction(SIGSEGV, &old_segv, nullptr);
+            sigaction(SIGBUS, &old_bus, nullptr);
+        }
+        g_walk_armed = false;
+    }
+};
+
+void* GuardedSearchLoaded(const char* lib_name, std::string_view prefix, bool exact) {
+    WalkGuard guard;
+    if (!guard.installed) {
+        return nullptr;
+    }
+    g_walk_armed = true;
+    void* hit = nullptr;
+    if (sigsetjmp(g_walk_jmp, 1) == 0) {
+        hit = SearchLoaded(lib_name, prefix, exact);
+    }
+    g_walk_armed = false;
+    return hit;
+}
+
+// File scan with retries: right after boot, apex files may not be visible
+// in the process mount namespace yet (ENOENT for a short window).
+bool ScanFileWithRetry(const char* path, std::string_view prefix, bool exact,
+                       uint32_t* rva_out) {
+    for (int i = 0; i < 5; ++i) {
+        if (ScanFileDynsym(path, prefix, exact, rva_out)) {
+            return true;
+        }
+        struct timespec ts = {0, 100 * 1000 * 1000};
+        nanosleep(&ts, nullptr);
+    }
+    return false;
+}
+
+}  // namespace
+
 void* ResolveExact(const char* lib_name, const char* symbol) {
     // Fast path: already-resolved exported symbols.
     void* handle = dlopen(lib_name, RTLD_NOLOAD | RTLD_NOW);
@@ -408,31 +481,32 @@ void* ResolveExact(const char* lib_name, const char* symbol) {
             return sym;
         }
     }
-    // Deterministic path: file .dynsym scan + load bias.
+    // Deterministic path: file .dynsym/.symtab scan + load bias,
+    // with retries for the early-boot apex-visibility window.
     {
         LibAddrs lib;
         if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
             uint32_t rva = 0;
-            if (ScanFileDynsym(lib.path, symbol, true, &rva) && rva != 0) {
+            if (ScanFileWithRetry(lib.path, symbol, true, &rva) && rva != 0) {
                 return reinterpret_cast<void*>(lib.bias + rva);
             }
         }
     }
-    return SearchLoaded(lib_name, symbol, true);
+    return GuardedSearchLoaded(lib_name, symbol, true);
 }
 
 void* ResolvePrefix(const char* lib_name, std::string_view prefix) {
-    // Deterministic path first: file .dynsym scan + load bias.
+    // Deterministic path first: file scan + load bias, with retries.
     {
         LibAddrs lib;
         if (FindLib(lib_name, &lib) && lib.path != nullptr && lib.bias != 0) {
             uint32_t rva = 0;
-            if (ScanFileDynsym(lib.path, prefix, false, &rva) && rva != 0) {
+            if (ScanFileWithRetry(lib.path, prefix, false, &rva) && rva != 0) {
                 return reinterpret_cast<void*>(lib.bias + rva);
             }
         }
     }
-    void* hit = SearchLoaded(lib_name, prefix, false);
+    void* hit = GuardedSearchLoaded(lib_name, prefix, false);
     if (hit != nullptr) {
         return hit;
     }
