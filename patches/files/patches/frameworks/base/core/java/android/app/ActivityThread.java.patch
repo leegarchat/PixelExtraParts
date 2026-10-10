@@ -17,12 +17,27 @@
      /** @hide */
      public static final String TAG = "ActivityThread";
  
-@@ -8343,6 +8351,65 @@
+@@ -8343,6 +8351,80 @@
                  throw new RuntimeException(
                      "Exception thrown in onCreate() of " + data.instrumentationName, e);
              }
 +            // --- [PixelParts] INJECTION START ---
-+            if (data.appInfo.packageName != null && !Process.isIsolated()) {
++            // Global safe mode (Settings.Global pixel_addon_safe_mode=1):
++            // skip the entire injection here — no dex, no native libs, no
++            // hooks in this process. (AddonLoader keeps its own check as a
++            // second layer for already-injected processes.)
++            boolean pixelPartsSafeMode = false;
++            try {
++                Context pixelPartsSmCtx = ContextImpl.createAppContext(this, data.info);
++                if (pixelPartsSmCtx != null) {
++                    pixelPartsSafeMode = android.provider.Settings.Global.getInt(
++                            pixelPartsSmCtx.getContentResolver(),
++                            "pixel_addon_safe_mode", 0) == 1;
++                }
++            } catch (Throwable t) {
++                android.util.Log.w("PixelParts", "Failed to check safe mode", t);
++            }
++            if (!pixelPartsSafeMode && data.appInfo.packageName != null && !Process.isIsolated()) {
 +                boolean shouldInject = false;
 +                String pkgName = data.appInfo.packageName;
 +
