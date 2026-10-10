@@ -342,12 +342,14 @@ bool ScanFileDynsym(const char* path, std::string_view prefix, bool exact,
     const ElfW(Ehdr)* eh = At<ElfW(Ehdr)>(img, 0);
     if (eh != nullptr && memcmp(eh->e_ident, ELFMAG, SELFMAG) == 0 && eh->e_shoff != 0 &&
         eh->e_shentsize == sizeof(ElfW(Shdr))) {
-        for (int i = 0; i < eh->e_shnum; ++i) {
+        for (int pass = 0; pass < 2; ++pass) {
+            const unsigned want = (pass == 0) ? SHT_DYNSYM : SHT_SYMTAB;
+            for (int i = 0; i < eh->e_shnum; ++i) {
             const ElfW(Shdr)* sh = At<ElfW(Shdr)>(img, eh->e_shoff + i * sizeof(ElfW(Shdr)));
             if (sh == nullptr) {
                 break;
             }
-            if (sh->sh_type != SHT_DYNSYM) {
+            if (sh->sh_type != want) {
                 continue;
             }
             const ElfW(Shdr)* strsh = At<ElfW(Shdr)>(img, eh->e_shoff +
@@ -364,9 +366,8 @@ bool ScanFileDynsym(const char* path, std::string_view prefix, bool exact,
                 if (sym->st_shndx == SHN_UNDEF || sym->st_value == 0) {
                     continue;
                 }
-                if (ELF64_ST_BIND(sym->st_info) == STB_LOCAL) {
-                    continue;
-                }
+                // NOTE: no STB_LOCAL skip — .symtab is mostly LOCAL and
+                // LSPlant needs HIDDEN ART internals dlsym can never see.
                 size_t strtab_end = strsh->sh_offset + strsh->sh_size;
                 if (strsh->sh_offset + sym->st_name >= strtab_end) {
                     continue;
@@ -385,8 +386,11 @@ bool ScanFileDynsym(const char* path, std::string_view prefix, bool exact,
                     break;
                 }
             }
-            break;  // first .dynsym wins
-        }
+            if (ok) {
+                break;
+            }
+            }  // sections
+        }  // passes
     }
     UnmapFile(&img);
     return ok;
