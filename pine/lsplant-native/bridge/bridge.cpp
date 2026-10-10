@@ -95,22 +95,233 @@ int CollectCb(dl_phdr_info* info, size_t, void* data) {
     return 0;
 }
 
+// ---- In-memory ELF symbol lookup --------------------------------------
+// Zygisk loaders (zygisksu) may map the engine manually, outside the
+// dynamic loader: present in /proc/self/maps but absent from
+// dl_iterate_phdr, and dlopen(path) may fail. Resolve the entry points by
+// parsing the mapped ELF directly (read-only, own address space).
+
+#include <elf.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+struct MemElf {
+    uintptr_t base = 0;
+    const Elf64_Dyn* dynamic = nullptr;
+    const char* strtab = nullptr;
+    const Elf64_Sym* symtab = nullptr;
+    size_t strsz = 0;
+    uint32_t nbucket = 0, nchain = 0;
+    const uint32_t* bucket = nullptr;
+    const uint32_t* chain = nullptr;
+    uint32_t ngnbucket = 0, symoffset = 0, bloomSize = 0, bloomShift = 0;
+    const uintptr_t* bloom = nullptr;
+    const uint32_t* gnbucket = nullptr;
+    const uint32_t* gnchain = nullptr;
+    bool gnuHash = false;
+};
+
+static uint32_t ElfHash(const char* name) {
+    uint32_t h = 0, g;
+    while (*name) {
+        h = (h << 4) + (uint8_t)*name++;
+        g = h & 0xf0000000;
+        h ^= g;
+        h ^= g >> 24;
+    }
+    return h;
+}
+
+static uint32_t GnuHash(const char* name) {
+    uint32_t h = 5381;
+    while (*name) h += (h << 5) + (uint8_t)*name++;
+    return h;
+}
+
+bool MemElfOpen(uintptr_t base, MemElf& out) {
+    auto* eh = reinterpret_cast<const Elf64_Ehdr*>(base);
+    if (eh->e_ident[0] != 0x7f || eh->e_ident[1] != 'E' || eh->e_ident[2] != 'L' ||
+        eh->e_ident[3] != 'F' || eh->e_ident[4] != ELFCLASS64) {
+        return false;
+    }
+    MemElf e;
+    e.base = base;
+    auto* ph = reinterpret_cast<const Elf64_Phdr*>(base + eh->e_phoff);
+    for (int i = 0; i < eh->e_phnum; i++) {
+        if (ph[i].p_type == PT_DYNAMIC) {
+            e.dynamic = reinterpret_cast<const Elf64_Dyn*>(base + ph[i].p_vaddr);
+            break;
+        }
+    }
+    if (!e.dynamic) return false;
+    for (auto* d = e.dynamic; d->d_tag != DT_NULL; d++) {
+        switch (d->d_tag) {
+            case DT_STRTAB: e.strtab = reinterpret_cast<const char*>(base + d->d_un.d_ptr); break;
+            case DT_SYMTAB: e.symtab = reinterpret_cast<const Elf64_Sym*>(base + d->d_un.d_ptr); break;
+            case DT_STRSZ: e.strsz = d->d_un.d_val; break;
+            case DT_HASH: {
+                auto* h = reinterpret_cast<const uint32_t*>(base + d->d_un.d_ptr);
+                e.nbucket = h[0];
+                e.nchain = h[1];
+                e.bucket = h + 2;
+                e.chain = e.bucket + e.nbucket;
+                break;
+            }
+            case DT_GNU_HASH: {
+                auto* h = reinterpret_cast<const uint32_t*>(base + d->d_un.d_ptr);
+                e.ngnbucket = h[0];
+                e.symoffset = h[1];
+                e.bloomSize = h[2];
+                e.bloomShift = h[3];
+                e.bloom = reinterpret_cast<const uintptr_t*>(h + 4);
+                e.gnbucket = reinterpret_cast<const uint32_t*>(
+                    e.bloom + e.bloomSize);
+                // Chain array starts right after the bucket array.
+                e.gnchain = e.gnbucket + e.ngnbucket;
+                e.gnuHash = true;
+                break;
+            }
+        }
+    }
+    if (!e.strtab || !e.symtab || e.strsz == 0) return false;
+    out = e;
+    return true;
+}
+
+void* MemElfLookup(const MemElf& e, const char* name) {
+    auto streq = [&](uint32_t idx) -> bool {
+        const Elf64_Sym& s = e.symtab[idx];
+        if (s.st_name >= e.strsz) return false;
+        const char* cand = e.strtab + s.st_name;
+        // Bound the compare inside the string table.
+        size_t maxlen = e.strsz - s.st_name;
+        size_t i = 0;
+        while (i < maxlen && name[i] && cand[i] && name[i] == cand[i]) i++;
+        return i < maxlen && name[i] == cand[i];
+    };
+    if (e.gnuHash) {
+        uint32_t h = GnuHash(name);
+        uint32_t n = e.gnbucket[h % e.ngnbucket];
+        if (n == 0) return nullptr;
+        const uint32_t* chain = e.gnchain + (n - e.symoffset);
+        uint32_t h2 = h >> e.bloomShift;
+        (void)h2;
+        for (;; n++, chain++) {
+            uint32_t c = *chain;
+            if (((c ^ h) >> 1) == 0 && streq(n)) {
+                return reinterpret_cast<void*>(e.base + e.symtab[n].st_value);
+            }
+            if (c & 1) break;
+        }
+        return nullptr;
+    }
+    if (e.bucket) {
+        for (uint32_t n = e.bucket[ElfHash(name) % e.nbucket]; n != 0;
+             n = e.chain[n]) {
+            if (n >= e.nchain) break;
+            if (streq(n)) {
+                return reinterpret_cast<void*>(e.base + e.symtab[n].st_value);
+            }
+        }
+    }
+    return nullptr;
+}
+
+// Scans /proc/self/maps (sees manually-mmapped libs too) and tries to bind
+// the six engine symbols from each non-system mapping.
+bool ProbeForeignEngineMaps(EngineApi& out) {
+    FILE* f = fopen("/proc/self/maps", "r");
+    if (!f) return false;
+    char line[1024];
+    uintptr_t lastBase = 0;
+    std::string lastPath;
+    while (fgets(line, sizeof(line), f)) {
+        uintptr_t start = 0;
+        char perms[5] = "";
+        char path[768] = "";
+        if (sscanf(line, "%lx-%*x %4s %*x %*s %*d %767[^\n]", &start, perms,
+                   path) < 2) {
+            continue;
+        }
+        std::string p = path;
+        while (!p.empty() && (p[0] == ' ' || p[0] == '\t')) p.erase(0, 1);
+        if (p.empty() || p[0] == '[') {
+            lastBase = 0;
+            lastPath.clear();
+            continue;
+        }
+        if (p == lastPath) continue;  // one base per library file
+        lastPath = p;
+        if (IsOwnLib(p)) continue;
+        MemElf elf;
+        if (!MemElfOpen(start, elf)) continue;
+        EngineApi api;
+        api.handle = reinterpret_cast<void*>(start);
+        api.origin = p + " (mem)";
+        api.foreign = true;
+        api.Init = reinterpret_cast<decltype(api.Init)>(
+            MemElfLookup(elf, kSymInit));
+        api.Hook = reinterpret_cast<decltype(api.Hook)>(
+            MemElfLookup(elf, kSymHook));
+        api.UnHook = reinterpret_cast<decltype(api.UnHook)>(
+            MemElfLookup(elf, kSymUnHook));
+        api.Deoptimize = reinterpret_cast<decltype(api.Deoptimize)>(
+            MemElfLookup(elf, kSymDeoptimize));
+        api.DobbyHook = reinterpret_cast<decltype(api.DobbyHook)>(
+            MemElfLookup(elf, kSymDobbyHook));
+        api.DobbyDestroy = reinterpret_cast<decltype(api.DobbyDestroy)>(
+            MemElfLookup(elf, kSymDobbyDestroy));
+        if (api.valid()) {
+            __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                                "bound foreign LSPlant engine: %s", p.c_str());
+            fclose(f);
+            out = api;
+            return true;
+        }
+        (void)lastBase;
+    }
+    fclose(f);
+    return false;
+}
+
 // Finds an already-loaded LSPlant engine that is NOT ours. Returns true and
 // fills `out` (handle kept open — do not dlclose).
 bool ProbeForeignEngine(EngineApi& out) {
+    // Path 1: /proc/self/maps + in-memory ELF parse. Sees manually-mmapped
+    // engines (zygisk) that the dynamic loader doesn't know about.
+    if (ProbeForeignEngineMaps(out)) return true;
+    // Path 2: loader-known objects via dlopen(NOLOAD) + dlsym.
     std::vector<std::string> paths;
     dl_iterate_phdr(CollectCb, &paths);
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "probe: %zu loaded objects", paths.size());
     for (const auto& path : paths) {
         if (IsOwnLib(path)) continue;
+        // Only shared objects can host the engine.
+        if (path.size() < 4 || path.compare(path.size() - 3, 3, ".so") != 0)
+            continue;
         void* h = dlopen(path.c_str(), RTLD_LAZY | RTLD_NOLOAD);
-        if (!h) continue;
-        if (BindHandle(h, path.c_str(), true, out)) {
+        if (!h) {
+            __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
+                                "probe: NOLOAD failed %s: %s", path.c_str(),
+                                dlerror());
+            continue;
+        }
+        void* initSym = dlsym(h, kSymInit);
+        __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
+                            "probe: %s init=%p", path.c_str(), initSym);
+        if (initSym && BindHandle(h, path.c_str(), true, out)) {
             __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
                                 "bound foreign LSPlant engine: %s", path.c_str());
             return true;
         }
         dlclose(h);
     }
+    // Last resort: global scope (covers RTLD_GLOBAL loads whose path probe
+    // missed, e.g. memfd-backed mappings).
+    void* gInit = dlsym(RTLD_DEFAULT, kSymInit);
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "probe: global-scope init=%p", gInit);
     return false;
 }
 
