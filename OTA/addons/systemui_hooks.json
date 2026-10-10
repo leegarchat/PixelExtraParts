@@ -1,6 +1,6 @@
 {
-    "version": "2.2.11",
+    "version": "2.2.12",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Adaptive chase: true X restored at pauses and turnarounds, no error buildup on wiggle",
+    "changelog": "Gravity follower: satellite with inertia, stronger pull when closer, slider is gravity strength",
     "info": "SystemUI hooks for PixelExtraParts"
 }

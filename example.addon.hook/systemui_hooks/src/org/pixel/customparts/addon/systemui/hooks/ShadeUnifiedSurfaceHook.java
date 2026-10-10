@@ -103,16 +103,21 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
 
     private static final class SmoothState {
         volatile float output = -1f; // -1 = never engaged: anchor only
-        volatile float prevTarget = -1f; // -1 = unknown (treat as settled)
+        volatile float vel;          // satellite velocity (inertia)
         volatile long lastMs;
     }
 
-    // Target travel per ms regarded as settled (pauses, holds, turnarounds).
-    private static final float V_QUIET_PER_MS = 0.0025f;
-    // Fast settle when settled: kills the lag error in a couple of frames,
-    // so wiggle extremes always land on the true X instead of accumulating.
-    private static final float TAU_QUIET_MS = 20f;
-    private static final float SMOOTH_EPS = 0.0015f;
+    // Gravity follower: the smoothed scale is a satellite attracted to the
+    // moving target. Pull grows as it closes in (like real gravity),
+    // velocity gives inertia, damping lands it dead on target with no orbit
+    // wobble. The slider sets gravity strength (0 = off = direct tracking);
+    // reverse works identically (symmetric by construction), including the
+    // glide back to 0 zoom.
+    private static final float G_REF = 0.028f;     // far pull at slider 1000
+    private static final float G_SOFT = 0.015f;    // softening (no singularity)
+    private static final float G_DAMP = 0.86f;     // velocity retention
+    private static final float G_PULL_MAX = 0.09f; // single-frame move bound
+    private static final float G_EPS = 0.0015f;    // arrival snap band
     // Fallback window key when applyBlur gets a null root.
     private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
 
@@ -270,61 +275,57 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     /**
-     * Eased scale toward the target. Unset state, or a closed shade
+     * Gravity step toward the target. Unset state, or a closed shade
      * (radius 0 = no blur layer on screen), anchors to the live stock value
-     * so there is never an entry jump and a half-finished exit glide can
-     * never poison the next open. Otherwise chases from the stored position.
-     * smoothMs <= 0 bypasses easing entirely. Returns the scale to apply and
-     * advances the stored state.
+     * with dead stop so there is never an entry jump and a half-finished
+     * glide can never poison the next open. Retargeting just redirects the
+     * one satellite — there are no parallel flows to interrupt. Returns the
+     * scale to apply and advances the stored state.
      */
     private float smoothScale(float target, float original, int radius, Object window) {
         long now = android.os.SystemClock.uptimeMillis();
         SmoothState st = smoothStateFor(window);
-        float current = st.output;
-        // Closed shade (radius 0 = no blur layer on screen) or never engaged:
-        // forget any half-finished glide and anchor to live stock. A frozen
-        // mid-glide would otherwise poison the next open. Zero touch here —
-        // there is nothing visible to ease.
-        if (current < 0f || radius == 0) {
+        float x = st.output;
+        if (x < 0f || radius == 0) {
             st.output = original;
+            st.vel = 0f;
             st.lastMs = now;
             return original;
         }
-        int smoothMs = sCfgSmoothMs;
-        if (smoothMs <= 0) {
+        int s = sCfgSmoothMs;
+        if (s <= 0) {
             st.output = target;
+            st.vel = 0f;
+            st.lastMs = now;
+            return target;
+        }
+        float r = target - x;
+        float dist = Math.abs(r);
+        if (dist < G_EPS) {
+            st.output = target;
+            st.vel = 0f;
             st.lastMs = now;
             return target;
         }
         long dt = now - st.lastMs;
-        float tau = smoothMs / 3f;
-        float alpha;
-        if (dt <= 0) {
-            alpha = 0f;
-        } else {
-            // Adaptive: settled target (pause/hold/turnaround) converges fast
-            // so the true X is never lost; moving target glides.
-            float prev = st.prevTarget;
-            float v = (prev < 0f) ? 0f : Math.abs(target - prev) / dt;
-            if (v < V_QUIET_PER_MS) {
-                float quietTau = Math.min(TAU_QUIET_MS, tau);
-                tau = quietTau;
-            }
-            alpha = 1f - (float) Math.exp(-dt / tau);
+        if (dt < 0) dt = 0;
+        // Frame-rate compensation, bounded: bursts advance a little, long
+        // gaps don't explode the integrator.
+        float kdt = Math.max(0.25f, Math.min(2f, dt / 16.7f));
+        float pull = (s / 1000f) * G_REF / (dist * dist + G_SOFT);
+        if (pull > G_PULL_MAX) pull = G_PULL_MAX;
+        pull *= kdt;
+        float v = (st.vel + Math.signum(r) * pull) * G_DAMP;
+        float nx = x + v;
+        // Absorb overshoot dead: no orbit wobble on a blur scale.
+        if ((target - nx) * r < 0) {
+            nx = target;
+            v = 0f;
         }
-        float next = current + (target - current) * alpha;
-        // Hard per-frame cap: full travel spread over smoothMs at 60fps.
-        // Bounds every visible jump even when frames are sparse; a resting
-        // offset stays invisible (no motion, nothing to compare against).
-        float stepCap = (ENLARGE_CAP - 0.0625f) * 16f / smoothMs;
-        float step = next - current;
-        if (step > stepCap) next = current + stepCap;
-        else if (step < -stepCap) next = current - stepCap;
-        else if (Math.abs(target - next) < SMOOTH_EPS) next = target;
-        st.output = next;
-        st.prevTarget = target;
+        st.output = nx;
+        st.vel = v;
         st.lastMs = now;
-        return next;
+        return nx;
     }
 
     private float applyZoomCurve(float originalScale, int zoomIntensity) {
