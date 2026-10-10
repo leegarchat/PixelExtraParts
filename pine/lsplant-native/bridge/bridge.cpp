@@ -99,26 +99,42 @@ int CollectCb(dl_phdr_info* info, size_t, void* data) {
 // Zygisk loaders (zygisksu) may map the engine manually, outside the
 // dynamic loader: present in /proc/self/maps but absent from
 // dl_iterate_phdr, and dlopen(path) may fail. Resolve the entry points by
-// parsing the mapped ELF directly (read-only, own address space).
+// parsing the mapped ELF. All reads go through /proc/self/mem with pread:
+// a direct pointer dereference of a guard/unmapped page would SIGSEGV the
+// process (observed SEGV_ACCERR in launcher), pread just returns an error.
 
 #include <elf.h>
 #include <fcntl.h>
+#include <time.h>
 #include <unistd.h>
+
+int g_memFd = -1;
+
+bool SafeRead(uintptr_t addr, void* buf, size_t len) {
+    if (g_memFd < 0 || len == 0 || len > (1u << 20)) return false;
+    size_t off = 0;
+    while (off < len) {
+        ssize_t r =
+            pread(g_memFd, (char*)buf + off, len - off, (off_t)(addr + off));
+        if (r <= 0) return false;
+        off += (size_t)r;
+    }
+    return true;
+}
 
 struct MemElf {
     uintptr_t base = 0;
-    const Elf64_Dyn* dynamic = nullptr;
-    const char* strtab = nullptr;
-    const Elf64_Sym* symtab = nullptr;
+    uintptr_t strtab = 0;
+    uintptr_t symtab = 0;
     size_t strsz = 0;
-    uint32_t nbucket = 0, nchain = 0;
-    const uint32_t* bucket = nullptr;
-    const uint32_t* chain = nullptr;
-    uint32_t ngnbucket = 0, symoffset = 0, bloomSize = 0, bloomShift = 0;
-    const uintptr_t* bloom = nullptr;
-    const uint32_t* gnbucket = nullptr;
-    const uint32_t* gnchain = nullptr;
+    uint32_t nbucket = 0;
+    uintptr_t bucket = 0;   // file-offset-independent: runtime address
+    uintptr_t chain = 0;
+    uint32_t ngnbucket = 0, symoffset = 0;
+    uintptr_t gnbucket = 0;
+    uintptr_t gnchain = 0;
     bool gnuHash = false;
+    bool sysvHash = false;
 };
 
 static uint32_t ElfHash(const char* name) {
@@ -139,101 +155,149 @@ static uint32_t GnuHash(const char* name) {
 }
 
 bool MemElfOpen(uintptr_t base, MemElf& out) {
-    auto* eh = reinterpret_cast<const Elf64_Ehdr*>(base);
-    if (eh->e_ident[0] != 0x7f || eh->e_ident[1] != 'E' || eh->e_ident[2] != 'L' ||
-        eh->e_ident[3] != 'F' || eh->e_ident[4] != ELFCLASS64) {
+    Elf64_Ehdr eh;
+    if (!SafeRead(base, &eh, sizeof(eh))) return false;
+    if (eh.e_ident[0] != 0x7f || eh.e_ident[1] != 'E' || eh.e_ident[2] != 'L' ||
+        eh.e_ident[3] != 'F' || eh.e_ident[4] != ELFCLASS64) {
         return false;
     }
-    MemElf e;
-    e.base = base;
-    auto* ph = reinterpret_cast<const Elf64_Phdr*>(base + eh->e_phoff);
-    for (int i = 0; i < eh->e_phnum; i++) {
+    if (eh.e_phnum == 0 || eh.e_phnum > 32) return false;
+    Elf64_Phdr ph[32];
+    if (!SafeRead(base + eh.e_phoff, ph, eh.e_phnum * sizeof(ph[0])))
+        return false;
+    uintptr_t dynAddr = 0;
+    for (int i = 0; i < eh.e_phnum; i++) {
         if (ph[i].p_type == PT_DYNAMIC) {
-            e.dynamic = reinterpret_cast<const Elf64_Dyn*>(base + ph[i].p_vaddr);
+            dynAddr = base + ph[i].p_vaddr;
             break;
         }
     }
-    if (!e.dynamic) return false;
-    for (auto* d = e.dynamic; d->d_tag != DT_NULL; d++) {
-        switch (d->d_tag) {
-            case DT_STRTAB: e.strtab = reinterpret_cast<const char*>(base + d->d_un.d_ptr); break;
-            case DT_SYMTAB: e.symtab = reinterpret_cast<const Elf64_Sym*>(base + d->d_un.d_ptr); break;
-            case DT_STRSZ: e.strsz = d->d_un.d_val; break;
+    if (!dynAddr) return false;
+    MemElf e;
+    e.base = base;
+    for (int i = 0; i < 40; i++) {
+        Elf64_Dyn d;
+        if (!SafeRead(dynAddr + i * sizeof(d), &d, sizeof(d))) return false;
+        if (d.d_tag == DT_NULL) break;
+        switch (d.d_tag) {
+            case DT_STRTAB: e.strtab = base + d.d_un.d_ptr; break;
+            case DT_SYMTAB: e.symtab = base + d.d_un.d_ptr; break;
+            case DT_STRSZ: e.strsz = d.d_un.d_val; break;
             case DT_HASH: {
-                auto* h = reinterpret_cast<const uint32_t*>(base + d->d_un.d_ptr);
+                uint32_t h[2];
+                if (!SafeRead(base + d.d_un.d_ptr, h, sizeof(h))) break;
                 e.nbucket = h[0];
-                e.nchain = h[1];
-                e.bucket = h + 2;
-                e.chain = e.bucket + e.nbucket;
+                if (e.nbucket == 0 || e.nbucket > 100000) break;
+                e.bucket = base + d.d_un.d_ptr + 8;
+                e.chain = e.bucket + (uintptr_t)e.nbucket * 4;
+                e.sysvHash = true;
                 break;
             }
             case DT_GNU_HASH: {
-                auto* h = reinterpret_cast<const uint32_t*>(base + d->d_un.d_ptr);
+                uint32_t h[4];
+                if (!SafeRead(base + d.d_un.d_ptr, h, sizeof(h))) break;
                 e.ngnbucket = h[0];
                 e.symoffset = h[1];
-                e.bloomSize = h[2];
-                e.bloomShift = h[3];
-                e.bloom = reinterpret_cast<const uintptr_t*>(h + 4);
-                e.gnbucket = reinterpret_cast<const uint32_t*>(
-                    e.bloom + e.bloomSize);
-                // Chain array starts right after the bucket array.
-                e.gnchain = e.gnbucket + e.ngnbucket;
+                uint32_t bloomSize = h[2];
+                if (e.ngnbucket == 0 || e.ngnbucket > 100000 ||
+                    bloomSize > 1024) {
+                    break;
+                }
+                uintptr_t bloom =
+                    base + d.d_un.d_ptr + 16;
+                e.gnbucket = bloom + (uintptr_t)bloomSize * sizeof(uintptr_t);
+                e.gnchain = e.gnbucket + (uintptr_t)e.ngnbucket * 4;
                 e.gnuHash = true;
                 break;
             }
         }
     }
-    if (!e.strtab || !e.symtab || e.strsz == 0) return false;
+    if (!e.strtab || !e.symtab || e.strsz == 0 || e.strsz > (1u << 24))
+        return false;
+    if (!e.gnuHash && !e.sysvHash) return false;
     out = e;
     return true;
 }
 
+bool MemElfReadSym(const MemElf& e, uint32_t idx, Elf64_Sym& out) {
+    return SafeRead(e.symtab + (uintptr_t)idx * sizeof(out), &out, sizeof(out));
+}
+
+bool MemElfStreq(const MemElf& e, uint32_t st_name, const char* name) {
+    if (st_name >= e.strsz) return false;
+    // Read a bounded chunk; the NUL must be inside the string table.
+    char buf[256];
+    size_t want = e.strsz - st_name;
+    if (want > sizeof(buf)) want = sizeof(buf);
+    if (!SafeRead(e.strtab + st_name, buf, want)) return false;
+    size_t i = 0;
+    while (i < want && name[i] && buf[i] && name[i] == buf[i]) i++;
+    if (i < want && name[i] == buf[i]) return true;  // both NUL
+    // Name longer than the chunk: compare the tail directly.
+    while (name[i]) {
+        char c;
+        if (!SafeRead(e.strtab + st_name + i, &c, 1) || c != name[i])
+            return false;
+        i++;
+        if (i > 1024) return false;
+    }
+    char c;
+    return SafeRead(e.strtab + st_name + i, &c, 1) && c == '\0';
+}
+
 void* MemElfLookup(const MemElf& e, const char* name) {
-    auto streq = [&](uint32_t idx) -> bool {
-        const Elf64_Sym& s = e.symtab[idx];
-        if (s.st_name >= e.strsz) return false;
-        const char* cand = e.strtab + s.st_name;
-        // Bound the compare inside the string table.
-        size_t maxlen = e.strsz - s.st_name;
-        size_t i = 0;
-        while (i < maxlen && name[i] && cand[i] && name[i] == cand[i]) i++;
-        return i < maxlen && name[i] == cand[i];
-    };
     if (e.gnuHash) {
         uint32_t h = GnuHash(name);
-        uint32_t n = e.gnbucket[h % e.ngnbucket];
-        if (n == 0) return nullptr;
-        const uint32_t* chain = e.gnchain + (n - e.symoffset);
-        uint32_t h2 = h >> e.bloomShift;
-        (void)h2;
-        for (;; n++, chain++) {
-            uint32_t c = *chain;
-            if (((c ^ h) >> 1) == 0 && streq(n)) {
-                return reinterpret_cast<void*>(e.base + e.symtab[n].st_value);
+        uint32_t n = 0;
+        if (!SafeRead(e.gnbucket + (uintptr_t)(h % e.ngnbucket) * 4, &n, 4) ||
+            n == 0) {
+            return nullptr;
+        }
+        for (int guard = 0; guard < 100000; guard++) {
+            uint32_t c = 0, idx = n - e.symoffset;
+            if (!SafeRead(e.gnchain + (uintptr_t)idx * 4, &c, 4)) return nullptr;
+            Elf64_Sym s;
+            if (MemElfReadSym(e, n, s) && ((c ^ h) >> 1) == 0 &&
+                s.st_shndx != SHN_UNDEF && MemElfStreq(e, s.st_name, name)) {
+                return reinterpret_cast<void*>(e.base + s.st_value);
             }
+            n++;
             if (c & 1) break;
         }
         return nullptr;
     }
-    if (e.bucket) {
-        for (uint32_t n = e.bucket[ElfHash(name) % e.nbucket]; n != 0;
-             n = e.chain[n]) {
-            if (n >= e.nchain) break;
-            if (streq(n)) {
-                return reinterpret_cast<void*>(e.base + e.symtab[n].st_value);
+    if (e.sysvHash) {
+        uint32_t n = 0;
+        if (!SafeRead(e.bucket + (uintptr_t)(ElfHash(name) % e.nbucket) * 4, &n,
+                      4)) {
+            return nullptr;
+        }
+        for (int guard = 0; n != 0 && guard < 100000; guard++) {
+            Elf64_Sym s;
+            if (!MemElfReadSym(e, n, s)) return nullptr;
+            if (s.st_shndx != SHN_UNDEF && MemElfStreq(e, s.st_name, name)) {
+                return reinterpret_cast<void*>(e.base + s.st_value);
             }
+            if (!SafeRead(e.chain + (uintptr_t)n * 4, &n, 4)) return nullptr;
         }
     }
     return nullptr;
 }
 
 // Scans /proc/self/maps (sees manually-mmapped libs too) and tries to bind
-// the six engine symbols from each non-system mapping.
+// the six engine symbols from each candidate mapping. Only /data/* and
+// memfd mappings are candidates (platform /system+/apex can never host a
+// foreign engine); the header page must be readable.
 bool ProbeForeignEngineMaps(EngineApi& out) {
     FILE* f = fopen("/proc/self/maps", "r");
     if (!f) return false;
+    g_memFd = open("/proc/self/mem", O_RDONLY);
+    if (g_memFd < 0) {
+        fclose(f);
+        return false;
+    }
+    bool found = false;
     char line[1024];
-    uintptr_t lastBase = 0;
     std::string lastPath;
     while (fgets(line, sizeof(line), f)) {
         uintptr_t start = 0;
@@ -246,13 +310,19 @@ bool ProbeForeignEngineMaps(EngineApi& out) {
         std::string p = path;
         while (!p.empty() && (p[0] == ' ' || p[0] == '\t')) p.erase(0, 1);
         if (p.empty() || p[0] == '[') {
-            lastBase = 0;
             lastPath.clear();
             continue;
         }
         if (p == lastPath) continue;  // one base per library file
         lastPath = p;
         if (IsOwnLib(p)) continue;
+        // Candidate origins only: zygisk/modules live under /data,
+        // file-less engines under memfd.
+        bool candidate = (p.compare(0, 6, "/data/") == 0) ||
+                         (p.compare(0, 7, "/memfd:") == 0);
+        if (!candidate) continue;
+        // Header page must be mapped readable (guard pages fault on access).
+        if (perms[0] != 'r') continue;
         MemElf elf;
         if (!MemElfOpen(start, elf)) continue;
         EngineApi api;
@@ -275,13 +345,17 @@ bool ProbeForeignEngineMaps(EngineApi& out) {
             __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
                                 "bound foreign LSPlant engine: %s", p.c_str());
             fclose(f);
+            close(g_memFd);
+            g_memFd = -1;
             out = api;
+            found = true;
             return true;
         }
-        (void)lastBase;
     }
     fclose(f);
-    return false;
+    close(g_memFd);
+    g_memFd = -1;
+    return found;
 }
 
 // Finds an already-loaded LSPlant engine that is NOT ours. Returns true and
@@ -290,27 +364,19 @@ bool ProbeForeignEngine(EngineApi& out) {
     // Path 1: /proc/self/maps + in-memory ELF parse. Sees manually-mmapped
     // engines (zygisk) that the dynamic loader doesn't know about.
     if (ProbeForeignEngineMaps(out)) return true;
-    // Path 2: loader-known objects via dlopen(NOLOAD) + dlsym.
+    // Path 2: loader-known objects via dlopen(NOLOAD) + dlsym. Only
+    // /data/* and memfd mappings can host a foreign engine — dlopen takes
+    // the loader lock, so never touch platform libraries here.
     std::vector<std::string> paths;
     dl_iterate_phdr(CollectCb, &paths);
-    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
-                        "probe: %zu loaded objects", paths.size());
     for (const auto& path : paths) {
         if (IsOwnLib(path)) continue;
-        // Only shared objects can host the engine.
-        if (path.size() < 4 || path.compare(path.size() - 3, 3, ".so") != 0)
-            continue;
+        bool candidate = (path.compare(0, 6, "/data/") == 0) ||
+                         (path.compare(0, 7, "/memfd:") == 0);
+        if (!candidate) continue;
         void* h = dlopen(path.c_str(), RTLD_LAZY | RTLD_NOLOAD);
-        if (!h) {
-            __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
-                                "probe: NOLOAD failed %s: %s", path.c_str(),
-                                dlerror());
-            continue;
-        }
-        void* initSym = dlsym(h, kSymInit);
-        __android_log_print(ANDROID_LOG_DEBUG, "LsplantBridge",
-                            "probe: %s init=%p", path.c_str(), initSym);
-        if (initSym && BindHandle(h, path.c_str(), true, out)) {
+        if (!h) continue;
+        if (BindHandle(h, path.c_str(), true, out)) {
             __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
                                 "bound foreign LSPlant engine: %s", path.c_str());
             return true;
@@ -320,8 +386,6 @@ bool ProbeForeignEngine(EngineApi& out) {
     // Last resort: global scope (covers RTLD_GLOBAL loads whose path probe
     // missed, e.g. memfd-backed mappings).
     void* gInit = dlsym(RTLD_DEFAULT, kSymInit);
-    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
-                        "probe: global-scope init=%p", gInit);
     return false;
 }
 
@@ -440,8 +504,15 @@ bool EnsureInit(JNIEnv* env) {
 
 bool ForeignEnginePresent() {
     if (g_engine.valid()) return g_engine.foreign;
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
     EngineApi api;
-    if (ProbeForeignEngine(api)) {
+    bool hit = ProbeForeignEngine(api);
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    long ms = (t1.tv_sec - t0.tv_sec) * 1000 + (t1.tv_nsec - t0.tv_nsec) / 1000000;
+    __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                        "probe done: foreign=%d in %ldms", hit, ms);
+    if (hit) {
         // Keep the bound handle — EnsureInit will reuse it.
         g_engine = api;
         return true;
