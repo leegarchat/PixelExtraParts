@@ -108,16 +108,17 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     }
 
     // Gravity follower: the smoothed scale is a satellite attracted to the
-    // moving target. Pull grows as it closes in (like real gravity),
-    // velocity gives inertia, damping lands it dead on target with no orbit
-    // wobble. The slider sets gravity strength (0 = off = direct tracking);
-    // reverse works identically (symmetric by construction), including the
-    // glide back to 0 zoom.
-    private static final float G_REF = 0.028f;     // far pull at slider 1000
-    private static final float G_SOFT = 0.015f;    // softening (no singularity)
-    private static final float G_DAMP = 0.86f;     // velocity retention
-    private static final float G_PULL_MAX = 0.09f; // single-frame move bound
-    private static final float G_EPS = 0.0015f;    // arrival snap band
+    // moving target. Pull peaks mid-range and eases to zero at the target
+    // (softened gravity), velocity gives inertia, and a step never exceeds
+    // the remaining gap — arrival is exact with no overshoot, no orbit and
+    // no judder, even on a static target. The slider sets gravity strength
+    // (0 = off = direct tracking); reverse works identically (symmetric by
+    // construction), including the glide back to 0 zoom.
+    private static final float G_REF = 0.09f;    // pull scale at slider 1000
+    private static final float G_SOFT = 0.015f;  // softening (peaks ~0.12 out)
+    private static final float G_DAMP = 0.86f;   // velocity retention (inertia)
+    private static final float G_VMAX = 0.15f;   // cruise backstop per frame
+    private static final float G_EPS = 0.0015f;  // arrival snap band
     // Fallback window key when applyBlur gets a null root.
     private static final Object SMOOTH_FALLBACK_WINDOW = new Object();
 
@@ -312,16 +313,15 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         // Frame-rate compensation, bounded: bursts advance a little, long
         // gaps don't explode the integrator.
         float kdt = Math.max(0.25f, Math.min(2f, dt / 16.7f));
-        float pull = (s / 1000f) * G_REF / (dist * dist + G_SOFT);
-        if (pull > G_PULL_MAX) pull = G_PULL_MAX;
-        pull *= kdt;
-        float v = (st.vel + Math.signum(r) * pull) * G_DAMP;
+        // Signed pull: strong mid-range, easing to zero at the target.
+        float pull = (s / 1000f) * G_REF * r / (dist * dist + G_SOFT) * kdt;
+        float v = (st.vel + pull) * G_DAMP;
+        // Never step further than the remaining gap (overshoot impossible),
+        // never faster than cruise backstop.
+        float vmax = Math.min(dist, G_VMAX);
+        if (v > vmax) v = vmax;
+        else if (v < -vmax) v = -vmax;
         float nx = x + v;
-        // Absorb overshoot dead: no orbit wobble on a blur scale.
-        if ((target - nx) * r < 0) {
-            nx = target;
-            v = 0f;
-        }
         st.output = nx;
         st.vel = v;
         st.lastMs = now;

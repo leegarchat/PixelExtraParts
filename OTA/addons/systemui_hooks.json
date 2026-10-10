@@ -1,6 +1,6 @@
 {
-    "version": "2.2.12",
+    "version": "2.2.13",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Gravity follower: satellite with inertia, stronger pull when closer, slider is gravity strength",
+    "changelog": "Follower fixed: step never exceeds remaining gap, overshoot impossible, no judder",
     "info": "SystemUI hooks for PixelExtraParts"
 }
