@@ -1,6 +1,6 @@
 {
-    "version": "2.2.5",
+    "version": "2.2.6",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Zoom recentered: 0 = stock, plus amplifies shrinking, minus reverses toward enlarge",
+    "changelog": "Zoom transitions eased over fixed 300ms (jerk stabilizer)",
     "info": "SystemUI hooks for PixelExtraParts"
 }

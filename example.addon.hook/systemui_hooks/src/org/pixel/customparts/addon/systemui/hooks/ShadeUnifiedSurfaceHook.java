@@ -89,9 +89,14 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // applyBlur() scale arg index cache: -2 unknown, -1 absent, >=0 actual index
     private static volatile int sApplyBlurScaleArgIndex = -2;
 
-    // One-shot fire marker for live diagnostics (does the shade blur path
-    // reach our applyBlur hook at all?).
-    private static volatile boolean sZoomFireLogged;
+    // Jerk stabilizer: output scale chases the target with a fixed slew rate
+    // covering the full travel in SMOOTH_MS. Slow shade drags pass through
+    // 1:1 (per-frame delta below the cap); fast flings/slider jumps glide
+    // over the fixed window instead of snapping. -1 = unset (snap on first
+    // frame after process start).
+    private static final float SMOOTH_MS = 300f;
+    private static volatile float sSmoothScale = -1f;
+    private static volatile long sSmoothLastMs;
 
     @Override
     public String getHookId() {
@@ -139,23 +144,25 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                         if (!isShadeTweaksEnabled(app)) return;
 
                         if (sZoomForceOffActive) {
-                            param.args[scaleIndex] = 1.0f;
+                            param.args[scaleIndex] = smoothScale(1.0f);
                             return;
                         }
-                        if (!sZoomScalingActive) return;
+
+                        float originalScale = resolveFloatArg(param.args, scaleIndex);
+                        if (originalScale < 0f) return;
+
+                        if (!sZoomScalingActive) {
+                            // Zoom just disengaged mid-glide: ease back to stock
+                            // instead of snapping. Pure-stock frames (never
+                            // engaged) pass through untouched.
+                            if (sSmoothScale < 0f || sSmoothScale == originalScale) return;
+                            param.args[scaleIndex] = smoothScale(originalScale);
+                            return;
+                        }
 
                         int zoomIntensity = sCfgZoomIntensity;
-                        Object argScale = param.args[scaleIndex];
-                        if (!(argScale instanceof Float)) return;
-
-                        float originalScale = (Float) argScale;
-                        float newScale = applyZoomCurve(originalScale, zoomIntensity);
-                        if (!sZoomFireLogged) {
-                            sZoomFireLogged = true;
-                            log("BlurUtils#applyBlur FIRED scale=" + originalScale
-                                    + " -> " + newScale + " (zoom=" + zoomIntensity + "%)");
-                        }
-                        param.args[scaleIndex] = newScale;
+                        float target = applyZoomCurve(originalScale, zoomIntensity);
+                        param.args[scaleIndex] = smoothScale(target);
                     } catch (Throwable t) {
                         logError("Failed in BlurUtils#applyBlur hook", t);
                     }
@@ -187,6 +194,38 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
      * </ul>
      */
     private static final float ENLARGE_CAP = 2.0f;
+
+    private float resolveFloatArg(Object[] args, int index) {
+        if (args == null || index < 0 || index >= args.length) return -1f;
+        Object v = args[index];
+        return (v instanceof Float) ? (Float) v : -1f;
+    }
+
+    /**
+     * Slew-rate limiter over wall-clock time: full scale travel
+     * (floor..ENLARGE_CAP) takes SMOOTH_MS. Returns the eased scale and
+     * advances the stored state.
+     */
+    private float smoothScale(float target) {
+        long now = android.os.SystemClock.uptimeMillis();
+        float current = sSmoothScale;
+        if (current < 0f) {
+            sSmoothScale = target;
+            sSmoothLastMs = now;
+            return target;
+        }
+        long dt = now - sSmoothLastMs;
+        if (dt < 0) dt = 0;
+        float maxStep = (ENLARGE_CAP - 0.0625f) * dt / SMOOTH_MS;
+        float d = target - current;
+        float next;
+        if (d > maxStep) next = current + maxStep;
+        else if (d < -maxStep) next = current - maxStep;
+        else next = target;
+        sSmoothScale = next;
+        sSmoothLastMs = now;
+        return next;
+    }
 
     private float applyZoomCurve(float originalScale, int zoomIntensity) {
         if (zoomIntensity >= 0) {
