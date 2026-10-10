@@ -18,10 +18,12 @@ import de.robv.android.xposed.XposedBridge;
  * {@link XposedBridge}. Hook files are untouched — they keep talking
  * {@code de.robv.android.xposed.*}.
  *
- * <p>The matching native library ({@code liblsplant.so}) provides
+ * <p>The matching native glue ({@code liblspbridge.so}) provides
  * {@code nativeDoHook}/{@code nativeUnHook}/{@code nativeDeoptimize} with
- * JNI names derived from this class, plus a {@code JNI_OnLoad} that runs
- * {@code lsplant::Init} (Dobby backend + libart symbol resolver).
+ * JNI names derived from this class. The LSPlant/Dobby engine behind the
+ * glue is bound at runtime: an already-injected foreign engine
+ * (Vector/LSPosed) is reused, otherwise our own {@code /system} prebuilts
+ * are loaded — never both in one process.
  */
 public final class LsplantBridge {
     private static final String TAG = "LsplantBridge";
@@ -37,8 +39,10 @@ public final class LsplantBridge {
     }
 
     /**
-     * Loads {@code liblsplant.so} (once per process). Returns true when the
-     * native backend is usable. Never throws.
+     * Loads the native backend (once per process). Prefers an already-injected
+     * foreign LSPlant engine (Vector/LSPosed): in that case our own
+     * {@code liblsplant.so}/{@code libdobby.so} prebuilts are NOT loaded at
+     * all. Returns true when the native backend is usable. Never throws.
      */
     public static synchronized boolean init() {
         if (initOk) {
@@ -50,12 +54,24 @@ public final class LsplantBridge {
         // (observed: CameraMetadataNative.set for the torch hook).
         exemptHiddenApi();
         if (!libraryLoaded) {
+            boolean foreign = false;
             try {
-                System.loadLibrary(LIB_NAME);
-                libraryLoaded = true;
+                foreign = nativeForeignEnginePresent();
             } catch (Throwable t) {
-                Log.e(TAG, "Failed to load liblsplant.so", t);
-                return false;
+                Log.w(TAG, "Foreign engine probe failed, using own prebuilts: " + t);
+            }
+            if (foreign) {
+                Log.i(TAG, "Reusing foreign LSPlant engine, own prebuilts skipped");
+                libraryLoaded = true;
+            } else {
+                try {
+                    System.loadLibrary(LIB_NAME);
+                    System.loadLibrary("dobby");
+                    libraryLoaded = true;
+                } catch (Throwable t) {
+                    Log.e(TAG, "Failed to load own LSPlant prebuilts", t);
+                    return false;
+                }
             }
         }
         try {
@@ -142,10 +158,17 @@ public final class LsplantBridge {
         }
     }
 
-    // ---- JNI (implemented in liblsplant.so glue) ----
+    // ---- JNI (implemented in our liblspbridge.so glue; the LSPlant/Dobby
+    // engine behind it is bound at runtime — foreign or own) ----
 
     /** Runs {@code lsplant::Init} state check; true when hooking is usable. */
     private static native boolean nativeInit();
+
+    /**
+     * True when an LSPlant engine not shipped by us is already loaded in this
+     * process (Vector/LSPosed). No engine code is executed by the probe.
+     */
+    private static native boolean nativeForeignEnginePresent();
 
     /**
      * Mirrors {@code lsplant::Hook(env, target, hooker, callback)}.

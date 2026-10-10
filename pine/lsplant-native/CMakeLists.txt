@@ -1,7 +1,8 @@
-# Glue-only build: Dobby (static) + JNI bridge -> liblspbridge.so.
-# LSPlant core itself is the official prefab binary
-# (third_party/lsplant/arm64-v8a/liblsplant.so, 6.4, LGPL-3.0),
-# linked at build time (DT_NEEDED) and shipped alongside.
+# Glue-only build: JNI bridge -> liblspbridge.so.
+# The bridge does NOT link LSPlant/Dobby at build time (no DT_NEEDED).
+# At runtime it binds to an already-loaded foreign engine first
+# (Vector/LSPosed export the LSPlant + Dobby entry points) and falls back
+# to dlopen()ing our own /system prebuilts. Headers below are API-only.
 #
 # Usage:
 #   cmake -B out -G Ninja \
@@ -15,12 +16,12 @@ project(pixel_lspbridge)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# --- Dobby (inline hook backend, Apache-2.0): official Vector-shipped
-# binary (source incompatible with NDK r29 clang); headers kept for API.
-add_library(dobby_static SHARED IMPORTED)
-set_target_properties(dobby_static PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third_party/dobby/arm64-v8a/libdobby.so"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/third_party/dobby/include"
+# --- Dobby (inline hook backend, Apache-2.0): headers only (API types).
+# The binary is bound at runtime (foreign engine or our own prebuilt).
+# Official Vector-shipped binary (source incompatible with NDK r29 clang).
+add_library(dobby_headers INTERFACE)
+target_include_directories(dobby_headers INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/dobby/include"
 )
 
 # --- JNI glue + ART ELF resolver -> liblspbridge.so ---
@@ -35,17 +36,13 @@ target_include_directories(lspbridge PRIVATE
 target_include_directories(lspbridge PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/dobby/include>
 )
-# Official LSPlant 6.4 arm64 prebuilt (prefab).
-add_library(lsplant_prebuilt SHARED IMPORTED)
-set_target_properties(lsplant_prebuilt PROPERTIES
-    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/third_party/lsplant/arm64-v8a/liblsplant.so"
-)
+# No DT_NEEDED on LSPlant/Dobby: bound at runtime via dlopen/dlsym.
+# --allow-shlib-undefined keeps the link working with function pointers.
 target_link_libraries(lspbridge PRIVATE
-    lsplant_prebuilt
-    dobby_static
+    dobby_headers
     log
     dl
 )
 target_compile_options(lspbridge PRIVATE -Oz -fvisibility=hidden)
-target_link_options(lspbridge PRIVATE -Wl,--gc-sections)
+target_link_options(lspbridge PRIVATE -Wl,--gc-sections -Wl,--allow-shlib-undefined)
 set_target_properties(lspbridge PROPERTIES OUTPUT_NAME lspbridge)

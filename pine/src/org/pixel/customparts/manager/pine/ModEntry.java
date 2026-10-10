@@ -10,16 +10,17 @@ public class ModEntry {
     private static final String TAG = "PineInject";
 
     public static void init() {
-        // LSPlant native backend: official liblsplant.so (LGPL-3.0) plus our
-        // liblspbridge.so glue (Dobby inline backend + libart ELF resolver).
-        // The Xposed-compat shim (de.robv.android.xposed.*) talks to it
-        // through LsplantBridge; hook files are unchanged.
+        // LSPlant backend binds at runtime: if Vector/LSPosed already injected
+        // its engine into this process, our glue reuses it (native probe
+        // inside LsplantBridge) and our own prebuilts are never loaded —
+        // two cores in one process is the native conflict. Standalone
+        // processes load the /system prebuilts as before.
+        // Load order matters: glue first (no DT_NEEDED on engines anymore),
+        // engine libs only when no foreign engine is present.
         try {
-            System.loadLibrary("lsplant");
-            System.loadLibrary("dobby");
             System.loadLibrary("lspbridge");
         } catch (Throwable t) {
-            Log.e(TAG, "Failed to load LSPlant native libs", t);
+            Log.e(TAG, "Failed to load lspbridge glue", t);
             return;
         }
         if (!LsplantBridge.init()) {
