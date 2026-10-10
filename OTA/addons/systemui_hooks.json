@@ -1,0 +1,6 @@
+{
+    "version": "2.2.3",
+    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
+    "changelog": "Zoom below 100 now enlarges the background (scale-% model); above 100 sharpens toward stock",
+    "info": "SystemUI hooks for PixelExtraParts"
+}
