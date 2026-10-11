@@ -1,6 +1,6 @@
 {
-    "version": "2.2.19",
+    "version": "2.2.21",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Absolute step backstop: sparse exit frames glide, no X-to-X jumps",
+    "changelog": "Expansion-authority loop: runs only while open, close kills stale pushes",
     "info": "SystemUI hooks for PixelExtraParts"
 }

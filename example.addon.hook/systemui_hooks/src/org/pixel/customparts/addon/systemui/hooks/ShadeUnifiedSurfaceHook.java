@@ -167,7 +167,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     // BlurUtils pipeline. Our own calls pass the hook untouched via
     // sInSelfDrive. The loop stops itself on arrival, disable or close
     // (plus a 5s watchdog).
-    private static final int LOOP_TICKS_MAX = 300;
+    private static final int LOOP_TICKS_MAX = 3600; // ~30s at 120Hz, insurance only
     private static volatile boolean sInSelfDrive;
     private static final Object sLoopLock = new Object();
     private static boolean sLoopScheduled; // guarded by sLoopLock
@@ -192,7 +192,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
         // 3-arg shape needs no opaque; 4-arg shape requires the cached one.
         boolean canDrive = st.applyMethod != null
                 && (sApplyBlurShape != 4 || st.opaqueKnown);
-        if (radiusEff > 0 && canDrive
+        if (radiusEff > 0 && canDrive && sShadeOpen
                 && window != SMOOTH_FALLBACK_WINDOW
                 && Math.abs(out - target) >= G_EPS) {
             if (!st.loopOn) {
@@ -238,6 +238,7 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
                 SmoothState st;
                 synchronized (sSmoothStates) { st = sSmoothStates.get(w); }
                 if (st == null || !st.loopOn) continue;
+                if (!sShadeOpen) { st.loopOn = false; continue; }
                 try {
                     if (++st.loopTicks > LOOP_TICKS_MAX) { st.loopOn = false; continue; }
                     if (st.radius <= 0 || st.applyMethod == null || st.blurUtils == null) {
@@ -311,12 +312,84 @@ public class ShadeUnifiedSurfaceHook extends BaseSystemUIHook {
     @Override
     protected void onInit(ClassLoader classLoader) {
         ensureConfigLoaded(getCurrentApplication());
+        hookShadeExpansion(classLoader);
         hookScrimControllerState(classLoader);
         hookScrimViewNotificationAlpha(classLoader);
         hookScrimViewTint(classLoader);
         hookBackgroundBlurRadiusIfPresent(classLoader);
         hookBlurUtils(classLoader);
         hookNotificationGroupHeaderBackground(classLoader);
+    }
+
+    // Authoritative shade open/closed tracking: blur frames may stop flowing
+    // (holds) or skip the final zero (abrupt dismiss), but expansion events
+    // always bracket real motion. The convergence loop runs only while open;
+    // close kills every loop and forgets glider states so the next open
+    // anchors fresh to live stock.
+    private static volatile boolean sShadeOpen;
+
+    private void hookShadeExpansion(ClassLoader classLoader) {
+        try {
+            Class<?> ctrl = XposedHelpers.findClassIfExists(
+                    "com.android.systemui.statusbar.NotificationShadeDepthController",
+                    classLoader);
+            if (ctrl == null) return;
+            XposedBridge.hookAllMethods(ctrl, "onPanelExpansionChanged",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) {
+                            try {
+                                float frac = readExpansionFraction(
+                                        param.args != null ? param.args : new Object[0]);
+                                if (frac < 0f) return;
+                                boolean open = frac > 0f;
+                                boolean was = sShadeOpen;
+                                sShadeOpen = open;
+                                if (was && !open) {
+                                    synchronized (sSmoothStates) {
+                                        for (Object k : sSmoothStates.keySet()) {
+                                            SmoothState st = sSmoothStates.get(k);
+                                            if (st != null) {
+                                                st.loopOn = false;
+                                                st.output = -1f;
+                                                st.vel = 0f;
+                                            }
+                                        }
+                                    }
+                                    android.util.Log.d("ShadeUnifiedSurfaceHook",
+                                            "shade closed: loops cleared");
+                                }
+                            } catch (Throwable t) {
+                                logError("Failed in onPanelExpansionChanged hook", t);
+                            }
+                        }
+                    });
+            log("ShadeExpansion tracker installed");
+        } catch (Throwable t) {
+            logError("Failed to hook shade expansion", t);
+        }
+    }
+
+    private static float readExpansionFraction(Object[] args) {
+        if (args.length == 0 || args[0] == null) return -1f;
+        Object ev = args[0];
+        try {
+            try {
+                Object v = ev.getClass().getMethod("getFraction").invoke(ev);
+                return ((Float) v).floatValue();
+            } catch (NoSuchMethodException e) {
+                try {
+                    java.lang.reflect.Field f = ev.getClass().getDeclaredField("fraction");
+                    f.setAccessible(true);
+                    return ((Float) f.get(ev)).floatValue();
+                } catch (NoSuchFieldException e2) {
+                    Object v = ev.getClass().getMethod("component1").invoke(ev);
+                    return ((Float) v).floatValue();
+                }
+            }
+        } catch (Throwable t) {
+            return -1f;
+        }
     }
 
     private void hookBlurUtils(ClassLoader classLoader) {
