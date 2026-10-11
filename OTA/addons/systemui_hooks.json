@@ -1,6 +1,6 @@
 {
-    "version": "2.2.21",
+    "version": "2.2.22",
     "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Expansion-authority loop: runs only while open, close kills stale pushes",
+    "changelog": "Restore tolerable follower (orig-gate, VMIN, wall watchdog)",
     "info": "SystemUI hooks for PixelExtraParts"
 }
