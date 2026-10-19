@@ -80,6 +80,14 @@ prebuilt_etc {
 }
 
 prebuilt_etc {
+    name: "ram_purge_addon",
+    src: "example.addon.hook/ram_purge/out/ram_purge.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+
+prebuilt_etc {
     name: "yandexmaps_fast_addon",
     src: "example.addon.hook/yandexmaps_fast/out/yandexmaps_fast.jar",
     sub_dir: "pixelparts/addons",

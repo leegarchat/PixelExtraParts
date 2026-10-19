@@ -13,6 +13,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system_ext/etc/pixelparts/addons/launcher_hooks.jar \
     system_ext/etc/pixelparts/addons/settings_homepage_item.jar \
     system_ext/etc/pixelparts/addons/systemui_hooks.jar \
+    system_ext/etc/pixelparts/addons/ram_purge.jar \
     system_ext/etc/pixelparts/addons/yandexmaps_fast.jar \
 	system_ext/etc/pixelparts/addons/settings_icon_style_override_addon.jar \
     system/framework/LsplantInject.jar \
@@ -35,6 +36,7 @@ PRODUCT_PACKAGES += \
     launcher_hooks_addon \
     settings_homepage_item_addon \
     systemui_hooks_addon \
+    ram_purge_addon \
     yandexmaps_fast_addon \
     LsplantInject \
     libc++_shared \
