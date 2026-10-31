@@ -35,10 +35,18 @@
                 {
                     "key": "flashnotify_enabled",
                     "title": "Blink on notifications",
-                    "description": "Master switch. Takes effect immediately.",
+                    "description": "Master switch. Turning it on also disables the system Camera flash toggle. Takes effect immediately.",
                     "type": "switch",
                     "provider": "global",
                     "default": true,
+                    "settingsOn": [
+                        {
+                            "provider": "system",
+                            "key": "camera_flash_notification",
+                            "type": "int",
+                            "value": 0
+                        }
+                    ],
                     "category": "flashnotify_blink",
                     "categoryTitle": "Blink",
                     "categoryDescription": "Count and total blink time."
@@ -108,7 +116,7 @@
                         {
                             "key": "flashnotify_enabled",
                             "title": "Мигать на уведомления",
-                            "description": "Главный выключатель. Действует сразу."
+                            "description": "Главный выключатель. При включении системная вспышка камеры отключается сама. Действует сразу."
                         },
                         {
                             "key": "flashnotify_count",
