@@ -76,13 +76,111 @@
                     "category": "flashnotify_blink"
                 },
                 {
+                    "key": "flashnotify_calls_enabled",
+                    "title": "Blink on SIM calls",
+                    "description": "Repeat bursts while a cellular call rings. SIM calls only — messenger calls have their own toggle below. If you use the Evolver flash-on-call, turn one of them off.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "flashnotify_calls",
+                    "categoryTitle": "SIM calls",
+                    "categoryDescription": "Burst: N blinks, pause, repeat until answered."
+                },
+                {
+                    "key": "flashnotify_sim_blink_ms",
+                    "title": "SIM blink phase",
+                    "description": "On/off phase inside a burst.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 300,
+                    "min": 50,
+                    "max": 2000,
+                    "step": 50,
+                    "unit": "ms",
+                    "category": "flashnotify_calls"
+                },
+                {
+                    "key": "flashnotify_sim_count",
+                    "title": "SIM burst count",
+                    "description": "Blinks per burst.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 3,
+                    "min": 1,
+                    "max": 50,
+                    "step": 1,
+                    "category": "flashnotify_calls"
+                },
+                {
+                    "key": "flashnotify_sim_pause_ms",
+                    "title": "SIM pause",
+                    "description": "Silence between bursts.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 1000,
+                    "min": 0,
+                    "max": 10000,
+                    "step": 100,
+                    "unit": "ms",
+                    "category": "flashnotify_calls"
+                },
+                {
+                    "key": "flashnotify_voip_enabled",
+                    "title": "Blink on messenger calls",
+                    "description": "Repeat bursts while a messenger (VoIP) call is active — tracked by its call-style notification. Stops when the call notification goes away.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "flashnotify_voip",
+                    "categoryTitle": "Messenger calls",
+                    "categoryDescription": "Burst: N blinks, pause, repeat until hangup."
+                },
+                {
+                    "key": "flashnotify_voip_blink_ms",
+                    "title": "VoIP blink phase",
+                    "description": "On/off phase inside a burst.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 300,
+                    "min": 50,
+                    "max": 2000,
+                    "step": 50,
+                    "unit": "ms",
+                    "category": "flashnotify_voip"
+                },
+                {
+                    "key": "flashnotify_voip_count",
+                    "title": "VoIP burst count",
+                    "description": "Blinks per burst.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 3,
+                    "min": 1,
+                    "max": 50,
+                    "step": 1,
+                    "category": "flashnotify_voip"
+                },
+                {
+                    "key": "flashnotify_voip_pause_ms",
+                    "title": "VoIP pause",
+                    "description": "Silence between bursts.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 1000,
+                    "min": 0,
+                    "max": 10000,
+                    "step": 100,
+                    "unit": "ms",
+                    "category": "flashnotify_voip"
+                },
+                {
                     "key": "flashnotify_total_ms",
                     "title": "Total blink time",
                     "description": "Overall time the blinking lasts. Split evenly into on/off phases.",
                     "type": "int",
                     "provider": "global",
                     "default": 1200,
-                    "min": 200,
+                    "min": 50,
                     "max": 10000,
                     "step": 100,
                     "unit": "ms",
@@ -127,6 +225,46 @@
                             "key": "flashnotify_strength",
                             "title": "Яркость фонарика",
                             "description": "Та же шкала, что у системного слайдера (макс. 45 на Pixel 8)."
+                        },
+                        {
+                            "key": "flashnotify_calls_enabled",
+                            "title": "Мигать на SIM-звонки",
+                            "description": "Повторять серии пока идет сотовый звонок. Только SIM — для мессенджеров тумблер ниже. Если пользуетесь вспышкой на звонок из Evolver — оставьте что-то одно."
+                        },
+                        {
+                            "key": "flashnotify_sim_blink_ms",
+                            "title": "SIM фаза",
+                            "description": "Фаза вкл/выкл внутри серии."
+                        },
+                        {
+                            "key": "flashnotify_sim_count",
+                            "title": "SIM число в серии",
+                            "description": "Вспышек в серии."
+                        },
+                        {
+                            "key": "flashnotify_sim_pause_ms",
+                            "title": "SIM пауза",
+                            "description": "Тишина между сериями."
+                        },
+                        {
+                            "key": "flashnotify_voip_enabled",
+                            "title": "Мигать на звонки мессенджеров",
+                            "description": "Повторять серии пока активен VoIP-звонок (следит за уведомлением о звонке). Останавливается когда уведомление уходит."
+                        },
+                        {
+                            "key": "flashnotify_voip_blink_ms",
+                            "title": "VoIP фаза",
+                            "description": "Фаза вкл/выкл внутри серии."
+                        },
+                        {
+                            "key": "flashnotify_voip_count",
+                            "title": "VoIP число в серии",
+                            "description": "Вспышек в серии."
+                        },
+                        {
+                            "key": "flashnotify_voip_pause_ms",
+                            "title": "VoIP пауза",
+                            "description": "Тишина между сериями."
                         },
                         {
                             "key": "flashnotify_total_ms",

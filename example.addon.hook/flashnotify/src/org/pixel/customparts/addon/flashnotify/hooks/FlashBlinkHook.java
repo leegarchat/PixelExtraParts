@@ -10,6 +10,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.telephony.TelephonyCallback;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import org.pixel.customparts.addon.flashnotify.Settings;
@@ -38,6 +40,11 @@ public final class FlashBlinkHook {
     private static String sCameraId;
     private static boolean sCameraResolved;
     private static int sMaxStrength = 1;
+    private static volatile boolean sCallBlink;
+    private static String sVoipKey;
+    private static volatile boolean sAudioBlink;
+    private static volatile boolean sRadioRinging;
+    private static java.lang.reflect.Method sIsRingingMethod;
     private static boolean sTestReceiverRegistered;
 
     /** Fired by the "Test blink" addon button (am broadcast). */
@@ -84,10 +91,168 @@ public final class FlashBlinkHook {
                         }
                     });
             Log.i(TAG, "hooked " + LISTENER + "#onNotificationPosted");
+            XposedHelpers.findAndHookMethod(listener, "onNotificationRemoved",
+                    StatusBarNotification.class,
+                    NotificationListenerService.RankingMap.class,
+                    int.class, new XC_MethodHook() {
+                        @Override protected void afterHookedMethod(MethodHookParam param) {
+                            if (param.args != null && param.args.length > 0) {
+                                onRemoved(param.args[0]);
+                            }
+                        }
+                    });
+            Log.i(TAG, "hooked " + LISTENER + "#onNotificationRemoved");
         } catch (Throwable t) {
             Log.e(TAG, "flash blink hook failed", t);
         }
         registerTestReceiver(app);
+        registerCallListener(app);
+        startAudioWatcher(app);
+    }
+
+    /**
+     * Silent self-managed VoIP detector (OneMe & co: no notification, no
+     * radio change). Telecom puts audio mode to RINGTONE for any ringing
+     * call, so listen for mode changes (public API, no permission) and
+     * confirm via TelecomManager.isRinging() (@SystemApi, reachable from
+     * SystemUI which holds MODIFY_PHONE_STATE; precedent: NavigationBar).
+     * Skipped while the SIM path owns ringing.
+     */
+    private static void startAudioWatcher(final Context context) {
+        if (context == null) return;
+        try {
+            final android.media.AudioManager am = (android.media.AudioManager)
+                    context.getSystemService(Context.AUDIO_SERVICE);
+            if (am == null) {
+                Log.w(TAG, "no AudioManager, self-managed calls unavailable");
+                return;
+            }
+            am.addOnModeChangedListener(context.getMainExecutor(),
+                    new android.media.AudioManager.OnModeChangedListener() {
+                        @Override public void onModeChanged(int mode) {
+                            Log.i(TAG, "audio mode=" + mode);
+                            if (mode == android.media.AudioManager.MODE_RINGTONE) {
+                                onAudioRinging(context);
+                            } else {
+                                onAudioIdle();
+                            }
+                        }
+                    });
+            Log.i(TAG, "audio watcher started");
+        } catch (Throwable t) {
+            Log.e(TAG, "audio watcher failed", t);
+        }
+    }
+
+    /** True if Telecom reports any (managed or self-managed) ringing call. */
+    private static boolean telecomRinging(Context context) {
+        try {
+            android.telecom.TelecomManager tm = (android.telecom.TelecomManager)
+                    context.getSystemService(Context.TELECOM_SERVICE);
+            if (tm == null) return false;
+            java.lang.reflect.Method m = sIsRingingMethod;
+            if (m == null) {
+                m = tm.getClass().getMethod("isRinging");
+                sIsRingingMethod = m;
+            }
+            Object r = m.invoke(tm);
+            return Boolean.TRUE.equals(r);
+        } catch (Throwable t) {
+            Log.w(TAG, "isRinging failed: " + t);
+            return false;
+        }
+    }
+
+    private static void onAudioRinging(Context context) {
+        if (sRadioRinging || sCallBlink) {
+            Log.i(TAG, "audio ring: SIM path owns it, skip");
+            return;
+        }
+        if (!telecomRinging(context)) {
+            Log.i(TAG, "audio ring: telecom idle, skip");
+            return;
+        }
+        if (!Settings.getVoipEnabled(context)) {
+            Log.i(TAG, "audio ring: voip toggle off, skip");
+            return;
+        }
+        int count = clamp(Settings.getVoipCount(context), 1, 50);
+        int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
+        int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
+        int strength = clamp(Settings.getStrength(context), 1, 45);
+        Log.i(TAG, "audio ring: self-managed go blink=" + blink + " count=" + count
+                + " pause=" + pause + " strength=" + strength);
+        sAudioBlink = true;
+        startBurst(context, blink, count, pause, strength);
+    }
+
+    private static void onAudioIdle() {
+        if (!sAudioBlink) return;
+        sAudioBlink = false;
+        synchronized (LOCK) {
+            Log.i(TAG, "audio idle: halt blink");
+            if (sBlinkThread != null) sBlinkThread.interrupt();
+        }
+    }
+
+    /** Repeats the pattern while the phone rings; stops on answer/hangup. */
+    private static final class CallListener extends TelephonyCallback
+            implements TelephonyCallback.CallStateListener {
+        private final Context mContext;
+
+        CallListener(Context context) {
+            mContext = context.getApplicationContext() != null
+                    ? context.getApplicationContext() : context;
+        }
+
+        @Override public void onCallStateChanged(int state) {
+            Log.i(TAG, "call state=" + state);
+            if (state == TelephonyManager.CALL_STATE_RINGING) {
+                sRadioRinging = true;
+                if (!Settings.getCallsEnabled(mContext)) {
+                    Log.i(TAG, "call blink disabled, skip");
+                    return;
+                }
+                int count = clamp(Settings.getSimCount(mContext), 1, 50);
+                int blink = clamp(Settings.getSimBlinkMs(mContext), 50, 2000);
+                int pause = clamp(Settings.getSimPauseMs(mContext), 0, 10000);
+                int strength = clamp(Settings.getStrength(mContext), 1, 45);
+                Log.i(TAG, "call: go blink=" + blink + " count=" + count
+                        + " pause=" + pause + " strength=" + strength);
+                sCallBlink = true;
+                sAudioBlink = false;
+                synchronized (LOCK) {
+                    sVoipKey = null;
+                }
+                startBurst(mContext, blink, count, pause, strength);
+            } else {
+                sRadioRinging = false;
+                if (sCallBlink) {
+                    Log.i(TAG, "call ended, stop blink");
+                    sCallBlink = false;
+                    synchronized (LOCK) {
+                        if (sBlinkThread != null) sBlinkThread.interrupt();
+                    }
+                }
+            }
+        }
+    }
+
+    private static void registerCallListener(Context context) {
+        if (context == null) return;
+        try {
+            TelephonyManager tm =
+                    (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm == null) {
+                Log.w(TAG, "no TelephonyManager, call blink unavailable");
+                return;
+            }
+            tm.registerTelephonyCallback(context.getMainExecutor(),
+                    new CallListener(context));
+            Log.i(TAG, "call listener registered");
+        } catch (Throwable t) {
+            Log.e(TAG, "call listener failed", t);
+        }
     }
 
     private static void registerTestReceiver(final Context context) {
@@ -104,17 +269,18 @@ public final class FlashBlinkHook {
             // NB: 2-arg registerReceiver throws SecurityException on targetSdk 34+
             // (RECEIVER_EXPORTED/NOT_EXPORTED required). Exported: the test
             // blink is harmless and must be reachable from shell/am.
+            IntentFilter filter = new IntentFilter(ACTION_TEST);
             context.registerReceiver(new BroadcastReceiver() {
                 @Override public void onReceive(Context c, Intent intent) {
                     if (!ACTION_TEST.equals(intent.getAction())) return;
                     Context app = c != null ? c : context;
                     Log.i(TAG, "test blink requested");
                     int count = clamp(Settings.getCount(app), 1, 50);
-                    int total = clamp(Settings.getTotalMs(app), 200, 10000);
+                    int total = clamp(Settings.getTotalMs(app), 100, 10000);
                     int strength = clamp(Settings.getStrength(app), 1, 45);
-                    startBlink(app, count, total, strength);
+                    startBlink(app, count, total, strength, false);
                 }
-            }, new IntentFilter(ACTION_TEST), Context.RECEIVER_EXPORTED);
+            }, filter, Context.RECEIVER_EXPORTED);
             Log.i(TAG, "test receiver registered");
         } catch (Throwable t) {
             Log.e(TAG, "test receiver failed", t);
@@ -148,9 +314,10 @@ public final class FlashBlinkHook {
             Log.w(TAG, "posted: null notification, skip");
             return;
         }
-        // Match stock behavior roughly: ongoing (player, download, call) never flashes.
+        // Ongoing (player, download, call) never flashes — except VoIP
+        // calls, tracked separately by their call-style notification.
         if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) {
-            Log.i(TAG, "posted: ongoing, skip");
+            onOngoing(context, sbn, n);
             return;
         }
         // Silent (below DEFAULT importance) never flashes either. Fail-open:
@@ -162,11 +329,55 @@ public final class FlashBlinkHook {
         }
 
         int count = clamp(Settings.getCount(context), 1, 50);
-        int total = clamp(Settings.getTotalMs(context), 200, 10000);
+        int total = clamp(Settings.getTotalMs(context), 100, 10000);
         int strength = clamp(Settings.getStrength(context), 1, 45);
         Log.i(TAG, "posted: go count=" + count + " total=" + total
                 + " strength=" + strength);
-        startBlink(context, count, total, strength);
+        startBlink(context, count, total, strength, false);
+    }
+
+    /** Messenger (VoIP) calls: repeat while the call-style notification lives. */
+    private static void onOngoing(Context context, StatusBarNotification sbn, Notification n) {
+        if (!Notification.CATEGORY_CALL.equals(n.category)) {
+            Log.i(TAG, "posted: ongoing, skip");
+            return;
+        }
+        if (!Settings.getVoipEnabled(context)) {
+            Log.i(TAG, "posted: voip call, toggle off, skip");
+            return;
+        }
+        String key;
+        try {
+            key = sbn.getKey();
+        } catch (Throwable t) {
+            return;
+        }
+        int count = clamp(Settings.getVoipCount(context), 1, 50);
+        int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
+        int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
+        int strength = clamp(Settings.getStrength(context), 1, 45);
+        Log.i(TAG, "posted: voip call go blink=" + blink + " count=" + count
+                + " pause=" + pause + " strength=" + strength + " key=" + key);
+        synchronized (LOCK) {
+            sVoipKey = key;
+        }
+        startBurst(context, blink, count, pause, strength);
+    }
+
+    private static void onRemoved(Object sbnObj) {
+        if (!(sbnObj instanceof StatusBarNotification)) return;
+        String key;
+        try {
+            key = ((StatusBarNotification) sbnObj).getKey();
+        } catch (Throwable t) {
+            return;
+        }
+        synchronized (LOCK) {
+            if (key == null || !key.equals(sVoipKey)) return;
+            sVoipKey = null;
+            Log.i(TAG, "voip call gone, stop blink");
+            if (sBlinkThread != null) sBlinkThread.interrupt();
+        }
     }
 
     private static boolean isSilent(StatusBarNotification sbn,
@@ -191,20 +402,89 @@ public final class FlashBlinkHook {
         return v < lo ? lo : Math.min(v, hi);
     }
 
+    /** Call/VoIP burst loop: N blinks, pause, repeat until interrupted. */
+    private static void runBurst(Context context, int blinkMs, int count,
+            int pauseMs, int strength) {
+        int phase = clamp(blinkMs, 50, 2000);
+        int n = clamp(count, 1, 50);
+        int pause = clamp(pauseMs, 0, 10000);
+        int level = clamp(strength, 1, 45);
+        Log.i(TAG, "burst: blink=" + phase + " count=" + n + " pause=" + pause
+                + " strength=" + level);
+        String cameraId = resolveCameraId(context);
+        if (cameraId == null) {
+            Log.w(TAG, "no flash camera, skip burst");
+            return;
+        }
+        CameraManager cm;
+        try {
+            cm = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        } catch (Throwable t) {
+            Log.w(TAG, "no CameraManager: " + t);
+            return;
+        }
+        if (cm == null) return;
+        try {
+            int cycle = 0;
+            while (true) {
+                cycle++;
+                for (int i = 0; i < n; i++) {
+                    torchOn(cm, cameraId, level);
+                    Thread.sleep(phase);
+                    setTorchQuiet(cm, cameraId, false);
+                    if (i + 1 < n) Thread.sleep(phase);
+                }
+                Log.i(TAG, "burst cycle " + cycle + " done, pause=" + pause);
+                if (pause > 0) Thread.sleep(pause);
+            }
+        } catch (InterruptedException e) {
+            setTorchQuiet(cm, cameraId, false);
+            Log.i(TAG, "burst stopped");
+            Thread.currentThread().interrupt();
+        } catch (Throwable t) {
+            Log.w(TAG, "burst aborted: " + t);
+            setTorchQuiet(cm, cameraId, false);
+        } finally {
+            synchronized (LOCK) {
+                if (Thread.currentThread() == sBlinkThread) sBlinkThread = null;
+            }
+        }
+    }
+
+    private static void startBurst(final Context context, final int blinkMs,
+            final int count, final int pauseMs, final int strength) {
+        synchronized (LOCK) {
+            if (sBlinkThread != null) sBlinkThread.interrupt();
+            sBlinkThread = new Thread(new Runnable() {
+                @Override public void run() {
+                    runBurst(context, blinkMs, count, pauseMs, strength);
+                }
+            }, TAG);
+            sBlinkThread.setDaemon(true);
+            sBlinkThread.start();
+        }
+    }
+
     private static void startBlink(final Context context, final int count,
-            final int totalMs, final int strength) {
+            final int totalMs, final int strength, final boolean repeat) {
         int unit = totalMs / (2 * count);
         if (unit < MIN_PHASE_MS) unit = MIN_PHASE_MS;
         final int phase = unit;
         final int level = strength;
         final int budget = totalMs;
+        final boolean loop = repeat;
         Log.i(TAG, "blink: count=" + count + " total=" + totalMs
-                + " strength=" + level + " phase=" + phase);
+                + " strength=" + level + " phase=" + phase + " repeat=" + loop);
         synchronized (LOCK) {
+            // A one-shot blink supersedes any tracked VoIP/audio loop.
+            if (!loop) {
+                sVoipKey = null;
+                sAudioBlink = false;
+            }
             if (sBlinkThread != null) sBlinkThread.interrupt();
             sBlinkThread = new Thread(new Runnable() {
                 @Override public void run() {
-                    runBlink(context, count, phase, level, budget);
+                    runBlink(context, count, phase, level, budget, loop);
                 }
             }, TAG);
             sBlinkThread.setDaemon(true);
@@ -218,7 +498,7 @@ public final class FlashBlinkHook {
      * interface, and SystemUI already holds the CAMERA permission.
      */
     private static void runBlink(Context context, int count, int phaseMs,
-            int strength, int totalMs) {
+            int strength, int totalMs, boolean repeat) {
         String cameraId = resolveCameraId(context);
         if (cameraId == null) {
             Log.w(TAG, "no flash camera, skip blink");
@@ -237,13 +517,17 @@ public final class FlashBlinkHook {
         int did = 0;
         final long start = android.os.SystemClock.elapsedRealtime();
         try {
-            for (int i = 0; i < count; i++) {
-                // Time budget wins over count: never start a blink that
-                // would overrun the total. Torch always ends OFF.
-                if (android.os.SystemClock.elapsedRealtime() - start + phaseMs > totalMs) {
-                    Log.i(TAG, "budget hit at " + (i + 1) + "/" + count);
-                    break;
-                }
+            do {
+                for (int i = 0; i < count; i++) {
+                    // Time budget wins over count (one-shot mode): never start
+                    // a blink that would overrun the total. Repeat mode
+                    // (calls) ignores the budget and runs until interrupted.
+                    // Torch always ends OFF.
+                    if (!repeat && android.os.SystemClock.elapsedRealtime()
+                            - start + phaseMs > totalMs) {
+                        Log.i(TAG, "budget hit at " + (i + 1) + "/" + count);
+                        break;
+                    }
                 Log.i(TAG, "phase " + (i + 1) + "/" + count + " ON");
                 long t0 = android.os.SystemClock.elapsedRealtime();
                 torchOn(cm, cameraId, strength);
@@ -256,6 +540,7 @@ public final class FlashBlinkHook {
                 if (i + 1 < count) Thread.sleep(phaseMs);
                 did++;
             }
+            } while (repeat);
             Log.i(TAG, "blink done: did=" + did + "/" + count
                     + " torchOnAvg=" + (did == 0 ? 0 : onCost / did)
                     + "ms torchOffAvg=" + (did == 0 ? 0 : offCost / did) + "ms");
