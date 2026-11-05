@@ -32,8 +32,8 @@ public class XposedModuleHost {
     private static final int HOST_API = 101;
 
     static class ModuleRecord {
-        final String id;
-        final String apkPath;
+        String id;
+        String apkPath;
         final List<String> classNames = new ArrayList<>();
         final Set<String> scopes = new HashSet<>();
         boolean staticScope = false;

@@ -254,6 +254,8 @@ java_library {
         "lsplant/src/org/pixel/customparts/lsplantinject/**/*.java",
         // Xposed-совместимый слой поверх LSPlant
         "lsplant/src/de/robv/android/xposed/**/*.java",
+        // Modern Xposed API 101 (модули Vector/LSPosed-формата)
+        "lsplant/src/io/github/libxposed/api/**/*.java",
         
         // Затенённый commons-lang для XposedHelpers
         "lsplant/src/external/org/apache/commons/lang3/**/*.java"
