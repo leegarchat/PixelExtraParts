@@ -1,3 +1,9 @@
 allow init pixelparts_vendor_data_file:dir create_dir_perms;
 allow init pixelparts_vendor_data_file:file create_file_perms;
 r_dir_file(hal_thermal_default, pixelparts_vendor_data_file)
+
+# PEP mod channel for the patched thermal HAL (init writes, HAL reads).
+# The stock prop vendor.thermal.config always carries a stock-safe value,
+# so an unpatched HAL never sees mod payload and cannot crash on it.
+allow init vendor_pixelparts_thermal_prop:property_service set;
+get_prop(hal_thermal_default, vendor_pixelparts_thermal_prop)

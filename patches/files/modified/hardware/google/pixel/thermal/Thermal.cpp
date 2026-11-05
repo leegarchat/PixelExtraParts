@@ -53,6 +53,9 @@ bool interfacesEqual(const std::shared_ptr<::ndk::ICInterface> left,
 }
 
 constexpr std::string_view kConfigProperty("vendor.thermal.config");
+// PEP mod channel: "<request>,<path>" payload for patched HAL only.
+// Stock HAL never reads this prop, so a mod config can never crash it.
+constexpr std::string_view kModConfigProperty("vendor.pixelparts.thermal.config");
 constexpr std::string_view kConfigDefaultFileName("thermal_info_config.json");
 constexpr std::chrono::milliseconds kConfigPollInterval(200);
 constexpr std::chrono::seconds kMissingConfigRetryInterval(5);
@@ -84,8 +87,16 @@ std::shared_ptr<ThermalHelper> Thermal::getThermalHelper() const {
 }
 
 std::string Thermal::readThermalConfigProperty() const {
-    std::string value = ::android::base::GetProperty(kConfigProperty.data(),
-                                                     kConfigDefaultFileName.data());
+    // Prefer the PEP mod channel; stock prop stays stock-safe so an
+    // unpatched HAL never sees mod payload (it would crash parsing it).
+    std::string value =
+            ::android::base::GetProperty(kModConfigProperty.data(), "");
+    value = ::android::base::Trim(value);
+    if (!value.empty()) {
+        return value;
+    }
+    value = ::android::base::GetProperty(kConfigProperty.data(),
+                                         kConfigDefaultFileName.data());
     value = ::android::base::Trim(value);
     return value.empty() ? std::string(kConfigDefaultFileName.data()) : value;
 }

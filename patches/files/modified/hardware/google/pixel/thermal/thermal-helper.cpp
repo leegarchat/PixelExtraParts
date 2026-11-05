@@ -53,6 +53,8 @@ constexpr std::string_view kPowerCapNameFile("name");
 constexpr std::string_view kPowerCapState2powerSuffix("power_levels_uw");
 constexpr std::string_view kPowerCapCurBudgetSuffix("constraint_0_power_limit_uw");
 constexpr std::string_view kConfigProperty("vendor.thermal.config");
+// PEP mod channel, see Thermal.cpp (stock HAL never reads it).
+constexpr std::string_view kModConfigProperty("vendor.pixelparts.thermal.config");
 constexpr std::string_view kConfigDefaultFileName("thermal_info_config.json");
 constexpr std::string_view kThermalGenlProperty("persist.vendor.enable.thermal.genl");
 constexpr std::string_view kThermalDisabledProperty("vendor.disable.thermalhal.control");
@@ -204,8 +206,15 @@ ThermalHelperImpl::ThermalHelperImpl(const NotificationCallback &cb, bool start_
     : thermal_watcher_(new ThermalWatcher(std::bind(&ThermalHelperImpl::thermalWatcherCallbackFunc,
                                                     this, std::placeholders::_1))),
       cb_(cb) {
-    const std::string config_property =
-            ::android::base::GetProperty(kConfigProperty.data(), kConfigDefaultFileName.data());
+    const std::string config_property = [] {
+        std::string mod = ::android::base::GetProperty(kModConfigProperty.data(), "");
+        mod = ::android::base::Trim(mod);
+        if (!mod.empty()) {
+            return mod;
+        }
+        return ::android::base::GetProperty(kConfigProperty.data(),
+                                             kConfigDefaultFileName.data());
+    }();
     loaded_config_property_ = config_property;
     std::string config_path = resolveThermalConfigPath(config_property);
     LOG(INFO) << "Using thermal config: " << config_path << " from " << kConfigProperty.data()
