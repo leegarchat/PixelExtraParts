@@ -16,7 +16,6 @@ permissive pixelparts_app;
 # on-device forensics. Writes need no rules (app is permissive).
 get_prop(zygote, system_pixelparts_prop)
 get_prop(shell, system_pixelparts_prop)
-get_prop(system_server, system_pixelparts_prop)
 
 # --- legacy system_app rules (kept: SystemUI/Settings stay enforcing) ---
 allow system_app system_pixelparts_prop:property_service set;
