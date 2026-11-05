@@ -8409,12 +8409,25 @@ public final class ActivityThread extends ClientTransactionHandler
                     shouldInject = true;
                 }
 
-                // 1b. system_server ("android"): inject for modern Xposed
-                // modules with system scope. HookEntry runs ONLY the module
-                // system dispatch there (no globals, no addons) — safe,
-                // and required for modules like DisableFlagSecure.
+                // 1b. system_server ("android"): inject ONLY when a system-scope
+                // modern module is installed (flag mirrored by XposedModuleHost;
+                // 0/absent = skip). NOTE: the flag is seeded by scans in other
+                // processes / manager rescan and persists in Settings.Global —
+                // after placing a system-scope APK, seed once via
+                // `settings put global pixelparts_xposed_has_system 1`
+                // (manager UI will own this later). HookEntry runs ONLY the
+                // module system dispatch there (no globals, no addons).
                 if ("android".equals(pkgName)) {
-                    shouldInject = true;
+                    try {
+                        Context injectContextSs = ContextImpl.createAppContext(this, data.info);
+                        if (injectContextSs != null && android.provider.Settings.Global
+                                .getInt(injectContextSs.getContentResolver(),
+                                        "pixelparts_xposed_has_system", 0) == 1) {
+                            shouldInject = true;
+                        }
+                    } catch (Throwable t) {
+                        android.util.Log.w("PixelParts", "Failed to check system modules", t);
+                    }
                 }
 
                 // 2. Проверка динамических настроек (Settings.Global)

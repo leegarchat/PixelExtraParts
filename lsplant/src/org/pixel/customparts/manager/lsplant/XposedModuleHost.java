@@ -48,12 +48,98 @@ public class XposedModuleHost {
     /** System package name as seen by ActivityThread in system_server. */
     public static final String SYSTEM_PACKAGE = "android";
 
+    /** Settings flag mirrored for the framework ss-inject gate. */
+    static final String SYSTEM_MODULES_KEY = "pixelparts_xposed_has_system";
+
+    /** Param impls (interfaces are implemented by the host, read by modules). */
+    static final class LoadedParamImpl implements XposedModuleInterface.ModuleLoadedParam {
+        private final ClassLoader cl;
+
+        LoadedParamImpl(ClassLoader cl) {
+            this.cl = cl;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return cl;
+        }
+    }
+
+    static final class PkgLoadedParamImpl implements XposedModuleInterface.PackageLoadedParam {
+        private final String pkg;
+        private final ClassLoader cl;
+        private final boolean first;
+
+        PkgLoadedParamImpl(String pkg, ClassLoader cl, boolean first) {
+            this.pkg = pkg;
+            this.cl = cl;
+            this.first = first;
+        }
+
+        @Override
+        public String getPackageName() {
+            return pkg;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return cl;
+        }
+
+        @Override
+        public boolean isFirstPackage() {
+            return first;
+        }
+    }
+
+    static final class PkgReadyParamImpl implements XposedModuleInterface.PackageReadyParam {
+        private final String pkg;
+        private final ClassLoader cl;
+        private final boolean first;
+
+        PkgReadyParamImpl(String pkg, ClassLoader cl, boolean first) {
+            this.pkg = pkg;
+            this.cl = cl;
+            this.first = first;
+        }
+
+        @Override
+        public String getPackageName() {
+            return pkg;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return cl;
+        }
+
+        @Override
+        public boolean isFirstPackage() {
+            return first;
+        }
+    }
+
+    static final class SystemStartingParamImpl
+            implements XposedModuleInterface.SystemServerStartingParam {
+        private final ClassLoader cl;
+
+        SystemStartingParamImpl(ClassLoader cl) {
+            this.cl = cl;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return cl;
+        }
+    }
+
     public static synchronized void ensureScanned(Context context) {
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
         scanDir(new File(context.getFilesDir().getParent() + "/addons"));
         Log.d(TAG, "Module scan complete: " + modules.size() + " modern module(s).");
+        syncSystemFlag(context);
     }
 
     private static void scanDir(File dir) {
@@ -78,35 +164,55 @@ public class XposedModuleHost {
             ModuleRecord rec = new ModuleRecord();
             rec.id = apk.getName().replaceAll("\\.apk$", "");
             rec.apkPath = apk.getAbsolutePath();
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(zip.getInputStream(init), "UTF-8"));
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                rec.classNames.add(line);
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(
+                        new InputStreamReader(zip.getInputStream(init), "UTF-8"));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) continue;
+                    rec.classNames.add(line);
+                }
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (Throwable ignored) {
+                    }
+                }
             }
-            br.close();
             if (rec.classNames.isEmpty()) return;
             ZipEntry prop = zip.getEntry("META-INF/xposed/module.prop");
             int minApi = 0;
             if (prop != null) {
-                BufferedReader pr = new BufferedReader(
-                        new InputStreamReader(zip.getInputStream(prop), "UTF-8"));
-                String pl;
-                while ((pl = pr.readLine()) != null) {
-                    pl = pl.trim();
-                    if (pl.startsWith("minApiVersion=")) {
+                BufferedReader pr = null;
+                try {
+                    pr = new BufferedReader(
+                            new InputStreamReader(zip.getInputStream(prop), "UTF-8"));
+                    String pl;
+                    while ((pl = pr.readLine()) != null) {
+                        pl = pl.trim();
+                        if (pl.startsWith("minApiVersion=")) {
+                            try {
+                                minApi = Integer.parseInt(pl.substring("minApiVersion=".length()));
+                            } catch (Throwable ignored) {
+                            }
+                        } else if (pl.startsWith("staticScope=")) {
+                            // Stored for future use (fixed vs dynamic scope);
+                            // currently all scopes are honored as listed.
+                            rec.staticScope = pl.substring("staticScope=".length())
+                                    .equalsIgnoreCase("true");
+                        }
+                    }
+                } finally {
+                    if (pr != null) {
                         try {
-                            minApi = Integer.parseInt(pl.substring("minApiVersion=".length()));
+                            pr.close();
                         } catch (Throwable ignored) {
                         }
-                    } else if (pl.startsWith("staticScope=")) {
-                        rec.staticScope = pl.substring("staticScope=".length())
-                                .equalsIgnoreCase("true");
                     }
                 }
-                pr.close();
             }
             if (minApi > HOST_API) {
                 Log.w(TAG, "Module " + rec.id + " needs API " + minApi + ", host is "
@@ -115,14 +221,27 @@ public class XposedModuleHost {
             }
             ZipEntry scope = zip.getEntry("META-INF/xposed/scope.list");
             if (scope != null) {
-                BufferedReader sr = new BufferedReader(
-                        new InputStreamReader(zip.getInputStream(scope), "UTF-8"));
-                String sl;
-                while ((sl = sr.readLine()) != null) {
-                    sl = sl.trim();
-                    if (!sl.isEmpty() && !sl.startsWith("#")) rec.scopes.add(sl);
+                BufferedReader sr = null;
+                try {
+                    sr = new BufferedReader(
+                            new InputStreamReader(zip.getInputStream(scope), "UTF-8"));
+                    String sl;
+                    while ((sl = sr.readLine()) != null) {
+                        sl = sl.trim();
+                        if (!sl.isEmpty() && !sl.startsWith("#")) rec.scopes.add(sl);
+                    }
+                } finally {
+                    if (sr != null) {
+                        try {
+                            sr.close();
+                        } catch (Throwable ignored) {
+                        }
+                    }
                 }
-                sr.close();
+            }
+            if (modules.containsKey(rec.id)) {
+                Log.w(TAG, "Duplicate module id " + rec.id + " — overwriting "
+                        + modules.get(rec.id).apkPath);
             }
             modules.put(rec.id, rec);
             Log.d(TAG, "Indexed modern module: " + rec.id + " classes=" + rec.classNames.size()
@@ -136,11 +255,14 @@ public class XposedModuleHost {
     }
 
     private static boolean isModuleEnabled(Context context, ModuleRecord rec) {
+        // Secure default: unknown APKs stay OFF until explicitly enabled.
+        // (Test branch note: enable test modules via
+        //  settings put global pixel_addon_<id>_enabled 1.)
         try {
             return Settings.Global.getInt(context.getContentResolver(),
-                    "pixel_addon_" + rec.id + "_enabled", 1) != 0;
+                    "pixel_addon_" + rec.id + "_enabled", 0) != 0;
         } catch (Throwable t) {
-            return true;
+            return false;
         }
     }
 
@@ -154,7 +276,7 @@ public class XposedModuleHost {
             for (String name : rec.classNames) {
                 try {
                     Class<?> clazz = Class.forName(name, false, loader);
-                    Object o = clazz.newInstance();
+                    Object o = clazz.getDeclaredConstructor().newInstance();
                     if (o instanceof XposedModuleInterface) {
                         rec.instances.add((XposedModuleInterface) o);
                     } else {
@@ -164,8 +286,7 @@ public class XposedModuleHost {
                     Log.e(TAG, "Failed to instantiate " + name + " from " + rec.id, t);
                 }
             }
-            XposedModuleInterface.ModuleLoadedParam mp =
-                    new XposedModuleInterface.ModuleLoadedParam(loader);
+            XposedModuleInterface.ModuleLoadedParam mp = new LoadedParamImpl(loader);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onModuleLoaded(mp);
@@ -181,6 +302,7 @@ public class XposedModuleHost {
 
     private static boolean targetsPackage(ModuleRecord rec, String packageName) {
         if (rec.scopes.isEmpty()) return true; // wildcard
+        if (rec.scopes.contains("*")) return true; // explicit wildcard
         if (rec.scopes.contains(packageName)) return true;
         return false;
     }
@@ -196,11 +318,9 @@ public class XposedModuleHost {
             ensureLoaded(context, rec);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.PackageLoadedParam lp =
-                    new XposedModuleInterface.PackageLoadedParam(packageName, appClassLoader,
-                            true);
+                    new PkgLoadedParamImpl(packageName, appClassLoader, true);
             XposedModuleInterface.PackageReadyParam rp =
-                    new XposedModuleInterface.PackageReadyParam(packageName, appClassLoader,
-                            true);
+                    new PkgReadyParamImpl(packageName, appClassLoader, true);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onPackageLoaded(lp);
@@ -225,7 +345,7 @@ public class XposedModuleHost {
             ensureLoaded(context, rec);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.SystemServerStartingParam sp =
-                    new XposedModuleInterface.SystemServerStartingParam(ssClassLoader);
+                    new SystemStartingParamImpl(ssClassLoader);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onSystemServerStarting(sp);
@@ -244,6 +364,20 @@ public class XposedModuleHost {
             if (rec.scopes.contains("system")) return true;
         }
         return false;
+    }
+
+    /** Mirror system-module presence for the framework ss-inject gate. */
+    public static void syncSystemFlag(Context context) {
+        boolean has = false;
+        try {
+            has = hasSystemModules(context);
+        } catch (Throwable ignored) {
+        }
+        try {
+            Settings.Global.putInt(context.getContentResolver(), SYSTEM_MODULES_KEY,
+                    has ? 1 : 0);
+        } catch (Throwable ignored) {
+        }
     }
 
     /** Debug/diagnostics: indexed module ids. */

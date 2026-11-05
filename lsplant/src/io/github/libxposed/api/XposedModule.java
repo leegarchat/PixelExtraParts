@@ -43,18 +43,18 @@ public abstract class XposedModule implements XposedModuleInterface {
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         ChainImpl chain = new ChainImpl(target, param.thisObject,
                                 param.args == null ? new Object[0] : param.args.clone());
+                        // Modern semantics: the intercept return value IS the
+                        // result (around-style). chain.proceed() runs the
+                        // original and returns its value for observation;
+                        // exceptions (from either) propagate to the caller.
                         Object result;
                         try {
                             result = hooker.intercept(chain);
                         } catch (Throwable t) {
-                            if (chain.proceeded) {
-                                param.setResult(chain.proceedResult);
-                                return;
-                            }
                             param.setThrowable(t);
                             return;
                         }
-                        param.setResult(chain.proceeded ? chain.proceedResult : result);
+                        param.setResult(result);
                     }
                 };
                 XposedBridge.hookMethod(target, cb);
