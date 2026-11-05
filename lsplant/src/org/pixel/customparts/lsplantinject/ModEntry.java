@@ -30,6 +30,16 @@ public class ModEntry {
 
         Application app = ActivityThread.currentApplication();
         if (app == null) {
+            // system_server has no Application: use the system context and
+            // this loader, package "android" (module system dispatch only).
+            try {
+                ActivityThread at = ActivityThread.currentActivityThread();
+                android.content.Context sysCtx = at.getSystemContext();
+                if (sysCtx == null) return;
+                HookEntry.init(sysCtx, ModEntry.class.getClassLoader(), "android");
+            } catch (Throwable t) {
+                Log.e(TAG, "HookEntry.init(system) failed", t);
+            }
             return;
         }
 

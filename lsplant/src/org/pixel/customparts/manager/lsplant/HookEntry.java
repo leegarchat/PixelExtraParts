@@ -27,13 +27,30 @@ public class HookEntry {
         }
 
         // Built-in hooks now live as native framework patches
-        // (see patches/files); this entry point only runs addon JARs.
+        // (see patches/files); this entry point only runs addon JARs
+        // and modern Xposed modules (APK).
         if (hasAddons) {
             try {
                 AddonLoader.loadAndRunAddons(context, classLoader, packageName);
             } catch (Throwable t) {
                 environment.logError(TAG, "Addon loading failed for " + packageName, t);
             }
+        }
+        if (XposedModuleHost.SYSTEM_PACKAGE.equals(packageName)) {
+            // system_server: only modern modules with system scope.
+            // (Requires ActivityThread to inject the "android" package;
+            // see framework patch — no globals here, ever.)
+            try {
+                XposedModuleHost.dispatchSystem(context, classLoader);
+            } catch (Throwable t) {
+                environment.logError(TAG, "Module system dispatch failed", t);
+            }
+            return;
+        }
+        try {
+            XposedModuleHost.dispatchPackage(context, classLoader, packageName);
+        } catch (Throwable t) {
+            environment.logError(TAG, "Module dispatch failed for " + packageName, t);
         }
     }
 
