@@ -9,7 +9,6 @@ package org.pixel.customparts.manager.lsplant;
  */
 public final class LsplantXposed {
     public static final String TAG = "LsplantXposed";
-    public static boolean disableHooks = false;
 
     private LsplantXposed() {
     }

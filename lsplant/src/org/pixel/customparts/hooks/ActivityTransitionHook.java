@@ -123,7 +123,6 @@ public class ActivityTransitionHook extends BaseHook {
 
     // Both build variants share the same resource names
     private static final String[] MODULE_PACKAGES = {
-            "org.pixel.customparts.xposed",
             "org.pixel.customparts"
     };
 
@@ -346,11 +345,6 @@ public class ActivityTransitionHook extends BaseHook {
             sCustomThemePackage = null;
             return null;
         }
-    }
-
-    static void invalidateCustomThemeCache() {
-        sCustomThemeCtx = null;
-        sCustomThemePackage = null;
     }
 
     private int resolveThemeAnim(Context themeCtx, String animName) {

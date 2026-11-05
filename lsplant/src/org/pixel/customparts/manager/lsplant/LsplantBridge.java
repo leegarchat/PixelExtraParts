@@ -19,7 +19,7 @@ import de.robv.android.xposed.XposedBridge;
  * {@code de.robv.android.xposed.*}.
  *
  * <p>The matching native glue ({@code liblspbridge.so}) provides
- * {@code nativeDoHook}/{@code nativeUnHook}/{@code nativeDeoptimize} with
+ * {@code nativeDoHook}/{@code nativeDeoptimize} with
  * JNI names derived from this class. The LSPlant/Dobby engine behind the
  * glue is bound at runtime: an already-injected foreign engine
  * (Vector/LSPosed) is reused, otherwise our own {@code /system} prebuilts
@@ -176,10 +176,6 @@ public final class LsplantBridge {
      * @return backup method object (invoke it to run the original), or null.
      */
     private static native Object nativeDoHook(Object target, Object hooker, Object callback);
-
-    /** Mirrors {@code lsplant::UnHook}. */
-    @SuppressWarnings("unused")
-    private static native boolean nativeUnHook(Object target);
 
     /** Mirrors {@code lsplant::Deoptimize}. */
     private static native void nativeDeoptimize(Object method);
