@@ -1,5 +1,7 @@
-genfscon sysfs /class/backlight u:object_r:sysfs_pixelparts_leds:s0
-genfscon sysfs /devices/platform/19440000.drmdsim/19440000.drmdsim.0/backlight/panel0-backlight/brightness u:object_r:sysfs_pixelparts_leds:s0
-genfscon sysfs /devices/platform/19440000.drmdsim/19440000.drmdsim.0/backlight/panel0-backlight/max_brightness u:object_r:sysfs_pixelparts_leds:s0
-genfscon sysfs /devices/platform/1c2c0000.drmdsim/1c2c0000.drmdsim.0/backlight/panel0-backlight/brightness u:object_r:sysfs_pixelparts_leds:s0
-genfscon sysfs /devices/platform/1c2c0000.drmdsim/1c2c0000.drmdsim.0/backlight/panel0-backlight/max_brightness u:object_r:sysfs_pixelparts_leds:s0
+# Backlight class symlink layer only. File contents live under
+# /sys/devices/... and are labeled by the DT parent genfscon
+# (sysfs_leds, hal already has rw there) — no custom type needed.
+# The app itself is permissive (pixelparts_app) and ignores labels.
+# If dmesg ever shows a denial on these nodes, the missing piece
+# will name itself — add back surgically, do not blanket-restore.
+genfscon sysfs /class/backlight u:object_r:sysfs_leds:s0

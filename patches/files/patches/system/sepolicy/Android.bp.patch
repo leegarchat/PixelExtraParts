@@ -1,0 +1,19 @@
+--- a/system/sepolicy/Android.bp
++++ b/system/sepolicy/Android.bp
+@@ -680,7 +680,7 @@
+     name: "precompiled_sepolicy_without_vendor",
+     srcs: [":precompiled_sepolicy_without_vendor_srcs"],
+     installable: false, // used only for Treble labeling tests
+-    permissive_domains_on_user_builds: ["backuptool", "su"],
++    permissive_domains_on_user_builds: ["backuptool", "su", "pixelparts_app"],
+ }
+ 
+ filegroup {
+@@ -718,6 +718,7 @@
+     permissive_domains_on_user_builds: [
+         "backuptool",
+         "su",
++        "pixelparts_app",
+     ],
+ }
+ 

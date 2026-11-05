@@ -1,7 +1,32 @@
+# Dedicated permissive domain for the PEP app (narrow, not system_app-wide).
+# Global SELinux stays Enforcing; only org.pixel.customparts (matched by
+# name= in seapp_contexts, shipped in PEP's own sepolicy) lands here.
+# Permissive => the app needs NO outgoing allow rules of its own (kernel
+# allows, audit logs). The system_app rules below stay untouched: they serve
+# OTHER enforcing system processes (SystemUI/Settings) — e.g. battery sysfs
+# reads and addon dex writes from whitelisted packages.
+type pixelparts_app, domain, coredomain;
+app_domain(pixelparts_app)
+net_domain(pixelparts_app)
+hal_client_domain(pixelparts_app, hal_thermal)
+permissive pixelparts_app;
+
+# Kill-switch reads: zygote evaluates it pre-fork (silent denials are masked
+# by the "1" default — without this rule the switch never worked), shell for
+# on-device forensics. Writes need no rules (app is permissive).
+get_prop(zygote, system_pixelparts_prop)
+get_prop(shell, system_pixelparts_prop)
+get_prop(system_server, system_pixelparts_prop)
+
+# --- legacy system_app rules (kept: SystemUI/Settings stay enforcing) ---
 allow system_app system_pixelparts_prop:property_service set;
 get_prop(system_app, system_pixelparts_prop)
 allow system_app pixelparts_data_file:dir create_dir_perms;
 allow system_app pixelparts_data_file:file create_file_perms;
+# NOTE: no shell_data_file rules here on purpose — zygote writing a boot
+# trace there trips core neverallows. Boot forensics = logcat immediately
+# after boot (zygote lines), plus behavior test in a NON-injected app
+# (custom loupe there == zygote hooks alive).
 allow init pixelparts_data_file:dir r_dir_perms;
 allow init pixelparts_data_file:file r_file_perms;
 allow appdomain pixelparts_data_file:dir r_dir_perms;
@@ -21,7 +46,3 @@ allow system_app sysfs_thermal:lnk_file read;
 allow system_app sysfs_batteryinfo:dir r_dir_perms;
 allow system_app sysfs_batteryinfo:file r_file_perms;
 allow system_app sysfs_batteryinfo:lnk_file read;
-allow system_app sysfs_pixelparts_leds:dir r_dir_perms;
-allow system_app sysfs_pixelparts_leds:file rw_file_perms;
-allow system_app sysfs_pixelparts_leds:lnk_file read;
-allow system_server sysfs_pixelparts_leds:file rw_file_perms;
