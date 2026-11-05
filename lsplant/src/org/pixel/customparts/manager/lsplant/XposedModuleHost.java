@@ -300,10 +300,39 @@ public class XposedModuleHost {
         }
     }
 
-    private static boolean targetsPackage(ModuleRecord rec, String packageName) {
-        if (rec.scopes.isEmpty()) return true; // wildcard
-        if (rec.scopes.contains("*")) return true; // explicit wildcard
-        if (rec.scopes.contains(packageName)) return true;
+    private static Set<String> getEffectiveScopes(Context context, ModuleRecord rec) {
+        // Mirror of AddonLoader scope_mode: 0 = manifest scope.list,
+        // 1 = custom packages only, 2 = both. Default 0.
+        int mode = 0;
+        try {
+            mode = Settings.Global.getInt(context.getContentResolver(),
+                    "pixel_addon_" + rec.id + "_scope_mode", 0);
+        } catch (Throwable ignored) {
+        }
+        Set<String> out = new HashSet<>();
+        if (mode == 0 || mode == 2) {
+            out.addAll(rec.scopes);
+        }
+        if (mode == 1 || mode == 2) {
+            try {
+                String custom = Settings.Global.getString(context.getContentResolver(),
+                        "pixel_addon_" + rec.id + "_packages");
+                if (custom != null && !custom.isEmpty()) {
+                    for (String pkg : custom.split(",")) {
+                        String t = pkg.trim();
+                        if (!t.isEmpty()) out.add(t);
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return out;
+    }
+
+    private static boolean targetsPackage(Set<String> scopes, String packageName) {
+        if (scopes.isEmpty()) return true; // wildcard
+        if (scopes.contains("*")) return true; // explicit wildcard
+        if (scopes.contains(packageName)) return true;
         return false;
     }
 
@@ -314,7 +343,7 @@ public class XposedModuleHost {
         ensureScanned(context);
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;
-            if (!targetsPackage(rec, packageName)) continue;
+            if (!targetsPackage(getEffectiveScopes(context, rec), packageName)) continue;
             ensureLoaded(context, rec);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.PackageLoadedParam lp =
