@@ -20,3 +20,4 @@ kilo.jsondocs/dtw-architecture-research.md
 # LSPlant native build staging (NDK cmake out dir + ad-hoc probes)
 /lsplant/lsplant-native/out/
 /lsplant/lsplant-native/bridge/resolve_test.cpp
+SELINUX_*.md
