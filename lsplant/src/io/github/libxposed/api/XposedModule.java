@@ -13,7 +13,20 @@ import org.pixel.customparts.manager.lsplant.LsplantBridge;
  */
 public abstract class XposedModule implements XposedModuleInterface {
 
+    private android.content.Context hostContext;
+    private String hostModulePackage;
+
     public XposedModule() {
+    }
+
+    /** Called by the host before any callback. */
+    public void attachHost(android.content.Context context, String modulePackage) {
+        try {
+            this.hostContext = context.getApplicationContext();
+        } catch (Throwable ignored) {
+            this.hostContext = context;
+        }
+        this.hostModulePackage = modulePackage;
     }
 
     @Override
@@ -36,6 +49,8 @@ public abstract class XposedModule implements XposedModuleInterface {
     public XposedInterface.HookBuilder hook(Executable executable) {
         final Member target = (Member) executable;
         return new XposedInterface.HookBuilder() {
+            private volatile ExceptionMode mode = ExceptionMode.PASSTHROUGH;
+
             @Override
             public XposedInterface.HookHandle intercept(final XposedInterface.Hooker hooker) {
                 final XC_MethodHook cb = new XC_MethodHook() {
@@ -65,7 +80,83 @@ public abstract class XposedModule implements XposedModuleInterface {
                     }
                 };
             }
+
+            @Override
+            public XposedInterface.HookBuilder setExceptionMode(ExceptionMode m) {
+                if (m != null) mode = m; // passthrough is native behavior
+                return this;
+            }
         };
+    }
+
+    /**
+     * Remote preferences of the module app, readable from a target process.
+     * Best-effort chain: module package prefs cross-package → own prefs →
+     * empty read-only stub (never null, never throws).
+     */
+    public android.content.SharedPreferences getRemotePreferences(String name) {
+        if (hostContext != null && hostModulePackage != null) {
+            try {
+                android.content.Context modCtx = hostContext.createPackageContext(
+                        hostModulePackage,
+                        android.content.Context.CONTEXT_IGNORE_SECURITY);
+                return modCtx.getSharedPreferences(name,
+                        android.content.Context.MODE_PRIVATE);
+            } catch (Throwable ignored) {
+            }
+        }
+        if (hostContext != null) {
+            try {
+                return hostContext.getSharedPreferences(name,
+                        android.content.Context.MODE_PRIVATE);
+            } catch (Throwable ignored) {
+            }
+        }
+        return emptyPreferences();
+    }
+
+    /** Empty read-only SharedPreferences stub (last-resort fallback). */
+    static android.content.SharedPreferences emptyPreferences() {
+        final android.content.SharedPreferences.Editor editProxy =
+                (android.content.SharedPreferences.Editor) java.lang.reflect.Proxy
+                        .newProxyInstance(XposedModule.class.getClassLoader(),
+                                new Class<?>[] {
+                                        android.content.SharedPreferences.Editor.class },
+                                new java.lang.reflect.InvocationHandler() {
+                                    @Override
+                                    public Object invoke(Object proxy,
+                                            java.lang.reflect.Method method,
+                                            Object[] args) {
+                                        Class<?> rt = method.getReturnType();
+                                        if (rt == boolean.class) return true;
+                                        if (rt == void.class) return null;
+                                        return proxy;
+                                    }
+                                });
+        return (android.content.SharedPreferences) java.lang.reflect.Proxy.newProxyInstance(
+                XposedModule.class.getClassLoader(),
+                new Class<?>[] { android.content.SharedPreferences.class },
+                new java.lang.reflect.InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, java.lang.reflect.Method method,
+                            Object[] args) {
+                        String n = method.getName();
+                        Class<?> rt = method.getReturnType();
+                        if ("contains".equals(n)) return false;
+                        if ("edit".equals(n)) return editProxy;
+                        if ("getAll".equals(n))
+                            return java.util.Collections.emptyMap();
+                        if ("getStringSet".equals(n)) {
+                            return (args != null && args.length > 1) ? args[1] : null;
+                        }
+                        if (args != null && args.length > 1) return args[1];
+                        if (rt == boolean.class) return false;
+                        if (rt == int.class) return 0;
+                        if (rt == long.class) return 0L;
+                        if (rt == float.class) return 0f;
+                        return null;
+                    }
+                });
     }
 
     public void log(int priority, String tag, String message) {

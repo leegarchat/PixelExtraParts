@@ -17,6 +17,8 @@ public interface XposedModuleInterface {
     /** Params for {@link #onModuleLoaded}. */
     interface ModuleLoadedParam {
         ClassLoader getClassLoader();
+
+        String getProcessName();
     }
 
     /** Params for {@link #onPackageLoaded}. */
@@ -44,6 +46,8 @@ public interface XposedModuleInterface {
         ClassLoader getClassLoader();
 
         boolean isFirstPackage();
+
+        android.content.pm.ApplicationInfo getApplicationInfo();
     }
 
     /** Params for {@link #onSystemServerStarting}. */

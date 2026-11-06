@@ -29,7 +29,7 @@ import android.provider.Settings;
  */
 public class XposedModuleHost {
     private static final String TAG = "XposedModuleHost";
-    private static final int HOST_API = 101;
+    private static final int HOST_API = 102;
 
     static class ModuleRecord {
         String id;
@@ -56,14 +56,21 @@ public class XposedModuleHost {
     /** Param impls (interfaces are implemented by the host, read by modules). */
     static final class LoadedParamImpl implements XposedModuleInterface.ModuleLoadedParam {
         private final ClassLoader cl;
+        private final String processName;
 
-        LoadedParamImpl(ClassLoader cl) {
+        LoadedParamImpl(ClassLoader cl, String processName) {
             this.cl = cl;
+            this.processName = processName;
         }
 
         @Override
         public ClassLoader getClassLoader() {
             return cl;
+        }
+
+        @Override
+        public String getProcessName() {
+            return processName;
         }
     }
 
@@ -98,11 +105,14 @@ public class XposedModuleHost {
         private final String pkg;
         private final ClassLoader cl;
         private final boolean first;
+        private final android.content.pm.ApplicationInfo appInfo;
 
-        PkgReadyParamImpl(String pkg, ClassLoader cl, boolean first) {
+        PkgReadyParamImpl(String pkg, ClassLoader cl, boolean first,
+                android.content.pm.ApplicationInfo appInfo) {
             this.pkg = pkg;
             this.cl = cl;
             this.first = first;
+            this.appInfo = appInfo;
         }
 
         @Override
@@ -118,6 +128,11 @@ public class XposedModuleHost {
         @Override
         public boolean isFirstPackage() {
             return first;
+        }
+
+        @Override
+        public android.content.pm.ApplicationInfo getApplicationInfo() {
+            return appInfo;
         }
     }
 
@@ -331,9 +346,15 @@ public class XposedModuleHost {
         }
     }
 
-    private static synchronized void ensureLoaded(Context context, ModuleRecord rec) {
+    private static synchronized void ensureLoaded(Context context, ModuleRecord rec,
+            String processName) {
         if (rec.loaded) return;
         rec.loaded = true;
+        String ownPkg = null;
+        try {
+            ownPkg = getOwnPackage(context, rec.apkPath);
+        } catch (Throwable ignored) {
+        }
         try {
             File odexDir = context.getDir("xposed_modules", Context.MODE_PRIVATE);
             DexClassLoader loader = new DexClassLoader(rec.apkPath,
@@ -343,6 +364,13 @@ public class XposedModuleHost {
                     Class<?> clazz = Class.forName(name, false, loader);
                     Object o = clazz.getDeclaredConstructor().newInstance();
                     if (o instanceof XposedModuleInterface) {
+                        if (o instanceof io.github.libxposed.api.XposedModule) {
+                            try {
+                                ((io.github.libxposed.api.XposedModule) o)
+                                        .attachHost(context, ownPkg);
+                            } catch (Throwable ignored) {
+                            }
+                        }
                         rec.instances.add((XposedModuleInterface) o);
                     } else {
                         Log.w(TAG, "Module class " + name + " is not an XposedModuleInterface");
@@ -351,7 +379,8 @@ public class XposedModuleHost {
                     Log.e(TAG, "Failed to instantiate " + name + " from " + rec.id, t);
                 }
             }
-            XposedModuleInterface.ModuleLoadedParam mp = new LoadedParamImpl(loader);
+            XposedModuleInterface.ModuleLoadedParam mp =
+                    new LoadedParamImpl(loader, processName);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onModuleLoaded(mp);
@@ -420,12 +449,17 @@ public class XposedModuleHost {
             if (!self && !targetsPackage(getEffectiveScopes(context, rec), packageName)) {
                 continue;
             }
-            ensureLoaded(context, rec);
+            ensureLoaded(context, rec, packageName);
             if (rec.instances.isEmpty()) continue;
+            android.content.pm.ApplicationInfo ai = null;
+            try {
+                ai = context.getPackageManager().getApplicationInfo(packageName, 0);
+            } catch (Throwable ignored) {
+            }
             XposedModuleInterface.PackageLoadedParam lp =
                     new PkgLoadedParamImpl(packageName, appClassLoader, true);
             XposedModuleInterface.PackageReadyParam rp =
-                    new PkgReadyParamImpl(packageName, appClassLoader, true);
+                    new PkgReadyParamImpl(packageName, appClassLoader, true, ai);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onPackageLoaded(lp);
@@ -447,7 +481,7 @@ public class XposedModuleHost {
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;
             if (!rec.scopes.contains("system")) continue;
-            ensureLoaded(context, rec);
+            ensureLoaded(context, rec, SYSTEM_PACKAGE);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.SystemServerStartingParam sp =
                     new SystemStartingParamImpl(ssClassLoader);

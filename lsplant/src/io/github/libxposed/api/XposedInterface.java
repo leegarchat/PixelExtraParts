@@ -30,6 +30,8 @@ public interface XposedInterface {
     /** Binds a {@link Hooker} to a hooked executable. */
     interface HookBuilder {
         HookHandle intercept(Hooker hooker);
+
+        HookBuilder setExceptionMode(ExceptionMode mode);
     }
 
     /** Opaque handle for a single interception. */
