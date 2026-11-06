@@ -2130,6 +2130,23 @@ private fun syncWhitelist(context: Context, addons: List<AddonUiModel>) {
             if (pkg !in BUILTIN_WHITELIST) addToWhitelist(context, pkg)
         }
     }
+    // Modern Xposed modules: their scopes must be injected too, otherwise
+    // targets never load the module (module shows "disabled").
+    try {
+        for (mod in scanInstalledModules(context)) {
+            if (!readAddonEnabled(context, mod.keyId, false)) continue
+            val mode = readScopeMode(context, mod.keyId)
+            val targets = when (mode) {
+                1 -> readCustomTargets(context, mod.keyId)
+                2 -> mod.scopes + readCustomTargets(context, mod.keyId)
+                else -> mod.scopes
+            }
+            for (pkg in targets) {
+                if (pkg == "android" || pkg == "*" || pkg.isBlank()) continue
+                if (pkg !in BUILTIN_WHITELIST) addToWhitelist(context, pkg)
+            }
+        }
+    } catch (_: Throwable) {}
 }
 
 private fun getEffectiveTargets(addon: AddonUiModel): Set<String> {
@@ -2752,6 +2769,13 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                 }
                 xposedModules = xposedModules.map {
                     if (it.id == id) it.copy(enabled = enabled) else it
+                }
+                scope.launch(Dispatchers.IO) {
+                    // Re-sync injection whitelist so scope targets of modules
+                    // (and removals) take effect without reopening the manager.
+                    try {
+                        syncWhitelist(context, emptyList())
+                    } catch (_: Throwable) {}
                 }
             },
             onScopeSaved = {
