@@ -137,7 +137,7 @@ public class XposedModuleHost {
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
-        scanDir(new File(context.getFilesDir().getParent() + "/addons"));
+        scanDir(new File("/data/pixelparts/addons"));
         Log.d(TAG, "Module scan complete: " + modules.size() + " modern module(s).");
         syncSystemFlag(context);
     }
