@@ -133,13 +133,62 @@ public class XposedModuleHost {
         }
     }
 
+    /** Settings list of manager-registered module APK paths (comma-separated). */
+    static final String MODULE_LIST_KEY = "pixelparts_xposed_modules";
+
     public static synchronized void ensureScanned(Context context) {
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
         scanDir(new File("/data/pixelparts/addons"));
+        scanRegisteredList(context);
         Log.d(TAG, "Module scan complete: " + modules.size() + " modern module(s).");
         syncSystemFlag(context);
+    }
+
+    /**
+     * Modules registered by the manager UI (installed APKs whose META-INF
+     * was already verified there). Modern modules carry no manifest
+     * markers, so per-process zip-walking all installed apps is skipped —
+     * the manager owns discovery, the engine only loads listed paths.
+     */
+    private static void scanRegisteredList(Context context) {
+        String list = null;
+        try {
+            list = Settings.Global.getString(context.getContentResolver(), MODULE_LIST_KEY);
+        } catch (Throwable ignored) {
+        }
+        if (list == null || list.isEmpty()) return;
+        for (String p : list.split(",")) {
+            String path = p.trim();
+            if (path.isEmpty()) continue;
+            File f = new File(path);
+            if (!f.getName().endsWith(".apk") || !f.canRead()) continue;
+            try {
+                scanApk(f);
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to load registered module: " + path, t);
+            }
+        }
+    }
+
+    /**
+     * Own package of an installed module APK (no install required).
+     * Used for self-targeting: an enabled module always receives its own
+     * package dispatch so it can report "activated".
+     * NOTE: the manager UI must also set
+     * {@code pixel_extra_parts_inject_package_<module-pkg>=1} on enable,
+     * otherwise the module process is never injected to begin with.
+     */
+    static String getOwnPackage(Context context, String apkPath) {
+        try {
+            android.content.pm.PackageManager pm = context.getPackageManager();
+            android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(apkPath,
+                    android.content.pm.PackageManager.GET_META_DATA);
+            if (pi != null) return pi.packageName;
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     private static void scanDir(File dir) {
@@ -343,7 +392,17 @@ public class XposedModuleHost {
         ensureScanned(context);
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;
-            if (!targetsPackage(getEffectiveScopes(context, rec), packageName)) continue;
+            // Self-targeting: enabled module always sees its own package
+            // (Vector parity — otherwise "activated" status never shows).
+            boolean self = false;
+            try {
+                String own = getOwnPackage(context, rec.apkPath);
+                self = packageName.equals(own);
+            } catch (Throwable ignored) {
+            }
+            if (!self && !targetsPackage(getEffectiveScopes(context, rec), packageName)) {
+                continue;
+            }
             ensureLoaded(context, rec);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.PackageLoadedParam lp =
