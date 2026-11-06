@@ -2728,7 +2728,8 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
             }
         )
     }
-    } else {
+    }
+    if (modulesTab == 1) {
         // === APK modules tab ===
         XposedModulesSection(
             modules = xposedModules,
