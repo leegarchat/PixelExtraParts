@@ -43,12 +43,37 @@ public class LegacyModuleHost {
     private static final Map<String, LegacyRecord> modules = new HashMap<>();
     private static boolean scanned = false;
 
+    private static final String MODULE_LIST_KEY = "pixelparts_xposed_modules";
+
     public static synchronized void ensureScanned(Context context) {
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
         scanDir(new File("/data/pixelparts/addons"));
+        scanRegisteredList(context);
         Log.d(TAG, "Legacy scan complete: " + modules.size() + " module(s).");
+    }
+
+    /** APK paths registered by the manager UI (installed modules). */
+    private static void scanRegisteredList(Context context) {
+        String list = null;
+        try {
+            list = android.provider.Settings.Global.getString(
+                    context.getContentResolver(), MODULE_LIST_KEY);
+        } catch (Throwable ignored) {
+        }
+        if (list == null || list.isEmpty()) return;
+        for (String p : list.split(",")) {
+            String path = p.trim();
+            if (path.isEmpty()) continue;
+            File f = new File(path);
+            if (!f.getName().endsWith(".apk") || !f.canRead()) continue;
+            try {
+                scanApk(f);
+            } catch (Throwable t) {
+                Log.e(TAG, "Failed to load registered legacy module: " + path, t);
+            }
+        }
     }
 
     private static void scanDir(File dir) {
