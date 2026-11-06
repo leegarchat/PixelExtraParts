@@ -52,6 +52,11 @@ public class HookEntry {
         } catch (Throwable t) {
             environment.logError(TAG, "Module dispatch failed for " + packageName, t);
         }
+        try {
+            LegacyModuleHost.dispatchPackage(context, classLoader, packageName);
+        } catch (Throwable t) {
+            environment.logError(TAG, "Legacy dispatch failed for " + packageName, t);
+        }
     }
 
 }
