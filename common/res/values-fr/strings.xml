@@ -666,6 +666,10 @@
     <string name="addon_safe_mode_title">Mode sans échec actif</string>
     <string name="addon_safe_mode_desc">Les addons ont été désactivés en raison de plantages répétés. Si le problème a été causé par un addon défectueux, vous pouvez le désactiver avant de quitter le mode sans échec.</string>
     <string name="addon_safe_mode_exit">Quitter le mode sans échec</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">Modules APK</string>
+    <string name="addon_modules_empty_title">Aucun module Xposed trouvé</string>
+    <string name="addon_modules_empty_desc">Les apps installées avec modules LSPosed/Vector apparaissent ici</string>
     <string name="addon_section_system">Modules système</string>
     <string name="addon_section_user">Modules installés</string>
     <string name="addon_system_empty_title">Aucun module système</string>

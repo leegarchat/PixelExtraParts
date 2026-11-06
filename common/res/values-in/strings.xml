@@ -666,6 +666,10 @@
     <string name="addon_safe_mode_title">Mode aman aktif</string>
     <string name="addon_safe_mode_desc">Addon telah dinonaktifkan karena crash berulang. Jika masalah disebabkan oleh addon yang bermasalah, Anda dapat menonaktifkannya sebelum keluar dari mode aman.</string>
     <string name="addon_safe_mode_exit">Keluar dari mode aman</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">Modul APK</string>
+    <string name="addon_modules_empty_title">Tidak ada modul Xposed ditemukan</string>
+    <string name="addon_modules_empty_desc">Aplikasi terinstal dengan modul LSPosed/Vector muncul di sini</string>
     <string name="addon_section_system">Modul sistem</string>
     <string name="addon_section_user">Modul terinstal</string>
     <string name="addon_system_empty_title">Tidak ada modul sistem</string>

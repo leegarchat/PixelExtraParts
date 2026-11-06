@@ -86,6 +86,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.util.zip.ZipFile
 import java.net.URL
 import java.util.Locale
 import org.pixel.customparts.R
@@ -2325,6 +2326,8 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
 
     var addons by remember { mutableStateOf<List<AddonUiModel>>(emptyList()) }
+    var xposedModules by remember { mutableStateOf<List<XposedModuleUiModel>>(emptyList()) }
+    var modulesTab by rememberSaveable { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var selectedAddon by remember { mutableStateOf<AddonUiModel?>(null) }
     var showDeleteDialog by remember { mutableStateOf<AddonUiModel?>(null) }
@@ -2336,6 +2339,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         withContext(Dispatchers.IO) {
             addons = scanAddons(context)
             syncWhitelist(context, addons)
+            xposedModules = scanInstalledModules(context)
         }
         isLoading = false
     }
@@ -2346,6 +2350,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
             withContext(Dispatchers.IO) {
                 addons = scanAddons(context)
                 syncWhitelist(context, addons)
+                xposedModules = scanInstalledModules(context)
             }
             isLoading = false
         }
@@ -2447,6 +2452,17 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
 
         Spacer(Modifier.height(12.dp))
 
+        // === Tabs: JAR addons / APK modules ===
+        TabRow(selectedTabIndex = modulesTab) {
+            Tab(selected = modulesTab == 0, onClick = { modulesTab = 0 },
+                text = { Text(dynamicStringResource(R.string.addon_tab_jars)) })
+            Tab(selected = modulesTab == 1, onClick = { modulesTab = 1 },
+                text = { Text(dynamicStringResource(R.string.addon_tab_modules)) })
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        if (modulesTab == 0) {
         // === Active apps section ===
         if (!isLoading) {
             val activeAppsMap = remember(addons) { buildActiveAppsMap(addons) }
@@ -2709,6 +2725,38 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = null }) { Text(dynamicStringResource(R.string.addon_btn_cancel)) }
+            }
+        )
+    }
+    } else {
+        // === APK modules tab ===
+        XposedModulesSection(
+            modules = xposedModules,
+            isLoading = isLoading,
+            onToggleModule = { id, enabled ->
+                val mod = xposedModules.find { it.id == id } ?: return@XposedModulesSection
+                writeAddonEnabled(context, mod.keyId, enabled)
+                scope.launch(Dispatchers.IO) {
+                    if (enabled) {
+                        // Self-injection: module process must be injected
+                        // for the module to see itself as active.
+                        addToWhitelist(context, mod.packageName)
+                        addModuleToRegistry(context, mod.apkPath)
+                    } else {
+                        removeModuleFromRegistry(context, mod.apkPath)
+                        if (mod.packageName !in BUILTIN_WHITELIST) {
+                            removeFromWhitelist(context, mod.packageName)
+                        }
+                    }
+                }
+                xposedModules = xposedModules.map {
+                    if (it.id == id) it.copy(enabled = enabled) else it
+                }
+            },
+            onScopeSaved = {
+                scope.launch(Dispatchers.IO) {
+                    xposedModules = scanInstalledModules(context)
+                }
             }
         )
     }
@@ -6599,5 +6647,261 @@ class AddonAppPickerActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+// =====================================================================
+// Xposed APK modules tab (LSPosed/Vector-format modules)
+// =====================================================================
+
+private const val XPOSED_MODULE_LIST_KEY = "pixelparts_xposed_modules"
+
+data class XposedModuleUiModel(
+    /** Engine key (matches pixel_addon_<keyId>_enabled/scope keys). */
+    val keyId: String,
+    val id: String,
+    val packageName: String,
+    val label: String,
+    val apkPath: String,
+    val versionName: String,
+    val minApi: Int,
+    val scopes: Set<String>,
+    val isLegacy: Boolean,
+    val enabled: Boolean,
+    val scopeMode: Int,
+    val customTargets: Set<String>
+)
+
+private fun readModuleRegistry(context: Context): Set<String> {
+    val raw = try {
+        Settings.Global.getString(context.contentResolver, XPOSED_MODULE_LIST_KEY)
+    } catch (_: Throwable) { null }
+    if (raw.isNullOrBlank()) return emptySet()
+    return raw.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+}
+
+private fun addModuleToRegistry(context: Context, apkPath: String) {
+    try {
+        val cur = readModuleRegistry(context).toMutableSet()
+        if (cur.add(apkPath)) {
+            Settings.Global.putString(context.contentResolver, XPOSED_MODULE_LIST_KEY,
+                cur.joinToString(","))
+        }
+    } catch (_: Throwable) {}
+}
+
+private fun removeModuleFromRegistry(context: Context, apkPath: String) {
+    try {
+        val cur = readModuleRegistry(context).toMutableSet()
+        if (cur.remove(apkPath)) {
+            Settings.Global.putString(context.contentResolver, XPOSED_MODULE_LIST_KEY,
+                cur.joinToString(","))
+        }
+    } catch (_: Throwable) {}
+}
+
+/**
+ * Detect installed LSPosed modules: manifest meta-data `xposedminversion`
+ * (legacy) or META-INF/xposed entries (modern). Mirrors Vector's
+ * ModuleDetection (manifest + zip-walk), without its TSV cache.
+ */
+private fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
+    val pm = context.packageManager
+    val out = ArrayList<XposedModuleUiModel>()
+    val apps = try {
+        pm.getInstalledApplications(PackageManager.GET_META_DATA)
+    } catch (_: Throwable) { return emptyList() }
+    for (info in apps) {
+        if (info.packageName == context.packageName) continue
+        val legacyMeta = try {
+            info.metaData?.containsKey("xposedminversion") == true
+        } catch (_: Throwable) { false }
+        var modern = false
+        var minApi = 0
+        val scopes = HashSet<String>()
+        var entryCount = 0
+        try {
+            ZipFile(info.sourceDir).use { zip ->
+                if (zip.getEntry("META-INF/xposed/java_init.list") != null) {
+                    modern = true
+                    zip.getEntry("META-INF/xposed/module.prop")?.let { e ->
+                        zip.getInputStream(e).bufferedReader().useLines { lines ->
+                            lines.forEach { l ->
+                                val t = l.trim()
+                                if (t.startsWith("minApiVersion=")) {
+                                    minApi = t.substringAfter("=").toIntOrNull() ?: 0
+                                }
+                            }
+                        }
+                    }
+                    zip.getEntry("META-INF/xposed/scope.list")?.let { e ->
+                        zip.getInputStream(e).bufferedReader().useLines { lines ->
+                            lines.forEach { l ->
+                                val t = l.trim()
+                                if (t.isNotEmpty() && !t.startsWith("#")) scopes.add(t)
+                            }
+                        }
+                    }
+                    entryCount = 1
+                } else if (zip.getEntry("assets/xposed_init") != null) {
+                    entryCount = 1
+                }
+            }
+        } catch (_: Throwable) { continue }
+        if (!legacyMeta && !modern && entryCount == 0) continue
+        val pkg = info.packageName
+        val keyId = pkg
+        val label = try { pm.getApplicationLabel(info).toString() } catch (_: Throwable) { pkg }
+        val version = try {
+            pm.getPackageInfo(pkg, 0)?.versionName ?: ""
+        } catch (_: Throwable) { "" }
+        val enabled = readAddonEnabled(context, keyId, false)
+        val scopeMode = readScopeMode(context, keyId)
+        val customTargets = readCustomTargets(context, keyId)
+        out.add(XposedModuleUiModel(
+            keyId = keyId, id = pkg, packageName = pkg, label = label,
+            apkPath = info.sourceDir, versionName = version, minApi = minApi,
+            scopes = scopes, isLegacy = legacyMeta && !modern,
+            enabled = enabled, scopeMode = scopeMode, customTargets = customTargets
+        ))
+    }
+    return out.sortedBy { it.label.lowercase() }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun XposedModulesSection(
+    modules: List<XposedModuleUiModel>,
+    isLoading: Boolean,
+    onToggleModule: (String, Boolean) -> Unit,
+    onScopeSaved: () -> Unit
+) {
+    val context = LocalContext.current
+    var scopeModule by remember { mutableStateOf<XposedModuleUiModel?>(null) }
+    var showAppPicker by remember { mutableStateOf(false) }
+    var pickerSelection by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var pickerMode by remember { mutableIntStateOf(1) }
+
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxWidth().padding(32.dp),
+            contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+        }
+        return
+    }
+
+    SectionHeader(dynamicStringResource(R.string.addon_tab_modules))
+
+    if (modules.isEmpty()) {
+        EmptySectionCard(
+            title = dynamicStringResource(R.string.addon_modules_empty_title),
+            description = dynamicStringResource(R.string.addon_modules_empty_desc)
+        )
+        return
+    }
+
+    for (mod in modules) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(mod.label, style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold)
+                        Text(mod.packageName, style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (mod.versionName.isNotEmpty() || mod.minApi > 0) {
+                            Text(
+                                "v${mod.versionName}" + (if (mod.minApi > 0) " · API ${mod.minApi}" else "") +
+                                    (if (mod.isLegacy) " · legacy" else ""),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                    Switch(checked = mod.enabled,
+                        onCheckedChange = { onToggleModule(mod.id, it) })
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val targetsLabel = when (mod.scopeMode) {
+                        1 -> mod.customTargets.joinToString(", ").ifEmpty { "—" }
+                        2 -> (mod.scopes + mod.customTargets).joinToString(", ").ifEmpty { "—" }
+                        else -> mod.scopes.joinToString(", ").ifEmpty { "—" }
+                    }
+                    Text(targetsLabel, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f))
+                    TextButton(onClick = {
+                        scopeModule = mod
+                        pickerSelection = mod.customTargets
+                        pickerMode = mod.scopeMode
+                    }) {
+                        Text(dynamicStringResource(R.string.addon_select_apps))
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+
+    val target = scopeModule
+    if (target != null) {
+        AlertDialog(
+            onDismissRequest = { scopeModule = null },
+            title = { Text(target.label) },
+            text = {
+                Column {
+                    val modes = listOf(0 to "Manifest", 1 to "Custom", 2 to "Merge")
+                    for ((v, label) in modes) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { pickerMode = v }) {
+                            RadioButton(selected = pickerMode == v,
+                                onClick = { pickerMode = v })
+                            Text(label)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    FilledTonalButton(onClick = { showAppPicker = true }) {
+                        Text(dynamicStringResource(R.string.addon_select_apps))
+                    }
+                    if (pickerSelection.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(pickerSelection.joinToString(", "),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    writeScopeMode(context, target.keyId, pickerMode)
+                    writeCustomTargets(context, target.keyId, pickerSelection)
+                    scopeModule = null
+                    onScopeSaved()
+                }) { Text(dynamicStringResource(R.string.addon_btn_save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { scopeModule = null }) {
+                    Text(dynamicStringResource(R.string.addon_btn_cancel))
+                }
+            }
+        )
+    }
+
+    if (showAppPicker && target != null) {
+        AppPickerDialog(
+            defaultTargets = target.scopes,
+            selectedPackages = pickerSelection,
+            onDismiss = { showAppPicker = false },
+            onConfirm = { pkgs ->
+                pickerSelection = pkgs
+                showAppPicker = false
+            }
+        )
     }
 }

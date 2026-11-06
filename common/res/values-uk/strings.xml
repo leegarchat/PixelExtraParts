@@ -666,6 +666,10 @@
     <string name="addon_safe_mode_title">Безпечний режим активний</string>
     <string name="addon_safe_mode_desc">Аддони було вимкнено через повторювані вильоти. Якщо проблему спричинив несправний аддон, ви можете вимкнути його перед виходом з безпечного режиму.</string>
     <string name="addon_safe_mode_exit">Вийти з безпечного режиму</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">APK-модулі</string>
+    <string name="addon_modules_empty_title">Xposed-модулі не знайдено</string>
+    <string name="addon_modules_empty_desc">Встановлені застосунки з модулями LSPosed/Vector з’являться тут</string>
     <string name="addon_section_system">Системні модулі</string>
     <string name="addon_section_user">Встановлені модулі</string>
     <string name="addon_system_empty_title">Немає системних модулів</string>

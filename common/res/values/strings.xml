@@ -1255,6 +1255,10 @@
     <string name="addon_safe_mode_title">Safe Mode Active</string>
     <string name="addon_safe_mode_desc">Addons were disabled due to repeated crashes. If the problem was caused by a faulty addon, you can disable it before exiting safe mode.</string>
     <string name="addon_safe_mode_exit">Exit Safe Mode</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">APK modules</string>
+    <string name="addon_modules_empty_title">No Xposed modules found</string>
+    <string name="addon_modules_empty_desc">Installed apps with LSPosed/Vector modules appear here</string>
     <string name="addon_section_system">System modules</string>
     <string name="addon_section_user">Installed modules</string>
     <string name="addon_system_empty_title">No system modules</string>

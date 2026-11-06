@@ -666,6 +666,10 @@
     <string name="addon_safe_mode_title">Abgesicherter Modus aktiv</string>
     <string name="addon_safe_mode_desc">Addons wurden aufgrund wiederholter Abstürze deaktiviert. Wenn das Problem durch ein fehlerhaftes Addon verursacht wurde, können Sie es vor dem Verlassen des abgesicherten Modus deaktivieren.</string>
     <string name="addon_safe_mode_exit">Abgesicherten Modus verlassen</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">APK-Module</string>
+    <string name="addon_modules_empty_title">Keine Xposed-Module gefunden</string>
+    <string name="addon_modules_empty_desc">Installierte Apps mit LSPosed/Vector-Modulen erscheinen hier</string>
     <string name="addon_section_system">Systemmodule</string>
     <string name="addon_section_user">Installierte Module</string>
     <string name="addon_system_empty_title">Keine Systemmodule</string>
