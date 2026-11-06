@@ -519,6 +519,19 @@ public class XposedModuleHost {
         }
     }
 
+    /** All effective scope targets of enabled modules (for whitelist sync). */
+    public static synchronized Set<String> getAllModuleTargets(Context context) {
+        ensureScanned(context);
+        Set<String> out = new HashSet<>();
+        for (ModuleRecord rec : modules.values()) {
+            if (!isModuleEnabled(context, rec)) continue;
+            out.addAll(getEffectiveScopes(context, rec));
+        }
+        out.remove(SYSTEM_PACKAGE);
+        out.remove("*");
+        return out;
+    }
+
     /** Debug/diagnostics: indexed module ids. */
     public static synchronized Set<String> getModuleIds() {
         return new HashSet<>(modules.keySet());

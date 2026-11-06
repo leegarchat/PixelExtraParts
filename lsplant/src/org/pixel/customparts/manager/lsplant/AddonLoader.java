@@ -359,6 +359,10 @@ public class AddonLoader {
 
     public static void syncWhitelist(Context context) {
         Set<String> allTargets = getAllAddonTargetPackages(context);
+        try {
+            allTargets.addAll(XposedModuleHost.getAllModuleTargets(context));
+        } catch (Throwable ignored) {
+        }
         for (String pkg : allTargets) {
             // Respect explicit per-app blocks (stored 0): boot/app sync must
             // never re-enable a package the user excluded. ActivityThread
