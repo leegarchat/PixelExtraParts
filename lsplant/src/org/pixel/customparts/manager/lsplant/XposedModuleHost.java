@@ -34,6 +34,8 @@ public class XposedModuleHost {
     static class ModuleRecord {
         String id;
         String apkPath;
+        /** Own package, resolved lazily (null = unresolved/fallback to id). */
+        String pkgName;
         final List<String> classNames = new ArrayList<>();
         final Set<String> scopes = new HashSet<>();
         boolean staticScope = false;
@@ -303,13 +305,27 @@ public class XposedModuleHost {
         }
     }
 
+    /**
+     * Canonical settings key base: own package when known (matches the
+     * manager UI, which keys everything by package), else the file id.
+     */
+    private static String keyBase(Context context, ModuleRecord rec) {
+        if (rec.pkgName == null) {
+            try {
+                rec.pkgName = getOwnPackage(context, rec.apkPath);
+            } catch (Throwable ignored) {
+            }
+        }
+        return rec.pkgName != null ? rec.pkgName : rec.id;
+    }
+
     private static boolean isModuleEnabled(Context context, ModuleRecord rec) {
         // Secure default: unknown APKs stay OFF until explicitly enabled.
         // (Test branch note: enable test modules via
-        //  settings put global pixel_addon_<id>_enabled 1.)
+        //  settings put global pixel_addon_<package>_enabled 1.)
         try {
             return Settings.Global.getInt(context.getContentResolver(),
-                    "pixel_addon_" + rec.id + "_enabled", 0) != 0;
+                    "pixel_addon_" + keyBase(context, rec) + "_enabled", 0) != 0;
         } catch (Throwable t) {
             return false;
         }
@@ -353,9 +369,10 @@ public class XposedModuleHost {
         // Mirror of AddonLoader scope_mode: 0 = manifest scope.list,
         // 1 = custom packages only, 2 = both. Default 0.
         int mode = 0;
+        String base = keyBase(context, rec);
         try {
             mode = Settings.Global.getInt(context.getContentResolver(),
-                    "pixel_addon_" + rec.id + "_scope_mode", 0);
+                    "pixel_addon_" + base + "_scope_mode", 0);
         } catch (Throwable ignored) {
         }
         Set<String> out = new HashSet<>();
@@ -365,7 +382,7 @@ public class XposedModuleHost {
         if (mode == 1 || mode == 2) {
             try {
                 String custom = Settings.Global.getString(context.getContentResolver(),
-                        "pixel_addon_" + rec.id + "_packages");
+                        "pixel_addon_" + base + "_packages");
                 if (custom != null && !custom.isEmpty()) {
                     for (String pkg : custom.split(",")) {
                         String t = pkg.trim();
