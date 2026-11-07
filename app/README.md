@@ -28,5 +28,23 @@
 - `privapp-permissions-extra-parts.xml` — whitelist привилегированных прав
   (сгенерирован из списка манифеста, пакет `org.pixel.extra.parts`).
 
+## Версии toolchain / deps (Gradle-сторона, newest-first)
+
+| Компонент | Версия | Примечание |
+| :--- | :--- | :--- |
+| Gradle | 9.7.1 | запуск напрямую, `gradle-9.7.1/bin/gradle` |
+| JDK для запуска Gradle | 25 (`/home/leegarboot/jdk25`) | newest-first держится, fallback 21 не понадобился |
+| Java source/target, KGP jvmTarget | 21 | `compileOptions` + `kotlin.compilerOptions` |
+| AGP | 9.5.1 | newest stable; built-in Kotlin — `kotlin-android` удалён, KGP 2.4.21 через `buildscript` classpath |
+| KGP / compose-compiler | 2.4.21 | newest stable |
+| Compose BOM | 2026.09.00 | тянет compose 1.12.1, material3 1.4.0 |
+| activity-compose | 1.14.0-alpha03 | newest ≥ floor 1.14.0-alpha01 |
+| core-ktx | 1.19.1 | floor 1.20.0-alpha01 нет в public maven (404) — взят newest доступный |
+| compileSdk / targetSdk | 37 | платформа `android-37.2` + симлинк `android-37` в `/opt/android-sdk/platforms` |
+| minSdk | 26 | пол ROM, не понижать |
+
+Soong-зеркало (`Android.bp`, `device.mk`) — за координатором; таблица выше —
+исходник версий для него.
+
 Правило: `package_name` / `applicationId` / `app_name` менять только после
 подтверждения (ворота идентичности §4 agent-instructions).

@@ -29,3 +29,5 @@ test_rework_*
 # Gradle (app/ standalone UI work)
 /.gradle/
 /app/build/
+/build/
+/.kotlin

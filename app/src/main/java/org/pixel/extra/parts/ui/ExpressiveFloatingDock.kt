@@ -3,7 +3,7 @@ package org.pixel.extra.parts.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateColorAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.dp
 
 // Floating dock with swipe scrub: tap is a zero-length swipe, selection
 // already happens on awaitFirstDown, no slop threshold.
-// NOTE: Compose BOM 2024.12.01 (ui 1.7.6) has no HapticFeedbackType.ContextClick,
-// taps use TextHandleMove instead (guideline changelog v1.1).
+// Haptics follow guideline table 8: ContextClick for taps,
+// TextHandleMove for swipe tab switches, Reject for locked attempts.
 @Composable
 fun <T> ExpressiveFloatingDock(
     tabs: List<T>,
@@ -131,7 +131,7 @@ fun <T> ExpressiveFloatingDock(
                         if (initialHit != null && initialHit != latestSelected) {
                             selectTabFromGesture(initialHit)
                         } else {
-                            dockHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            dockHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         }
 
                         try {

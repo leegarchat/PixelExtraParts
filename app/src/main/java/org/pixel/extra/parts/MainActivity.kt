@@ -3,7 +3,7 @@ package org.pixel.extra.parts
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
@@ -39,7 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.SizeTransform
+import androidx.compose.animation.SizeTransform
 import org.pixel.extra.parts.home.HomeScreen
 import org.pixel.extra.parts.settings.SettingsScreen
 import org.pixel.extra.parts.ui.AppExpressiveTheme
@@ -54,7 +54,8 @@ import org.pixel.extra.parts.ui.rememberGraphicsLayerRecordingState
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Edge-to-edge via WindowCompat; icon contrast is synced in AppExpressiveTheme.
+        WindowCompat.enableEdgeToEdge(window)
         setContent {
             AppExpressiveTheme {
                 PepRoot()
