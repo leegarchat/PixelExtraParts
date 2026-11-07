@@ -95,3 +95,4 @@ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
 # stock and the .pep module emit install/symbols rules for the same output
 # path and ninja fails with "multiple rules generates".
 PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
+$(info PEP-DEBUG thermal-stock-present=[$(filter android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))])
