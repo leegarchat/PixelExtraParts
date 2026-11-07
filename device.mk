@@ -88,3 +88,10 @@ SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
 
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private
+
+# Replace the stock thermal HAL with our fork (same stem + overrides:).
+# The stock entry is added by device/google/zuma/common.mk BEFORE this file
+# is inherited, so filter-out here reliably wins. Without this, both the
+# stock and the .pep module emit install/symbols rules for the same output
+# path and ninja fails with "multiple rules generates".
+PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
