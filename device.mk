@@ -26,6 +26,8 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system/framework/oat/arm64/LsplantInject.odex \
     system/framework/oat/arm64/LsplantInject.vdex
 
+$(warning $(PRODUCT_PACKAGES))
+
 PRODUCT_PACKAGES += \
     PixelCustomPartsSystem \
     init.pixelextraparts.rc \
@@ -89,12 +91,8 @@ SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private
 
-# NOTE: stock android.hardware.thermal-service.pixel CANNOT be removed
-# from PRODUCT_PACKAGES here: inherit-product evaluates this file into a
-# node-local scope, so filter-out would only touch our own list, not the
-# entry from device/google/zuma/common.mk:40 (verified empirically).
-# The fork relies on Soong overrides: + stem: (same output path).
-# KNOWN ISSUE: stock stays in the install set, so both modules emit a
-# symbols rule for the same path and ninja fails with "multiple rules".
-# Resolution pending (options: upstream one-liner in common.mk as
-# uncommitted tree state like domain.te, or fork without stem).
+# Stock thermal HAL is removed here (plain include above runs this file
+# immediately in global scope, after common.mk added stock). The pep fork
+# (same stem + overrides:) is the only thermal-service.pixel in the image.
+PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
+$(info PEP-DEBUG thermal-stock-present=[$(filter android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))])
