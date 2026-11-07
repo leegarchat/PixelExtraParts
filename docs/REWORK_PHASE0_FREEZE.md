@@ -109,10 +109,11 @@ fb6f893 drift-repair, 5f25e59 делегаты, 67f7470 H1+WEAVE,
   hardware/ чисто. sepolicy уже покрывал мод-канал.
 - Остаток триплетов (10): 5 делегатов + ActivityThread +
   2 PackageInstaller + SystemServer + domain.te.
-- ВНИМАНИЕ владельцу: system/sepolicy Android.bp + compat_cil.go
-  показывают M относительно detached-HEAD (там закоммичен мод) —
-  рабочее дерево ВАНИЛЬ, это и нужно. frameworks/base HEAD новее
-  triplet-базы в 4 файлах — originals/ обновлены до HEAD.
+- ВНИМАНИЕ владельцу: локальный коммит 0cae3e97e в system/sepolicy СНЕСЁН
+  (reset --hard до evo/cnb dd9d56abe, см. проверку «no local commits»).
+  system/sepolicy чистый кроме domain.te (-system_app, uncommitted KEEP).
+  frameworks/base HEAD новее triplet-базы в 4 файлах — originals/
+  обновлены до HEAD (коммит fb6f893).
 - packages/apps/Settings, device/lineage/sepolicy,
   vendor/gms/google.xml — чужая грязь, не тронута.
 
