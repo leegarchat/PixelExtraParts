@@ -1,0 +1,20 @@
+// PixelExtraParts Soong plugin: compile-time weave (H1).
+// Intercepts framework-minus-apex and SettingsLib at PreArch time,
+// excludes stock sources and injects PEP replacements/helpers.
+// No upstream Android.bp is touched.
+
+bootstrap_go_package {
+    name: "soong-pixelparts-plugin",
+    pkgPath: "pixelparts/soong",
+    deps: [
+        "blueprint",
+        "blueprint-proptools",
+        "soong",
+        "soong-android",
+        "soong-java",
+    ],
+    srcs: [
+        "weave_mutator.go",
+    ],
+    pluginFor: ["soong_build"],
+}

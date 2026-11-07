@@ -270,3 +270,31 @@ java_library {
     kotlincflags: ["-Xjvm-default=all"],
 }
 
+
+// PixelExtraParts H1 weave overlays (replacements + helpers).
+// Consumed by soong-pixelparts-plugin via Exclude_srcs/Srcs on
+// framework-minus-apex and SettingsLib. No upstream .bp is touched.
+
+filegroup {
+    name: "pixelparts_framework_weave",
+    srcs: [
+        "framework_overrides/**/*.java",
+    ],
+    visibility: ["//frameworks/base:__subpackages__"],
+}
+
+filegroup {
+    name: "pixelparts_framework_helpers",
+    srcs: [
+        "framework_helpers/**/*.java",
+    ],
+    visibility: ["//frameworks/base:__subpackages__"],
+}
+
+filegroup {
+    name: "pixelparts_settingslib_weave",
+    srcs: [
+        "settingslib_overrides/**/*.java",
+    ],
+    visibility: ["//frameworks/base/packages/SettingsLib:__subpackages__"],
+}
