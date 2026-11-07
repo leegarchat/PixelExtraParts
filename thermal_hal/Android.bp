@@ -78,8 +78,8 @@ vintf_fragment {
     name: "android.hardware.thermal-service.pixel.pep.xml",
     src: "android.hardware.thermal-service.pixel.pep.xml",
     vendor: true,
-    # Same-name vendor prebuilt (prebuilt_etc_xml) is overridden here so the
-    # fork wins the install set regardless of inherit order. The stock
-    # fragment declares the identical IThermal/default FqInstance.
+    // Same-name vendor prebuilt (prebuilt_etc_xml) is overridden here so the
+    // fork wins the install set regardless of inherit order. The stock
+    // fragment declares the identical IThermal/default FqInstance.
     overrides: ["android.hardware.thermal-service.pixel.xml"],
 }

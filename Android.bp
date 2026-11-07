@@ -296,7 +296,7 @@ filegroup {
 filegroup {
     name: "pixelparts_framework_helpers",
     srcs: [
-        "framework_helpers/**/*.java",
+        "framework_helpers/core/java/**/*.java",
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
