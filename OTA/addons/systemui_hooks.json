@@ -1,6 +1,0 @@
-{
-    "version": "2.2.22",
-    "downloadUrl": "https://github.com/leegarchat/PixelExtraParts/raw/refs/heads/lineage-24.0/OTA/addons/files/systemui_hooks.jar",
-    "changelog": "Restore tolerable follower (orig-gate, VMIN, wall watchdog)",
-    "info": "SystemUI hooks for PixelExtraParts"
-}

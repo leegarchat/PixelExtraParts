@@ -1,8 +1,0 @@
-{
-  "version": 1,
-  "bypass_paths": [
-    "packages/apps/PixelExtraParts/patches/files/modified/frameworks/base",
-    "packages/apps/PixelExtraParts/patches/files/modified/hardware/google/pixel/thermal"
-  ],
-  "patches": {}
-}

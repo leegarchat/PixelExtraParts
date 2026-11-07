@@ -1,5 +1,0 @@
--keep class org.pixel.customparts.** { *; }
--keep class org.pixel.customparts.MainActivity { *; }
--keep class org.pixel.customparts.activities.* { *; }
--keep class org.pixel.customparts.services.* { *; }
--keep class androidx.compose.ui.graphics.layer.GraphicsLayer { *; }

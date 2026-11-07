@@ -1,6 +1,0 @@
-{
-  "imported_from": "live tree state (HEAD originals + worktree modified)",
-  "imported_at": "2026-10-09T17:18:48",
-  "base": "LOS 24 / Evolution-X, October 2026 tree",
-  "note": "originals refreshed from each repo HEAD; modified refreshed from worktree; BufferAllocator.cpp and coredomain.te now identical (upstream absorbed both changes)"
-}
