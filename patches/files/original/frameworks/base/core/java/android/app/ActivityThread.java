@@ -7314,7 +7314,10 @@ public final class ActivityThread extends ClientTransactionHandler
         mConfigurationController.handleConfigurationChanged(config);
         updateDeviceIdForNonUIContexts(deviceId);
 
-        FontController.OnConfigurationChanged(getApplication().getResources());
+        final Application currentApp = getApplication();
+        if (currentApp != null) {
+            FontController.OnConfigurationChanged(currentApp.getResources());
+        }
 
         // These are only done to maintain @UnsupportedAppUsage and should be removed someday.
         mCurDefaultDisplayDpi = mConfigurationController.getCurDefaultDisplayDpi();
@@ -7431,16 +7434,18 @@ public final class ActivityThread extends ClientTransactionHandler
             }
         }
 
-        ResourcesImpl beforeImpl = getApplication().getResources().getImpl();
+        final Application app = getApplication();
+        ResourcesImpl beforeImpl = app != null ? app.getResources().getImpl() : null;
 
         synchronized (mResourcesManager) {
             // Update all affected Resources objects to use new ResourcesImpl
             mResourcesManager.applyAllPendingAppInfoUpdates();
         }
 
-        ResourcesImpl afterImpl = getApplication().getResources().getImpl();
+        ResourcesImpl afterImpl = app != null ? app.getResources().getImpl() : null;
 
-        if ((beforeImpl != afterImpl) && !Arrays.equals(beforeImpl.getAssets().getApkAssets(),
+        if (beforeImpl != null && afterImpl != null && (beforeImpl != afterImpl)
+                && !Arrays.equals(beforeImpl.getAssets().getApkAssets(),
                 afterImpl.getAssets().getApkAssets())) {
             List<String> beforeAssets = Arrays.asList(beforeImpl.getAssets().getApkPaths());
             List<String> afterAssets = Arrays.asList(afterImpl.getAssets().getApkPaths());
@@ -7460,6 +7465,33 @@ public final class ActivityThread extends ClientTransactionHandler
                         + afterAssets);
             }
         }
+
+        if (app != null) {
+            updateVariableFontFamilies(app);
+            FontController.OnConfigurationChanged(app.getResources());
+        }
+    }
+
+    /**
+     * Shows the Material 3 Expressive {@code variable-*} fonts of system apps in the font
+     * selected in ThemePicker, the same as the rest of their text, which goes through the
+     * framework's headline and body font families. Third-party apps keep the
+     * {@code variable-*} fonts as defined.
+     */
+    private static void updateVariableFontFamilies(@NonNull Context context) {
+        String headlineFamily = null;
+        String bodyFamily = null;
+        if (context.getApplicationInfo().isSystemApp()) {
+            final Resources res = context.getResources();
+            headlineFamily = res.getString(com.android.internal.R.string.config_headlineFontFamily);
+            bodyFamily = res.getString(com.android.internal.R.string.config_bodyFontFamily);
+            if (FontController.isDefaultFont(bodyFamily)) {
+                // Keep variable-* as defined so opsz/ROND from fonts_customization.xml survive.
+                headlineFamily = null;
+                bodyFamily = null;
+            }
+        }
+        Typeface.setVariableFontFamilies(headlineFamily, bodyFamily);
     }
 
     /**
@@ -8316,6 +8348,7 @@ public final class ActivityThread extends ClientTransactionHandler
             sendMessage(H.SET_CONTENT_CAPTURE_OPTIONS_CALLBACK, data.appInfo.packageName);
 
             mInitialApplication = app;
+            updateVariableFontFamilies(app);
             final boolean updateHttpProxy;
             synchronized (this) {
                 updateHttpProxy = mUpdateHttpProxyOnBind;

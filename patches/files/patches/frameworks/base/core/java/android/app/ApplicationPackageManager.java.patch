@@ -1,6 +1,6 @@
 --- a/frameworks/base/core/java/android/app/ApplicationPackageManager.java
 +++ b/frameworks/base/core/java/android/app/ApplicationPackageManager.java
-@@ -3806,6 +3806,11 @@
+@@ -3807,6 +3807,11 @@
              return UserIcons.getDefaultUserIcon(
                      mContext.getResources(), targetUserId, /* light= */ false);
          }

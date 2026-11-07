@@ -1,6 +1,6 @@
 --- a/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java
 +++ b/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java
-@@ -5128,6 +5128,7 @@
+@@ -5170,6 +5170,7 @@
      public int interceptKeyBeforeQueueing(KeyEvent event, int policyFlags) {
          final int keyCode = event.getKeyCode();
          final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
