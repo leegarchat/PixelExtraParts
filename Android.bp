@@ -315,7 +315,6 @@ filegroup {
         "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
         "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
         "weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
-        "weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }
@@ -323,6 +322,7 @@ filegroup {
 filegroup {
     name: "pixelparts_weave_services_impl",
     srcs: [
+        "weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
         "weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],

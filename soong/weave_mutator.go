@@ -48,21 +48,26 @@ var settingsLibExtraSrcs = []string{
 	":pixelparts_weave_settingslib",
 }
 
-// Stock sources to drop, relative to frameworks/base/services/.
-var servicesCoreExcludes = []string{
-	"core/java/com/android/server/pm/PackageInstallerService.java",
-	"core/java/com/android/server/pm/PackageInstallerSession.java",
-	"core/java/com/android/server/policy/PhoneWindowManager.java",
-	"core/java/com/android/server/wm/DisplayContent.java",
+// Stock sources to drop, relative to frameworks/base/services/core/.
+// NOTE: the compiling module is services.core.unboosted
+// (java_library_static); services.core itself is a thin static_libs-only
+// wrapper and must NOT be touched.
+var servicesCoreUnboostedExcludes = []string{
+	"java/com/android/server/pm/PackageInstallerService.java",
+	"java/com/android/server/pm/PackageInstallerSession.java",
+	"java/com/android/server/policy/PhoneWindowManager.java",
 }
 
-var servicesCoreExtraSrcs = []string{
+var servicesCoreUnboostedExtraSrcs = []string{
 	":pixelparts_weave_services_core",
 	":pixelparts_services_helpers",
 }
 
 // Stock sources to drop, relative to frameworks/base/services/.
+// DisplayContent lives in services.core-sources-am-wm, compiled ONLY by
+// services.impl — hence it is excluded here, not in unboosted.
 var servicesImplExcludes = []string{
+	"core/java/com/android/server/wm/DisplayContent.java",
 	"java/com/android/server/SystemServer.java",
 }
 
@@ -79,9 +84,9 @@ func pixelPartsJavaWeaveMutator(ctx android.BottomUpMutatorContext) {
 	case "SettingsLib":
 		excludes = settingsLibExcludes
 		extraSrcs = settingsLibExtraSrcs
-	case "services.core":
-		excludes = servicesCoreExcludes
-		extraSrcs = servicesCoreExtraSrcs
+	case "services.core.unboosted":
+		excludes = servicesCoreUnboostedExcludes
+		extraSrcs = servicesCoreUnboostedExtraSrcs
 	case "services.impl":
 		excludes = servicesImplExcludes
 		extraSrcs = servicesImplExtraSrcs
