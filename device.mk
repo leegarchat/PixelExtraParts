@@ -61,6 +61,10 @@ $(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCo
 endif
 
 
+# Soong plugin allowlist (build-time weave). Our bootstrap_go_package
+# is not in Soong's hardcoded list; this is the documented escape hatch.
+BUILD_BROKEN_PLUGIN_VALIDATION += soong-pixelparts-plugin
+
 # PixelExtraParts build-time weave regen.
 # Regenerates weave_gen/ (git-ignored) from live vanilla sources +
 # weave/specs/*.patch BEFORE Soong parses file lists. Fails the build
