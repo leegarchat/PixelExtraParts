@@ -196,5 +196,10 @@
   "rel": "hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator_data.h",
   "out": "packages/apps/PixelExtraParts/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator_data.h",
   "type": "copy"
+ },
+ {
+  "rel": "hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+  "out": "packages/apps/PixelExtraParts/weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+  "type": "copy"
  }
 ]
