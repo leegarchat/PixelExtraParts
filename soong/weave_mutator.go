@@ -78,7 +78,11 @@ var servicesImplExtraSrcs = []string{
 func pixelPartsJavaWeaveMutator(ctx android.BottomUpMutatorContext) {
 	var excludes, extraSrcs []string
 	switch ctx.ModuleName() {
-	case "framework-minus-apex":
+	case "framework-minus-apex", "framework-minus-apex-headers":
+		// NOTE: framework-minus-apex-headers is a separate java_library
+		// (same defaults) whose turbine output is what downstream modules
+		// actually compile against (header_jar_override). Both need the
+		// same weave.
 		excludes = frameworkMinusApexExcludes
 		extraSrcs = frameworkMinusApexExtraSrcs
 	case "SettingsLib":
