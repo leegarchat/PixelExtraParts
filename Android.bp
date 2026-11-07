@@ -275,10 +275,20 @@ java_library {
 // Consumed by soong-pixelparts-plugin via Exclude_srcs/Srcs on
 // framework-minus-apex and SettingsLib. No upstream .bp is touched.
 
+// PixelExtraParts H1 weave: build-time generated sources (weave_gen/).
+// Produced by weave/weave_apply.py from live vanilla + weave/specs
+// during the make phase (see device.mk). Upstream trees stay vanilla.
+
 filegroup {
-    name: "pixelparts_framework_weave",
+    name: "pixelparts_weave_framework",
     srcs: [
-        "framework_overrides/**/*.java",
+        "weave_gen/frameworks/base/core/java/android/widget/EdgeEffect.java",
+        "weave_gen/frameworks/base/core/java/android/widget/Magnifier.java",
+        "weave_gen/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+        "weave_gen/frameworks/base/core/java/android/app/Activity.java",
+        "weave_gen/frameworks/base/core/java/android/app/ActivityThread.java",
+        "weave_gen/frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+        "weave_gen/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
@@ -292,11 +302,49 @@ filegroup {
 }
 
 filegroup {
-    name: "pixelparts_settingslib_weave",
+    name: "pixelparts_weave_settingslib",
     srcs: [
-        "settingslib_overrides/**/*.java",
+        "weave_gen/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
     ],
     visibility: ["//frameworks/base/packages/SettingsLib:__subpackages__"],
+}
+
+filegroup {
+    name: "pixelparts_weave_services_core",
+    srcs: [
+        "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+        "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+        "weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+        "weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+    ],
+    visibility: ["//frameworks/base/services:__subpackages__"],
+}
+
+filegroup {
+    name: "pixelparts_weave_services_impl",
+    srcs: [
+        "weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
+    ],
+    visibility: ["//frameworks/base/services:__subpackages__"],
+}
+
+filegroup {
+    name: "pixelparts_weave_thermal",
+    srcs: [
+        "weave_gen/hardware/google/pixel/thermal/service.cpp",
+        "weave_gen/hardware/google/pixel/thermal/Thermal.cpp",
+        "weave_gen/hardware/google/pixel/thermal/thermal-helper.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_throttling.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_info.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_files.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/power_files.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_stats_helper.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_predictions_helper.cpp",
+        "weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
+        "weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
+    ],
+    visibility: ["//packages/apps/PixelExtraParts/thermal_hal"],
 }
 
 filegroup {

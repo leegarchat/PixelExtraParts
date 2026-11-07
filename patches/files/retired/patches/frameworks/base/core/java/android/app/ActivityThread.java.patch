@@ -1,0 +1,121 @@
+--- a/frameworks/base/core/java/android/app/ActivityThread.java
++++ b/frameworks/base/core/java/android/app/ActivityThread.java
+@@ -334,7 +334,15 @@
+     private static DdmSyncStageUpdater newDdmSyncStageUpdater() {
+         return new DdmSyncStageUpdater();
+     }
+-
++    // --- [PixelParts] CONSTANTS ---
++    private static final java.util.Set<String> PIXEL_PARTS_DEFAULT_WHITELIST = new java.util.HashSet<>(java.util.Arrays.asList(
++            "com.android.systemui",
++            "com.google.android.apps.nexuslauncher",
++            "com.google.android.apps.pixel.launcher",
++            "com.android.launcher3"
++    ));
++    private static final String PIXEL_PARTS_INJECT_PREFIX = "pixel_extra_parts_inject_package_";
++    // ------------------------------
+     /** @hide */
+     public static final String TAG = "ActivityThread";
+ 
+@@ -8376,6 +8384,101 @@
+                 throw new RuntimeException(
+                     "Exception thrown in onCreate() of " + data.instrumentationName, e);
+             }
++            // --- [PixelParts] INJECTION START ---
++            // Global safe mode (Settings.Global pixel_addon_safe_mode=1):
++            // skip the entire injection here — no dex, no native libs, no
++            // hooks in this process. (AddonLoader keeps its own check as a
++            // second layer for already-injected processes.)
++            boolean pixelPartsSafeMode = false;
++            try {
++                Context pixelPartsSmCtx = ContextImpl.createAppContext(this, data.info);
++                if (pixelPartsSmCtx != null) {
++                    pixelPartsSafeMode = android.provider.Settings.Global.getInt(
++                            pixelPartsSmCtx.getContentResolver(),
++                            "pixel_addon_safe_mode", 0) == 1;
++                }
++            } catch (Throwable t) {
++                android.util.Log.w("PixelParts", "Failed to check safe mode", t);
++            }
++            if (!pixelPartsSafeMode && data.appInfo.packageName != null && !Process.isIsolated()) {
++                boolean shouldInject = false;
++                String pkgName = data.appInfo.packageName;
++
++                // 1. Проверка по дефолтному списку (Hardcoded Whitelist)
++                if (PIXEL_PARTS_DEFAULT_WHITELIST.contains(pkgName)) {
++                    shouldInject = true;
++                }
++
++                // 1b. system_server ("android"): inject ONLY when a system-scope
++                // modern module is installed (flag mirrored by XposedModuleHost;
++                // 0/absent = skip). NOTE: the flag is seeded by scans in other
++                // processes / manager rescan and persists in Settings.Global —
++                // after placing a system-scope APK, seed once via
++                // `settings put global pixelparts_xposed_has_system 1`
++                // (manager UI will own this later). HookEntry runs ONLY the
++                // module system dispatch there (no globals, no addons).
++                if ("android".equals(pkgName)) {
++                    try {
++                        Context injectContextSs = ContextImpl.createAppContext(this, data.info);
++                        if (injectContextSs != null && android.provider.Settings.Global
++                                .getInt(injectContextSs.getContentResolver(),
++                                        "pixelparts_xposed_has_system", 0) == 1) {
++                            shouldInject = true;
++                        }
++                    } catch (Throwable t) {
++                        android.util.Log.w("PixelParts", "Failed to check system modules", t);
++                    }
++                }
++
++                // 2. Проверка динамических настроек (Settings.Global)
++                // Формируем ключ: pixel_extra_parts_inject_package_com.example.app
++                try {
++                    // чтобы не конфликтовать с существующей переменной AOSP.
++                    Context injectContext = ContextImpl.createAppContext(this, data.info);
++                    
++                    if (injectContext != null) {
++                        String key = PIXEL_PARTS_INJECT_PREFIX + pkgName;
++                        
++                        int override = android.provider.Settings.Global.getInt(
++                                injectContext.getContentResolver(), key, -1);
++
++                        if (override == 1) {
++                            shouldInject = true;
++                        } else if (override == 0) {
++                            shouldInject = false;
++                        }
++                    }
++                } catch (Throwable t) {
++                    android.util.Log.w("PixelParts", "Failed to check inject settings", t);
++                }
++
++                // 3. Сама инъекция (только если shouldInject == true)
++                if (shouldInject) {
++                    try {
++                        final String jarPath = "/system/framework/LsplantInject.jar";
++                        final java.io.File jarFile = new java.io.File(jarPath);
++
++                        if (jarFile.exists()) {
++                            final ClassLoader appCl = data.info.getClassLoader();
++                            if (appCl instanceof dalvik.system.BaseDexClassLoader) {
++                                dalvik.system.BaseDexClassLoader dexLoader =
++                                        (dalvik.system.BaseDexClassLoader) appCl;
++                                
++                                dexLoader.addDexPath(jarPath);
++
++                                Class<?> entry = appCl.loadClass("org.pixel.customparts.lsplantinject.ModEntry");
++                                java.lang.reflect.Method m = entry.getDeclaredMethod("init");
++                                m.invoke(null);
++                                
++                                // android.util.Log.i("PixelParts", "Injected into: " + pkgName);
++                            }
++                        }
++                    } catch (Throwable t) {
++                        android.util.Log.e("PixelParts", "Injection failed for " + pkgName, t);
++                    }
++                }
++            }
++            // --- [PixelParts] INJECTION END ---
+             try {
+                 timestampApplicationOnCreateNs = SystemClock.uptimeNanos();
+                 mInstrumentation.callApplicationOnCreate(app);

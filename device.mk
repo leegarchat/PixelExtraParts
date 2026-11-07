@@ -61,6 +61,15 @@ $(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCo
 endif
 
 
+# PixelExtraParts build-time weave regen.
+# Regenerates weave_gen/ (git-ignored) from live vanilla sources +
+# weave/specs/*.patch BEFORE Soong parses file lists. Fails the build
+# loudly on spec drift (never silent). Idempotent: writes only on change.
+PEP_WEAVE_RES := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/weave/weave_apply.py --top $(shell pwd) --manifest $(PIXEL_EXTRA_PARTS_PATH)/weave/manifest.json 2>&1)
+ifneq ($(filter PEP_WEAVE_ERROR%,$(PEP_WEAVE_RES)),)
+$(error PixelExtraParts weave regen failed: $(PEP_WEAVE_RES))
+endif
+
 # PixelExtraParts sepolicy
 BOARD_VENDOR_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/vendor

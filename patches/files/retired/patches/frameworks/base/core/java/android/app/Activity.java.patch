@@ -1,0 +1,151 @@
+--- a/frameworks/base/core/java/android/app/Activity.java
++++ b/frameworks/base/core/java/android/app/Activity.java
+@@ -6066,6 +6066,8 @@
+             @Nullable Bundle options) {
+         if (mParent == null) {
+             options = transferSpringboardActivityOptions(options);
++            // Evolution X: inject custom open transition animation
++            options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+             Instrumentation.ActivityResult ar =
+                 mInstrumentation.execStartActivity(
+                     this, mMainThread.getApplicationThread(), mToken, this,
+@@ -6087,6 +6089,8 @@
+             }
+ 
+             cancelInputsAndStartExitTransition(options);
++            // Evolution X: fallback for open transition (split-screen etc.)
++            CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+             // TODO Consider clearing/flushing other event sources and events for child windows.
+         } else {
+             if (options != null) {
+@@ -6253,6 +6257,7 @@
+             throw new RuntimeException("Can't be called from a child");
+         }
+         options = transferSpringboardActivityOptions(options);
++        options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+         Instrumentation.ActivityResult ar = mInstrumentation.execStartActivity(
+                 this, mMainThread.getApplicationThread(), mToken, resultWho, intent, requestCode,
+                 options, user);
+@@ -6272,6 +6277,7 @@
+         }
+ 
+         cancelInputsAndStartExitTransition(options);
++        CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+     }
+ 
+     /**
+@@ -6303,6 +6309,7 @@
+             throw new RuntimeException("Can't be called from a child");
+         }
+         options = transferSpringboardActivityOptions(options);
++        options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+         Instrumentation.ActivityResult ar =
+                 mInstrumentation.execStartActivity(
+                         this, mMainThread.getApplicationThread(), mToken, mEmbeddedID,
+@@ -6313,6 +6320,7 @@
+                 ar.getResultData());
+         }
+         cancelInputsAndStartExitTransition(options);
++        CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+     }
+ 
+     /**
+@@ -6347,6 +6355,7 @@
+             throw new RuntimeException("Can't be called from a child");
+         }
+         options = transferSpringboardActivityOptions(options);
++        options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+         Instrumentation.ActivityResult ar =
+                 mInstrumentation.execStartActivityAsCaller(
+                         this, mMainThread.getApplicationThread(), mToken, this,
+@@ -6356,6 +6365,7 @@
+                     mToken, mEmbeddedID, requestCode, ar.getResultCode(), ar.getResultData());
+         }
+         cancelInputsAndStartExitTransition(options);
++        CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+     }
+ 
+     /**
+@@ -6697,6 +6707,7 @@
+                 }
+                 intent.migrateExtraStreamToClipData(this);
+                 intent.prepareToLeaveProcess(this);
++                options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+                 result = ActivityTaskManager.getService()
+                     .startActivity(mMainThread.getApplicationThread(), getOpPackageName(),
+                             getAttributionTag(), intent,
+@@ -6708,6 +6719,10 @@
+ 
+             Instrumentation.checkStartActivityResult(result, intent);
+ 
++            if (result != ActivityManager.START_RETURN_INTENT_TO_CALLER) {
++                CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
++            }
++
+             if (requestCode >= 0) {
+                 // If this start is requesting a result, we can avoid making
+                 // the activity visible until the result is received.  Setting
+@@ -6772,9 +6787,14 @@
+         if (mParent == null) {
+             try {
+                 intent.migrateExtraStreamToClipData(this);
++                options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+                 intent.prepareToLeaveProcess(this);
+-                return ActivityTaskManager.getService()
++                boolean started = ActivityTaskManager.getService()
+                     .startNextMatchingActivity(mToken, intent, options);
++                if (started) {
++                    CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
++                }
++                return started;
+             } catch (RemoteException e) {
+                 // Empty
+             }
+@@ -6831,6 +6851,7 @@
+     public void startActivityFromChild(@NonNull Activity child, @RequiresPermission Intent intent,
+             int requestCode, @Nullable Bundle options) {
+         options = transferSpringboardActivityOptions(options);
++        options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+         Instrumentation.ActivityResult ar =
+             mInstrumentation.execStartActivity(
+                 this, mMainThread.getApplicationThread(), mToken, child,
+@@ -6841,6 +6862,7 @@
+                 ar.getResultCode(), ar.getResultData());
+         }
+         cancelInputsAndStartExitTransition(options);
++        CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+     }
+ 
+     /**
+@@ -6912,6 +6934,7 @@
+             intent.putExtra(Intent.EXTRA_REFERRER, referrer);
+         }
+         options = transferSpringboardActivityOptions(options);
++        options = CustomTransitionHelper.injectOpenTransition(this, intent, options);
+         Instrumentation.ActivityResult ar =
+             mInstrumentation.execStartActivity(
+                 this, mMainThread.getApplicationThread(), mToken, who,
+@@ -6922,6 +6945,7 @@
+                 ar.getResultCode(), ar.getResultData());
+         }
+         cancelInputsAndStartExitTransition(options);
++        CustomTransitionHelper.applyOpenTransitionFallback(this, mToken, intent);
+     }
+ 
+     /**
+@@ -7576,6 +7600,9 @@
+             mParent.finishFromChild(this);
+         }
+ 
++        // Evolution X: apply custom close transition
++        CustomTransitionHelper.applyCloseTransition(this, mToken);
++
+         getAutofillClientController().onActivityFinish(mIntent);
+     }
+ 
+@@ -10377,4 +10404,5 @@
+             default: return String.valueOf(request);
+         }
+     }
++
+ }

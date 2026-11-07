@@ -1,0 +1,50 @@
+--- a/hardware/google/pixel/thermal/Thermal.h
++++ b/hardware/google/pixel/thermal/Thermal.h
+@@ -18,7 +18,10 @@
+ 
+ #include <aidl/android/hardware/thermal/BnThermal.h>
+ 
++#include <atomic>
++#include <chrono>
+ #include <mutex>
++#include <shared_mutex>
+ #include <thread>
+ 
+ #include "thermal-helper.h"
+@@ -51,7 +54,7 @@
+   public:
+     Thermal();
+     explicit Thermal(const std::shared_ptr<ThermalHelper> &helper);
+-    ~Thermal() = default;
++    ~Thermal();
+     ndk::ScopedAStatus getTemperatures(std::vector<Temperature> *_aidl_return) override;
+     ndk::ScopedAStatus getTemperaturesWithType(TemperatureType type,
+                                                std::vector<Temperature> *_aidl_return) override;
+@@ -111,6 +114,12 @@
+     };
+ 
+     std::shared_ptr<ThermalHelper> thermal_helper_;
++    mutable std::shared_mutex thermal_helper_mutex_;
++    std::atomic_bool config_watcher_running_{false};
++    std::thread config_watcher_thread_;
++    std::string last_config_property_;
++    std::string pending_config_property_;
++    std::chrono::steady_clock::time_point last_pending_config_check_{};
+     std::mutex thermal_callback_mutex_;
+     std::vector<CallbackSetting> callbacks_;
+     std::mutex cdev_callback_mutex_;
+@@ -128,6 +137,14 @@
+             const std::shared_ptr<IThermalChangedCallback> &callback, bool filterType,
+             TemperatureType type);
+ 
++    std::shared_ptr<ThermalHelper> getThermalHelper() const;
++    std::string readThermalConfigProperty() const;
++    void startConfigWatcher();
++    void stopConfigWatcher();
++    void configWatcherLoop();
++    bool reloadThermalHelper(const std::string &config_property,
++                             std::string *loaded_config_property);
++
+     void dumpVirtualSensorInfo(std::ostringstream *dump_buf);
+     void dumpVtEstimatorInfo(std::ostringstream *dump_buf);
+     void dumpThrottlingInfo(std::ostringstream *dump_buf);

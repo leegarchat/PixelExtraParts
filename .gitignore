@@ -22,3 +22,6 @@ kilo.jsondocs/dtw-architecture-research.md
 /lsplant/lsplant-native/bridge/resolve_test.cpp
 SELINUX_*.md
 test_rework_*
+
+# PEP weave outputs (build-time generated, see weave/)
+/weave_gen/

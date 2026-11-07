@@ -1,0 +1,13 @@
+--- a/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java
++++ b/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java
+@@ -3133,6 +3133,10 @@
+         if (!isVerificationServiceEnabled()) {
+             return false;
+         }
++        if ((params.installFlags & PackageManager.INSTALL_DISABLE_VERIFICATION) != 0) {
++            // The installer explicitly requested a verification-free trusted-system install.
++            return false;
++        }
+         if (mDeveloperVerifierController.getVerifierPackageName() == null) {
+             // The system doesn't have a verifier specified.
+             return false;

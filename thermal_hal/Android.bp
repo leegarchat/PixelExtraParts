@@ -20,18 +20,9 @@ cc_binary {
     stem: "android.hardware.thermal-service.pixel",
     overrides: ["android.hardware.thermal-service.pixel"],
     srcs: [
-        "service.cpp",
-        "Thermal.cpp",
-        "thermal-helper.cpp",
-        "utils/thermal_throttling.cpp",
-        "utils/thermal_info.cpp",
-        "utils/thermal_files.cpp",
-        "utils/power_files.cpp",
-        "utils/powerhal_helper.cpp",
-        "utils/thermal_stats_helper.cpp",
-        "utils/thermal_predictions_helper.cpp",
-        "utils/thermal_watcher.cpp",
-        "virtualtemp_estimator/virtualtemp_estimator.cpp",
+        // Build-time generated (//packages/apps/PixelExtraParts/weave_gen):
+        // live vanilla + weave/specs, see device.mk regen stanza.
+        ":pixelparts_weave_thermal",
     ],
     vendor: true,
     relative_install_path: "hw",
