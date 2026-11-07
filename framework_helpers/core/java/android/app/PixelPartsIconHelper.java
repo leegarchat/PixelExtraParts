@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+public final class PixelPartsIconHelper {
+
     private static final String TAG = "PixelPartsIcon";
 
     private static final String PIXEL_PARTS_ICON_RELOAD_ACTION =
@@ -293,9 +295,4 @@ import org.json.JSONObject;
             sPixelPartsIconCache.evictAll();
         }
     }
-
-public final class PixelPartsIconHelper {
-    /**
-     * @hide
-     */
 }
