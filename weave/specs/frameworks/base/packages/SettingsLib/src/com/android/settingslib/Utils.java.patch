@@ -4,7 +4,7 @@
  import static com.android.settingslib.Utils.fetchUserIconInfo;
  
  import android.annotation.ColorInt;
-+import android.app.ApplicationPackageManager;
++import android.app.PixelPartsIconHelper;
  import android.app.admin.DevicePolicyManager;
  import android.content.Context;
  import android.content.Intent;
@@ -273,7 +273,7 @@
 +        return appInfo != null
 +                && appInfo.packageName != null
 +                && !appInfo.packageName.isEmpty()
-+                && ApplicationPackageManager.hasPixelPartsIconOverride(
++                && PixelPartsIconHelper.hasPixelPartsIconOverride(
 +                        context,
 +                        appInfo.packageName,
 +                        context.getResources().getConfiguration().densityDpi);
