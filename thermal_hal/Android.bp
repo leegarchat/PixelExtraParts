@@ -29,11 +29,9 @@ cc_binary {
     ],
     vendor: true,
     relative_install_path: "hw",
-    # VINTF fragment: intentionally NOT duplicated here. The stock fragment
-    # (vendor-provided android.hardware.thermal-service.pixel.xml, same
-    # IThermal/default) already ships in the image and is binary-agnostic.
-    # A second fragment with the same FqInstance is a fatal
-    # "Conflicting FqInstance" at manifest assembly.
+    vintf_fragment_modules: [
+        "android.hardware.thermal-service.pixel.pep.xml",
+    ],
     init_rc: [
         "android.hardware.thermal-service.pixel.pep.rc",
     ],
@@ -76,6 +74,8 @@ cc_binary {
     ],
 }
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
+vintf_fragment {
+    name: "android.hardware.thermal-service.pixel.pep.xml",
+    src: "android.hardware.thermal-service.pixel.pep.xml",
+    vendor: true,
 }
