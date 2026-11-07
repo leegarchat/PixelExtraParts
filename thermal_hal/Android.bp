@@ -29,6 +29,15 @@ cc_binary {
     ],
     vendor: true,
     relative_install_path: "hw",
+    // Regen mirror (device.mk runs weave_apply.py before Soong parse):
+    // filegroup srcs live under weave_gen/, NOT under this directory, so
+    // the implicit -I<module dir> doesn't cover them. Mirror the stock
+    // layout explicitly so root-relative quotes like
+    // "virtualtemp_estimator/virtualtemp_estimator.h" (utils/thermal_info.h)
+    // resolve exactly as in hardware/google/pixel/thermal.
+    include_dirs: [
+        "packages/apps/PixelExtraParts/weave_gen/hardware/google/pixel/thermal",
+    ],
     vintf_fragment_modules: [
         "android.hardware.thermal-service.pixel.pep.xml",
     ],
