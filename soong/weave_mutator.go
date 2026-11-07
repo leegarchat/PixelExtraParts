@@ -52,6 +52,10 @@ var settingsLibExtraSrcs = []string{
 	":pixelparts_settingslib_weave",
 }
 
+var servicesCoreExtraSrcs = []string{
+	":pixelparts_services_helpers",
+}
+
 func pixelPartsJavaWeaveMutator(ctx android.BottomUpMutatorContext) {
 	var excludes, extraSrcs []string
 	switch ctx.ModuleName() {
@@ -61,6 +65,8 @@ func pixelPartsJavaWeaveMutator(ctx android.BottomUpMutatorContext) {
 	case "SettingsLib":
 		excludes = settingsLibExcludes
 		extraSrcs = settingsLibExtraSrcs
+	case "services.core":
+		extraSrcs = servicesCoreExtraSrcs
 	default:
 		return
 	}

@@ -88,3 +88,34 @@
 Проверка владельцем: user-сборка (гейты neverallow/allowlist молчат) →
 `ps -Z` показывает `system_app` → HBM вкл/выкл + слайдер, `dmesg` без
 `avc: denied`.
+
+## 6. ФИНАЛ (все фазы в ветке, сборок не запускалось)
+
+Коммиты (новые к старым): 5fbaa86 thermal-форк, 72dde46 хуки,
+fb6f893 drift-repair, 5f25e59 делегаты, 67f7470 H1+WEAVE,
+8d4023f freeze+SELinux, 3938d84 база.
+
+- H1: soong/soong-pixelparts-plugin (framework-minus-apex, SettingsLib,
+  services.core) + filegroups pixelparts_framework_weave/helpers,
+  pixelparts_settingslib_weave, pixelparts_services_helpers.
+- WEAVE: EdgeEffect/Magnifier/WindowOnBack/Utils — оверлеи в PEP,
+  апстрим ваниль, триплеты retired.
+- DELEGATE: Activity +29/-1, APM +5, Launcher +19, PhoneWM +1,
+  DisplayContent +6; хелперы в framework_helpers/.
+- DtwSystemService переехал в framework_helpers_services/
+  (модуль services.core), untracked-файлов в frameworks/base нет.
+- HOOK: 3 хука в systemui_hooks + регистрация; 3 source-файла ваниль.
+- THERMAL: thermal_hal/ форк (stem+overrides), device.mk += pep;
+  hardware/ чисто. sepolicy уже покрывал мод-канал.
+- Остаток триплетов (10): 5 делегатов + ActivityThread +
+  2 PackageInstaller + SystemServer + domain.te.
+- ВНИМАНИЕ владельцу: system/sepolicy Android.bp + compat_cil.go
+  показывают M относительно detached-HEAD (там закоммичен мод) —
+  рабочее дерево ВАНИЛЬ, это и нужно. frameworks/base HEAD новее
+  triplet-базы в 4 файлах — originals/ обновлены до HEAD.
+- packages/apps/Settings, device/lineage/sepolicy,
+  vendor/gms/google.xml — чужая грязь, не тронута.
+
+Чек-лист владельца (одна сборка): neverallow/allowlist/check_boot_jars/
+api-stubs молчат → ps -Z system_app → HBM/thermal/поворот/AOD/переходы/
+иконки/DTW → maps Telegram без lsplant → dmesg без avc.

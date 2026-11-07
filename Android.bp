@@ -298,3 +298,11 @@ filegroup {
     ],
     visibility: ["//frameworks/base/packages/SettingsLib:__subpackages__"],
 }
+
+filegroup {
+    name: "pixelparts_services_helpers",
+    srcs: [
+        "framework_helpers_services/**/*.java",
+    ],
+    visibility: ["//frameworks/base/services:__subpackages__"],
+}
