@@ -120,3 +120,18 @@ fb6f893 drift-repair, 5f25e59 делегаты, 67f7470 H1+WEAVE,
 Чек-лист владельца (одна сборка): neverallow/allowlist/check_boot_jars/
 api-stubs молчат → ps -Z system_app → HBM/thermal/поворот/AOD/переходы/
 иконки/DTW → maps Telegram без lsplant → dmesg без avc.
+
+## 7. BUILD-TIME WEAVE (замена статичным форкам, коммит 6f376dd)
+
+Статичные копии (framework_overrides/, settingslib_overrides/,
+vendored thermal-sources) УДАЛЕНЫ. Вместо них:
+- `weave/specs/` — 18 unified-diff спек (13 java + 5 thermal).
+- `weave/weave_apply.py` + `weave/manifest.json` (36 записей: 18 patch + 18 copy).
+- `device.mk` запускает regen на make-парсе; дрейф = громкий стоп сборки.
+- `weave_gen/` — git-ignored выхлоп; Go-плагин подсовывает его через
+  Exclude_srcs + явные filegroups (framework/SettingsLib/services.core/
+  services.impl + services_helpers + thermal).
+- Исходники в полном ванильном состоянии: frameworks/base и hardware
+  чистые, system/sepolicy — только domain.te. Триплеты мигрировавших
+  файлов retired; legacy-патчер их пропускает (bypass_paths).
+- domain.te оставлен tree-патчем (не Java, H1 неприменим).
