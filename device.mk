@@ -95,4 +95,3 @@ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
 # immediately in global scope, after common.mk added stock). The pep fork
 # (same stem + overrides:) is the only thermal-service.pixel in the image.
 PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
-$(info PEP-DEBUG thermal-stock-present=[$(filter android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))])
