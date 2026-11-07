@@ -23,7 +23,11 @@ on property:persist.sys.pixelparts.thermal_config_request=* && property:persist.
     chown system system /data/vendor/pixelparts/ThermalConfigs/active.json
     chmod 0644 /data/vendor/pixelparts/ThermalConfigs/active.json
     restorecon /data/vendor/pixelparts/ThermalConfigs/active.json
-    setprop vendor.thermal.config ${persist.sys.pixelparts.thermal_config_request},/data/vendor/pixelparts/ThermalConfigs/active.json
+    # Stock-safe: an unpatched HAL must never see our "<request>,<path>"
+    # mod payload (it would fail parsing it) — stock prop always carries
+    # the default config name. Mod channel is vendor.pixelparts.thermal.config.
+    setprop vendor.thermal.config thermal_info_config.json
+    setprop vendor.pixelparts.thermal.config ${persist.sys.pixelparts.thermal_config_request},/data/vendor/pixelparts/ThermalConfigs/active.json
 
 on property:persist.sys.pixelparts.thermal_config_request=* && property:persist.sys.pixelparts.thermal_config=thermal_info_config.json
     setprop vendor.thermal.config thermal_info_config.json
