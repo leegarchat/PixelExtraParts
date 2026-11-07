@@ -89,10 +89,12 @@ SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private
 
-# Replace the stock thermal HAL with our fork (same stem + overrides:).
-# The stock entry is added by device/google/zuma/common.mk BEFORE this file
-# is inherited, so filter-out here reliably wins. Without this, both the
-# stock and the .pep module emit install/symbols rules for the same output
-# path and ninja fails with "multiple rules generates".
-PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
-$(info PEP-DEBUG thermal-stock-present=[$(filter android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))])
+# NOTE: stock android.hardware.thermal-service.pixel CANNOT be removed
+# from PRODUCT_PACKAGES here: inherit-product evaluates this file into a
+# node-local scope, so filter-out would only touch our own list, not the
+# entry from device/google/zuma/common.mk:40 (verified empirically).
+# The fork relies on Soong overrides: + stem: (same output path).
+# KNOWN ISSUE: stock stays in the install set, so both modules emit a
+# symbols rule for the same path and ninja fails with "multiple rules".
+# Resolution pending (options: upstream one-liner in common.mk as
+# uncommitted tree state like domain.te, or fork without stem).
