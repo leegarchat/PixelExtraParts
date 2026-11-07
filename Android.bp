@@ -1,7 +1,7 @@
 
 prebuilt_etc {
     name: "init.pixelextraparts.rc",
-    src: "init.pixelextraparts.rc",
+    src: "config/init.pixelextraparts.rc",
     sub_dir: "init",
     system_ext_specific: true,
 }
@@ -11,7 +11,7 @@ prebuilt_etc {
 // (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
 cc_prebuilt_library_shared {
     name: "liblsplant",
-    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblsplant.so"],
+    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/liblsplant.so"],
     strip: {
     none: true,
     },
@@ -22,7 +22,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "libdobby",
-    srcs: ["lsplant/libs/lsplant/arm64-v8a/libdobby.so"],
+    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libdobby.so"],
     strip: {
     none: true,
     },
@@ -33,7 +33,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "libc++_shared",
-    srcs: ["lsplant/libs/lsplant/arm64-v8a/libc++_shared.so"],
+    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libc++_shared.so"],
     strip: {
     none: true,
     },
@@ -44,7 +44,7 @@ cc_prebuilt_library_shared {
 
 cc_prebuilt_library_shared {
     name: "liblspbridge",
-    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblspbridge.so"],
+    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/liblspbridge.so"],
     strip: {
     none: true,
     },
@@ -59,23 +59,23 @@ java_library {
     // Xposed-compat shim over the LSPlant backend
     srcs: [
         // Общий интерфейс IHookEnvironment
-        "lsplant/src/org/pixel/customparts/core/**/*.kt",
-        "lsplant/src/org/pixel/customparts/core/**/*.java",
+        "native/lsplant/src/org/pixel/customparts/core/**/*.kt",
+        "native/lsplant/src/org/pixel/customparts/core/**/*.java",
         // Общие хуки (код реализации)
-        "lsplant/src/org/pixel/customparts/hooks/**/*.kt",
-        "lsplant/src/org/pixel/customparts/hooks/**/*.java",
+        "native/lsplant/src/org/pixel/customparts/hooks/**/*.kt",
+        "native/lsplant/src/org/pixel/customparts/hooks/**/*.java",
         // Менеджер инъекции (движок-независимый + LSPlant-бэкенд)
-        "lsplant/src/org/pixel/customparts/manager/lsplant/**/*.kt",
-        "lsplant/src/org/pixel/customparts/manager/lsplant/**/*.java",
-        "lsplant/src/org/pixel/customparts/lsplantinject/**/*.kt",
-        "lsplant/src/org/pixel/customparts/lsplantinject/**/*.java",
+        "native/lsplant/src/org/pixel/customparts/manager/lsplant/**/*.kt",
+        "native/lsplant/src/org/pixel/customparts/manager/lsplant/**/*.java",
+        "native/lsplant/src/org/pixel/customparts/lsplantinject/**/*.kt",
+        "native/lsplant/src/org/pixel/customparts/lsplantinject/**/*.java",
         // Xposed-совместимый слой поверх LSPlant
-        "lsplant/src/de/robv/android/xposed/**/*.java",
+        "native/lsplant/src/de/robv/android/xposed/**/*.java",
         // Modern Xposed API 101 (модули Vector/LSPosed-формата)
-        "lsplant/src/io/github/libxposed/api/**/*.java",
+        "native/lsplant/src/io/github/libxposed/api/**/*.java",
         
         // Затенённый commons-lang для XposedHelpers
-        "lsplant/src/external/org/apache/commons/lang3/**/*.java"
+        "native/lsplant/src/external/org/apache/commons/lang3/**/*.java"
     ],
     installable: true,
     libs: [
@@ -113,7 +113,7 @@ filegroup {
 filegroup {
     name: "pixelparts_framework_helpers",
     srcs: [
-        "framework_helpers/core/java/**/*.java",
+        "platform/framework_helpers/core/java/**/*.java",
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
@@ -161,13 +161,13 @@ filegroup {
         "weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
         "weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
     ],
-    visibility: ["//packages/apps/PixelExtraParts/thermal_hal"],
+    visibility: ["//packages/apps/PixelExtraParts/native/thermal_hal"],
 }
 
 filegroup {
     name: "pixelparts_services_helpers",
     srcs: [
-        "framework_helpers_services/**/*.java",
+        "platform/services_helpers/**/*.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }

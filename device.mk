@@ -28,19 +28,19 @@ ifeq ($(strip $(VENDOR_PATH)),)
 $(error PixelExtraParts requires VENDOR_PATH to generate thermal config copy rules)
 endif
 
-PIXEL_EXTRA_PARTS_THERMAL_RESULT := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/generate_thermal_configs.py --quiet --vendor-path $(VENDOR_PATH) --device-codename $(DEVICE_CODENAME) --init-rc $(PIXEL_EXTRA_PARTS_PATH)/init.pixelextraparts.rc $(if $(strip $(THERMAL_CUSTOM_JSON_PATH)),--thermal-json $(THERMAL_CUSTOM_JSON_PATH),) 2>&1)
+PIXEL_EXTRA_PARTS_THERMAL_RESULT := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/config/thermal/generate_thermal_configs.py --quiet --vendor-path $(VENDOR_PATH) --device-codename $(DEVICE_CODENAME) --init-rc $(PIXEL_EXTRA_PARTS_PATH)/config/init.pixelextraparts.rc $(if $(strip $(THERMAL_CUSTOM_JSON_PATH)),--thermal-json $(THERMAL_CUSTOM_JSON_PATH),) 2>&1)
 
 ifneq ($(findstring PixelExtraPartsThermalError:,$(PIXEL_EXTRA_PARTS_THERMAL_RESULT)),)
 $(warning $(PIXEL_EXTRA_PARTS_THERMAL_RESULT))
 else
-$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCopyRules.mk)
+$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/config/thermal/ThermalConfigCopyRules.mk)
 endif
 
 
 # Soong namespaces (plugin, filegroups, thermal fork).
 PRODUCT_SOONG_NAMESPACES += \
     $(PIXEL_EXTRA_PARTS_PATH) \
-    $(PIXEL_EXTRA_PARTS_PATH)/thermal_hal
+    $(PIXEL_EXTRA_PARTS_PATH)/native/thermal_hal
 
 # Soong plugin allowlist (build-time weave). Our bootstrap_go_package
 # is not in Soong's hardcoded list; this is the documented escape hatch.
@@ -57,18 +57,18 @@ endif
 
 # PixelExtraParts sepolicy
 BOARD_VENDOR_SEPOLICY_DIRS += \
-    $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/vendor
+    $(PIXEL_EXTRA_PARTS_PATH)/policy/sepolicy/vendor
 
 SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
-    $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/public
+    $(PIXEL_EXTRA_PARTS_PATH)/policy/sepolicy/system_ext/public
 
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
-    $(PIXEL_EXTRA_PARTS_PATH)/sepolicy/system_ext/private
+    $(PIXEL_EXTRA_PARTS_PATH)/policy/sepolicy/system_ext/private
 
 # Stock thermal HAL is removed here (plain include above runs this file
 # immediately in global scope, after common.mk added stock). The pep fork
 # uses its own output name (no shared stem: Soong emits edges for every
 # in-scope module, so a shared path is fatal) + overrides:.
-# labels: sepolicy/vendor/file_contexts maps the pep binary to
+# labels: policy/sepolicy/vendor/file_contexts maps the pep binary to
 # hal_thermal_default_exec (zuma labels only the stock path).
 PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))

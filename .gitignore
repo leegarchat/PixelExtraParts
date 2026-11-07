@@ -6,20 +6,17 @@
 /.opencode
 /test.files
 /.history
-/ThermalConfigs/ThermalConfigCopyRules.mk
+/config/thermal/ThermalConfigCopyRules.mk
 /.lh
-/ThermalConfigs/__pycache__
-/ThermalConfigs/configs
-/OTA/__pycache__
-/patches/subpatches/__pycache__
-/patches/__pycache__
+/config/thermal/__pycache__
+/config/thermal/configs
 /.kilo
 rule.gemini.md
 kilo.jsondocs/dtw-architecture-research.md
 
 # LSPlant native build staging (NDK cmake out dir + ad-hoc probes)
-/lsplant/lsplant-native/out/
-/lsplant/lsplant-native/bridge/resolve_test.cpp
+/native/lsplant/lsplant-native/out/
+/native/lsplant/lsplant-native/bridge/resolve_test.cpp
 SELINUX_*.md
 test_rework_*
 
