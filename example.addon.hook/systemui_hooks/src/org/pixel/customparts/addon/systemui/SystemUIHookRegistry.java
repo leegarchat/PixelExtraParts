@@ -3,10 +3,13 @@ package org.pixel.customparts.addon.systemui;
 import android.content.Context;
 import android.util.Log;
 
+import org.pixel.customparts.addon.systemui.hooks.AodBurnInLayerHook;
 import org.pixel.customparts.addon.systemui.hooks.AodNotificationIconColorHook;
 import org.pixel.customparts.addon.systemui.hooks.BaseSystemUIHook;
+import org.pixel.customparts.addon.systemui.hooks.HbmBrightnessLockHook;
 import org.pixel.customparts.addon.systemui.hooks.KeyguardBatteryPowerHook;
 import org.pixel.customparts.addon.systemui.hooks.NotificationIconShapeHook;
+import org.pixel.customparts.addon.systemui.hooks.RotationAnimationHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeCompactMediaHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeDateCalendarHook;
 import org.pixel.customparts.addon.systemui.hooks.ShadeUnifiedSurfaceHook;
@@ -36,6 +39,9 @@ public final class SystemUIHookRegistry {
         hooks.add(new ShadeCompactMediaHook());
         hooks.add(new NotificationIconShapeHook());
         hooks.add(new AodNotificationIconColorHook());
+        hooks.add(new RotationAnimationHook());
+        hooks.add(new HbmBrightnessLockHook());
+        hooks.add(new AodBurnInLayerHook());
 
         Collections.sort(hooks, new Comparator<BaseSystemUIHook>() {
             @Override
