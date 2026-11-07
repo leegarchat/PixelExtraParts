@@ -61,6 +61,11 @@ $(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/ThermalConfigs/ThermalConfigCo
 endif
 
 
+# Soong namespaces (plugin, filegroups, thermal fork).
+PRODUCT_SOONG_NAMESPACES += \
+    $(PIXEL_EXTRA_PARTS_PATH) \
+    $(PIXEL_EXTRA_PARTS_PATH)/thermal_hal
+
 # Soong plugin allowlist (build-time weave). Our bootstrap_go_package
 # is not in Soong's hardcoded list; this is the documented escape hatch.
 BUILD_BROKEN_PLUGIN_VALIDATION += soong-pixelparts-plugin
