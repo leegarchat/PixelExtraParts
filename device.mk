@@ -93,5 +93,8 @@ SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
 
 # Stock thermal HAL is removed here (plain include above runs this file
 # immediately in global scope, after common.mk added stock). The pep fork
-# (same stem + overrides:) is the only thermal-service.pixel in the image.
+# uses its own output name (no shared stem: Soong emits edges for every
+# in-scope module, so a shared path is fatal) + overrides:.
+# labels: sepolicy/vendor/file_contexts maps the pep binary to
+# hal_thermal_default_exec (zuma labels only the stock path).
 PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))

@@ -17,7 +17,10 @@ package {
 
 cc_binary {
     name: "android.hardware.thermal-service.pixel.pep",
-    stem: "android.hardware.thermal-service.pixel",
+    # NOTE: intentionally NO stem: and NO same-name output. Soong emits
+    # install/symbols edges for every in-scope module regardless of
+    # PRODUCT_PACKAGES, so sharing the stock output path is a fatal
+    # "multiple rules" at ninja load. overrides: keeps make-side sane.
     overrides: ["android.hardware.thermal-service.pixel"],
     srcs: [
         // Build-time generated (//packages/apps/PixelExtraParts/weave_gen):
