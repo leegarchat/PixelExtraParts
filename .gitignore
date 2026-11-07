@@ -21,3 +21,4 @@ kilo.jsondocs/dtw-architecture-research.md
 /lsplant/lsplant-native/out/
 /lsplant/lsplant-native/bridge/resolve_test.cpp
 SELINUX_*.md
+test_rework_*
