@@ -1,7 +1,8 @@
 # Backlight class symlink layer only. File contents live under
 # /sys/devices/... and are labeled by the DT parent genfscon
 # (sysfs_leds, hal already has rw there) — no custom type needed.
-# The app itself is permissive (pixelparts_app) and ignores labels.
+# The app runs as enforcing system_app with an explicit rw grant
+# (pixelparts.te) and reads through labels like everyone else.
 # If dmesg ever shows a denial on these nodes, the missing piece
 # will name itself — add back surgically, do not blanket-restore.
 genfscon sysfs /class/backlight u:object_r:sysfs_leds:s0
