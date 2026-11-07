@@ -1,19 +1,11 @@
-# Dedicated permissive domain for the PEP app (narrow, not system_app-wide).
-# Global SELinux stays Enforcing; only org.pixel.customparts (matched by
-# name= in seapp_contexts, shipped in PEP's own sepolicy) lands here.
-# Permissive => the app needs NO outgoing allow rules of its own (kernel
-# allows, audit logs). The system_app rules below stay untouched: they serve
-# OTHER enforcing system processes (SystemUI/Settings) — e.g. battery sysfs
-# reads and addon dex writes from whitelisted packages.
-type pixelparts_app, domain, coredomain;
-app_domain(pixelparts_app)
-net_domain(pixelparts_app)
-hal_client_domain(pixelparts_app, hal_thermal)
-permissive pixelparts_app;
+# Enforcing policy for the PEP app (Variant A, test_rework_patches).
+# The app runs as stock system_app (sharedUserId android.uid.system);
+# no custom domain, no permissive. Rules below serve the app itself
+# plus other enforcing system processes (SystemUI/Settings) —
+# e.g. battery sysfs reads and addon dex writes from whitelisted packages.
 
-# Kill-switch reads: zygote evaluates it pre-fork (silent denials are masked
-# by the "1" default — without this rule the switch never worked), shell for
-# on-device forensics. Writes need no rules (app is permissive).
+# Kill-switch reads: zygote evaluates it pre-fork, shell for
+# on-device forensics.
 get_prop(zygote, system_pixelparts_prop)
 get_prop(shell, system_pixelparts_prop)
 
@@ -37,7 +29,7 @@ allow shell pixelparts_data_file:file create_file_perms;
 allow appdomain pixelparts_system_file:dir r_dir_perms;
 allow appdomain pixelparts_system_file:file r_file_perms;
 allow system_app sysfs_leds:dir r_dir_perms;
-allow system_app sysfs_leds:file r_file_perms;
+allow system_app sysfs_leds:file rw_file_perms;
 allow system_app sysfs_leds:lnk_file read;
 allow system_app sysfs_thermal:dir r_dir_perms;
 allow system_app sysfs_thermal:file r_file_perms;
