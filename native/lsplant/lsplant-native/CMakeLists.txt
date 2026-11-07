@@ -1,4 +1,7 @@
-# Glue-only build: JNI bridge -> liblspbridge.so.
+# Glue-only NDK build (FALLBACK): JNI bridge -> liblspbridge.so.
+# Primary path is the Soong source build (cc_library_shared "liblspbridge"
+# in packages/apps/PixelExtraParts/Android.bp). Use this CMake file only to
+# cross-check the bridge outside the full tree, or to stage a prebuilt.
 # The bridge does NOT link LSPlant/Dobby at build time (no DT_NEEDED).
 # At runtime it binds to an already-loaded foreign engine first
 # (Vector/LSPosed export the LSPlant + Dobby entry points) and falls back

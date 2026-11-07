@@ -33,9 +33,12 @@
   `PixelPartsHardwareInput`, `PixelPartsKeepScreenOn`), компилируются В СОСТАВЕ
   `services.core.unboosted` через `:pixelparts_services_helpers`.
 - `native/lsplant/` — рантайм инжектора: `src/` (исходники `LsplantInject`),
-  `libs/` (пребилты `.so`), `lsplant-native/` (апстрим-зеркало, в сборке
-  не участвует). Java-пакеты (`org.pixel...manager.lsplant`) — это ПАКЕТЫ,
-  а не пути: при переезде каталога их не переименовывать.
+  `libs/` (пребилты `liblsplant/dobby/c++_shared.so`), `lsplant-native/`
+  (`bridge/` — наш JNI-glue, собирается из исходников модулем
+  `cc_library_shared liblspbridge`; `third_party/` — только мастер-копии
+  движков + заголовки + provenance-маркеры, IDE/CI-мусор вычищен).
+  Java-пакеты (`org.pixel...manager.lsplant`) — это ПАКЕТЫ, а не пути:
+  при переезде каталогов их не переименовывать.
 - `native/thermal_hal/` — форк HAL `.pep` (`overrides:`, без `stem:`),
   свой `.rc`/`.xml`. Исходники — через `:pixelparts_weave_thermal`
   из `weave_gen/` + `include_dirs` на зеркало `weave_gen/.../thermal`.

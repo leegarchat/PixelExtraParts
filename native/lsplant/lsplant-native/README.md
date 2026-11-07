@@ -28,10 +28,12 @@ Needs NDK r28+ (tested r29), CMake 3.28+, ninja:
 `./build_lsplant.sh` (env: `ANDROID_NDK`, `ABI`, `PLATFORM`).
 
 ## Install into prebuilts
-After a successful build + device soak test, copy the three .so files to
-`lsplant/libs/lsplant/arm64-v8a/` (liblsplant.so, libdobby.so,
-liblspbridge.so) — they ship to `/system/lib64` via `cc_prebuilt_*`
-modules in `Android.bp` / `device.mk`.
+`liblspbridge.so` builds from source during the ROM build (Soong
+`cc_library_shared`, see root `Android.bp`) — no manual step.
+After a successful NDK-fallback build + device soak test, copy the two
+engine .so files to `native/lsplant/libs/lsplant/arm64-v8a/`
+(liblsplant.so, libdobby.so) — they ship to `/system/lib64` via
+`cc_prebuilt_*` modules in `Android.bp` / `device.mk`.
 
 ## License notes
 - LSPlant core: LGPL-3.0 — shipped as a separate unmodified shared

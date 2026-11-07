@@ -14,9 +14,12 @@
 rule.gemini.md
 kilo.jsondocs/dtw-architecture-research.md
 
-# LSPlant native build staging (NDK cmake out dir + ad-hoc probes)
+# LSPlant native build staging (NDK cmake fallback + ad-hoc probes)
 /native/lsplant/lsplant-native/out/
 /native/lsplant/lsplant-native/bridge/resolve_test.cpp
+# Untracked local master of the dobby binary (build input is the
+# identical tracked copy under native/lsplant/libs/; see third_party/dobby.BINARY)
+/native/lsplant/lsplant-native/third_party/dobby/arm64-v8a/
 SELINUX_*.md
 test_rework_*
 
