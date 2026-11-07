@@ -308,9 +308,6 @@ import java.util.function.Supplier;
  * of both of those when held.
  */
 public class PhoneWindowManager implements WindowManagerPolicy {
-    private static final String PIXELPARTS_PACKAGE = "org.pixel.customparts";
-    private static final String ACTION_PIXELPARTS_HARDWARE_INPUT =
-            "org.pixel.customparts.action.HARDWARE_INPUT";
     static final String TAG = "WindowManager";
     static final boolean localLOGV = false;
     static final boolean DEBUG = false;
@@ -5131,18 +5128,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     public int interceptKeyBeforeQueueing(KeyEvent event, int policyFlags) {
         final int keyCode = event.getKeyCode();
         final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
-        if (down && (policyFlags & WindowManagerPolicy.FLAG_INJECTED) == 0) {
-            final KeyEvent keyEvent = KeyEvent.obtain(event);
-            mHandler.post(() -> {
-                try {
-                    mContext.sendBroadcastAsUser(new Intent(ACTION_PIXELPARTS_HARDWARE_INPUT)
-                            .setPackage(PIXELPARTS_PACKAGE)
-                            .putExtra(Intent.EXTRA_KEY_EVENT, keyEvent), UserHandle.ALL);
-                } finally {
-                    keyEvent.recycle();
-                }
-            });
-        }
+        PixelPartsHardwareInput.notifyHardwareInput(mHandler, mContext, event, down, policyFlags);
         boolean isWakeKey = (policyFlags & WindowManagerPolicy.FLAG_WAKE) != 0
                 || event.isWakeKey();
         boolean isKeyGestureTriggered = (policyFlags & FLAG_KEY_GESTURE_TRIGGERED) != 0;

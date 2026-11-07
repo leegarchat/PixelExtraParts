@@ -177,7 +177,6 @@ import android.app.WindowConfiguration;
 import android.content.ComponentCallbacks;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ActivityInfo.ScreenOrientation;
 import android.content.res.CompatibilityInfo;
@@ -300,11 +299,6 @@ import java.util.function.Predicate;
  * particular Display.
  */
 class DisplayContent extends RootDisplayArea implements WindowManagerPolicy.DisplayContentInfo {
-    private static final String PIXELPARTS_PACKAGE = "org.pixel.customparts";
-    private static final String ACTION_PIXELPARTS_KEEP_SCREEN_ON =
-            "org.pixel.customparts.action.KEEP_SCREEN_ON_CHANGED";
-    private static final String EXTRA_PIXELPARTS_KEEP_SCREEN_ON = "active";
-    private static final String EXTRA_PIXELPARTS_KEEP_SCREEN_ON_PACKAGE = "package";
     private static final String TAG = TAG_WITH_CLASS_NAME ? "DisplayContent" : TAG_WM;
 
     /** The default scaling mode that scales content automatically. */
@@ -1407,16 +1401,9 @@ class DisplayContent extends RootDisplayArea implements WindowManagerPolicy.Disp
         mHoldScreenWindow = mTmpHoldScreenWindow;
         mTmpHoldScreenWindow = null;
 
-        if (hold != wasHolding) {
-            final String holderPackage = hold && mHoldScreenWindow != null
-                ? mHoldScreenWindow.mSession.mPackageName : "";
-            mWmService.mH.post(() -> mWmService.mContext.sendBroadcastAsUser(
-                new Intent(ACTION_PIXELPARTS_KEEP_SCREEN_ON)
-                    .setPackage(PIXELPARTS_PACKAGE)
-                    .putExtra(EXTRA_PIXELPARTS_KEEP_SCREEN_ON, hold)
-                    .putExtra(EXTRA_PIXELPARTS_KEEP_SCREEN_ON_PACKAGE, holderPackage),
-                UserHandle.ALL));
-        }
+        PixelPartsKeepScreenOn.notifyChanged(mWmService.mH, mWmService.mContext, hold,
+                wasHolding, hold && mHoldScreenWindow != null
+                        ? mHoldScreenWindow.mSession.mPackageName : "");
 
         final boolean state = mHoldScreenWakeLock.isHeld();
         if (hold != state) {

@@ -4,7 +4,7 @@
  
  import android.annotation.FloatRange;
  import android.annotation.NonNull;
-+import android.app.ApplicationPackageManager;
++import android.app.PixelPartsIconHelper;
  import android.content.ComponentName;
  import android.content.Context;
  import android.content.pm.PackageManager.NameNotFoundException;
@@ -34,7 +34,7 @@
 +            if (ppCn != null) {
 +                final int targetDensity = density != 0
 +                        ? density : mContext.getResources().getDisplayMetrics().densityDpi;
-+                final Drawable pixelPartsIcon = ApplicationPackageManager
++                final Drawable pixelPartsIcon = PixelPartsIconHelper
 +                        .loadPixelPartsIconOverride(mContext, ppCn.getPackageName(), targetDensity);
 +                if (pixelPartsIcon != null) {
 +                    return pixelPartsIcon;
