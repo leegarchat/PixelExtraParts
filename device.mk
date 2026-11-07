@@ -29,6 +29,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
 PRODUCT_PACKAGES += \
     PixelCustomPartsSystem \
     init.pixelextraparts.rc \
+    android.hardware.thermal-service.pixel.pep \
     ambient_extend_hook_addon \
     gcam_photo_torch_addon \
     icon_manager_settings_addon \

@@ -1,0 +1,87 @@
+// PixelExtraParts thermal HAL fork (FORK via overrides:).
+// Builds the mod-channel thermal service (vendor.pixelparts.thermal.config)
+// from sources vendored in this directory and вытесняет the stock
+// android.hardware.thermal-service.pixel from the image. No file under
+// hardware/google/pixel is touched.
+
+soong_namespace {
+    imports: [
+        "hardware/google/interfaces",
+        "hardware/google/pixel/pixelstats",
+    ],
+}
+
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+cc_binary {
+    name: "android.hardware.thermal-service.pixel.pep",
+    stem: "android.hardware.thermal-service.pixel",
+    overrides: ["android.hardware.thermal-service.pixel"],
+    srcs: [
+        "service.cpp",
+        "Thermal.cpp",
+        "thermal-helper.cpp",
+        "utils/thermal_throttling.cpp",
+        "utils/thermal_info.cpp",
+        "utils/thermal_files.cpp",
+        "utils/power_files.cpp",
+        "utils/powerhal_helper.cpp",
+        "utils/thermal_stats_helper.cpp",
+        "utils/thermal_predictions_helper.cpp",
+        "utils/thermal_watcher.cpp",
+        "virtualtemp_estimator/virtualtemp_estimator.cpp",
+    ],
+    vendor: true,
+    relative_install_path: "hw",
+    vintf_fragment_modules: [
+        "android.hardware.thermal-service.pixel.pep.xml",
+    ],
+    init_rc: [
+        "android.hardware.thermal-service.pixel.pep.rc",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcutils",
+        "libjsoncpp",
+        "libutils",
+        "libnl",
+        "libbinder_ndk",
+        "android.frameworks.stats-V2-ndk",
+        "android.hardware.power-V1-ndk",
+        "android.hardware.thermal-V3-ndk",
+        "pixel-power-ext-V1-ndk",
+        "pixelatoms-cpp",
+    ],
+    static_libs: [
+        "libpixelstats",
+    ],
+    export_shared_lib_headers: [
+        "android.frameworks.stats-V2-ndk",
+        "pixelatoms-cpp",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wunused",
+    ],
+    tidy: true,
+    tidy_checks: [
+        "android-*",
+        "cert-*",
+        "clang-analyzer-security*",
+    ],
+    tidy_checks_as_errors: [
+        "android-*",
+        "clang-analyzer-security*",
+        "cert-*",
+    ],
+}
+
+vintf_fragment {
+    name: "android.hardware.thermal-service.pixel.pep.xml",
+    src: "android.hardware.thermal-service.pixel.pep.xml",
+    vendor: true,
+}
