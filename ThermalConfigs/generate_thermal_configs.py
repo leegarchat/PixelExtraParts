@@ -367,6 +367,7 @@ def strip_old_thermal_block(content):
                 next_normalized = lines[index].strip().lstrip("# ").strip()
                 if (
                     next_normalized.startswith("setprop vendor.thermal.config")
+                    or next_normalized.startswith("setprop vendor.pixelparts.thermal.config")
                     or next_normalized.startswith(f"setprop {THERMAL_CONFIG_PROP}")
                     or next_normalized.startswith(f"copy {THERMAL_CONFIG_DATA_DIR}/${{{THERMAL_CONFIG_PROP}}}")
                     or next_normalized.startswith(f"chown system system {THERMAL_CONFIG_ACTIVE_PATH}")
@@ -408,7 +409,11 @@ def update_init_rc(init_rc_path, enabled):
             f"    chown system system {THERMAL_CONFIG_ACTIVE_PATH}",
             f"    chmod 0644 {THERMAL_CONFIG_ACTIVE_PATH}",
             f"    restorecon {THERMAL_CONFIG_ACTIVE_PATH}",
-            f"    setprop vendor.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}},{THERMAL_CONFIG_ACTIVE_PATH}",
+            "    # Stock-safe: an unpatched HAL must never see our \"<request>,<path>\"",
+            "    # mod payload (it would fail parsing it) — stock prop always carries",
+            "    # the default config name. Mod channel is vendor.pixelparts.thermal.config.",
+            f"    setprop vendor.thermal.config {BASE_CONFIG_FILENAME}",
+            f"    setprop vendor.pixelparts.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}},{THERMAL_CONFIG_ACTIVE_PATH}",
             "",
             f"on property:{THERMAL_CONFIG_REQUEST_PROP}=* && property:{THERMAL_CONFIG_PROP}={BASE_CONFIG_FILENAME}",
             f"    setprop vendor.thermal.config {BASE_CONFIG_FILENAME}",
@@ -421,7 +426,8 @@ def update_init_rc(init_rc_path, enabled):
             f"#     chown system system {THERMAL_CONFIG_ACTIVE_PATH}",
             f"#     chmod 0644 {THERMAL_CONFIG_ACTIVE_PATH}",
             f"#     restorecon {THERMAL_CONFIG_ACTIVE_PATH}",
-            f"#     setprop vendor.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}},{THERMAL_CONFIG_ACTIVE_PATH}",
+            f"#     setprop vendor.thermal.config {BASE_CONFIG_FILENAME}",
+            f"#     setprop vendor.pixelparts.thermal.config ${{{THERMAL_CONFIG_REQUEST_PROP}}},{THERMAL_CONFIG_ACTIVE_PATH}",
             f"# on property:{THERMAL_CONFIG_REQUEST_PROP}=* && property:{THERMAL_CONFIG_PROP}={BASE_CONFIG_FILENAME}",
             f"#     setprop vendor.thermal.config {BASE_CONFIG_FILENAME}",
         ]
