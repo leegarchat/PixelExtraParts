@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="tab_home">Inicio</string>
+    <string name="tab_settings">Ajustes</string>
+    <string name="home_title">Estructura vacía</string>
+    <string name="home_subtitle">Prueba del kit de IU — blur, dock, háptica</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_subtitle">Marcador — las secciones irán aquí</string>
+</resources>

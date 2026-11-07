@@ -15,6 +15,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system/framework/oat/arm64/LsplantInject.vdex
 
 PRODUCT_PACKAGES += \
+    PixelExtraParts \
     init.pixelextraparts.rc \
     android.hardware.thermal-service.pixel.pep \
     LsplantInject \

@@ -50,4 +50,8 @@
   в git нет) + `ThermalConfigCopyRules.mk` (generated, в git нет).
 - `config/init.pixelextraparts.rc` — init-скрипт (модуль `prebuilt_etc`).
   Перезаписывается генератором thermal (safe-split) при каждой сборке.
-- `app/` — ПУСТО, слот под будущий АПК (см. `app/README.md`).
+- `app/` — приложение `org.pixel.extra.parts` (см. `app/README.md`):
+  Gradle (`:app:assembleDebug`) для UI-стенда + Soong-зеркало `PixelExtraParts`
+  в корневом `Android.bp` для прошивки (platform-подпись, system_ext priv-app).
+  Два манифеста: `src/main` (debug, без `sharedUserId`) и `src/firmware`
+  (полный carte-blanche + `sharedUserId="android.uid.system"`).

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="tab_home">Головна</string>
+    <string name="tab_settings">Налаштування</string>
+    <string name="home_title">Порожній каркас</string>
+    <string name="home_subtitle">Перевірка UI-кіту — блюр, док, тактильність</string>
+    <string name="settings_title">Налаштування</string>
+    <string name="settings_subtitle">Заглушка — розділи з’являться тут</string>
+</resources>

@@ -25,3 +25,7 @@ test_rework_*
 
 # PEP weave outputs (build-time generated, see weave/)
 /weave_gen/
+
+# Gradle (app/ standalone UI work)
+/.gradle/
+/app/build/

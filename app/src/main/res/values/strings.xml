@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_settings">Settings</string>
+    <string name="home_title">Empty shell</string>
+    <string name="home_subtitle">UI kit check — blur, dock, haptics</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Placeholder — sections land here</string>
+</resources>

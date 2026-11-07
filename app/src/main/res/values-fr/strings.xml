@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="tab_home">Accueil</string>
+    <string name="tab_settings">Paramètres</string>
+    <string name="home_title">Coque vide</string>
+    <string name="home_subtitle">Vérification du kit — flou, dock, haptique</string>
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_subtitle">Espace réservé — les sections viendront ici</string>
+</resources>
