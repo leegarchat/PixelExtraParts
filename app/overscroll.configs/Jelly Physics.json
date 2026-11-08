@@ -1,10 +1,10 @@
 {
     "overscroll_enabled": 1,
-    "overscroll_pull": 1.6,
+    "overscroll_pull": 0.85,
     "overscroll_stiffness": 110.0,
     "overscroll_damping": 0.88,
     "overscroll_fling": 1.5,
-    "overscroll_res_exponent": 4.0,
+    "overscroll_res_exponent": 2.5,
     "overscroll_physics_min_vel": 7.0,
     "overscroll_physics_min_val": 0.5,
     "overscroll_anim_speed": 155.0,
