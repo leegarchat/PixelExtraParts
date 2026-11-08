@@ -14,32 +14,10 @@
  import android.view.animation.AnimationUtils;
  import android.view.animation.DecelerateInterpolator;
  import android.view.animation.Interpolator;
-@@ -227,6 +233,198 @@
+@@ -227,6 +233,176 @@
      private Matrix mTmpMatrix = null;
      private float[] mTmpPoints = null;
  
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: static configuration
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    private static final String TAG_CUSTOM = "PixelPartsOverscroll";
-+    private static String sKeySuffix = "_pine";
-+
-+    /**
-+     * @hide
-+     */
-+    public static void configure(boolean useGlobal, @NonNull String suffix) {
-+        if (!useGlobal) {
-+            Log.w(TAG_CUSTOM, "Settings.Secure is no longer supported. Forcing Settings.Global.");
-+        }
-+        sKeySuffix = suffix;
-+    }
-+
-+    private static String resolveKey(String key) {
-+        String base = key.replaceAll("_(xposed|pine|native)$", "");
-+        return base + sKeySuffix;
-+    }
-+
 +    // ═══════════════════════════════════════════════════════════════════
 +    //  Custom bounce: Settings keys
 +    // ═══════════════════════════════════════════════════════════════════
@@ -213,7 +191,7 @@
      /**
       * Construct a new EdgeEffect with a theme appropriate for the provided context.
       * @param context Context used to provide theming and resource information for the EdgeEffect
-@@ -253,6 +451,9 @@
+@@ -253,6 +429,9 @@
          mPaint.setColor((themeColor & 0xffffff) | 0x33000000);
          mPaint.setStyle(Paint.Style.FILL);
          mPaint.setBlendMode(DEFAULT_BLEND_MODE);
@@ -223,7 +201,7 @@
      }
  
      @EdgeEffectType
-@@ -295,7 +496,37 @@
+@@ -295,7 +474,37 @@
       * @return true if animation is finished, false if drawing should continue on the next frame.
       */
      public boolean isFinished() {
@@ -261,7 +239,7 @@
      }
  
      /**
-@@ -303,9 +534,22 @@
+@@ -303,9 +512,22 @@
       * After this call {@link #isFinished()} will return true.
       */
      public void finish() {
@@ -287,7 +265,7 @@
      }
  
      /**
-@@ -339,57 +583,128 @@
+@@ -339,57 +561,128 @@
       *                     Values may be from 0-1.
       */
      public void onPull(float deltaDistance, float displacement) {
@@ -452,7 +430,7 @@
          }
      }
  
-@@ -423,21 +738,26 @@
+@@ -423,21 +716,26 @@
       * 0 and <code>deltaDistance</code>.
       */
      public float onPullDistance(float deltaDistance, float displacement) {
@@ -491,7 +469,7 @@
          onPull(delta, displacement);
          return delta;
      }
-@@ -463,22 +783,52 @@
+@@ -463,22 +761,52 @@
       * draw the results accordingly.
       */
      public void onRelease() {
@@ -554,7 +532,7 @@
      }
  
      /**
-@@ -492,38 +842,40 @@
+@@ -492,38 +820,40 @@
       * @param velocity Velocity at impact in pixels per second.
       */
      public void onAbsorb(int velocity) {
@@ -625,7 +603,7 @@
      }
  
      /**
-@@ -585,6 +937,340 @@
+@@ -585,6 +915,340 @@
       *         animation
       */
      public boolean draw(Canvas canvas) {
@@ -966,7 +944,7 @@
          int edgeEffectBehavior = getCurrentEdgeEffectBehavior();
          if (edgeEffectBehavior == TYPE_GLOW) {
              update();
-@@ -688,15 +1374,6 @@
+@@ -688,15 +1352,6 @@
          return Math.max(max, f4);
      }
  
@@ -982,7 +960,7 @@
      private void update() {
          final long time = AnimationUtils.currentAnimationTimeMillis();
          final float t = Math.min((time - mStartTime) / mDuration, 1.f);
-@@ -748,9 +1425,9 @@
+@@ -748,9 +1403,9 @@
  
      private void updateSpring() {
          final long time = AnimationUtils.currentAnimationTimeMillis();
@@ -994,7 +972,7 @@
          }
          mStartTime = time;
  
-@@ -818,7 +1495,7 @@
+@@ -818,7 +1473,7 @@
       * considered at rest or false if it is still animating.
       */
      private boolean isAtEquilibrium() {
@@ -1003,7 +981,7 @@
          double velocity = mVelocity;
  
          // Don't allow displacement to drop below 0. We don't want it stretching the opposite
-@@ -836,4 +1513,513 @@
+@@ -836,4 +1491,510 @@
          double expIntensity = EXP_STRETCH_INTENSITY * (1 - Math.exp(-overscroll * scalar));
          return sign * (float) (linearIntensity + expIntensity);
      }
@@ -1422,24 +1400,21 @@
 +    private static float getFloatSetting(Context ctx, String key, float def) {
 +        if (ctx == null) return def;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getFloat(ctx.getContentResolver(), resolved, def);
++            return Settings.Global.getFloat(ctx.getContentResolver(), key, def);
 +        } catch (Exception ignored) { return def; }
 +    }
 +
 +    private static int getIntSetting(Context ctx, String key, int def) {
 +        if (ctx == null) return def;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getInt(ctx.getContentResolver(), resolved, def);
++            return Settings.Global.getInt(ctx.getContentResolver(), key, def);
 +        } catch (Exception ignored) { return def; }
 +    }
 +
 +    private static String getStringSetting(Context ctx, String key) {
 +        if (ctx == null) return null;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getString(ctx.getContentResolver(), resolved);
++            return Settings.Global.getString(ctx.getContentResolver(), key);
 +        } catch (Exception ignored) { return null; }
 +    }
 +
