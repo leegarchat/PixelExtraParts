@@ -58,7 +58,6 @@ object AutoHbmController {
     private val hbmModeLock = Any()
     private const val THERMAL_ROOT = "/sys/class/thermal"
     private const val SOC_THERMAL_NAME = "soc_therm"
-    private const val BATTERY_TEMP_PATH = "/sys/class/power_supply/battery/temp"
 
     fun isSupported(): Boolean {
         return File(BRIGHTNESS_PATH).exists() && File(MAX_BRIGHTNESS_PATH).exists()
@@ -493,14 +492,7 @@ object AutoHbmController {
             .onFailure { Log.w(TAG, "Unable to read $SOC_THERMAL_NAME thermal zone", it) }
             .getOrNull()
 
-        if (socTemperature != null) return socTemperature
-
-        // Keep the battery value as a safe fallback on devices without soc_therm.
-        return File(BATTERY_TEMP_PATH).readTextOrNull()
-            ?.trim()
-            ?.toLongOrNull()
-            ?.let(::normalizeTemperature)
-            ?.takeIf { it in 0f..150f }
+        return socTemperature
     }
 
     private fun readIntFile(path: String): Int? {

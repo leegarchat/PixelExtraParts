@@ -10,9 +10,6 @@ import android.text.TextUtils;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.lang.reflect.Field;
 import java.util.Locale;
 import java.util.WeakHashMap;
@@ -41,21 +38,6 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
     private static final String KEY_CUSTOM_SYMBOL_BASE = "pixelparts_battery_info_custom_symbol";
     private static final String KEY_REFRESH_INTERVAL_MS_BASE = "pixelparts_battery_info_refresh_interval_ms";
     private static final String KEY_AVERAGE_MODE_BASE = "pixelparts_battery_info_average_mode";
-
-    private static final String[] SYS_CURRENT_UA_PATHS = {
-        "/sys/class/power_supply/battery/current_now",
-        "/sys/class/power_supply/battery/current_avg",
-        "/sys/class/power_supply/battery/batt_current_ua_now",
-        "/sys/class/power_supply/battery/BatteryAverageCurrent"
-    };
-    private static final String[] SYS_VOLTAGE_UV_PATHS = {
-        "/sys/class/power_supply/battery/voltage_now",
-        "/sys/class/power_supply/battery/batt_volt",
-        "/sys/class/power_supply/battery/voltage_ocv"
-    };
-    private static final String[] SYS_TEMP_PATHS = {
-        "/sys/class/power_supply/battery/temp"
-    };
 
     private static final long DEFAULT_REFRESH_INTERVAL_MS = 1000L;
     private static final long MIN_REFRESH_INTERVAL_MS = 100L;
@@ -101,9 +83,6 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
     private Runnable mSensorSampler;
     private volatile boolean mSensorLoopActive;
 
-    private volatile String mResolvedCurrentPath;
-    private volatile String mResolvedVoltagePath;
-    private volatile String mResolvedTempPath;
 
     @Override
     public String getHookId() {
@@ -471,28 +450,6 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
             }
         }
 
-        if (needCurrent && (currentRaw == null || currentRaw == 0)) {
-             currentRaw = readFirstLongFromPaths(SYS_CURRENT_UA_PATHS);
-             if (currentRaw == null) {
-                // log("KeyguardBatteryPowerHook: Failed to find valid current path from options");
-            }
-        }
-        
-        if (needVoltage && (voltageRaw == null || voltageRaw == 0)) {
-            voltageRaw = readFirstLongFromPaths(SYS_VOLTAGE_UV_PATHS);
-            if (voltageRaw == null) {
-                // log("KeyguardBatteryPowerHook: Failed to find valid voltage path from options");
-            }
-        }
-        
-        if (needTemp && temperatureCelsius <= 0.1f) {
-            Long tempRaw = readFirstLongFromPaths(SYS_TEMP_PATHS);
-            if (tempRaw != null) {
-                temperatureCelsius = tempRaw / 10.0f;
-                //  log("KeyguardBatteryPowerHook: Read temp from sysfs: " + tempRaw + " (" + temperatureCelsius + "C)");
-            }
-        }
-
         if ((needCurrent && currentRaw == null) || (needVoltage && voltageRaw == null)) {
             return null;
         }
@@ -529,53 +486,6 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
                 microWatt,
                 temperatureCelsius
         );
-    }
-
-    private Long readFirstLongFromPaths(String[] paths) {
-        String resolvedPath = null;
-        if (paths == SYS_CURRENT_UA_PATHS) resolvedPath = mResolvedCurrentPath;
-        else if (paths == SYS_VOLTAGE_UV_PATHS) resolvedPath = mResolvedVoltagePath;
-        else if (paths == SYS_TEMP_PATHS) resolvedPath = mResolvedTempPath;
-
-        if (!TextUtils.isEmpty(resolvedPath)) {
-            Long resolvedValue = readLongFromFile(resolvedPath);
-            if (resolvedValue != null) return resolvedValue;
-        }
-
-        for (String path : paths) {
-            Long value = readLongFromFile(path);
-            if (value != null) {
-                if (paths == SYS_CURRENT_UA_PATHS) mResolvedCurrentPath = path;
-                else if (paths == SYS_VOLTAGE_UV_PATHS) mResolvedVoltagePath = path;
-                else if (paths == SYS_TEMP_PATHS) mResolvedTempPath = path;
-                return value;
-            } else {
-                // log("KeyguardBatteryPowerHook: Failed to read from " + path);
-            }
-        }
-        return null;
-    }
-
-    private Long readLongFromFile(String path) {
-        File file = new File(path);
-        if (!file.exists()) {
-            return null;
-        }
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line = reader.readLine();
-            if (line == null) {
-                return null;
-            }
-            String value = line.trim();
-            if (value.isEmpty()) {
-                return null;
-            }
-            return Long.parseLong(value);
-        } catch (Throwable t) {
-            // log("KeyguardBatteryPowerHook: Error reading " + path + ": " + t.getMessage());
-            return null;
-        }
     }
 
     private long normalizeCurrentToUa(long rawValue) {
