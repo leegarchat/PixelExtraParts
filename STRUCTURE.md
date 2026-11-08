@@ -53,8 +53,10 @@
   в git нет) + `ThermalConfigCopyRules.mk` (generated, в git нет).
 - `config/init.pixelextraparts.rc` — init-скрипт (модуль `prebuilt_etc`).
   Перезаписывается генератором thermal (safe-split) при каждой сборке.
-- `common/` + `system/` + `lang/` — стоковая аппка (как в проде, без изменений),
-  `proguard.flags`, `privapp-permissions-pixelparts.xml`, `donate_page.json`.
+- `app/` — стоковая аппка единой цепочкой (как в проде, без изменений):
+  `AndroidManifest.xml`, `src/`, `res/`, `lib/`, `lang/`, `proguard.flags`,
+  `privapp-permissions-pixelparts.xml`, `donate_page.json`
+  (бывшие рудименты веток `common/` + `system/` слиты сюда).
 - `addons/` — аддоны: `release/` — продовые (11 шт, `out/*.jar` зачекинены),
   `tests/` — экспериментальные; `prebuild/` — общие зависимости сборки;
   `build.sh` (`build.bat/ps1`) собирает по имени из `release/` и `tests/`.
