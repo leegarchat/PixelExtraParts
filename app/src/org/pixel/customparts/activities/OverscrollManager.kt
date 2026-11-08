@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import org.pixel.customparts.utils.HookKeyCompat
 import java.io.BufferedReader
 import java.io.FileOutputStream
 import java.io.InputStreamReader
@@ -21,7 +22,8 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 
 object OverscrollManager {
 
-    // LSPlant-only runtime suffix (legacy "_xposed" keys are still read via stripSuffix).
+    // Legacy write suffix (hooks still read "_pine" — see HookKeyCompat KDoc).
+    // Do NOT change without a data migration + hook-side audit.
     private const val SUFFIX: String = "_pine"
 
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"
@@ -151,8 +153,8 @@ object OverscrollManager {
         Settings.Global.putString(context.contentResolver, KEY_SAVED_PROFILES, arr.toString())
     }
 
-    /** Убирает платформенный суффикс _pine/_xposed из ключа для кросс-платформенного JSON */
-    private fun stripSuffix(key: String): String = key.removeSuffix("_pine").removeSuffix("_xposed")
+    /** Убирает платформенный суффикс _lsplant/_pine/_xposed из ключа для кросс-платформенного JSON */
+    private fun stripSuffix(key: String): String = HookKeyCompat.stripHookSuffix(key)
 
     fun getAppConfigs(context: Context): List<AppConfigItem> {
         val raw = Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG) ?: return emptyList()
@@ -181,7 +183,7 @@ object OverscrollManager {
 
     private fun collectCurrentSettingsJson(context: Context): JSONObject {
         val json = JSONObject()
-        // Ключи в JSON хранятся БЕЗ суффикса _pine/_xposed — кросс-платформенный формат.
+        // Ключи в JSON хранятся БЕЗ суффикса _lsplant/_pine/_xposed — кросс-платформенный формат.
         // Для чтения из Settings.Global используем полный ключ (с суффиксом),
         // а для записи в JSON — stripSuffix(key).
         json.put(stripSuffix(KEY_ENABLED), Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1))
@@ -229,7 +231,7 @@ object OverscrollManager {
             if (originalKey == KEY_ACTIVE_PROFILE) continue 
             if (originalKey == "name") continue // Игнорируем мета-поле имени, если оно есть
 
-            var baseKey = originalKey.removeSuffix("_pine").removeSuffix("_xposed")
+            var baseKey = stripSuffix(originalKey)
             
             if (baseKey.endsWith("_v2")) {
                 baseKey = baseKey.removeSuffix("_v2")

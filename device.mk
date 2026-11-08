@@ -16,7 +16,7 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system_ext/etc/pixelparts/addons/ram_purge.jar \
     system_ext/etc/pixelparts/addons/yandexmaps_fast.jar \
     system_ext/etc/pixelparts/addons/flashnotify.jar \
-	system_ext/etc/pixelparts/addons/settings_icon_style_override_addon.jar \
+    system_ext/etc/pixelparts/addons/settings_icon_style_override.jar \
     system/framework/LsplantInject.jar \
     system/lib64/libc++_shared.so \
     system/lib64/liblsplant.so \
@@ -26,8 +26,6 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system/framework/oat/arm64/LsplantInject.odex \
     system/framework/oat/arm64/LsplantInject.vdex
 
-$(warning $(PRODUCT_PACKAGES))
-
 PRODUCT_PACKAGES += \
     PixelCustomPartsSystem \
     init.pixelextraparts.rc \
@@ -35,7 +33,7 @@ PRODUCT_PACKAGES += \
     ambient_extend_hook_addon \
     gcam_photo_torch_addon \
     icon_manager_settings_addon \
-	settings_icon_style_override_addon \
+    settings_icon_style_override_addon \
     ims_carrier_config_addon \
     launcher_hooks_addon \
     settings_homepage_item_addon \

@@ -48,7 +48,9 @@ public final class XposedBridge {
 	// built-in handlers
 	private static final Map<Member, CopyOnWriteSortedSet<XC_MethodHook>> sHookedMethodCallbacks = new HashMap<>();
 
-	// LSPlant changed: Move sLoadedPackageCallbacks to LsplantXposed.
+	// Per-method dispatch lives in LSPlantDispatcher below (per-method
+	// CopyOnWriteSortedSet routing to LsplantBridge); there is no global
+	// legacy callback table in this backend.
 	// /*package*/ static final CopyOnWriteSortedSet<XC_LoadPackage> sLoadedPackageCallbacks = new CopyOnWriteSortedSet<>();
 
 	private static HookProvider hookProvider = HookProvider.LSPLANT;
@@ -250,8 +252,9 @@ public final class XposedBridge {
 		return unhooks;
 	}
 
-	// LSPlant changed: removed handleHookedMethod(), it be implemented in Handler.class
-	// LSPlant changed: removed hookXxx(), it is implemented in LsplantXposed.class
+	// LSPlant backend note: legacy handleHookedMethod()/hookXxx() entry points
+	// are gone; per-method dispatch is implemented by LSPlantDispatcher below,
+	// backed by LsplantBridge.nativeDoHook.
 
 	/**
 	 * Basically the same as {@link Method#invoke}, but calls the original method

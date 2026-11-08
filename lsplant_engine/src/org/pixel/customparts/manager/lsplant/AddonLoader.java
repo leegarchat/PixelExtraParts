@@ -90,12 +90,9 @@ public class AddonLoader {
         }
     }
 
-    // Package excluded from addon injection entirely (system_server — can't hook reliably)
-    private static final String IGNORED_PACKAGE = "android";
-
     public static void loadAndRunAddons(Context context, ClassLoader appClassLoader, String packageName) {
         // system_server is excluded — hooking it is unreliable
-        if (IGNORED_PACKAGE.equals(packageName)) return;
+        if (XposedModuleHost.SYSTEM_PACKAGE.equals(packageName)) return;
 
         // Global safe mode check (cross-process via Settings.Global)
         if (isGlobalSafeMode(context)) {
@@ -277,7 +274,7 @@ public class AddonLoader {
             } catch (Throwable ignored) {}
         }
         // "android" (system_server) is never a valid target
-        result.remove(IGNORED_PACKAGE);
+        result.remove(XposedModuleHost.SYSTEM_PACKAGE);
         info.cachedEffectiveTargets = Collections.unmodifiableSet(result);
         return info.cachedEffectiveTargets;
     }
@@ -430,13 +427,6 @@ public class AddonLoader {
 
         rebuildTargetIndex(context);
         Log.d(TAG, "Addon scan complete. " + loadedAddons.size() + " addon(s) indexed.");
-    }
-
-    public static synchronized void rescan(Context context) {
-        loadedAddons.clear();
-        targetIndex.clear();
-        scanned = false;
-        ensureAddonsLoaded(context);
     }
 
     /**

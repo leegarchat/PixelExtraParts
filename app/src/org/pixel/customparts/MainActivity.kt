@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,7 +53,6 @@ import org.pixel.customparts.ui.addons.AddonMainEntryRow
 import org.pixel.customparts.ui.addons.AddonSettingDef
 import org.pixel.customparts.ui.addons.SettingType
 import org.pixel.customparts.ui.addons.scanAddonMainEntries
-import org.pixel.customparts.utils.RootUtils
 import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
@@ -76,60 +74,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            var rootState by remember { mutableStateOf(if (AppConfig.NEEDS_ROOT_ACCESS) 0 else 1) }
-
-            LaunchedEffect(Unit) {
-                if (AppConfig.NEEDS_ROOT_ACCESS) {
-                    withContext(Dispatchers.IO) {
-                        try {
-                            if (RootUtils.hasRootAccess()) {
-                                RootUtils.grantPermissions(context)
-                                rootState = 1
-                            } else {
-                                rootState = 2
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            rootState = 2
-                        }
-                    }
-                }
-            }
-
             val colorScheme = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
             MaterialTheme(colorScheme = colorScheme) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    when (rootState) {
-                        0 -> LoadingScreen()
-                        1 -> MainDashboard()
-                        2 -> NoRootDialog { finishAffinity() }
-                    }
+                    MainDashboard()
                 }
             }
         }
     }
-}
-
-@Composable
-fun LoadingScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-fun NoRootDialog(onExit: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = { },
-        icon = { Icon(Icons.Rounded.Security, contentDescription = null) },
-        title = { Text(text = dynamicStringResource(R.string.main_root_title)) },
-        text = { Text(dynamicStringResource(R.string.main_root_desc)) },
-        confirmButton = {
-            TextButton(onClick = onExit) { Text(dynamicStringResource(R.string.btn_exit)) }
-        },
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -897,8 +850,7 @@ private fun collectMainSearchResourceStrings(context: Context): Map<String, Stri
         "systemui" to listOf("sysui_", "qs_", "shade_", "lockscreen_", "battery_", "charging_", "magnifier_", "activity_transition_", "log_"),
         "launcher" to listOf("launcher_", "recents_", "search_widget_", "grid_", "clear_all_", "gesture_bar_"),
         "thermal" to listOf("thermal_"),
-        "addons" to listOf("addon_"),
-        "test" to listOf("test_")
+        "addons" to listOf("addon_")
     )
     val result = categories.keys.associateWith { StringBuilder() }.toMutableMap()
     runCatching {

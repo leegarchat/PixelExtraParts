@@ -12,9 +12,6 @@
     <string name="os_msg_app_exists">Это приложение уже есть в списке</string>
 
     <!-- Master Switch (Dynamic) -->
-    <!-- Xposed Mode -->
-    <string name="os_label_master_xposed">Модуль Xposed</string>
-    <string name="os_desc_master_xposed">Использует Xposed Framework для подмены системного класса EdgeEffect.\n\nПозволяет внедрить физику во все приложения без модификации системы. Если модуль не активен в LSPosed, эффекты будут работать только в этом приложении (демо-режим).</string>
     
     <!-- Native Mode -->
     <string name="os_label_master_native">Системная интеграция</string>
@@ -393,12 +390,8 @@
     <string name="magnifier_shape_square">Квадрат</string>
     <string name="magnifier_shape_circle">Круг</string>
     <string name="magnifier_offset_y_title">Смещение по вертикали</string>
-    <string name="magnifier_xposed_warning_title">Требуется Xposed-модуль</string>
-    <string name="magnifier_xposed_warning_desc">Модификация текстовой лупы работает поприложениям. Включите Xposed-модуль для каждого приложения, где вы хотите видеть изменённую лупу.</string>
     <string name="magnifier_preview_label">Пример</string>
     <string name="magnifier_sample_text">Пример текста для тестирования лупы</string>
-    <string name="overscroll_xposed_warning_title">Требуется Xposed-модуль</string>
-    <string name="overscroll_xposed_warning_desc">Модификация эффекта прокрутки работает поприложениям. Включите Xposed-модуль для каждого приложения, где вы хотите видеть изменённый эффект прокрутки.</string>
 
     <string name="sysui_media_player_title">Медиаплеер</string>
     <string name="sysui_media_compact_mode_title">Режим компактности</string>
@@ -449,9 +442,6 @@
     <string name="os_status_active">Активно</string>
     <string name="os_status_disabled">Отключено</string>
     
-    <!-- Xposed Dialogs -->
-    <string name="os_dialog_xposed_title">Xposed не активен</string>
-    <string name="os_dialog_xposed_msg">Хуки не могут быть установлены.\n\nПриложение не обнаружило активный фреймворк LSPosed. Без него перехват системных вызовов невозможен, настройки будут работать только внутри этого приложения.</string>
 
     <!-- Profiles UI -->
     <string name="os_group_profiles">Профили настроек</string>
@@ -698,8 +688,6 @@
     <string name="dt2w_title">Пробуждение касанием</string>
     <string name="dt2w_add_tile">Добавить плитку DT2W</string>
     
-    <string name="dt2w_desc_xposed">Xposed-хук для SystemUI.\n\nПерехватывает события сенсора в классе DozeTriggers и эмулирует пробуждение, так как аппаратная поддержка на Pixel часто отключена или ограничена.</string>
-    <string name="dt2w_desc_native">Нативная системная интеграция.\n\nИспользует встроенный в прошивку код для обработки сенсорных событий в режиме Doze, обеспечивая пробуждение без сторонних хуков.</string>
     
     <string name="dt2w_info_title">Как это работает</string>
     <string name="dt2w_info_desc">Это программная эмуляция, а не аппаратная функция ядра.\n\n<b>Принцип работы:</b>\nСистема держит сенсор активным в режиме AOD/Doze и анализирует касания.\n\n<b>Важно:</b>\n• Из-за программной обработки возможна небольшая задержка.\n• Может незначительно влиять на расход батареи (Deep Sleep).</string>
@@ -710,8 +698,6 @@
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Сон на рабочем столе</string>
     
-    <string name="dt2s_desc_xposed">Xposed-хук для Pixel Launcher.\n\nПерехватывает метод \'onTouchEvent\' в классе Workspace лаунчера, позволяя блокировать экран касанием по пустому месту.</string>
-    <string name="dt2s_desc_native">Нативная инъекция кода.\n\nИспользует модифицированный фреймворк для регистрации \'ActivityLifecycleCallbacks\' в процессе Launcher3. При запуске активити автоматически находится корневое View рабочего стола (Workspace) и к нему привязывается кастомный \'OnTouchListener\'. Это работает без Xposed и не требует прав суперпользователя для самого лаунчера.</string>
 
     <string name="dt2s_info_title">Особенности DT2S</string>
     <string name="dt2s_info_desc">Позволяет выключить экран двойным тапом по пустой области рабочего стола.\n\n<b>Ограничения:</b>\n• Работает только в Pixel Launcher.\n• Не срабатывает на виджетах или иконках.\n• Может конфликтовать со свайпами, если "Допуск смещения" настроен слишком агрессивно.</string>
@@ -737,8 +723,6 @@
     <string name="nav_back">Назад</string>
 
     <!-- Shared Dialogs -->
-    <string name="xposed_required_title">Требуется Xposed</string>
-    <string name="xposed_required_message">Для работы этой функции необходим активный модуль Xposed.</string>
     
     <string name="status_active">Активно</string>
     <string name="status_disabled">Отключено</string>
@@ -759,12 +743,7 @@
     <string name="main_header_systemui">SystemUI</string>
     <string name="main_header_camera">Камера</string>
 
-    <!-- Test things (debug section, hidden by default) -->
-    <string name="test_things_title">Тестовые штуки</string>
-    <string name="test_things_desc">Экспериментальные возможности в разработке</string>
     
-    <string name="main_root_title">Нет Root доступа</string>
-    <string name="main_root_desc">Для работы приложения необходимы права суперпользователя (Root) и активный Xposed Framework.\n\nПожалуйста, установите Magisk/KernelSU и предоставьте права.</string>
 
     <string name="dt_desc_activity">Управление жестами пробуждения и сна</string>
     <string name="launcher_title_activity">Разное</string>

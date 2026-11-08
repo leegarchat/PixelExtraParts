@@ -43,8 +43,6 @@ public class LegacyModuleHost {
     private static final Map<String, LegacyRecord> modules = new HashMap<>();
     private static boolean scanned = false;
 
-    private static final String MODULE_LIST_KEY = "pixelparts_xposed_modules";
-
     public static synchronized void ensureScanned(Context context) {
         if (scanned) return;
         scanned = true;
@@ -59,7 +57,7 @@ public class LegacyModuleHost {
         String list = null;
         try {
             list = android.provider.Settings.Global.getString(
-                    context.getContentResolver(), MODULE_LIST_KEY);
+                    context.getContentResolver(), XposedModuleHost.MODULE_LIST_KEY);
         } catch (Throwable ignored) {
         }
         if (list == null || list.isEmpty()) return;
@@ -209,10 +207,5 @@ public class LegacyModuleHost {
                 }
             }
         }
-    }
-
-    /** Debug/diagnostics: indexed legacy module ids. */
-    public static synchronized Set<String> getModuleIds() {
-        return new HashSet<>(modules.keySet());
     }
 }

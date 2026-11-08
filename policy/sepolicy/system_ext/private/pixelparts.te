@@ -1,4 +1,4 @@
-# Enforcing policy for the PEP app (Variant A, test_rework_patches).
+# Enforcing policy for the PEP release app.
 # The app runs as stock system_app (sharedUserId android.uid.system);
 # no custom domain, no permissive. Rules below serve the app itself
 # plus other enforcing system processes (SystemUI/Settings) —

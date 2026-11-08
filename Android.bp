@@ -144,8 +144,6 @@ android_app {
     ],
     srcs: [
         "app/src/**/*.kt",
-        "app/src/**/*.java",
-        "app/src/**/*.kt",
         "app/src/**/*.java"
     ],
     use_embedded_native_libs: false,
@@ -167,7 +165,6 @@ android_app {
         "androidx.compose.ui_ui-tooling-preview",
         "androidx.compose.material3_material3",
         "androidx.compose.material_material-icons-extended",
-        "SettingsLib",
         "org.lineageos.settings.resources", 
     ],
 
@@ -222,7 +219,7 @@ cc_prebuilt_library_shared {
 }
 cc_prebuilt_library_shared {
     name: "liblspbridge",
-    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblspbridge.so"],
+    srcs: ["lsplant_engine/libs/lsplant/arm64-v8a/liblspbridge.so"],
     strip: {
     none: true,
     },
@@ -245,9 +242,6 @@ java_library {
         // Общий интерфейс IHookEnvironment
         "lsplant_engine/src/org/pixel/customparts/core/**/*.kt",
         "lsplant_engine/src/org/pixel/customparts/core/**/*.java",
-        // Общие хуки (код реализации)
-        "lsplant_engine/src/org/pixel/customparts/hooks/**/*.kt",
-        "lsplant_engine/src/org/pixel/customparts/hooks/**/*.java",
         // Менеджер инъекции (движок-независимый + LSPlant-бэкенд)
         "lsplant_engine/src/org/pixel/customparts/manager/lsplant/**/*.kt",
         "lsplant_engine/src/org/pixel/customparts/manager/lsplant/**/*.java",

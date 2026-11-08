@@ -38,7 +38,6 @@ public class XposedModuleHost {
         String pkgName;
         final List<String> classNames = new ArrayList<>();
         final Set<String> scopes = new HashSet<>();
-        boolean staticScope = false;
         final List<XposedModuleInterface> instances = new ArrayList<>();
         boolean loaded = false;
         boolean moduleLoadedCalled = false;
@@ -264,11 +263,6 @@ public class XposedModuleHost {
                                 minApi = Integer.parseInt(pl.substring("minApiVersion=".length()));
                             } catch (Throwable ignored) {
                             }
-                        } else if (pl.startsWith("staticScope=")) {
-                            // Stored for future use (fixed vs dynamic scope);
-                            // currently all scopes are honored as listed.
-                            rec.staticScope = pl.substring("staticScope=".length())
-                                    .equalsIgnoreCase("true");
                         }
                     }
                 } finally {
@@ -336,8 +330,7 @@ public class XposedModuleHost {
 
     private static boolean isModuleEnabled(Context context, ModuleRecord rec) {
         // Secure default: unknown APKs stay OFF until explicitly enabled.
-        // (Test branch note: enable test modules via
-        //  settings put global pixel_addon_<package>_enabled 1.)
+        // (Manual enable: settings put global pixel_addon_<package>_enabled 1.)
         try {
             return Settings.Global.getInt(context.getContentResolver(),
                     "pixel_addon_" + keyBase(context, rec) + "_enabled", 0) != 0;
@@ -530,17 +523,5 @@ public class XposedModuleHost {
         out.remove(SYSTEM_PACKAGE);
         out.remove("*");
         return out;
-    }
-
-    /** Debug/diagnostics: indexed module ids. */
-    public static synchronized Set<String> getModuleIds() {
-        return new HashSet<>(modules.keySet());
-    }
-
-    /** Used by tests/tools to drop cached scan state. */
-    public static synchronized void rescan(Context context) {
-        modules.clear();
-        scanned = false;
-        ensureScanned(context);
     }
 }

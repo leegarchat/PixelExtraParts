@@ -1,7 +1,7 @@
 #!/bin/bash
-# One-shot NDK build of liblsplant.so (LSPlant + Dobby + JNI glue).
-# Output (staging): lsplant/lsplant-native/out/<abi>/liblsplant.so
-# Install into prebuilts (lsplant/libs/lsplant/) is a separate manual step.
+# NDK fallback build of liblspbridge.so (LSPlant/Dobby JNI glue only).
+# Output (staging): lsplant_engine/lsplant-native/out/<abi>/liblspbridge.so
+# Install into prebuilts (lsplant_engine/libs/lsplant/) is a separate manual step.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NDK="${ANDROID_NDK:-${ANDROID_NDK_HOME:-/opt/android-sdk/ndk/29.0.14206865}}"
@@ -22,4 +22,4 @@ cmake -B "$BUILD_DIR" -G Ninja \
     -DCMAKE_BUILD_TYPE=MinSizeRel \
     -S "$SCRIPT_DIR"
 cmake --build "$BUILD_DIR"
-echo "OK: $(find "$BUILD_DIR" -name liblsplant.so)"
+echo "OK: $(find "$BUILD_DIR" -name liblspbridge.so)"

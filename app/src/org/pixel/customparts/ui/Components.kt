@@ -678,15 +678,6 @@ fun InfoDialog(
                         val videoSuffix = stringResource(R.string.url_video_sample_path_suffix)
 
                         LaunchedEffect(videoResName, reloadKey) {
-                            val TAG = "CustomPartsVideo"
-
-                            if (videoResName == "test_row") {
-                                android.util.Log.d(TAG, "Skipping logic for 'test_row'")
-                                isLoading = false
-                                return@LaunchedEffect
-                            }
-
-                            android.util.Log.d(TAG, ">>> START LaunchedEffect for: $videoResName | ReloadKey: $reloadKey")
                             isLoading = true
                             isError = false
                             
@@ -759,9 +750,7 @@ fun InfoDialog(
                                 .background(if (isLoading || isError || currentUri == null) Color.Black else Color.Transparent),
                             contentAlignment = Alignment.Center
                         ) {
-                            if (videoResName == "test_row") {
-                                Text(dynamicStringResource(R.string.common_video_placeholder), color = Color.White)
-                            } else if (currentUri != null && !isError) {
+                            if (currentUri != null && !isError) {
                                 AndroidView(
                                     factory = { ctx ->
                                         VideoView(ctx).apply {

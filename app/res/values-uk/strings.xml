@@ -11,9 +11,6 @@
     <string name="os_msg_app_exists">Цей додаток вже є у списку</string>
 
     <!-- Master Switch (Dynamic) -->
-    <!-- Xposed Mode -->
-    <string name="os_label_master_xposed">Модуль Xposed</string>
-    <string name="os_desc_master_xposed">Використовує фреймворк Xposed для хуку системного класу EdgeEffect.\n\nДозволяє впроваджувати фізику в усі додатки без модифікації системи. Якщо модуль неактивний у LSPosed, ефекти працюватимуть лише в цьому додатку (демо-режим).</string>
     
     <!-- Native Mode -->
     <string name="os_label_master_native">Системна інтеграція</string>
@@ -38,12 +35,8 @@
     <string name="magnifier_shape_square">Квадрат</string>
     <string name="magnifier_shape_circle">Коло</string>
     <string name="magnifier_offset_y_title">Вертикальний зсув</string>
-    <string name="magnifier_xposed_warning_title">Потрібен модуль Xposed</string>
-    <string name="magnifier_xposed_warning_desc">Модифікація лупи працює для кожного додатка окремо. Увімкніть модуль Xposed для кожного додатка, в якому має з\'являтися модифікована лупа.</string>
     <string name="magnifier_preview_label">Приклад</string>
     <string name="magnifier_sample_text">Приклад тексту для тестування лупи</string>
-    <string name="overscroll_xposed_warning_title">Потрібен модуль Xposed</string>
-    <string name="overscroll_xposed_warning_desc">Модифікація overscroll працює для кожного додатка окремо. Увімкніть модуль Xposed для кожного додатка, в якому має з\'являтися модифікований ефект краю.</string>
 
     <string name="sysui_media_player_title">Медіаплеєр</string>
     <string name="sysui_media_compact_mode_title">Компактний режим</string>
@@ -90,9 +83,6 @@
     <string name="os_status_active">Активний</string>
     <string name="os_status_disabled">Вимкнено</string>
     
-    <!-- Xposed Dialogs -->
-    <string name="os_dialog_xposed_title">Xposed неактивний</string>
-    <string name="os_dialog_xposed_msg">Неможливо встановити хуки.\n\nДодаток не виявив активного фреймворку LSPosed. Без нього перехоплення системних викликів неможливе; налаштування працюватимуть лише в межах цього додатка.</string>
 
     <!-- Profiles UI -->
     <string name="os_group_profiles">Профілі</string>
@@ -325,8 +315,6 @@
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Подвійний дотик для прокидання</string>
     
-    <string name="dt2w_desc_xposed">Xposed-хук для SystemUI.\n\nПерехоплює події сенсора в класі DozeTriggers та емулює прокидання, оскільки апаратна підтримка часто вимкнена або обмежена на пристроях Pixel.</string>
-    <string name="dt2w_desc_native">Системна інтеграція (Нативна).\n\nВикористовує вбудований у прошивку код для обробки подій дотику в режимі Doze, забезпечуючи прокидання без хуків сторонніх розробників.</string>
     
     <string name="dt2w_info_title">Як працює</string>
     <string name="dt2w_info_desc">Це програмна емуляція, а не апаратна функція ядра.\n\n<b>Принцип:</b>\nСистема тримає дігітайзер активним у режимі AOD/Doze та аналізує дотики.\n\n<b>Важливо:</b>\n• Можлива невелика затримка через програмну обробку.\n• Може трохи вплинути на споживання батареї (Deep Sleep).</string>
@@ -337,8 +325,6 @@
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Подвійний дотик для засинання</string>
     
-    <string name="dt2s_desc_xposed">Xposed-хук для Pixel Launcher.\n\nПерехоплює метод \'onTouchEvent\' у класі Workspace лаунчера та дозволяє блокувати екран натисканням на порожнє місце.</string>
-    <string name="dt2s_desc_native">Нативна ін\'єкція коду.\n\nВикористовує модифікований фреймворк для реєстрації \'ActivityLifecycleCallbacks\' у процесі Launcher3. При запуску Activity автоматично знаходиться кореневий View Workspace та приєднується власний \'OnTouchListener\'. Працює без Xposed і не потребує прав root для самого лаунчера.</string>
 
     <string name="dt2s_info_title">Особливості DT2S</string>
     <string name="dt2s_info_desc">Дозволяє вимкнути екран подвійним дотиком на порожню ділянку робочого столу.\n\n<b>Обмеження:</b>\n• Працює лише в Pixel Launcher.\n• Не реагує на віджети або іконки.\n• Може конфліктувати з жестами свайпу, якщо "допуск зміщення" налаштовано занадто агресивно.</string>
@@ -364,8 +350,6 @@
     <string name="nav_back">Назад</string>
 
     <!-- Shared Dialogs -->
-    <string name="xposed_required_title">Потрібен Xposed</string>
-    <string name="xposed_required_message">Ця функція потребує активного модуля Xposed.</string>
     
     <string name="status_active">Активний</string>
     <string name="status_disabled">Вимкнено</string>
@@ -382,12 +366,7 @@
     <string name="main_header_systemui">SystemUI</string>
     <string name="main_header_camera">Камера</string>
 
-    <!-- Test things (debug section, hidden by default) -->
-    <string name="test_things_title">Тестові функції</string>
-    <string name="test_things_desc">Експериментальні функції в розробці</string>
     
-    <string name="main_root_title">Немає доступу Root</string>
-    <string name="main_root_desc">Додаток потребує прав суперкористувача (Root) та активного фреймворку Xposed.\n\nБудь ласка, встановіть Magisk/KernelSU та надайте дозвіл.</string>
 
     <string name="dt_desc_activity">Управління жестами прокидання та засинання</string>
     <string name="launcher_title_activity">Різне</string>

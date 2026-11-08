@@ -11,7 +11,8 @@ and resolves ART symbols dynamically instead of hardcoding layouts.
 ## Layout
 - `bridge/bridge.cpp` — JNI glue for
   `org.pixel.customparts.manager.lsplant.LsplantBridge`
-  (`nativeInit`/`nativeDoHook`/`nativeUnHook`/`nativeDeoptimize`).
+  (`nativeInit`/`nativeDoHook`/`nativeDeoptimize`,
+  plus `nativeForeignEnginePresent` probe).
 - `bridge/art_elf.{h,cpp}` — minimal libart.so symbol resolver (exact via
   `dlopen(RTLD_NOLOAD)+dlsym`, prefix via manual ELF walk over .dynsym,
   on-disk .symtab fallback).
@@ -28,12 +29,14 @@ Needs NDK r28+ (tested r29), CMake 3.28+, ninja:
 `./build_lsplant.sh` (env: `ANDROID_NDK`, `ABI`, `PLATFORM`).
 
 ## Install into prebuilts
-`liblspbridge.so` builds from source during the ROM build (Soong
-`cc_library_shared`, see root `Android.bp`) — no manual step.
-After a successful NDK-fallback build + device soak test, copy the two
-engine .so files to `native/lsplant/libs/lsplant/arm64-v8a/`
-(liblsplant.so, libdobby.so) — they ship to `/system/lib64` via
-`cc_prebuilt_*` modules in `Android.bp` / `device.mk`.
+`liblspbridge.so` ships to the ROM as a Soong `cc_prebuilt_library_shared`
+(`liblspbridge` in the root `Android.bp`, source
+`lsplant_engine/libs/lsplant/arm64-v8a/liblspbridge.so`) — no manual step.
+After a successful NDK-fallback build + device soak test, copy the freshly
+built `liblspbridge.so` (and, if renewed, the engine `.so` files) into
+`lsplant_engine/libs/lsplant/arm64-v8a/` (liblsplant.so, libdobby.so) — they
+ship to `/system/lib64` via `cc_prebuilt_*` modules in `Android.bp` /
+`device.mk`.
 
 ## License notes
 - LSPlant core: LGPL-3.0 — shipped as a separate unmodified shared
@@ -41,6 +44,6 @@ engine .so files to `native/lsplant/libs/lsplant/arm64-v8a/`
 - Dobby: Apache-2.0.
 - `bridge/` + headers usage: ours.
 
-- `lsplant/libs/lsplant/arm64-v8a/libc++_shared.so`: NDK r29 shared STL,
+- `lsplant_engine/libs/lsplant/arm64-v8a/libc++_shared.so`: NDK r29 shared STL,
   required at runtime by the prefab liblsplant.so (the platform itself
   carries no libc++_shared). Shipped to /system/lib64 alongside.

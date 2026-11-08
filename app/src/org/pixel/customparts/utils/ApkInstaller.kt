@@ -8,7 +8,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageInstaller
 import android.util.Log
 import kotlin.coroutines.cancellation.CancellationException
-import org.pixel.customparts.AppConfig
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -70,11 +69,7 @@ object ApkInstaller {
                 log("Requested INSTALL_DISABLE_VERIFICATION for system install")
             } catch (e: Exception) {
                 log("Failed to request verification bypass: ${e.message}")
-                return if (AppConfig.NEEDS_ROOT_ACCESS) {
-                    fallbackSuInstall(apkPath, log)
-                } else {
-                    false
-                }
+                return false
             }
 
             try {
@@ -157,16 +152,11 @@ object ApkInstaller {
                 if (System.nanoTime() >= installDeadline) break
             }
 
-            if (installSuccess) {
+            return if (installSuccess) {
                 log("Install successful!")
-                return true
+                true
             } else {
                 log("API install failed. Status: $installMsg")
-            }
-
-            return if (AppConfig.NEEDS_ROOT_ACCESS) {
-                fallbackSuInstall(apkPath, log)
-            } else {
                 false
             }
         } catch (e: CancellationException) {
@@ -179,11 +169,7 @@ object ApkInstaller {
                 throw CancellationException()
             }
             log("Install exception: ${e.message}")
-            return if (AppConfig.NEEDS_ROOT_ACCESS) {
-                fallbackSuInstall(apkPath, log)
-            } else {
-                false
-            }
+            return false
         } finally {
             receiver?.let { registeredReceiver ->
                 if (receiverRegistered) {
@@ -263,57 +249,10 @@ object ApkInstaller {
                 log("API uninstall failed. Status: $uninstallMsg")
             }
 
-            if (AppConfig.NEEDS_ROOT_ACCESS) {
-                try {
-                    val suResult = runCommand(arrayOf("su", "-c", "cmd package uninstall $packageName"))
-                    if (suResult.first.contains("Success")) {
-                        log("SU uninstall successful.")
-                        return true
-                    }
-                    log("SU uninstall failed. Output: ${suResult.first}")
-                } catch (e: Exception) {
-                    log("SU fallback not available: ${e.message}")
-                }
-            }
-
             return false
         } catch (e: Exception) {
             log("Uninstall exception: ${e.message}")
             return false
         }
-    }
-
-    private fun fallbackSuInstall(apkPath: String, log: (String) -> Unit): Boolean {
-        log("Trying fallback to su...")
-        try {
-            val suResult = runCommand(arrayOf(
-                "su", "-c", "cmd package install --skip-verification --force-queryable -r -d -t ${shellQuote(apkPath)}"
-            ))
-            if (suResult.first.contains("Success")) {
-                log("SU install successful.")
-                return true
-            }
-            log("SU install failed. Output: ${suResult.first}")
-        } catch (e: Exception) {
-            log("SU fallback not available: ${e.message}")
-        }
-        return false
-    }
-
-    private fun shellQuote(value: String): String {
-        return "'${value.replace("'", "'\\''")}'"
-    }
-
-    private fun runCommand(cmd: Array<String>, workDir: File? = null): Pair<String, String> {
-        val process = ProcessBuilder(*cmd)
-            .directory(workDir)
-            .redirectErrorStream(true)
-            .start()
-
-        process.outputStream.close()
-
-        val output = process.inputStream.bufferedReader().readText()
-        process.waitFor()
-        return Pair(output.trim(), "")
     }
 }

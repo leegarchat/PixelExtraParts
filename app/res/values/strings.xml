@@ -11,9 +11,6 @@
     <string name="os_msg_app_exists">This app is already in the list</string>
 
     <!-- Master Switch (Dynamic) -->
-    <!-- Xposed Mode -->
-    <string name="os_label_master_xposed">Xposed Module</string>
-    <string name="os_desc_master_xposed">Uses Xposed Framework to hook the system EdgeEffect class.\n\nAllows injecting physics into all applications without system modification. If the module is not active in LSPosed, effects will only work in this app (demo mode).</string>
     
     <!-- Native Mode -->
     <string name="os_label_master_native">System Integration</string>
@@ -392,12 +389,8 @@
     <string name="magnifier_shape_square">Square</string>
     <string name="magnifier_shape_circle">Circle</string>
     <string name="magnifier_offset_y_title">Vertical offset</string>
-    <string name="magnifier_xposed_warning_title">Xposed module required</string>
-    <string name="magnifier_xposed_warning_desc">Text magnifier modification works per-app. Enable the Xposed module for each application where you want the modified loupe to appear.</string>
     <string name="magnifier_preview_label">Preview</string>
     <string name="magnifier_sample_text">Sample text for magnifier testing</string>
-    <string name="overscroll_xposed_warning_title">Xposed module required</string>
-    <string name="overscroll_xposed_warning_desc">Overscroll effect modification works per-app. Enable the Xposed module for each application where you want the modified edge effect to appear.</string>
 
     <string name="sysui_media_player_title">Media player</string>
     <string name="sysui_media_compact_mode_title">Compact mode</string>
@@ -448,9 +441,6 @@
     <string name="os_status_active">Active</string>
     <string name="os_status_disabled">Disabled</string>
     
-    <!-- Xposed Dialogs -->
-    <string name="os_dialog_xposed_title">Xposed is not active</string>
-    <string name="os_dialog_xposed_msg">Hooks cannot be installed.\n\nThe app did not detect an active LSPosed framework. Without it, intercepting system calls is impossible; settings will only apply within this application.</string>
 
     <!-- Profiles UI -->
     <string name="os_group_profiles">Profiles</string>
@@ -697,8 +687,6 @@
     <string name="dt2w_title">Double Tap to Wake (DT2W)</string>
     <string name="dt2w_add_tile">Add DT2W tile</string>
     
-    <string name="dt2w_desc_xposed">Xposed hook for SystemUI.\n\nIntercepts sensor events in DozeTriggers class and emulates wake-up, as hardware support on Pixel is often disabled or limited.</string>
-    <string name="dt2w_desc_native">Native System Integration.\n\nUses built-in firmware code to process touch events in Doze mode, ensuring wake-up without third-party hooks.</string>
     
     <string name="dt2w_info_title">How it works</string>
     <string name="dt2w_info_desc">This is Software Emulation, not a hardware kernel feature.\n\n<b>Mechanism:</b>\nSystem keeps digitizer active in AOD/Doze mode and analyzes touches.\n\n<b>Important:</b>\n• Small delay is possible due to software processing.\n• May slightly affect battery drain (Deep Sleep).</string>
@@ -709,8 +697,6 @@
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Double Tap to Sleep (DT2S)</string>
     
-    <string name="dt2s_desc_xposed">Xposed hook for Pixel Launcher.\n\nIntercepts \'onTouchEvent\' in launcher Workspace class, allowing screen lock by tapping on empty space.</string>
-    <string name="dt2s_desc_native">Native Injection.\n\nUses modified framework to register \'ActivityLifecycleCallbacks\' in Launcher3 process. Upon activity start, automatically finds root Workspace view and attaches custom \'OnTouchListener\'. Works without Xposed and doesn\'t require root for the launcher itself.</string>
 
     <string name="dt2s_info_title">DT2S Specifics</string>
     <string name="dt2s_info_desc">Allows turning off screen by double tapping empty desktop area.\n\n<b>Limitations:</b>\n• Works only in Pixel Launcher.\n• Does not trigger on widgets or icons.\n• May conflict with swipes if "Slop" is set too aggressively.</string>
@@ -736,8 +722,6 @@
     <string name="nav_back">Back</string>
 
     <!-- Shared Dialogs -->
-    <string name="xposed_required_title">Xposed Required</string>
-    <string name="xposed_required_message">This feature requires Xposed module to be active.</string>
     
     <string name="status_active">Active</string>
     <string name="status_disabled">Disabled</string>
@@ -758,12 +742,7 @@
     <string name="main_header_systemui">SystemUI</string>
     <string name="main_header_camera">Camera</string>
 
-    <!-- Test things (debug section, hidden by default) -->
-    <string name="test_things_title">Test Things</string>
-    <string name="test_things_desc">Experimental features under development</string>
     
-    <string name="main_root_title">No Root Access</string>
-    <string name="main_root_desc">Application requires Superuser rights (Root) and active Xposed Framework.\n\nPlease install Magisk/KernelSU and grant permissions.</string>
 
     <string name="dt_desc_activity">Manage wake and sleep gestures</string>
     <string name="launcher_title_activity">Misc</string>

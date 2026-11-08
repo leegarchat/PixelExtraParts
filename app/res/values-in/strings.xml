@@ -11,9 +11,6 @@
     <string name="os_msg_app_exists">Aplikasi ini sudah ada di daftar</string>
 
     <!-- Master Switch (Dynamic) -->
-    <!-- Xposed Mode -->
-    <string name="os_label_master_xposed">Modul Xposed</string>
-    <string name="os_desc_master_xposed">Menggunakan framework Xposed untuk menghook kelas sistem EdgeEffect.\n\nMemungkinkan injeksi fisika ke semua aplikasi tanpa memodifikasi sistem. Jika modul tidak aktif di LSPosed, efek hanya akan bekerja di aplikasi ini (mode demo).</string>
     
     <!-- Native Mode -->
     <string name="os_label_master_native">Integrasi Sistem</string>
@@ -38,12 +35,8 @@
     <string name="magnifier_shape_square">Persegi</string>
     <string name="magnifier_shape_circle">Lingkaran</string>
     <string name="magnifier_offset_y_title">Offset Vertikal</string>
-    <string name="magnifier_xposed_warning_title">Modul Xposed Diperlukan</string>
-    <string name="magnifier_xposed_warning_desc">Modifikasi kaca pembesar bekerja per-aplikasi. Aktifkan modul Xposed untuk setiap aplikasi tempat kaca pembesar yang dimodifikasi harus muncul.</string>
     <string name="magnifier_preview_label">Pratinjau</string>
     <string name="magnifier_sample_text">Teks contoh untuk pengujian kaca pembesar</string>
-    <string name="overscroll_xposed_warning_title">Modul Xposed Diperlukan</string>
-    <string name="overscroll_xposed_warning_desc">Modifikasi overscroll bekerja per-aplikasi. Aktifkan modul Xposed untuk setiap aplikasi tempat efek tepi yang dimodifikasi harus muncul.</string>
 
     <string name="sysui_media_player_title">Pemutar Media</string>
     <string name="sysui_media_compact_mode_title">Mode Kompak</string>
@@ -90,9 +83,6 @@
     <string name="os_status_active">Aktif</string>
     <string name="os_status_disabled">Nonaktif</string>
     
-    <!-- Xposed Dialogs -->
-    <string name="os_dialog_xposed_title">Xposed tidak aktif</string>
-    <string name="os_dialog_xposed_msg">Tidak dapat memasang hook.\n\nAplikasi tidak mendeteksi framework LSPosed yang aktif. Tanpa itu, intersepsi panggilan sistem tidak mungkin; pengaturan hanya akan bekerja di dalam aplikasi ini.</string>
 
     <!-- Profiles UI -->
     <string name="os_group_profiles">Profil</string>
@@ -325,8 +315,6 @@
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Ketuk ganda untuk bangun</string>
     
-    <string name="dt2w_desc_xposed">Hook Xposed untuk SystemUI.\n\nMengintersep event sensor di kelas DozeTriggers dan mengemulasi bangun, karena dukungan hardware sering dinonaktifkan atau dibatasi di perangkat Pixel.</string>
-    <string name="dt2w_desc_native">Integrasi sistem (Native).\n\nMenggunakan kode bawaan firmware untuk memproses event sentuh dalam mode Doze, memastikan bangun tanpa hook pihak ketiga.</string>
     
     <string name="dt2w_info_title">Cara kerja</string>
     <string name="dt2w_info_desc">Ini adalah emulasi software, bukan fungsi hardware kernel.\n\n<b>Prinsip:</b>\nSistem menjaga digitizer tetap aktif di mode AOD/Doze dan menganalisis sentuhan.\n\n<b>Penting:</b>\n• Sedikit jeda mungkin terjadi karena pemrosesan software.\n• Dapat sedikit mempengaruhi konsumsi baterai (Deep Sleep).</string>
@@ -337,8 +325,6 @@
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Ketuk ganda untuk tidur</string>
     
-    <string name="dt2s_desc_xposed">Hook Xposed untuk Pixel Launcher.\n\nMengintersep method \'onTouchEvent\' di kelas Workspace launcher dan memungkinkan mengunci layar dengan mengetuk area kosong.</string>
-    <string name="dt2s_desc_native">Injeksi kode native.\n\nMenggunakan framework yang dimodifikasi untuk mendaftarkan \'ActivityLifecycleCallbacks\' di proses Launcher3. Saat Activity dimulai, root Workspace View secara otomatis ditemukan dan \'OnTouchListener\' kustom dipasang. Bekerja tanpa Xposed dan tidak memerlukan hak root untuk launcher itu sendiri.</string>
 
     <string name="dt2s_info_title">Kekhususan DT2S</string>
     <string name="dt2s_info_desc">Memungkinkan mematikan layar dengan mengetuk ganda pada area kosong desktop.\n\n<b>Keterbatasan:</b>\n• Hanya bekerja di Pixel Launcher.\n• Tidak merespons widget atau ikon.\n• Dapat konflik dengan gestur swipe jika "toleransi perpindahan" diatur terlalu agresif.</string>
@@ -364,8 +350,6 @@
     <string name="nav_back">Kembali</string>
 
     <!-- Shared Dialogs -->
-    <string name="xposed_required_title">Xposed diperlukan</string>
-    <string name="xposed_required_message">Fitur ini memerlukan modul Xposed aktif.</string>
     
     <string name="status_active">Aktif</string>
     <string name="status_disabled">Nonaktif</string>
@@ -382,12 +366,7 @@
     <string name="main_header_systemui">SystemUI</string>
     <string name="main_header_camera">Kamera</string>
 
-    <!-- Test things (debug section, hidden by default) -->
-    <string name="test_things_title">Fitur pengujian</string>
-    <string name="test_things_desc">Fitur eksperimental dalam pengembangan</string>
     
-    <string name="main_root_title">Tidak ada akses Root</string>
-    <string name="main_root_desc">Aplikasi memerlukan hak superuser (Root) dan framework Xposed aktif.\n\nSilakan instal Magisk/KernelSU dan berikan izin.</string>
 
     <string name="dt_desc_activity">Manajemen gestur bangun dan tidur</string>
     <string name="launcher_title_activity">Lainnya</string>

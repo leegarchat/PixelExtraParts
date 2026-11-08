@@ -11,9 +11,6 @@
     <string name="os_msg_app_exists">Cette application est déjà dans la liste</string>
 
     <!-- Master Switch (Dynamic) -->
-    <!-- Xposed Mode -->
-    <string name="os_label_master_xposed">Module Xposed</string>
-    <string name="os_desc_master_xposed">Utilise le framework Xposed pour accrocher la classe système EdgeEffect.\n\nPermet d\'injecter la physique dans toutes les applications sans modifier le système. Si le module n\'est pas actif dans LSPosed, les effets ne fonctionneront que dans cette application (mode démo).</string>
     
     <!-- Native Mode -->
     <string name="os_label_master_native">Intégration système</string>
@@ -38,12 +35,8 @@
     <string name="magnifier_shape_square">Carré</string>
     <string name="magnifier_shape_circle">Cercle</string>
     <string name="magnifier_offset_y_title">Décalage vertical</string>
-    <string name="magnifier_xposed_warning_title">Module Xposed requis</string>
-    <string name="magnifier_xposed_warning_desc">La modification de la loupe fonctionne par application. Activez le module Xposed pour chaque application dans laquelle la loupe modifiée doit apparaître.</string>
     <string name="magnifier_preview_label">Aperçu</string>
     <string name="magnifier_sample_text">Exemple de texte pour tester la loupe</string>
-    <string name="overscroll_xposed_warning_title">Module Xposed requis</string>
-    <string name="overscroll_xposed_warning_desc">La modification du overscroll fonctionne par application. Activez le module Xposed pour chaque application dans laquelle l\'effet de bord modifié doit apparaître.</string>
 
     <string name="sysui_media_player_title">Lecteur multimédia</string>
     <string name="sysui_media_compact_mode_title">Mode compact</string>
@@ -90,9 +83,6 @@
     <string name="os_status_active">Actif</string>
     <string name="os_status_disabled">Désactivé</string>
     
-    <!-- Xposed Dialogs -->
-    <string name="os_dialog_xposed_title">Xposed n\'est pas actif</string>
-    <string name="os_dialog_xposed_msg">Impossible d\'installer les hooks.\n\nL\'application n\'a détecté aucun framework LSPosed actif. Sans celui-ci, l\'interception des appels système est impossible ; les paramètres ne fonctionneront que dans cette application.</string>
 
     <!-- Profiles UI -->
     <string name="os_group_profiles">Profils</string>
@@ -325,8 +315,6 @@
     <!-- DT2W (Wake) -->
     <string name="dt2w_title">Double appui pour réveiller</string>
     
-    <string name="dt2w_desc_xposed">Hook Xposed pour SystemUI.\n\nIntercepte les événements du capteur dans la classe DozeTriggers et émule le réveil, car le support matériel est souvent désactivé ou limité sur les appareils Pixel.</string>
-    <string name="dt2w_desc_native">Intégration système (Natif).\n\nUtilise le code intégré au firmware pour le traitement des événements tactiles en mode Doze, assurant le réveil sans hooks tiers.</string>
     
     <string name="dt2w_info_title">Fonctionnement</string>
     <string name="dt2w_info_desc">Ceci est une émulation logicielle, pas une fonction hardware du kernel.\n\n<b>Principe :</b>\nLe système maintient le digitizer actif en mode AOD/Doze et analyse les touches.\n\n<b>Important :</b>\n• Un léger délai est possible en raison du traitement logiciel.\n• Peut légèrement affecter la consommation de batterie (Deep Sleep).</string>
@@ -337,8 +325,6 @@
     <!-- DT2S (Sleep) -->
     <string name="dt2s_title">Double appui pour verrouiller</string>
     
-    <string name="dt2s_desc_xposed">Hook Xposed pour le Pixel Launcher.\n\nIntercepte la méthode \'onTouchEvent\' dans la classe Workspace du lanceur et permet de verrouiller l\'écran en appuyant sur un espace vide.</string>
-    <string name="dt2s_desc_native">Injection de code natif.\n\nUtilise le framework modifié pour enregistrer des \'ActivityLifecycleCallbacks\' dans le processus Launcher3. Au lancement de l\'Activity, la vue root Workspace est automatiquement trouvée et un \'OnTouchListener\' personnalisé est attaché. Fonctionne sans Xposed et ne nécessite pas de droits root pour le lanceur lui-même.</string>
 
     <string name="dt2s_info_title">Particularités DT2S</string>
     <string name="dt2s_info_desc">Permet d\'éteindre l\'écran en double appuyant sur une zone vide du bureau.\n\n<b>Limitations :</b>\n• Fonctionne uniquement dans le Pixel Launcher.\n• Ne réagit pas sur les widgets ou icônes.\n• Peut entrer en conflit avec les gestes de balayage si la « tolérance de déplacement » est réglée trop agressivement.</string>
@@ -364,8 +350,6 @@
     <string name="nav_back">Retour</string>
 
     <!-- Shared Dialogs -->
-    <string name="xposed_required_title">Xposed requis</string>
-    <string name="xposed_required_message">Cette fonctionnalité nécessite un module Xposed actif.</string>
     
     <string name="status_active">Actif</string>
     <string name="status_disabled">Désactivé</string>
@@ -382,12 +366,7 @@
     <string name="main_header_systemui">SystemUI</string>
     <string name="main_header_camera">Caméra</string>
 
-    <!-- Test things (debug section, hidden by default) -->
-    <string name="test_things_title">Fonctionnalités de test</string>
-    <string name="test_things_desc">Fonctionnalités expérimentales en développement</string>
     
-    <string name="main_root_title">Aucun accès Root</string>
-    <string name="main_root_desc">L\'application nécessite des droits superutilisateur (Root) et un framework Xposed actif.\n\nVeuillez installer Magisk/KernelSU et accorder les permissions.</string>
 
     <string name="dt_desc_activity">Gestion des gestes de réveil et de veille</string>
     <string name="launcher_title_activity">Divers</string>

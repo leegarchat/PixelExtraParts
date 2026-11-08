@@ -19,9 +19,8 @@ object SettingsCompat {
     // Canonical suffix for new writes. Legacy "_pine" (and ancient "_xposed")
     // values keep working through read-through fallback below, so user
     // settings survive the engine rename without any migration step.
-    private const val ACTIVE_SUFFIX = "_lsplant"
-    private const val LEGACY_ENGINE_SUFFIX = "_pine"
-    private const val XPOSED_SUFFIX = "_xposed"
+    // Suffix vocabulary lives in HookKeyCompat; the gating below is local
+    // on purpose (see HookKeyCompat KDoc).
 
     
     private val SUFFIXED_KEY_BASES = setOf(
@@ -69,7 +68,6 @@ object SettingsCompat {
         "launcher_clear_all_hide_actions_row",
         "launcher_replace_on_clear",
         "launcher_clear_all_bottom_margin",
-        "launcher_debug_enable",
         "launcher_padding_homepage",
         "launcher_padding_dock",
         "launcher_padding_search",
@@ -107,11 +105,11 @@ object SettingsCompat {
     }
 
     private fun stripRuntimeSuffix(key: String): String {
-        return key.removeSuffix(ACTIVE_SUFFIX).removeSuffix(LEGACY_ENGINE_SUFFIX).removeSuffix(XPOSED_SUFFIX)
+        return HookKeyCompat.stripHookSuffix(key)
     }
 
     private fun activeRuntimeSuffix(): String {
-        return ACTIVE_SUFFIX
+        return HookKeyCompat.ACTIVE_SUFFIX
     }
 
     /** Raw read: new key first, then legacy keys. Null when nothing is stored. */
@@ -119,7 +117,7 @@ object SettingsCompat {
         val resolver = context.contentResolver
         val stripped = stripRuntimeSuffix(baseKey)
         val candidates = if (isSuffixedKey(stripped)) {
-            listOf(ACTIVE_SUFFIX, LEGACY_ENGINE_SUFFIX, XPOSED_SUFFIX).map { stripped + it }
+            listOf(HookKeyCompat.ACTIVE_SUFFIX, HookKeyCompat.LEGACY_ENGINE_SUFFIX, HookKeyCompat.XPOSED_SUFFIX).map { stripped + it }
         } else {
             listOf(stripped)
         }

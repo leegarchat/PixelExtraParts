@@ -1,6 +1,5 @@
 package org.pixel.customparts.core;
 
-import android.app.Activity;
 import android.content.Context;
 
 public abstract class BaseHook {
@@ -34,12 +33,6 @@ public abstract class BaseHook {
     public boolean isEnabled(Context context) {
         return true;
     }
-
-
-    public void onActivityCreated(Activity activity) {}
-    public void onActivityResumed(Activity activity) {}
-    public void onActivityPaused(Activity activity) {}
-    public void onActivityDestroyed(Activity activity) {}
 
 
     protected void log(String message) {

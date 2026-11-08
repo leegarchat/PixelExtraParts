@@ -68,8 +68,10 @@ object SettingsKeys {
     const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
 
 
-    // LSPlant-only runtime: all suffixed keys use "_pine".
-    // The legacy "_xposed" suffix is still stripped when reading stored keys.
+    // Suffix note: hooks still read "_pine" (see HookKeyCompat KDoc), so the
+    // legacy "_pine" write suffix stays. New addon-framework writes use
+    // "_lsplant" and both resolve via the read-through fallback; do NOT
+    // change this value without a data migration + hook-side audit.
     internal const val suffix: String = "_pine"
     
     val BATTERY_INFO_ENABLE: String
@@ -172,10 +174,6 @@ object SettingsKeys {
 
     val LAUNCHER_DISABLE_TOP_WIDGET: String
         get() = "launcher_disable_top_widget" + suffix
-
-    
-    val LAUNCHER_DEBUG_ENABLE: String
-        get() = "launcher_debug_enable" + suffix
 
     val LAUNCHER_RECENTS_MODIFY_ENABLE: String
         get() = "launcher_recents_modify_enable" + suffix

@@ -3,7 +3,6 @@
 // Java peer: org.pixel.customparts.manager.lsplant.LsplantBridge
 //   private static native boolean nativeInit();
 //   private static native Object nativeDoHook(Object target, Object hooker, Object callback);
-//   private static native boolean nativeUnHook(Object target);
 //   private static native void nativeDeoptimize(Object method);
 //
 // This library is glue only: it does NOT link LSPlant/Dobby at build time
@@ -603,15 +602,6 @@ Java_org_pixel_customparts_manager_lsplant_LsplantBridge_nativeDoHook(JNIEnv* en
         return nullptr;
     }
     return g_engine.Hook(env, target, hooker, callback);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_org_pixel_customparts_manager_lsplant_LsplantBridge_nativeUnHook(JNIEnv* env, jclass,
-                                                                     jobject target) {
-    if (!EnsureInit(env)) {
-        return JNI_FALSE;
-    }
-    return g_engine.UnHook(env, target) ? JNI_TRUE : JNI_FALSE;
 }
 
 JNIEXPORT void JNICALL

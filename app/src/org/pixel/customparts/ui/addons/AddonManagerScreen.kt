@@ -95,6 +95,7 @@ import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.activities.AddonPageActivity
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
+import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
 import org.pixel.customparts.utils.dynamicStringResource
@@ -418,24 +419,20 @@ private val BUILTIN_WHITELIST = setOf(
 // read-through fallback to legacy "_pine"/"_xposed" values so user settings
 // survive the update. Applies to GLOBAL hook keys only; other providers
 // and unsuffixed keys pass through untouched.
-private const val ACTIVE_HOOK_SUFFIX = "_lsplant"
-private val LEGACY_HOOK_SUFFIXES = listOf("_pine", "_xposed")
+//
+// Suffix vocabulary + strip live in HookKeyCompat (shared with
+// SettingsCompat/PixelPartsTileRefresher). The write/read gating below
+// stays local on purpose: bare addon.json keys must pass through verbatim,
+// only suffixed keys are rewritten — see HookKeyCompat KDoc.
+private fun stripHookSuffix(key: String): String = HookKeyCompat.stripHookSuffix(key)
 
-private fun stripHookSuffix(key: String): String {
-    var base = key
-    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
-        if (base.endsWith(s)) {
-            base = base.removeSuffix(s)
-            break
-        }
-    }
-    return base
-}
+private fun hookSuffixes(): List<String> =
+    listOf(HookKeyCompat.ACTIVE_SUFFIX, HookKeyCompat.LEGACY_ENGINE_SUFFIX, HookKeyCompat.XPOSED_SUFFIX)
 
 private fun writeKeyForHookSettings(provider: SettingProvider, key: String): String {
     if (provider != SettingProvider.GLOBAL) return key
-    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
-        if (key.endsWith(s)) return stripHookSuffix(key) + ACTIVE_HOOK_SUFFIX
+    for (s in hookSuffixes()) {
+        if (key.endsWith(s)) return stripHookSuffix(key) + HookKeyCompat.ACTIVE_SUFFIX
     }
     return key
 }
@@ -444,14 +441,14 @@ private fun readKeyCandidates(provider: SettingProvider, key: String): List<Stri
     if (provider != SettingProvider.GLOBAL) return listOf(key)
     val stripped = stripHookSuffix(key)
     var hasSuffix = false
-    for (s in listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES) {
+    for (s in hookSuffixes()) {
         if (key.endsWith(s)) {
             hasSuffix = true
             break
         }
     }
     if (!hasSuffix) return listOf(key)
-    return (listOf(ACTIVE_HOOK_SUFFIX) + LEGACY_HOOK_SUFFIXES).map { stripped + it }
+    return hookSuffixes().map { stripped + it }
 }
 
 private fun readGlobalStringAny(context: Context, key: String): String? {
