@@ -282,6 +282,8 @@ internal fun MorphingBurgerArrowIcon(
         val wingBackX = 0.5.dp.toPx()
         val wingSpanY = 5.8.dp.toPx()
 
+        // At t = 0 all three bars are horizontal (y = -offset, 0, +offset);
+        // at t = 1 the top/bottom bars meet the shaft tip as an arrowhead.
         rotate(degrees = 180f * t, pivot = Offset(cx, cy)) {
             val shaftStart = Offset(cx - lerp(halfSpan, 6.5.dp.toPx(), t), cy)
             val shaftEnd = Offset(cx + lerp(halfSpan, 6.2.dp.toPx(), t), cy)
@@ -299,7 +301,7 @@ internal fun MorphingBurgerArrowIcon(
             )
             val topEnd = Offset(
                 x = cx + lerp(halfSpan, wingTipX, t),
-                y = cy + lerp(0f, 0f, t),
+                y = cy + lerp(-barOffsetY, 0f, t),
             )
             drawLine(
                 color = tint,

@@ -105,6 +105,9 @@ internal fun ExpandedOverflowRows(
                     val shiftTarget = 0f
                     // Settle residual: starts at the release offset, springs to the
                     // committed-slot delta. Scoped to the stable key(item.key).
+                    // Folded into the layout offset below (not the graphics
+                    // layer) so onPlaced bounds track the animation frame by
+                    // frame and a re-grab mid-settle reads the on-screen top.
                     var settleExtraYPx = 0f
                     if (isSettling) {
                         val settleAnim = remember(drag.settleToken) {
@@ -131,7 +134,7 @@ internal fun ExpandedOverflowRows(
                         )
                     val rowTopNow = when {
                         isDragged -> draggedTopY
-                        isSettling -> drag.settleBaseTopPx
+                        isSettling -> drag.settleBaseTopPx + settleExtraYPx
                         else -> glideTopY + slideUpOffsetPx + chrome.editorScrollPx
                     }
 
@@ -146,7 +149,8 @@ internal fun ExpandedOverflowRows(
                         jigglePhase = jigglePhase + slot * 1.15f,
                         wobbleStrength = wobbleStrength,
                         shiftTargetPx = shiftTarget,
-                        followOffsetYPx = if (isSettling) settleExtraYPx else null,
+                        // Residual already folded into rowTopNow above.
+                        followOffsetYPx = null,
                         onPick = {
                             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onPickEntry(item.key)
@@ -288,7 +292,9 @@ internal fun PinnedFlightRows(
                     label = "PinnedGlide",
                 )
                 // Same settle residual as overflow rows: release offset springs to
-                // the committed-slot delta on a frozen base. Scoped to key(tab.key).
+                // the committed-slot delta. Folded into the layout offset below
+                // so onPlaced bounds track the animation and re-grab reads the
+                // on-screen top. Scoped to key(tab.key).
                 var settleExtraYPx = 0f
                 if (isSettling) {
                     val settleAnim = remember(drag.settleToken) {
@@ -314,7 +320,7 @@ internal fun PinnedFlightRows(
                     )
                 val rowTopNow = when {
                     isDragged -> draggedTopY
-                    isSettling -> drag.settleBaseTopPx
+                    isSettling -> drag.settleBaseTopPx + settleExtraYPx
                     else -> settledTopY + chrome.editorScrollPx
                 }
 
@@ -333,7 +339,8 @@ internal fun PinnedFlightRows(
                     jigglePhase = jigglePhase + slot * 1.15f,
                     wobbleStrength = wobbleStrength,
                     shiftTargetPx = shiftTarget,
-                    followOffsetYPx = if (isSettling) settleExtraYPx else null,
+                    // Residual already folded into rowTopNow above.
+                    followOffsetYPx = null,
                     onExpandedClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onPickEntry(tab.key)

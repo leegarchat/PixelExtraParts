@@ -32,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.motion.MotionSettings
-import org.pixel.extra.parts.ui.GroupCard
 import org.pixel.extra.parts.ui.SettingSlider
 import org.pixel.extra.parts.ui.SettingSwitchRow
 import org.pixel.extra.parts.ui.SettingSwitchRowVariant
@@ -218,13 +218,13 @@ fun MotionTuningSheet(
                         .fillMaxWidth()
                         .weight(1f, fill = false),
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 64.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     tuningGroup(R.string.g_timing) {
                         tuningSlider(
                             titleRes = R.string.s_expand_ms,
                             value = motion.expandMs.toFloat(),
-                            range = 0f..10000f,
+                            range = 0f..1000f,
                             step = 10f,
                             default = 450f,
                             label = { v -> stringResource(R.string.fmt_ms, v.toInt()) },
@@ -233,7 +233,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_collapse_ms,
                             value = motion.collapseMs.toFloat(),
-                            range = 0f..10000f,
+                            range = 0f..1000f,
                             step = 10f,
                             default = 380f,
                             label = { v -> stringResource(R.string.fmt_ms, v.toInt()) },
@@ -263,7 +263,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_pulse,
                             value = motion.expansionPulsePct,
-                            range = 0f..20f,
+                            range = 0f..8f,
                             step = 0.25f,
                             default = 1.5f,
                             label = { v -> stringResource(R.string.fmt_pct2, v) },
@@ -272,7 +272,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_press,
                             value = motion.pressScalePct,
-                            range = 100f..150f,
+                            range = 100f..120f,
                             step = 0.5f,
                             default = 103f,
                             label = { v -> stringResource(R.string.fmt_pct2, v) },
@@ -281,7 +281,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_bottom_lift,
                             value = motion.bottomLiftDp,
-                            range = 0f..300f,
+                            range = 0f..64f,
                             step = 1f,
                             default = 0f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
@@ -299,7 +299,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_blur,
                             value = motion.blurRadiusPx,
-                            range = 0f..80f,
+                            range = 0f..60f,
                             step = 1f,
                             default = 40f,
                             label = { v -> stringResource(R.string.fmt_px, v.toInt()) },
@@ -331,7 +331,7 @@ fun MotionTuningSheet(
                                     updated[k] = v / 100f
                                     onUpdate(motion.copy(flightGaps = updated))
                                 },
-                                valueRange = 0f..100f,
+                                valueRange = 0f..50f,
                                 step = 1f,
                                 defaultValue = 14f,
                                 resetLabel = stringResource(R.string.motion_reset),
@@ -350,7 +350,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_bulge_base,
                             value = motion.arcBulgeBaseDp,
-                            range = 0f..300f,
+                            range = 0f..80f,
                             step = 1f,
                             default = 26f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
@@ -359,7 +359,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_bulge_step,
                             value = motion.arcBulgeStepDp,
-                            range = 0f..200f,
+                            range = 0f..48f,
                             step = 1f,
                             default = 12f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
@@ -395,7 +395,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_row_corner,
                             value = motion.rowCornerDp,
-                            range = 0f..64f,
+                            range = 0f..24f,
                             step = 1f,
                             default = 16f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
@@ -460,11 +460,11 @@ fun MotionTuningSheet(
                         )
                     }
 
-                    tuningGroup(R.string.g_reveal) {
+                    tuningGroup(R.string.g_reveal, showDivider = false) {
                         tuningSlider(
                             titleRes = R.string.s_overshoot,
                             value = motion.revealOvershoot,
-                            range = 0f..3f,
+                            range = 0f..1.5f,
                             step = 0.05f,
                             default = 0.85f,
                             label = { v -> stringResource(R.string.fmt_coef, v) },
@@ -473,7 +473,7 @@ fun MotionTuningSheet(
                         tuningSlider(
                             titleRes = R.string.s_slide,
                             value = motion.riseOffsetDp,
-                            range = 0f..100f,
+                            range = 0f..32f,
                             step = 1f,
                             default = 10f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
@@ -548,6 +548,7 @@ private fun SheetHeader(
                 text = stringResource(R.string.motion_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
             FilledTonalButton(
@@ -564,14 +565,32 @@ private fun SheetHeader(
     }
 }
 
-// One group = one level-1 GroupCard with the group title.
+// One group = flat title text + sliders, no card wrapper. The sheet container
+// (surfaceContainerHigh + edgeOutline) stays; groups are separated by a
+// 1.dp outlineVariant divider and 16.dp list spacing.
 private fun LazyListScope.tuningGroup(
     @StringRes titleRes: Int,
+    showDivider: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     item(key = "group_$titleRes") {
-        GroupCard(title = stringResource(titleRes)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
             content()
+            if (showDivider) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                    thickness = 1.dp,
+                )
+            }
         }
     }
 }

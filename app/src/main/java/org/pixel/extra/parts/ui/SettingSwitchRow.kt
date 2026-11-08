@@ -91,7 +91,7 @@ fun SettingSwitchRow(
                 color = if (!enabled && disabledTitleColor != null) {
                     disabledTitleColor
                 } else {
-                    Color.Unspecified
+                    MaterialTheme.colorScheme.onSurface
                 },
             )
             if (!summary.isNullOrBlank()) {

@@ -184,7 +184,7 @@ private fun PepRoot() {
                             editorMode = true
                         },
                     )
-                    else -> HomeScreen()
+                    else -> HomeScreen(onOpenSection = { selectedKey = it })
                 }
             }
         }

@@ -557,32 +557,14 @@ fun ExpressiveFloatingDockWithOverflow(
                 // full width including padding, full row height, plus small slop),
                 // so any press inside the row starts a potential pickup. Analytic
                 // geometry below is only a fallback before first placement.
-                // Park a previous gesture's settle instantly at its committed slot so
-                // the next pickup never shares settle state with it. Called at DOWN
-                // (before hit-testing, leaving the long-press window for bounds to
-                // refresh) and again in pickUpAt (in case DOWN raced a drop commit).
+                // Park a previous gesture's settle so the next pickup never shares
+                // settle state with it. Called at DOWN (before hit-testing,
+                // leaving the long-press window for bounds to refresh) and again
+                // in pickUpAt (in case DOWN raced a drop commit). The settle
+                // residual renders in layout space, so the cached rect already
+                // tracks the animation: no snap is needed or applied.
                 fun parkSettleForPickup() {
-                    val key = settleKey ?: return
-                    // Snap the parked row's cached bounds to its committed slot now:
-                    // onPlaced only reports the frozen settle base (release origin),
-                    // so without this the stale origin rect would survive until the
-                    // next placement pass and poison the very hit-test below.
-                    val finalSlot = (overflowKeys + pinnedKeys).indexOf(key)
-                    if (finalSlot >= 0) {
-                        val finalTop = chrome.committedSlotTopY(
-                            finalSlot,
-                            overflowKeys.size,
-                            pinnedKeys.size,
-                            maxAllowedBarHPx,
-                            editorScrollPx,
-                        )
-                        val cur = rowBoundsPx[key]
-                        if (cur != null) {
-                            val h = cur.bottom - cur.top
-                            val snapped = cur.copy(top = finalTop, bottom = finalTop + h)
-                            if (snapped != cur) rowBoundsPx = rowBoundsPx + (key to snapped)
-                        }
-                    }
+                    if (settleKey == null) return
                     settleKey = null
                     settleBaseTopPx = 0f
                     settleStartDeltaPx = 0f
@@ -593,15 +575,9 @@ fun ExpressiveFloatingDockWithOverflow(
                     if (rowBoundsPx.isNotEmpty()) {
                         val order = effOverflow.map { it.key } + effTabs.map { it.key }
                         val pad = touchSlopPx * 0.5f
-                        // Skip the settling row's measured rect: onPlaced reports the
-                        // frozen settle base (origin top) without the animated
-                        // residual, so mid-settle it sits at the release origin while
-                        // the row is visually at/near its committed slot. Trusting it
-                        // would latch the old key (or steal a neighbor's slot).
-                        // The analytic path below uses committed geometry only.
-                        val settling = settleKey
+                        // Settle renders in layout space, so even a mid-settle rect
+                        // matches the on-screen row: every key hit-tests truthfully.
                         order.forEachIndexed { slot, key ->
-                            if (key == settling) return@forEachIndexed
                             val r = rowBoundsPx[key] ?: return@forEachIndexed
                             if (x >= r.left - pad && x <= r.right + pad &&
                                 y >= r.top - pad && y <= r.bottom + pad
@@ -637,7 +613,6 @@ fun ExpressiveFloatingDockWithOverflow(
                     // shared settle state survives into the new drag, then resolve
                     // the key from the committed lists (dragKey == null here, so the
                     // preview lists equal the committed arrangement).
-                    val wasSettling = settleKey
                     parkSettleForPickup()
                     val keyAtSlot = if (slot < overCount) {
                         effOverflow.getOrNull(slot)?.key
@@ -650,14 +625,10 @@ fun ExpressiveFloatingDockWithOverflow(
                     dragHoverSlot = slot
                     // Base the finger follow on the actually placed row top so the
                     // held row does not jump when analytic and placed Y diverge.
-                    // Exception: a re-grab of the just-parked settling row must use
-                    // committed geometry — its measured rect still sits at the stale
-                    // release origin until the next placement refreshes it.
-                    dragStartTopPx = if (keyAtSlot == wasSettling) {
-                        editorSlotTop(slot)
-                    } else {
-                        rowBoundsPx[keyAtSlot]?.top ?: editorSlotTop(slot)
-                    }
+                    // Settle renders in layout space, so even a mid-settle rect is
+                    // the on-screen top; the analytic path is only a pre-placement
+                    // fallback and matches static geometry exactly (same scroll).
+                    dragStartTopPx = rowBoundsPx[keyAtSlot]?.top ?: editorSlotTop(slot)
                 }
 
                 fun dragBy(dy: Float) {
