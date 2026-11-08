@@ -16,7 +16,7 @@
 
 Домены:
 
-- `build/soong/` — Go-плагин `soong-pixelparts-plugin` (`weave_mutator.go`).
+- `soong/` — Go-плагин `soong-pixelparts-plugin` (`weave_mutator.go`).
   Логика оперирует только ИМЕНАМИ модулей (`framework-minus-apex`,
   `services.core.unboosted`, `services.impl`, `SettingsLib`) и ИМЕНАМИ
   filegroup (`:pixelparts_*`). Физических путей не содержит — переезд
