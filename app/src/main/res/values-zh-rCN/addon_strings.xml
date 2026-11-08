@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">扩展</string>
+    <string name="addons_desc">扩展 System UI 的挂钩包。开关在目标进程重启后生效。</string>
+    <string name="addon_enable_title">已启用</string>
+    <string name="addon_enable_desc">将此包加载到其目标进程中</string>
+    <string name="addon_back">返回</string>
+    <string name="addon_systemui_name">SystemUI 挂钩</string>
+    <string name="addon_systemui_desc">针对 System UI 的旋转、亮度锁定和 AOD 调整。</string>
+    <string name="addon_rotation_title">旋转</string>
+    <string name="addon_rotation_desc">窗口旋转的样式与动效。</string>
+    <string name="addon_rotation_style_title">样式</string>
+    <string name="addon_rotation_smooth_title">平滑过渡</string>
+    <string name="addon_rotation_smooth_desc">柔化旋转切换，而非生硬跳转。</string>
+    <string name="addon_hbm_title">高亮度</string>
+    <string name="addon_hbm_desc">强光下的亮度锁定与超时。</string>
+    <string name="addon_hbm_lock_title">锁定亮度</string>
+    <string name="addon_hbm_lock_desc">在 HBM 激活期间保持最高亮度。</string>
+    <string name="addon_hbm_window_title">最高亮度超时</string>
+    <string name="addon_aod_title">息屏显示</string>
+    <string name="addon_aod_desc">防烧屏保护与图标渲染。</string>
+    <string name="addon_aod_group_title">防烧屏保护</string>
+    <string name="addon_aod_group_desc">通过周期性像素位移防止静态图像残留。</string>
+    <string name="addon_aod_shift_title">移动内容</string>
+    <string name="addon_aod_shift_desc">定期轻微移动 AOD 内容以避免烧屏。</string>
+    <string name="addon_aod_color_title">全彩图标</string>
+    <string name="addon_aod_color_desc">在 AOD 上以全彩显示通知图标。</string>
+</resources>

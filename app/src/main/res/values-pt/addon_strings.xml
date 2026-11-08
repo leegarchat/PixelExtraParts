@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Complementos</string>
+    <string name="addons_desc">Pacotes hook que ampliam o System UI. As chaves aplicam-se ao reiniciar o processo.</string>
+    <string name="addon_enable_title">Ativado</string>
+    <string name="addon_enable_desc">Carregar este pacote nos seus processos de destino</string>
+    <string name="addon_back">Voltar</string>
+    <string name="addon_systemui_name">Hooks do SystemUI</string>
+    <string name="addon_systemui_desc">Ajustes de rotação, bloqueio de brilho e AOD para o System UI.</string>
+    <string name="addon_rotation_title">Rotação</string>
+    <string name="addon_rotation_desc">Estilo e movimento da rotação de janelas.</string>
+    <string name="addon_rotation_style_title">Estilo</string>
+    <string name="addon_rotation_smooth_title">Transições suaves</string>
+    <string name="addon_rotation_smooth_desc">Suavizar as mudanças de rotação em vez de cortar.</string>
+    <string name="addon_hbm_title">Brilho alto</string>
+    <string name="addon_hbm_desc">Bloqueio de brilho e tempo limite sob luz forte.</string>
+    <string name="addon_hbm_lock_title">Bloquear brilho</string>
+    <string name="addon_hbm_lock_desc">Manter o brilho máximo enquanto o HBM estiver ativo.</string>
+    <string name="addon_hbm_window_title">Tempo limite de brilho máximo</string>
+    <string name="addon_aod_title">Tela sempre ativa</string>
+    <string name="addon_aod_desc">Proteção contra retenção e desenho de ícones.</string>
+    <string name="addon_aod_group_title">Proteção contra retenção</string>
+    <string name="addon_aod_group_desc">Deslocamentos periódicos de pixels contra a retenção de imagem.</string>
+    <string name="addon_aod_shift_title">Deslocar conteúdo</string>
+    <string name="addon_aod_shift_desc">Mover o conteúdo AOD periodicamente para evitar retenção.</string>
+    <string name="addon_aod_color_title">Ícones em cores</string>
+    <string name="addon_aod_color_desc">Mostrar ícones de notificação em cores no AOD.</string>
+</resources>

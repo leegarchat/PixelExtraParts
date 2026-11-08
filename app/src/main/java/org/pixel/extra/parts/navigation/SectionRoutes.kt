@@ -7,6 +7,7 @@ object SectionRoutes {
     const val HOME = "home"
     const val DISPLAY = "display"
     const val SYSTEM_UI = "systemui"
+    const val ADDONS = "addons"
     const val OVERSCROLL = "overscroll"
     const val THERMAL = "thermal"
     const val ICONS = "icons"
@@ -17,6 +18,7 @@ object SectionRoutes {
         HOME,
         DISPLAY,
         SYSTEM_UI,
+        ADDONS,
         OVERSCROLL,
         THERMAL,
         ICONS,

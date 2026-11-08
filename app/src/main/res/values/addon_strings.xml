@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Addons</string>
+    <string name="addons_desc">Hook packs that extend System UI. Switches apply when the target process restarts.</string>
+    <string name="addon_enable_title">Enabled</string>
+    <string name="addon_enable_desc">Load this pack into its target processes</string>
+    <string name="addon_back">Back</string>
+    <string name="addon_systemui_name">SystemUI Hooks</string>
+    <string name="addon_systemui_desc">Rotation, brightness lock and AOD tweaks for System UI.</string>
+    <string name="addon_rotation_title">Rotation</string>
+    <string name="addon_rotation_desc">Window rotation style and motion.</string>
+    <string name="addon_rotation_style_title">Style</string>
+    <string name="addon_rotation_smooth_title">Smooth transitions</string>
+    <string name="addon_rotation_smooth_desc">Ease rotation changes instead of snapping.</string>
+    <string name="addon_hbm_title">High brightness</string>
+    <string name="addon_hbm_desc">Brightness lock and timeout for strong light.</string>
+    <string name="addon_hbm_lock_title">Lock brightness</string>
+    <string name="addon_hbm_lock_desc">Keep maximum brightness while HBM is active.</string>
+    <string name="addon_hbm_window_title">Max brightness timeout</string>
+    <string name="addon_aod_title">Always-on display</string>
+    <string name="addon_aod_desc">Burn-in protection and icon rendering.</string>
+    <string name="addon_aod_group_title">Burn-in protection</string>
+    <string name="addon_aod_group_desc">Periodic pixel shifts that prevent static image retention.</string>
+    <string name="addon_aod_shift_title">Shift layout</string>
+    <string name="addon_aod_shift_desc">Nudge AOD content periodically to avoid burn-in.</string>
+    <string name="addon_aod_color_title">Full-color icons</string>
+    <string name="addon_aod_color_desc">Render notification icons in full color on AOD.</string>
+</resources>

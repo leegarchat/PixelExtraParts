@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Аддоны</string>
+    <string name="addons_desc">Хук-пакеты, расширяющие System UI. Переключатели применятся при перезапуске процесса.</string>
+    <string name="addon_enable_title">Включено</string>
+    <string name="addon_enable_desc">Загружать пакет в его целевые процессы</string>
+    <string name="addon_back">Назад</string>
+    <string name="addon_systemui_name">Хуки SystemUI</string>
+    <string name="addon_systemui_desc">Поворот, блокировка яркости и настройки AOD для System UI.</string>
+    <string name="addon_rotation_title">Поворот</string>
+    <string name="addon_rotation_desc">Стиль и движение поворота окон.</string>
+    <string name="addon_rotation_style_title">Стиль</string>
+    <string name="addon_rotation_smooth_title">Плавные переходы</string>
+    <string name="addon_rotation_smooth_desc">Смягчать смену поворота вместо резкого переключения.</string>
+    <string name="addon_hbm_title">Высокая яркость</string>
+    <string name="addon_hbm_desc">Блокировка яркости и таймаут при сильном свете.</string>
+    <string name="addon_hbm_lock_title">Блокировать яркость</string>
+    <string name="addon_hbm_lock_desc">Держать максимальную яркость, пока активен HBM.</string>
+    <string name="addon_hbm_window_title">Таймаут максимальной яркости</string>
+    <string name="addon_aod_title">Всегда на экране</string>
+    <string name="addon_aod_desc">Защита от выгорания и отрисовка иконок.</string>
+    <string name="addon_aod_group_title">Защита от выгорания</string>
+    <string name="addon_aod_group_desc">Периодические сдвиги пикселей против остаточного изображения.</string>
+    <string name="addon_aod_shift_title">Сдвигать контент</string>
+    <string name="addon_aod_shift_desc">Периодически смещать контент AOD, чтобы избежать выгорания.</string>
+    <string name="addon_aod_color_title">Цветные иконки</string>
+    <string name="addon_aod_color_desc">Показывать иконки уведомлений в полном цвете на AOD.</string>
+</resources>

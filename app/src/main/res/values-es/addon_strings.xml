@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Complementos</string>
+    <string name="addons_desc">Paquetes hook que amplían System UI. Los interruptores se aplican al reiniciar el proceso.</string>
+    <string name="addon_enable_title">Activado</string>
+    <string name="addon_enable_desc">Cargar este paquete en sus procesos de destino</string>
+    <string name="addon_back">Atrás</string>
+    <string name="addon_systemui_name">Hooks de SystemUI</string>
+    <string name="addon_systemui_desc">Ajustes de rotación, bloqueo de brillo y AOD para System UI.</string>
+    <string name="addon_rotation_title">Rotación</string>
+    <string name="addon_rotation_desc">Estilo y movimiento de la rotación de ventanas.</string>
+    <string name="addon_rotation_style_title">Estilo</string>
+    <string name="addon_rotation_smooth_title">Transiciones suaves</string>
+    <string name="addon_rotation_smooth_desc">Suavizar los cambios de rotación en lugar de cortarlos.</string>
+    <string name="addon_hbm_title">Brillo alto</string>
+    <string name="addon_hbm_desc">Bloqueo de brillo y tiempo límite con luz intensa.</string>
+    <string name="addon_hbm_lock_title">Bloquear brillo</string>
+    <string name="addon_hbm_lock_desc">Mantener el brillo máximo mientras HBM está activo.</string>
+    <string name="addon_hbm_window_title">Tiempo límite de brillo máximo</string>
+    <string name="addon_aod_title">Pantalla siempre activa</string>
+    <string name="addon_aod_desc">Protección contra quemado y dibujo de iconos.</string>
+    <string name="addon_aod_group_title">Protección contra quemado</string>
+    <string name="addon_aod_group_desc">Desplazamientos periódicos de píxeles contra la retención de imagen.</string>
+    <string name="addon_aod_shift_title">Desplazar contenido</string>
+    <string name="addon_aod_shift_desc">Mover el contenido AOD periódicamente para evitar quemados.</string>
+    <string name="addon_aod_color_title">Iconos a todo color</string>
+    <string name="addon_aod_color_desc">Mostrar los iconos de notificación a todo color en AOD.</string>
+</resources>

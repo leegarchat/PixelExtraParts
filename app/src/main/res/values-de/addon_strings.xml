@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Add-ons</string>
+    <string name="addons_desc">Hook-Pakete für die System UI. Schalter wirken beim nächsten Neustart des Zielprozesses.</string>
+    <string name="addon_enable_title">Aktiviert</string>
+    <string name="addon_enable_desc">Dieses Paket in seine Zielprozesse laden</string>
+    <string name="addon_back">Zurück</string>
+    <string name="addon_systemui_name">SystemUI-Hooks</string>
+    <string name="addon_systemui_desc">Rotation, Helligkeitssperre und AOD-Anpassungen für die System UI.</string>
+    <string name="addon_rotation_title">Rotation</string>
+    <string name="addon_rotation_desc">Stil und Bewegung der Fensterrotation.</string>
+    <string name="addon_rotation_style_title">Stil</string>
+    <string name="addon_rotation_smooth_title">Weiche Übergänge</string>
+    <string name="addon_rotation_smooth_desc">Rotationswechsel weich überblenden statt springen.</string>
+    <string name="addon_hbm_title">Hohe Helligkeit</string>
+    <string name="addon_hbm_desc">Helligkeitssperre und Zeitlimit bei starkem Licht.</string>
+    <string name="addon_hbm_lock_title">Helligkeit sperren</string>
+    <string name="addon_hbm_lock_desc">Maximale Helligkeit halten, solange HBM aktiv ist.</string>
+    <string name="addon_hbm_window_title">Zeitlimit für Max-Helligkeit</string>
+    <string name="addon_aod_title">Always-on-Display</string>
+    <string name="addon_aod_desc">Einbrennschutz und Symbol-Darstellung.</string>
+    <string name="addon_aod_group_title">Einbrennschutz</string>
+    <string name="addon_aod_group_desc">Regelmäßige Pixelverschiebung gegen statisches Einbrennen.</string>
+    <string name="addon_aod_shift_title">Layout verschieben</string>
+    <string name="addon_aod_shift_desc">AOD-Inhalte regelmäßig versetzen, um Einbrennen zu vermeiden.</string>
+    <string name="addon_aod_color_title">Volle Symbolfarben</string>
+    <string name="addon_aod_color_desc">Benachrichtigungssymbole auf dem AOD in Vollfarbe darstellen.</string>
+</resources>

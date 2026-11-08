@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.pixel.extra.parts.addons.AddonsScreen
 import org.pixel.extra.parts.display.DisplayScreen
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.dock.ExpressiveFloatingDockWithOverflow
@@ -89,6 +90,7 @@ private val PinnedTabs = listOf(
 private val SectionEntries = listOf(
     DockEntry(key = SectionRoutes.DISPLAY, labelRes = R.string.tab_display, iconRes = R.drawable.ic_search),
     DockEntry(key = SectionRoutes.SYSTEM_UI, labelRes = R.string.tab_systemui, iconRes = R.drawable.ic_info),
+    DockEntry(key = SectionRoutes.ADDONS, labelRes = R.string.tab_addons, iconRes = R.drawable.ic_extension),
     DockEntry(key = SectionRoutes.OVERSCROLL, labelRes = R.string.tab_overscroll, iconRes = R.drawable.ic_more),
     DockEntry(key = SectionRoutes.THERMAL, labelRes = R.string.tab_thermal, iconRes = R.drawable.ic_share),
     DockEntry(key = SectionRoutes.ICONS, labelRes = R.string.tab_icons, iconRes = R.drawable.ic_favorite),
@@ -170,6 +172,7 @@ private fun PepRoot() {
                 when (key) {
                     SectionRoutes.DISPLAY -> DisplayScreen()
                     SectionRoutes.SYSTEM_UI -> SystemUiScreen()
+                    SectionRoutes.ADDONS -> AddonsScreen()
                     SectionRoutes.OVERSCROLL -> OverscrollScreen()
                     SectionRoutes.THERMAL -> ThermalScreen()
                     SectionRoutes.ICONS -> IconsScreen()

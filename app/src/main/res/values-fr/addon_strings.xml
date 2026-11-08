@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Modules</string>
+    <string name="addons_desc">Packs de hooks qui étendent System UI. Les interrupteurs s’appliquent au redémarrage du processus.</string>
+    <string name="addon_enable_title">Activé</string>
+    <string name="addon_enable_desc">Charger ce pack dans ses processus cibles</string>
+    <string name="addon_back">Retour</string>
+    <string name="addon_systemui_name">Hooks SystemUI</string>
+    <string name="addon_systemui_desc">Rotation, verrou de luminosité et réglages AOD pour System UI.</string>
+    <string name="addon_rotation_title">Rotation</string>
+    <string name="addon_rotation_desc">Style et mouvement de la rotation des fenêtres.</string>
+    <string name="addon_rotation_style_title">Style</string>
+    <string name="addon_rotation_smooth_title">Transitions douces</string>
+    <string name="addon_rotation_smooth_desc">Adoucir les changements de rotation au lieu de couper.</string>
+    <string name="addon_hbm_title">Haute luminosité</string>
+    <string name="addon_hbm_desc">Verrou de luminosité et durée limite en forte lumière.</string>
+    <string name="addon_hbm_lock_title">Verrouiller la luminosité</string>
+    <string name="addon_hbm_lock_desc">Conserver la luminosité maximale tant que HBM est actif.</string>
+    <string name="addon_hbm_window_title">Durée limite de luminosité max</string>
+    <string name="addon_aod_title">Écran toujours allumé</string>
+    <string name="addon_aod_desc">Protection contre la rémanence et rendu des icônes.</string>
+    <string name="addon_aod_group_title">Protection rémanence</string>
+    <string name="addon_aod_group_desc">Décalages périodiques des pixels contre la rétention d’image.</string>
+    <string name="addon_aod_shift_title">Décaler le contenu</string>
+    <string name="addon_aod_shift_desc">Déplacer le contenu AOD périodiquement pour éviter la rémanence.</string>
+    <string name="addon_aod_color_title">Icônes en couleurs</string>
+    <string name="addon_aod_color_desc">Afficher les icônes de notification en couleurs sur l’AOD.</string>
+</resources>

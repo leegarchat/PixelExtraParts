@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="tab_addons">Аддони</string>
+    <string name="addons_desc">Хук-пакети, що розширюють System UI. Перемикачі застосуються після перезапуску процесу.</string>
+    <string name="addon_enable_title">Увімкнено</string>
+    <string name="addon_enable_desc">Завантажувати пакет у його цільові процеси</string>
+    <string name="addon_back">Назад</string>
+    <string name="addon_systemui_name">Хуки SystemUI</string>
+    <string name="addon_systemui_desc">Поворот, блокування яскравості та налаштування AOD для System UI.</string>
+    <string name="addon_rotation_title">Поворот</string>
+    <string name="addon_rotation_desc">Стиль і рух повороту вікон.</string>
+    <string name="addon_rotation_style_title">Стиль</string>
+    <string name="addon_rotation_smooth_title">Плавні переходи</string>
+    <string name="addon_rotation_smooth_desc">Пом’якшувати зміну повороту замість різкого перемикання.</string>
+    <string name="addon_hbm_title">Висока яскравість</string>
+    <string name="addon_hbm_desc">Блокування яскравості й таймаут за сильного світла.</string>
+    <string name="addon_hbm_lock_title">Блокувати яскравість</string>
+    <string name="addon_hbm_lock_desc">Тримати максимальну яскравість, доки активний HBM.</string>
+    <string name="addon_hbm_window_title">Таймаут максимальної яскравості</string>
+    <string name="addon_aod_title">Завжди на екрані</string>
+    <string name="addon_aod_desc">Захист від вигорання та відображення іконок.</string>
+    <string name="addon_aod_group_title">Захист від вигорання</string>
+    <string name="addon_aod_group_desc">Періодичні зсуви пікселів проти залишкового зображення.</string>
+    <string name="addon_aod_shift_title">Зсувати контент</string>
+    <string name="addon_aod_shift_desc">Періодично зміщувати контент AOD, щоб уникнути вигорання.</string>
+    <string name="addon_aod_color_title">Кольорові іконки</string>
+    <string name="addon_aod_color_desc">Показувати іконки сповіщень у повному кольорі на AOD.</string>
+</resources>
