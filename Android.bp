@@ -1,6 +1,6 @@
 prebuilt_etc {
     name: "init.pixelextraparts.rc",
-    src: "config/init.pixelextraparts.rc",
+    src: "init.pixelextraparts.rc",
     sub_dir: "init",
     system_ext_specific: true,
 }

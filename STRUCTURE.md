@@ -55,7 +55,8 @@
 - `config/thermal/` — `generate_thermal_configs.py` (пути вычисляет от
   собственного `SCRIPT_DIR`, переездобезопасен) + `configs/` (generated,
   в git нет) + `ThermalConfigCopyRules.mk` (generated, в git нет).
-- `config/init.pixelextraparts.rc` — init-скрипт (модуль `prebuilt_etc`).
+- `init.pixelextraparts.rc` — init-скрипт всего модуля в корне
+  (app-директории, brightness, thermal-свитч; модуль `prebuilt_etc`).
   Перезаписывается генератором thermal (safe-split) при каждой сборке.
 - `app/` — стоковая аппка единой цепочкой (как в проде, без изменений):
   `AndroidManifest.xml`, `src/`, `res/`, `lib/`, `lang/`, `proguard.flags`,
