@@ -18,8 +18,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,12 +45,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.pixel.extra.parts.display.DisplayScreen
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.dock.ExpressiveFloatingDockWithOverflow
+import org.pixel.extra.parts.hiddenapps.HiddenAppsScreen
 import org.pixel.extra.parts.home.HomeScreen
+import org.pixel.extra.parts.icons.IconsScreen
 import org.pixel.extra.parts.motion.rememberFloatBarMotion
+import org.pixel.extra.parts.navigation.SectionRoutes
+import org.pixel.extra.parts.overscroll.OverscrollScreen
 import org.pixel.extra.parts.settings.MotionTuningSheet
 import org.pixel.extra.parts.settings.SettingsScreen
+import org.pixel.extra.parts.systemui.SystemUiScreen
+import org.pixel.extra.parts.thermal.ThermalScreen
 import org.pixel.extra.parts.ui.AppExpressiveTheme
 import org.pixel.extra.parts.ui.DockStrip
 import org.pixel.extra.parts.ui.TopBarBlurOverlay
@@ -73,48 +78,28 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Collapsed bar pins: Home + Settings only. The future sections live in the
+// overflow list below as clean slots; the editor can promote them to pins.
 private val PinnedTabs = listOf(
-    DockEntry(key = "home", labelRes = R.string.tab_home, iconRes = R.drawable.ic_home),
-    DockEntry(key = "settings", labelRes = R.string.tab_settings, iconRes = R.drawable.ic_tune),
+    DockEntry(key = SectionRoutes.HOME, labelRes = R.string.tab_home, iconRes = R.drawable.ic_home),
+    DockEntry(key = SectionRoutes.SETTINGS, labelRes = R.string.tab_settings, iconRes = R.drawable.ic_tune),
 )
 
-private val OverflowEntries: List<DockEntry> = run {
-    // Icons cycle through already existing drawables (no new files).
-    val extraIcons = listOf(
-        R.drawable.ic_home,
-        R.drawable.ic_favorite,
-        R.drawable.ic_search,
-        R.drawable.ic_music,
-        R.drawable.ic_archive,
-        R.drawable.ic_download,
-        R.drawable.ic_share,
-        R.drawable.ic_delete,
-        R.drawable.ic_info,
-        R.drawable.ic_tune,
-        R.drawable.ic_more,
-        R.drawable.ic_edit,
-    )
-    listOf(
-        DockEntry(key = "archive", labelRes = R.string.overflow_item_archive, iconRes = R.drawable.ic_archive),
-        DockEntry(key = "downloads", labelRes = R.string.overflow_item_downloads, iconRes = R.drawable.ic_download),
-        DockEntry(key = "shared", labelRes = R.string.overflow_item_shared, iconRes = R.drawable.ic_share),
-        DockEntry(key = "trash", labelRes = R.string.overflow_item_trash, iconRes = R.drawable.ic_delete),
-        DockEntry(key = "about", labelRes = R.string.overflow_item_about, iconRes = R.drawable.ic_info),
-    ) + (1..12).map { n ->
-        DockEntry(
-            key = "extra_$n",
-            labelRes = R.string.overflow_extra_title,
-            iconRes = extraIcons[(n - 1) % extraIcons.size],
-            labelArg = n,
-        )
-    }
-}
+// Overflow slots for the migration stages: title-only screens, no logic yet.
+private val SectionEntries = listOf(
+    DockEntry(key = SectionRoutes.DISPLAY, labelRes = R.string.tab_display, iconRes = R.drawable.ic_search),
+    DockEntry(key = SectionRoutes.SYSTEM_UI, labelRes = R.string.tab_systemui, iconRes = R.drawable.ic_info),
+    DockEntry(key = SectionRoutes.OVERSCROLL, labelRes = R.string.tab_overscroll, iconRes = R.drawable.ic_more),
+    DockEntry(key = SectionRoutes.THERMAL, labelRes = R.string.tab_thermal, iconRes = R.drawable.ic_share),
+    DockEntry(key = SectionRoutes.ICONS, labelRes = R.string.tab_icons, iconRes = R.drawable.ic_favorite),
+    DockEntry(key = SectionRoutes.HIDDEN_APPS, labelRes = R.string.tab_hidden_apps, iconRes = R.drawable.ic_archive),
+)
 
 private const val TOP_BAR_HEIGHT = 64 // dp
 
 @Composable
 private fun PepRoot() {
-    var selectedKey by rememberSaveable { mutableStateOf("home") }
+    var selectedKey by rememberSaveable { mutableStateOf(SectionRoutes.HOME) }
     var overflowExpanded by rememberSaveable { mutableStateOf(false) }
     var editorMode by rememberSaveable { mutableStateOf(false) }
     // Tuning state owned by the dock module: one holder shared by the dock
@@ -134,13 +119,12 @@ private fun PepRoot() {
         overflowExpanded = false
     }
 
-    val allEntries = remember { PinnedTabs + OverflowEntries }
-    val sectionOrder = remember(allEntries) {
-        allEntries.mapIndexed { index, entry -> entry.key to index }.toMap()
+    val allEntries = remember { PinnedTabs + SectionEntries }
+    val sectionOrder = remember {
+        SectionRoutes.ORDERED.withIndex().associate { it.value to it.index }
     }
     val current = allEntries.firstOrNull { it.key == selectedKey } ?: PinnedTabs.first()
-    val sectionLabel = current.labelArg?.let { stringResource(current.labelRes, it) }
-        ?: stringResource(current.labelRes)
+    val sectionLabel = stringResource(current.labelRes)
 
     Box(
         modifier = Modifier
@@ -148,63 +132,57 @@ private fun PepRoot() {
             .background(rootBg)
     ) {
         // Main scrollable content: recorded once per frame for the shared blur.
+        // Each screen is edge-to-edge (own contentPadding), so the list runs
+        // under the top bar and the dock instead of being squeezed between them.
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .recordLayer(state = blurState, backgroundColor = rootBg, blurRadius = blurRadius)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Spacer(modifier = Modifier.height(TOP_BAR_HEIGHT.dp + 8.dp))
-                AnimatedContent(
-                    targetState = selectedKey,
-                    transitionSpec = {
-                        val orderOf: (String) -> Int = { sectionOrder[it] ?: Int.MAX_VALUE }
-                        val direction = if (orderOf(targetState) >= orderOf(initialState)) 1 else -1
-                        (slideInHorizontally(
-                            animationSpec = tween(320, easing = FastOutSlowInEasing),
-                            initialOffsetX = { fullWidth -> (fullWidth * 0.18f * direction).toInt() }
-                        ) + fadeIn(
-                            animationSpec = tween(260)
-                        ) + scaleIn(
-                            initialScale = 0.96f,
-                            animationSpec = tween(320, easing = FastOutSlowInEasing)
-                        )).togetherWith(
-                            slideOutHorizontally(
-                                animationSpec = tween(260, easing = FastOutSlowInEasing),
-                                targetOffsetX = { fullWidth -> (-fullWidth * 0.18f * direction).toInt() }
-                            ) + fadeOut(
-                                animationSpec = tween(200)
-                            ) + scaleOut(
-                                targetScale = 0.96f,
-                                animationSpec = tween(260, easing = FastOutSlowInEasing)
-                            )
-                        ).using(SizeTransform(clip = false))
-                    },
-                    label = "ScreenTransition",
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 16.dp),
-                ) { key ->
-                    if (key == "settings") {
-                        SettingsScreen(
-                            onOpenTuning = { showTuning = true },
-                            onOpenEditor = {
-                                overflowExpanded = true
-                                editorMode = true
-                            },
+            AnimatedContent(
+                targetState = selectedKey,
+                transitionSpec = {
+                    val orderOf: (String) -> Int = { sectionOrder[it] ?: Int.MAX_VALUE }
+                    val direction = if (orderOf(targetState) >= orderOf(initialState)) 1 else -1
+                    (slideInHorizontally(
+                        animationSpec = tween(320, easing = FastOutSlowInEasing),
+                        initialOffsetX = { fullWidth -> (fullWidth * 0.18f * direction).toInt() }
+                    ) + fadeIn(
+                        animationSpec = tween(260)
+                    ) + scaleIn(
+                        initialScale = 0.96f,
+                        animationSpec = tween(320, easing = FastOutSlowInEasing)
+                    )).togetherWith(
+                        slideOutHorizontally(
+                            animationSpec = tween(260, easing = FastOutSlowInEasing),
+                            targetOffsetX = { fullWidth -> (-fullWidth * 0.18f * direction).toInt() }
+                        ) + fadeOut(
+                            animationSpec = tween(200)
+                        ) + scaleOut(
+                            targetScale = 0.96f,
+                            animationSpec = tween(260, easing = FastOutSlowInEasing)
                         )
-                    } else {
-                        val entry = allEntries.firstOrNull { it.key == key } ?: PinnedTabs.first()
-                        val entryLabel = entry.labelArg?.let { stringResource(entry.labelRes, it) }
-                            ?: stringResource(entry.labelRes)
-                        HomeScreen(
-                            sectionLabel = entryLabel,
-                            iconRes = entry.iconRes,
-                        )
-                    }
+                    ).using(SizeTransform(clip = false))
+                },
+                label = "ScreenTransition",
+                modifier = Modifier.fillMaxSize(),
+            ) { key ->
+                when (key) {
+                    SectionRoutes.DISPLAY -> DisplayScreen()
+                    SectionRoutes.SYSTEM_UI -> SystemUiScreen()
+                    SectionRoutes.OVERSCROLL -> OverscrollScreen()
+                    SectionRoutes.THERMAL -> ThermalScreen()
+                    SectionRoutes.ICONS -> IconsScreen()
+                    SectionRoutes.HIDDEN_APPS -> HiddenAppsScreen()
+                    SectionRoutes.SETTINGS -> SettingsScreen(
+                        onOpenTuning = { showTuning = true },
+                        onOpenEditor = {
+                            overflowExpanded = true
+                            editorMode = true
+                        },
+                    )
+                    else -> HomeScreen()
                 }
-                // Clearance above the floating dock (guideline 128-140.dp zone).
-                Spacer(modifier = Modifier.height(132.dp))
             }
         }
 
@@ -254,7 +232,7 @@ private fun PepRoot() {
         ) {
             ExpressiveFloatingDockWithOverflow(
                 tabs = PinnedTabs,
-                overflowItems = OverflowEntries,
+                overflowItems = SectionEntries,
                 selectedKey = selectedKey,
                 onSelect = { selectedKey = it },
                 expanded = overflowExpanded,

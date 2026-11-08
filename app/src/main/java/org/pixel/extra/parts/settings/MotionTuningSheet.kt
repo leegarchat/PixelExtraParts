@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,7 +58,10 @@ import androidx.compose.ui.unit.dp
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.motion.MotionSettings
+import org.pixel.extra.parts.ui.GroupCard
 import org.pixel.extra.parts.ui.SettingSlider
+import org.pixel.extra.parts.ui.SettingSwitchRow
+import org.pixel.extra.parts.ui.SettingSwitchRowVariant
 import org.pixel.extra.parts.ui.edgeOutline
 import kotlinx.coroutines.launch
 
@@ -303,9 +305,14 @@ fun MotionTuningSheet(
                             label = { v -> stringResource(R.string.fmt_px, v.toInt()) },
                             onChange = { onUpdate(motion.copy(blurRadiusPx = it)) },
                         )
-                        TapEaterSwitchRow(
+                        SettingSwitchRow(
+                            title = stringResource(R.string.s_tap_eater),
+                            summary = null,
                             checked = motion.stripTapEater,
                             onCheckedChange = { onUpdate(motion.copy(stripTapEater = it)) },
+                            variant = SettingSwitchRowVariant.SwitchOnlyCard,
+                            titleStyle = MaterialTheme.typography.titleSmall,
+                            switchHaptic = HapticFeedbackType.TextHandleMove,
                         )
                     }
 
@@ -557,73 +564,13 @@ private fun SheetHeader(
     }
 }
 
-// Simple M3 Switch row for the strip tap-catcher toggle, with haptic on flip.
-// Rendered on a level-2 nested card so the control reads as its own surface
-// inside the group card.
-@Composable
-private fun TapEaterSwitchRow(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    val haptics = LocalHapticFeedback.current
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceContainer.edgeOutline(),
-                shape = shape,
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.s_tap_eater),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f),
-        )
-        Switch(
-            checked = checked,
-            onCheckedChange = {
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onCheckedChange(it)
-            },
-        )
-    }
-}
-
-// One group = one level-1 card: rounded container, adaptive 1.dp outline,
-// internal 14.dp padding, 12.dp between controls and a primary group title.
+// One group = one level-1 GroupCard with the group title.
 private fun LazyListScope.tuningGroup(
     @StringRes titleRes: Int,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     item(key = "group_$titleRes") {
-        val shape = RoundedCornerShape(20.dp)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.surfaceContainerLow.edgeOutline(),
-                    shape = shape,
-                )
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+        GroupCard(title = stringResource(titleRes)) {
             content()
         }
     }

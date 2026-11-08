@@ -10,8 +10,7 @@ data class DockEntry(
     val key: String,
     @StringRes val labelRes: Int,
     @DrawableRes val iconRes: Int,
-    // Optional format argument for labelRes strings containing %1$d
-    // (used by the generated extra_N demo entries).
+    // Optional slot index for future numbered section entries.
     val labelArg: Int? = null,
 )
 

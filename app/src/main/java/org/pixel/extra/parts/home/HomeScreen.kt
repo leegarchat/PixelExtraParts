@@ -1,20 +1,17 @@
 package org.pixel.extra.parts.home
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
+import org.pixel.extra.parts.R
+import org.pixel.extra.parts.ui.SectionStub
 
-// Home tab content: the donor demo list for the currently selected section.
-// The root provides top/bottom clearance, so only a small bottom inset stays.
+// Home slot: title only, no demo rows. Real home content lands in a later stage.
 @Composable
-fun HomeScreen(
-    sectionLabel: String,
-    @DrawableRes iconRes: Int,
-) {
-    DemoSectionScreen(
-        sectionLabel = sectionLabel,
-        iconRes = iconRes,
-        contentPadding = PaddingValues(bottom = 12.dp),
+fun HomeScreen(modifier: Modifier = Modifier) {
+    SectionStub(
+        titleRes = R.string.tab_home,
+        bodyRes = R.string.stub_body,
+        iconRes = R.drawable.ic_home,
+        modifier = modifier,
     )
 }

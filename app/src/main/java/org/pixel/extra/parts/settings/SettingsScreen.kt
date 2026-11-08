@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,32 +30,39 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.ui.edgeOutline
+import org.pixel.extra.parts.ui.sectionContentPadding
 
 // Settings tab: entrances to the float-bar tuning sheet and the dock editor.
 // The sheet itself stays an overlay owned by the root; this screen only
 // triggers it, plus expands the dock straight into editor mode.
+// The list is edge-to-edge: it scrolls under the top bar and the dock.
 @Composable
 fun SettingsScreen(
     onOpenTuning: () -> Unit,
     onOpenEditor: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = sectionContentPadding(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SettingsActionCard(
-            iconRes = R.drawable.ic_tune,
-            title = stringResource(R.string.motion_title),
-            subtitle = stringResource(R.string.motion_open_desc),
-            onClick = onOpenTuning,
-        )
-        SettingsActionCard(
-            iconRes = R.drawable.ic_edit,
-            title = stringResource(R.string.dock_edit_behavior),
-            subtitle = null,
-            onClick = onOpenEditor,
-        )
+        item(key = "tuning") {
+            SettingsActionCard(
+                iconRes = R.drawable.ic_tune,
+                title = stringResource(R.string.motion_title),
+                subtitle = stringResource(R.string.motion_open_desc),
+                onClick = onOpenTuning,
+            )
+        }
+        item(key = "editor") {
+            SettingsActionCard(
+                iconRes = R.drawable.ic_edit,
+                title = stringResource(R.string.dock_edit_behavior),
+                subtitle = null,
+                onClick = onOpenEditor,
+            )
+        }
     }
 }
 
