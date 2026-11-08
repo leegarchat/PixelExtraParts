@@ -2,6 +2,7 @@ package org.pixel.extra.parts.overscroll
 
 import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -66,6 +67,19 @@ data class OverscrollStoredProfile(
     val json: JSONObject,
     val isPreset: Boolean = false,
 )
+
+// One per-package override. Serialized exactly like the legacy manager so
+// the hook keeps parsing it: "pkg:filter:scale:ignore" (filter/ignore as
+// 0/1), entries joined with single spaces.
+data class OverscrollAppConfig(
+    val pkg: String,
+    val filter: Boolean = false,
+    val scale: Float = 1f,
+    val ignore: Boolean = false,
+) {
+    override fun toString(): String =
+        "$pkg:${if (filter) 1 else 0}:$scale:${if (ignore) 1 else 0}"
+}
 
 // Persistence bridge between Settings.Global and the editor UI.
 // Settings keys and JSON payload keys are identical (direct names).
@@ -459,5 +473,69 @@ object OverscrollStore {
             Settings.Global.putString(context.contentResolver, OverscrollKeys.SAVED_PROFILES, arr.toString())
         } catch (_: Exception) {
         }
+    }
+
+    // Per-app overrides: "pkg:filter:scale:ignore" entries joined by spaces.
+    // The format matches the EdgeEffect hook parser in the weave patch.
+    suspend fun getAppConfigs(context: Context): List<OverscrollAppConfig> =
+        withContext(Dispatchers.IO) { readAppConfigs(context) }
+
+    suspend fun saveAppConfigs(context: Context, list: List<OverscrollAppConfig>) =
+        withContext(Dispatchers.IO) {
+            val text = list.joinToString(" ") { it.toString() }
+            try {
+                Settings.Global.putString(context.contentResolver, OverscrollKeys.PACKAGES_CONFIG, text)
+            } catch (_: Exception) {
+            }
+        }
+
+    // Full-settings export: the collectJson payload travels as-is, so per-app
+    // overrides and the active-profile marker survive the round trip.
+    suspend fun exportTo(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val json = collectJson(context).toString(4).toByteArray()
+            context.contentResolver.openFileDescriptor(uri, "w")?.use { pfd ->
+                java.io.FileOutputStream(pfd.fileDescriptor).use { it.write(json) }
+            } ?: error("no descriptor")
+        }.isSuccess
+    }
+
+    // Full-settings import: applies the payload, then drops the active
+    // profile marker so the UI never claims a profile it did not load.
+    suspend fun importFrom(context: Context, uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val text = context.contentResolver.openInputStream(uri)?.bufferedReader().use {
+                it?.readText() ?: error("no stream")
+            }
+            applyJson(context, JSONObject(text))
+            Settings.Global.putString(context.contentResolver, OverscrollKeys.ACTIVE_PROFILE_NAME, null)
+        }.isSuccess
+    }
+
+    private fun readAppConfigs(context: Context): List<OverscrollAppConfig> {
+        val raw = try {
+            Settings.Global.getString(context.contentResolver, OverscrollKeys.PACKAGES_CONFIG)
+        } catch (_: Exception) {
+            null
+        } ?: return emptyList()
+        if (raw.isBlank()) return emptyList()
+        val out = mutableListOf<OverscrollAppConfig>()
+        for (entry in raw.split(" ")) {
+            try {
+                val parts = entry.split(":")
+                if (parts.size >= 3) {
+                    out.add(
+                        OverscrollAppConfig(
+                            pkg = parts[0],
+                            filter = parts[1] == "1",
+                            scale = parts[2].toFloat(),
+                            ignore = parts.size >= 4 && parts[3] == "1",
+                        ),
+                    )
+                }
+            } catch (_: Exception) {
+            }
+        }
+        return out
     }
 }

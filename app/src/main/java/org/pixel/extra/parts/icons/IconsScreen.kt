@@ -2,32 +2,29 @@ package org.pixel.extra.parts.icons
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.ui.GroupCard
@@ -35,37 +32,77 @@ import org.pixel.extra.parts.ui.SettingSwitchRow
 import org.pixel.extra.parts.ui.SettingSwitchRowVariant
 import org.pixel.extra.parts.ui.sectionContentPadding
 
-// Icons section skeleton: engine master switch, adaptive-shape presets plus a
-// custom path editor, per-area stretch/remove/scale controls, tint modes with
-// swatches, themed-icon toggles and the icon-pack picker. Reads and writes go
-// straight to Settings.Global through IconsStore; the heavy apply pipeline
-// (per-app export, progress, overlays) lands in a later stage.
+// Icons hub: engine switches, full adaptive-shape studio, per-area
+// stretch/remove/scale with tint swatches, themed-icon toggles, the live
+// icon-pack pipeline (packs, progress, dialogs) and the per-app list.
 @Composable
 fun IconsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var ui by remember { mutableStateOf<IconsStore.IconsState?>(null) }
-    var packs by remember { mutableStateOf<List<IconsStore.IconPackRef>>(emptyList()) }
-    var draftName by remember { mutableStateOf<String?>(null) }
-    var draftPath by remember { mutableStateOf<String?>(null) }
-    var pathError by remember { mutableStateOf(false) }
+    var dashboard by remember { mutableStateOf(PacksManager.getCachedDashboardState()) }
+    var isLoading by remember { mutableStateOf(dashboard == null) }
+    var loadFailed by remember { mutableStateOf(false) }
+    var packsExpanded by remember { mutableStateOf(true) }
+    var appsExpanded by remember { mutableStateOf(true) }
+    var showSystemApps by remember { mutableStateOf(true) }
+    var showHiddenApps by remember { mutableStateOf(false) }
+    var appSearchQuery by remember { mutableStateOf("") }
+    var partialPack by remember { mutableStateOf<IconPackInfo?>(null) }
+    var previewPack by remember { mutableStateOf<IconPackInfo?>(null) }
+    var expandedAppPackage by remember { mutableStateOf<String?>(null) }
+    var applyModePack by remember { mutableStateOf<IconPackInfo?>(null) }
+    var confirmClearAllIcons by remember { mutableStateOf(false) }
+    var activeProgress by remember { mutableStateOf(PacksManager.getActiveProgress()) }
+    var completionResult by remember { mutableStateOf<IconApplyResult?>(null) }
+    var handledProgressTaskId by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        val loaded = withContext(Dispatchers.IO) { IconsStore.loadState(context) }
-        ui = loaded
-        packs = withContext(Dispatchers.IO) { IconsStore.discoverIconPacks(context) }
+    suspend fun loadDashboard(showSpinner: Boolean = true, forceRefresh: Boolean = false) {
+        if (showSpinner) isLoading = true
+        loadFailed = false
+        runCatching { PacksManager.loadDashboardState(context, forceRefresh) }
+            .onSuccess { dashboard = it }
+            .onFailure { loadFailed = true }
+        isLoading = false
     }
 
-    val state = ui
-    // Drafts mirror the stored custom shape once the snapshot arrives.
-    LaunchedEffect(state) {
-        if (state != null && draftName == null && draftPath == null) {
-            draftName = state.customName
-            draftPath = state.customPath
+    fun startIconOperation(start: () -> Boolean) {
+        startIconsOperation(context, start) {
+            activeProgress = PacksManager.getActiveProgress()
         }
     }
 
+    LaunchedEffect(Unit) {
+        ui = withContext(Dispatchers.IO) { IconsStore.loadState(context) }
+        loadDashboard(showSpinner = dashboard == null)
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val progress = PacksManager.getActiveProgress()
+            activeProgress = progress
+            if (progress?.completed == true && handledProgressTaskId != progress.taskId) {
+                handledProgressTaskId = progress.taskId
+                completionResult = progress.result
+                loadDashboard(showSpinner = false, forceRefresh = true)
+            }
+            delay(500)
+        }
+    }
+
+    val state = ui
     fun update(next: IconsStore.IconsState) {
         ui = next
+    }
+
+    val packs = dashboard?.iconPacks.orEmpty()
+    val visibleApps = remember(dashboard?.installedApps, showSystemApps, showHiddenApps, appSearchQuery) {
+        filterVisibleApps(
+            dashboard?.installedApps.orEmpty(),
+            showSystemApps,
+            showHiddenApps,
+            appSearchQuery,
+        )
     }
 
     LazyColumn(
@@ -90,7 +127,6 @@ fun IconsScreen(modifier: Modifier = Modifier) {
         }
 
         if (state == null) {
-            // Snapshot still loading; rows appear on the next frame.
             return@LazyColumn
         }
 
@@ -123,115 +159,7 @@ fun IconsScreen(modifier: Modifier = Modifier) {
         }
 
         item(key = "shape") {
-            GroupCard(title = stringResource(R.string.icons_group_shape)) {
-                Text(
-                    text = stringResource(R.string.icons_shape_presets),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                IconsPresetRow(
-                    label = stringResource(R.string.icons_shape_system_default),
-                    pathData = "",
-                    selected = state.customPath.isBlank(),
-                    onSelect = {
-                        IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_PATH, null)
-                        IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_NAME, null)
-                        draftName = ""
-                        draftPath = ""
-                        pathError = false
-                        update(state.copy(customPath = "", customName = ""))
-                    },
-                )
-                IconsStore.SHAPE_PRESETS.forEach { preset ->
-                    IconsPresetRow(
-                        label = stringResource(preset.labelRes),
-                        pathData = preset.pathData,
-                        selected = state.customPath.trim() == preset.pathData,
-                        onSelect = {
-                            val label = context.getString(preset.labelRes)
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_PATH, preset.pathData)
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_NAME, label)
-                            draftName = label
-                            draftPath = preset.pathData
-                            pathError = false
-                            update(state.copy(customPath = preset.pathData, customName = label))
-                        },
-                    )
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                Text(
-                    text = stringResource(R.string.icons_custom_section),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                OutlinedTextField(
-                    value = draftName.orEmpty(),
-                    onValueChange = { draftName = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.icons_custom_name)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = draftPath.orEmpty(),
-                    onValueChange = {
-                        draftPath = it
-                        pathError = false
-                    },
-                    singleLine = false,
-                    minLines = 2,
-                    label = { Text(stringResource(R.string.icons_custom_path)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    isError = pathError,
-                    supportingText = if (pathError) {
-                        {
-                            Text(
-                                text = stringResource(R.string.icons_custom_invalid),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(
-                        onClick = {
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_PATH, null)
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_NAME, null)
-                            draftName = ""
-                            draftPath = ""
-                            pathError = false
-                            update(state.copy(customPath = "", customName = ""))
-                        },
-                    ) {
-                        Text(stringResource(R.string.icons_custom_clear))
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(
-                        onClick = {
-                            val path = draftPath.orEmpty().trim()
-                            if (!IconsStore.isValidShapePath(path)) {
-                                pathError = true
-                                return@TextButton
-                            }
-                            val name = draftName.orEmpty().trim()
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_PATH, path)
-                            IconsStore.putString(context, IconsKeys.ICON_SHAPE_CUSTOM_NAME, name)
-                            pathError = false
-                            update(state.copy(customPath = path, customName = name))
-                        },
-                    ) {
-                        Text(stringResource(R.string.icons_custom_apply))
-                    }
-                }
-            }
+            IconsShapeSection()
         }
 
         item(key = "appearance") {
@@ -335,7 +263,7 @@ fun IconsScreen(modifier: Modifier = Modifier) {
                         update(
                             state.copy(
                                 launcherStretch = enabled,
-                                launcherRemove = if (enabled) false else state.launcherRemove,
+                                launcherRemove = if (enabled) false else state.launcherStretch,
                             )
                         )
                     },
@@ -500,39 +428,164 @@ fun IconsScreen(modifier: Modifier = Modifier) {
             }
         }
 
-        item(key = "packs") {
-            GroupCard(title = stringResource(R.string.icons_group_packs)) {
-                IconsPackRow(
-                    label = stringResource(R.string.icons_pack_system),
-                    summary = stringResource(R.string.icons_pack_system_sub),
-                    selected = state.currentIconPack == null,
-                    onSelect = {
-                        IconsStore.putString(context, IconsKeys.LAUNCHER_CURRENT_ICON_PACK, null)
-                        update(state.copy(currentIconPack = null))
-                    },
-                )
-                if (packs.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.icons_packs_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        when {
+            isLoading -> item(key = "packs_loading") {
+                IconsLoadingContent()
+            }
+            loadFailed -> item(key = "packs_failed") {
+                IconsEmptyState(stringResource(R.string.icons_load_failed))
+            }
+            else -> {
+                if (activeProgress != null) {
+                    item(key = "packs_progress") {
+                        IconsProgressCard(progress = activeProgress!!)
+                    }
+                }
+                item(key = "packs") {
+                    IconsPacksSection(
+                        packs = packs,
+                        expanded = packsExpanded,
+                        busy = activeProgress?.completed == false,
+                        onExpandChange = { packsExpanded = it },
+                        onApplyAll = { pack -> applyModePack = pack },
+                        onApplyPartial = { partialPack = it },
+                        onViewPack = { previewPack = it },
+                        onApplyUpdate = { pack ->
+                            startIconOperation {
+                                PacksManager.startApplyAll(context, pack.packageName, IconApplyMode.INSTALLED_ONLY)
+                            }
+                        },
+                        onCancelAll = { pack ->
+                            startIconOperation { PacksManager.startRemoveIconPack(context, pack.packageName) }
+                        },
                     )
-                } else {
-                    packs.forEach { pack ->
-                        IconsPackRow(
-                            label = pack.label,
-                            summary = pack.packageName,
-                            selected = state.currentIconPack == pack.packageName,
-                            onSelect = {
-                                IconsStore.putString(
-                                    context, IconsKeys.LAUNCHER_CURRENT_ICON_PACK, pack.packageName
+                }
+                item(key = "apps") {
+                    IconsAppsSection(
+                        apps = visibleApps,
+                        iconMap = dashboard?.iconMap ?: IconMapSnapshot.EMPTY,
+                        iconPacks = packs,
+                        expanded = appsExpanded,
+                        busy = activeProgress?.completed == false,
+                        showSystemApps = showSystemApps,
+                        showHiddenApps = showHiddenApps,
+                        searchQuery = appSearchQuery,
+                        expandedAppPackage = expandedAppPackage,
+                        onExpandChange = { appsExpanded = it },
+                        onShowSystemChange = { showSystemApps = it },
+                        onShowHiddenChange = { showHiddenApps = it },
+                        onSearchChange = { appSearchQuery = it },
+                        onAppExpandChange = { packageName, next ->
+                            expandedAppPackage = if (next) packageName else null
+                        },
+                        onRestore = {
+                            expandedAppPackage = null
+                            startIconOperation {
+                                PacksManager.startRemovePackageIcon(context, it.packageName)
+                            }
+                        },
+                        onApply = { app, candidate ->
+                            expandedAppPackage = null
+                            startIconOperation {
+                                PacksManager.startApplySingle(
+                                    context,
+                                    candidate.iconPackPackage,
+                                    app.packageName,
+                                    candidate.drawableName,
                                 )
-                                update(state.copy(currentIconPack = pack.packageName))
-                            },
+                            }
+                        },
+                        onImport = { app, uri ->
+                            expandedAppPackage = null
+                            startIconOperation {
+                                PacksManager.startImportPackageIcon(context, app.packageName, uri)
+                            }
+                        },
+                        onSaveShapeOverrides = { _, _ ->
+                            scope.launch { loadDashboard(showSpinner = false, forceRefresh = true) }
+                        },
+                    )
+                }
+                item(key = "clear_all") {
+                    GroupCard(title = stringResource(R.string.icons_clear_all)) {
+                        Text(
+                            text = stringResource(R.string.icons_clear_all_msg),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Button(
+                            onClick = { confirmClearAllIcons = true },
+                            enabled = activeProgress?.completed != false,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(stringResource(R.string.icons_clear_all))
+                        }
                     }
                 }
             }
         }
+    }
+
+    val mapSnapshot = dashboard?.iconMap
+    if (partialPack != null && mapSnapshot != null) {
+        IconsPartialApplyDialog(
+            pack = partialPack!!,
+            iconMap = mapSnapshot,
+            onDismiss = { partialPack = null },
+            onApply = { selectedPackages ->
+                val pack = partialPack ?: return@IconsPartialApplyDialog
+                partialPack = null
+                startIconOperation { PacksManager.startApplyPartial(context, pack.packageName, selectedPackages) }
+            },
+        )
+    }
+
+    if (applyModePack != null) {
+        IconsApplyModeDialog(
+            pack = applyModePack!!,
+            onDismiss = { applyModePack = null },
+            onApply = { mode ->
+                val pack = applyModePack ?: return@IconsApplyModeDialog
+                applyModePack = null
+                startIconOperation { PacksManager.startApplyAll(context, pack.packageName, mode) }
+            },
+        )
+    }
+
+    if (previewPack != null) {
+        IconsPackPreviewDialog(
+            pack = previewPack!!,
+            onDismiss = { previewPack = null },
+        )
+    }
+
+    if (confirmClearAllIcons) {
+        IconsClearAllDialog(
+            onDismiss = { confirmClearAllIcons = false },
+            onConfirm = {
+                confirmClearAllIcons = false
+                startIconOperation { PacksManager.startClearAllIcons(context) }
+            },
+        )
+    }
+
+    if (completionResult != null) {
+        IconsApplyCompletedDialog(
+            result = completionResult!!,
+            onDismiss = {
+                completionResult = null
+                PacksManager.clearCompletedProgress()
+                activeProgress = PacksManager.getActiveProgress()
+            },
+            onRebooted = {
+                completionResult = null
+                PacksManager.clearCompletedProgress()
+                activeProgress = PacksManager.getActiveProgress()
+            },
+        )
     }
 }

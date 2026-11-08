@@ -41,49 +41,50 @@ private data class HomeSectionEntry(
 
 // Same sections as the dock pins and overflow slots, minus Home/Settings:
 // tap routes through the shared selected-key state, so the transition matches
-// a dock tab switch exactly.
+// a dock tab switch exactly. Row icons are the section tiles inherited from
+// the original PixelParts project (pep_bak/common/res/drawable).
 private val HomeSections = listOf(
     HomeSectionEntry(
         routeKey = SectionRoutes.DISPLAY,
         titleRes = R.string.tab_display,
         subtitleRes = R.string.display_desc,
-        iconRes = R.drawable.ic_search,
+        iconRes = R.drawable.ic_auto_hbm_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.SYSTEM_UI,
         titleRes = R.string.tab_systemui,
         subtitleRes = R.string.sysui_section_desc,
-        iconRes = R.drawable.ic_info,
+        iconRes = R.drawable.ic_activity_transition_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.OVERSCROLL,
         titleRes = R.string.tab_overscroll,
         subtitleRes = R.string.os_header_desc,
-        iconRes = R.drawable.ic_more,
+        iconRes = R.drawable.ic_overscroll_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.THERMAL,
         titleRes = R.string.tab_thermal,
-        subtitleRes = null,
-        iconRes = R.drawable.ic_share,
+        subtitleRes = R.string.thermal_desc,
+        iconRes = R.drawable.ic_thermal_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.ICONS,
         titleRes = R.string.tab_icons,
         subtitleRes = R.string.icons_header_sub,
-        iconRes = R.drawable.ic_favorite,
+        iconRes = R.drawable.ic_saturation_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.HIDDEN_APPS,
         titleRes = R.string.tab_hidden_apps,
         subtitleRes = R.string.hidden_apps_subtitle,
-        iconRes = R.drawable.ic_archive,
+        iconRes = R.drawable.ic_auto_lock_tile,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.ADDONS,
         titleRes = R.string.tab_addons,
         subtitleRes = R.string.addons_desc,
-        iconRes = R.drawable.ic_extension,
+        iconRes = R.drawable.ic_addon_tile,
     ),
 )
 

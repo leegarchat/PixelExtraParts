@@ -16,6 +16,26 @@ object DisplayStore {
     private const val SURFACE_COMPOSER_INTERFACE = "android.ui.ISurfaceComposer"
     private const val TRANSACTION_SET_SATURATION = 1022
 
+    // Firmware broadcast contracts. Action strings stay verbatim so the
+    // firmware-side services keep interop with this client.
+    const val AUTO_HBM_ACTION_STATE_CHANGED = "org.pixel.customparts.action.AUTO_HBM_STATE_CHANGED"
+    const val AUTO_HBM_EXTRA_LUX = "lux"
+    const val AUTO_HBM_EXTRA_ACTIVE = "active"
+    const val AUTO_HBM_EXTRA_BRIGHTNESS = "brightness"
+    const val AUTO_HBM_EXTRA_MAX_BRIGHTNESS = "max_brightness"
+    const val AUTO_HBM_EXTRA_TEMPERATURE = "temperature"
+
+    const val AUTO_LOCK_ACTION_STATE_CHANGED = "org.pixel.customparts.action.AUTO_LOCK_STATE_CHANGED"
+    const val AUTO_LOCK_EXTRA_ENABLED = "enabled"
+    const val AUTO_LOCK_EXTRA_TIMEOUT = "timeout"
+    const val AUTO_LOCK_EXTRA_REMAINING = "remaining"
+
+    private const val BRIGHTNESS_PATH = "/sys/class/backlight/panel0-backlight/brightness"
+    private const val MAX_BRIGHTNESS_PATH = "/sys/class/backlight/panel0-backlight/max_brightness"
+    private const val THERMAL_ROOT = "/sys/class/thermal"
+    private const val SOC_THERMAL_NAME = "soc_therm"
+    private const val BATTERY_TEMP_PATH = "/sys/class/power_supply/battery/temp"
+
     fun getInt(context: Context, key: String, defaultValue: Int): Int {
         return try {
             Settings.Global.getInt(context.contentResolver, key, defaultValue)
@@ -32,6 +52,74 @@ object DisplayStore {
         } catch (e: Exception) {
             Log.w(TAG, "Write failed for $key", e)
             false
+        }
+    }
+
+    fun getFloat(context: Context, key: String, defaultValue: Float): Float {
+        return try {
+            Settings.Global.getFloat(context.contentResolver, key, defaultValue)
+        } catch (e: Exception) {
+            Log.w(TAG, "Read failed for $key", e)
+            defaultValue
+        }
+    }
+
+    // Best-effort state broadcast for firmware services that listen for
+    // tuning changes. Sending needs no manifest entry.
+    fun publishAutoLockState(context: Context, enabled: Boolean, timeoutSeconds: Int, remainingSeconds: Int = -1) {
+        runCatching {
+            context.sendBroadcast(
+                android.content.Intent(AUTO_LOCK_ACTION_STATE_CHANGED).apply {
+                    putExtra(AUTO_LOCK_EXTRA_ENABLED, enabled)
+                    putExtra(AUTO_LOCK_EXTRA_TIMEOUT, timeoutSeconds)
+                    putExtra(AUTO_LOCK_EXTRA_REMAINING, remainingSeconds)
+                },
+            )
+        }.onFailure { Log.w(TAG, "AutoLock publish failed", it) }
+    }
+
+    // Panel brightness nodes shared by the AutoHBM live card.
+    fun readBrightness(): Int? = readIntSysfs(BRIGHTNESS_PATH)
+
+    fun readMaxBrightness(): Int? = readIntSysfs(MAX_BRIGHTNESS_PATH)
+
+    fun readSocTemperatureC(): Float? {
+        val soc = runCatching {
+            java.io.File(THERMAL_ROOT).listFiles { file -> file.name.startsWith("thermal_zone") }
+                ?.mapNotNull { zone ->
+                    val type = runCatching { java.io.File(zone, "type").readText().trim().lowercase() }.getOrNull()
+                        ?: return@mapNotNull null
+                    if (type != SOC_THERMAL_NAME) return@mapNotNull null
+                    runCatching { java.io.File(zone, "temp").readText().trim().toLong() }.getOrNull()
+                        ?.let(::normalizeTemperature)
+                        ?.takeIf { it in 0f..150f }
+                }
+                ?.firstOrNull()
+        }.getOrNull()
+        if (soc != null) return soc
+        return runCatching { java.io.File(BATTERY_TEMP_PATH).readText().trim().toLong() }.getOrNull()
+            ?.let(::normalizeTemperature)
+            ?.takeIf { it in 0f..150f }
+    }
+
+    fun readSocModel(): String {
+        return runCatching {
+            val clazz = Class.forName("android.os.SystemProperties")
+            val method = clazz.getMethod("get", String::class.java, String::class.java)
+            (method.invoke(null, "ro.soc.model", "") as? String)?.trim()?.takeIf { it.isNotEmpty() }
+        }.getOrNull() ?: "SoC"
+    }
+
+    private fun readIntSysfs(path: String): Int? {
+        return runCatching { java.io.File(path).readText().trim().toInt() }.getOrNull()
+    }
+
+    private fun normalizeTemperature(rawValue: Long): Float {
+        val absValue = kotlin.math.abs(rawValue).toFloat()
+        return when {
+            absValue > 1000f -> absValue / 1000f
+            absValue > 100f -> absValue / 10f
+            else -> absValue
         }
     }
 

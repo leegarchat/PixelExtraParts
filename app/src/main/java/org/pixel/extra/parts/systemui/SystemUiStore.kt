@@ -41,6 +41,13 @@ internal fun readGlobalString(context: Context, key: String): String? =
         null
     }
 
+internal fun writeGlobalString(context: Context, key: String, value: String?) {
+    try {
+        Settings.Global.putString(context.contentResolver, key, value)
+    } catch (_: Exception) {
+    }
+}
+
 // One int-valued option of a segmented row; labels come from resources.
 internal data class SegmentOption(
     val value: Int,

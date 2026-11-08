@@ -23,9 +23,8 @@ import org.pixel.extra.parts.ui.SettingSlider
 import org.pixel.extra.parts.ui.SettingSwitchRow
 import org.pixel.extra.parts.ui.SettingSwitchRowVariant
 
-// Saturation card: enable switch plus a 0-200% level slider applied
-// immediately through SurfaceFlinger. The preview pager and QS tile entry
-// from the legacy screen are dropped; only the tuning knobs are kept.
+// Saturation card: enable switch, live photo preview pager and a 0-200%
+// level slider applied immediately through SurfaceFlinger.
 @Composable
 fun SaturationCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -45,6 +44,7 @@ fun SaturationCard(modifier: Modifier = Modifier) {
         subtitle = stringResource(R.string.saturation_summary),
         modifier = modifier,
     ) {
+        SaturationPreviewCard(percent = if (enabled) percent else DisplayKeys.SATURATION_DEFAULT)
         SettingSwitchRow(
             title = stringResource(R.string.saturation_enable_title),
             summary = stringResource(R.string.saturation_enable_summary),

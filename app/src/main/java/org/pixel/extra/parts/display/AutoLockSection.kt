@@ -1,6 +1,9 @@
 package org.pixel.extra.parts.display
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -9,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.ui.ExpressiveSegmentedRow
 import org.pixel.extra.parts.ui.GroupCard
@@ -28,9 +33,9 @@ import org.pixel.extra.parts.ui.SettingSwitchRow
 import org.pixel.extra.parts.ui.SettingSwitchRowVariant
 
 // Auto-lock card: enable switch, segmented always/smart mode, pause-media
-// switch and an inactivity timeout slider. Broadcast receivers and the
-// countdown readout from the legacy screen are dropped; the firmware
-// service owns the timer and reads these keys.
+// switch and an inactivity timeout slider. A receiver keeps the knobs in
+// sync with the firmware service (tiles or the service itself may change
+// the state); every local change is published back on the same contract.
 @Composable
 fun AutoLockCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -54,6 +59,32 @@ fun AutoLockCard(modifier: Modifier = Modifier) {
     }
     val enabled = mode != DisplayKeys.AUTO_LOCK_MODE_OFF
     val blockerOnly = mode == DisplayKeys.AUTO_LOCK_MODE_BLOCKER_ONLY
+
+    // External changes (tiles, service) arrive on the firmware broadcast.
+    DisposableEffect(Unit) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                mode = DisplayStore.getInt(
+                    context,
+                    DisplayKeys.AUTO_LOCK_MODE,
+                    DisplayKeys.AUTO_LOCK_MODE_OFF,
+                ).coerceIn(DisplayKeys.AUTO_LOCK_MODE_OFF, DisplayKeys.AUTO_LOCK_MODE_BLOCKER_ONLY)
+                pauseMedia = DisplayStore.isEnabled(context, DisplayKeys.AUTO_LOCK_PAUSE_MEDIA)
+                timeoutSeconds = DisplayStore.getInt(
+                    context,
+                    DisplayKeys.AUTO_LOCK_TIMEOUT_SECONDS,
+                    DisplayKeys.AUTO_LOCK_TIMEOUT_DEFAULT_S,
+                ).coerceIn(DisplayKeys.AUTO_LOCK_TIMEOUT_MIN_S, DisplayKeys.AUTO_LOCK_TIMEOUT_MAX_S)
+            }
+        }
+        ContextCompat.registerReceiver(
+            context,
+            receiver,
+            IntentFilter(DisplayStore.AUTO_LOCK_ACTION_STATE_CHANGED),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        onDispose { runCatching { context.unregisterReceiver(receiver) } }
+    }
 
     GroupCard(
         title = stringResource(R.string.auto_lock_title),
@@ -143,6 +174,7 @@ fun AutoLockCard(modifier: Modifier = Modifier) {
                 timeoutSeconds = value.toInt()
                     .coerceIn(DisplayKeys.AUTO_LOCK_TIMEOUT_MIN_S, DisplayKeys.AUTO_LOCK_TIMEOUT_MAX_S)
                 DisplayStore.putInt(context, DisplayKeys.AUTO_LOCK_TIMEOUT_SECONDS, timeoutSeconds)
+                DisplayStore.publishAutoLockState(context, enabled, timeoutSeconds)
             },
             enabled = enabled,
             valueRange = DisplayKeys.AUTO_LOCK_TIMEOUT_MIN_S.toFloat()..
@@ -168,6 +200,15 @@ private fun writeAutoLockMode(context: Context, mode: Int) {
         context,
         DisplayKeys.AUTO_LOCK_ENABLED,
         normalized != DisplayKeys.AUTO_LOCK_MODE_OFF,
+    )
+    DisplayStore.publishAutoLockState(
+        context,
+        normalized != DisplayKeys.AUTO_LOCK_MODE_OFF,
+        DisplayStore.getInt(
+            context,
+            DisplayKeys.AUTO_LOCK_TIMEOUT_SECONDS,
+            DisplayKeys.AUTO_LOCK_TIMEOUT_DEFAULT_S,
+        ),
     )
 }
 

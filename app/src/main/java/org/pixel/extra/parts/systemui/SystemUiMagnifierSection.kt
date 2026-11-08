@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -52,7 +54,9 @@ private const val DEFAULT_SIZE = 1.0f
 private const val DEFAULT_OFFSET_Y = 0
 
 // Hub group for the text loupe: enable switch plus zoom/size sliders,
-// shape segmented row, vertical-offset slider and a live lens preview.
+// shape segmented row, vertical-offset slider, editable sample text and a
+// live lens preview whose geometry mirrors the framework (100x48 base,
+// square/circle normalized to the longest side, default center -42dp).
 // State is read once from Settings.Global and written back on every change.
 @Composable
 internal fun MagnifierGroup(modifier: Modifier = Modifier) {
@@ -72,6 +76,8 @@ internal fun MagnifierGroup(modifier: Modifier = Modifier) {
     var offsetY by remember {
         mutableIntStateOf(readGlobalInt(context, SystemUiKeys.MAGNIFIER_OFFSET_Y, DEFAULT_OFFSET_Y))
     }
+    val defaultSampleText = stringResource(R.string.sysui_mag_sample)
+    var sampleText by remember(defaultSampleText) { mutableStateOf(defaultSampleText) }
 
     val subtitle = stringResource(
         R.string.sysui_mag_status,
@@ -169,8 +175,15 @@ internal fun MagnifierGroup(modifier: Modifier = Modifier) {
                 valueLabel = { v -> stringResource(R.string.sysui_fmt_dp, v.toInt()) },
                 enabled = enabled,
             )
+            OutlinedTextField(
+                value = sampleText,
+                onValueChange = { sampleText = it },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
             Box(modifier = Modifier.alpha(if (enabled) 1f else 0.42f)) {
                 MagnifierLensPreview(
+                    sampleText = sampleText,
                     zoom = zoom,
                     sizeScale = sizeScale,
                     shape = shape,
@@ -187,31 +200,50 @@ private fun magnifierShapeLabel(shape: Int): Int = when (shape) {
     else -> R.string.sysui_mag_shape_default
 }
 
-// Simplified lens preview: a lens box with the scaled sample over a dimmed
-// source line, shifted by the vertical offset. Geometry is indicative only;
-// exact numbers live in the status subtitle above.
+// Faithful lens preview: the framework base is 100x48dp scaled by
+// sizeScale (square/circle normalize to the longest side), the default lens
+// center sits 42dp above the text cursor plus the custom offset. The column
+// always spans both the lens and the source line, so large offsets never
+// clip; positions are animated like the loupe itself.
 @Composable
 private fun MagnifierLensPreview(
+    sampleText: String,
     zoom: Float,
     sizeScale: Float,
     shape: Int,
     offsetY: Int,
     modifier: Modifier = Modifier,
 ) {
-    val sample = stringResource(R.string.sysui_mag_sample)
-    val animatedZoom by animateFloatAsState(
-        targetValue = zoom,
-        label = "SystemUiMagZoom",
+    val animatedZoom by animateFloatAsState(targetValue = zoom, label = "SystemUiMagZoom")
+    val animatedSize by animateFloatAsState(targetValue = sizeScale, label = "SystemUiMagSize")
+    val baseW = 100f
+    val baseH = 48f
+    var magWDp = baseW * animatedSize
+    var magHDp = baseH * animatedSize
+    if (shape == SHAPE_SQUARE || shape == SHAPE_CIRCLE) {
+        val side = maxOf(magWDp, magHDp)
+        magWDp = side
+        magHDp = side
+    }
+    val lensCenterRelative = -42f + offsetY
+    val animatedLensCenter by animateFloatAsState(
+        targetValue = lensCenterRelative,
+        label = "SystemUiMagCenter",
     )
-    val animatedSize by animateFloatAsState(
-        targetValue = sizeScale,
-        label = "SystemUiMagSize",
-    )
-    val lensSide = (96f * animatedSize).coerceIn(48f, 200f).dp
-    val lensShape = if (shape == SHAPE_CIRCLE) {
+    val textLineH = 20f
+    val lensHalfH = magHDp / 2f
+    val textHalfH = textLineH / 2f
+    val lensTop = animatedLensCenter - lensHalfH
+    val lensBottom = animatedLensCenter + lensHalfH
+    val topEdge = minOf(lensTop, -textHalfH)
+    val bottomEdge = maxOf(lensBottom, textHalfH)
+    val boxHeightDp = (bottomEdge - topEdge).coerceAtLeast(1f)
+    val textTopOffset = -textHalfH - topEdge
+    val lensTopOffset = lensTop - topEdge
+    val magShape = if (shape == SHAPE_CIRCLE) {
         CircleShape
     } else {
-        RoundedCornerShape(18.dp)
+        RoundedCornerShape(50)
     }
     val container = MaterialTheme.colorScheme.surfaceContainerHigh
     val containerShape = RoundedCornerShape(16.dp)
@@ -235,30 +267,35 @@ private fun MagnifierLensPreview(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center,
+                    .height(boxHeightDp.dp),
+                contentAlignment = Alignment.TopCenter,
             ) {
                 Text(
-                    text = sample,
+                    text = sampleText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = textTopOffset.dp),
                 )
                 Box(
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = offsetY.dp)
-                        .size(lensSide)
-                        .clip(lensShape)
+                        .align(Alignment.TopCenter)
+                        .padding(top = lensTopOffset.dp)
+                        .size(magWDp.dp, magHDp.dp)
+                        .shadow(elevation = 6.dp, shape = magShape)
+                        .clip(magShape)
                         .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, MaterialTheme.colorScheme.surface.edgeOutline(), lensShape),
+                        .border(1.dp, MaterialTheme.colorScheme.surface.edgeOutline(), magShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = sample,
+                        text = sampleText,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.graphicsLayer {
                             scaleX = animatedZoom
                             scaleY = animatedZoom

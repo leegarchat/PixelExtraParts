@@ -58,6 +58,8 @@ fun OverscrollProfilesSection(
     onApply: (OverscrollStoredProfile) -> Unit,
     onSave: (String) -> Unit,
     onDelete: (OverscrollStoredProfile) -> Unit,
+    onImport: () -> Unit,
+    onExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showSaveDialog by remember { mutableStateOf(false) }
@@ -89,6 +91,37 @@ fun OverscrollProfilesSection(
             )
         }
         val haptics = LocalHapticFeedback.current
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Button(
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onImport()
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                Text(text = stringResource(R.string.os_import))
+            }
+            Button(
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onExport()
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+            ) {
+                Text(text = stringResource(R.string.os_export))
+            }
+        }
         Button(
             onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.ContextClick)

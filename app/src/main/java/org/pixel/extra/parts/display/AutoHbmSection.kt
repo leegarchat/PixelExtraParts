@@ -30,10 +30,9 @@ import org.pixel.extra.parts.ui.SettingSwitchRow
 import org.pixel.extra.parts.ui.SettingSwitchRowVariant
 import java.io.File
 
-// AutoHBM card: enable switch, segmented auto/permanent mode, brightness
-// lock, threshold and delay sliders, plus an expandable advanced group.
-// The legacy live-lux status card, sensor listeners, broadcast receivers and
-// QS tile entry are dropped; the service reads these keys on its own.
+// AutoHBM card: live lux monitor, enable switch, segmented auto/permanent
+// mode, brightness lock, threshold and delay sliders, plus an expandable
+// advanced group.
 @Composable
 fun AutoHbmCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -117,6 +116,19 @@ fun AutoHbmCard(modifier: Modifier = Modifier) {
         subtitle = stringResource(R.string.auto_hbm_summary),
         modifier = modifier,
     ) {
+        AutoHbmLiveCard(
+            enabled = enabled,
+            threshold = threshold,
+            supported = supported,
+            checkIntervalMs = checkIntervalMs,
+            onCheckIntervalChange = {
+                checkIntervalMs = it.coerceIn(
+                    DisplayKeys.HBM_CHECK_INTERVAL_MIN_MS,
+                    DisplayKeys.HBM_CHECK_INTERVAL_MAX_MS,
+                )
+                DisplayStore.putInt(context, DisplayKeys.AUTO_HBM_CHECK_INTERVAL_MS, checkIntervalMs)
+            },
+        )
         if (!supported) {
             Column(modifier = Modifier.padding(horizontal = 4.dp)) {
                 Text(
@@ -306,22 +318,6 @@ fun AutoHbmCard(modifier: Modifier = Modifier) {
                 defaultValue = DisplayKeys.HBM_COOLDOWN_DEFAULT_S.toFloat(),
                 resetLabel = stringResource(R.string.motion_reset),
                 valueLabel = { v -> stringResource(R.string.display_fmt_sec, v.toInt()) },
-            )
-            SettingSlider(
-                title = stringResource(R.string.auto_hbm_check_interval_title),
-                value = checkIntervalMs.toFloat(),
-                onValueChange = { value ->
-                    checkIntervalMs = value.toInt()
-                        .coerceIn(DisplayKeys.HBM_CHECK_INTERVAL_MIN_MS, DisplayKeys.HBM_CHECK_INTERVAL_MAX_MS)
-                    DisplayStore.putInt(context, DisplayKeys.AUTO_HBM_CHECK_INTERVAL_MS, checkIntervalMs)
-                },
-                enabled = baseControlsEnabled,
-                valueRange = DisplayKeys.HBM_CHECK_INTERVAL_MIN_MS.toFloat()..
-                    DisplayKeys.HBM_CHECK_INTERVAL_MAX_MS.toFloat(),
-                step = 10f,
-                defaultValue = DisplayKeys.HBM_CHECK_INTERVAL_DEFAULT_MS.toFloat(),
-                resetLabel = stringResource(R.string.motion_reset),
-                valueLabel = { v -> stringResource(R.string.fmt_ms, v.toInt()) },
             )
             SettingSlider(
                 title = stringResource(R.string.auto_hbm_temperature_limit_title),

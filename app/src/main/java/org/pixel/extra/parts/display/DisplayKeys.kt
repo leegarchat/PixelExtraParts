@@ -29,6 +29,8 @@ object DisplayKeys {
     const val DTW_ENABLED = "pixelparts_dtw_enabled"
     const val DTW_TAP_COUNT = "pixelparts_dtw_tap_count"
     const val DTW_TAP_TIMEOUT_MS = "pixelparts_dtw_tap_timeout_ms"
+    const val DTW_COORDINATE_CHECK = "pixelparts_dtw_coordinate_check"
+    const val DTW_MAX_DISTANCE_DP = "pixelparts_dtw_max_distance_dp"
 
     // Auto lock.
     const val AUTO_LOCK_ENABLED = "pixelparts_auto_lock_enabled"
@@ -79,6 +81,9 @@ object DisplayKeys {
     const val DTW_TIMEOUT_DEFAULT_MS = 300
     const val DTW_TIMEOUT_MIN_MS = 100
     const val DTW_TIMEOUT_MAX_MS = 2000
+    const val DTW_MAX_DISTANCE_DEFAULT_DP = 50
+    const val DTW_MAX_DISTANCE_MIN_DP = 10
+    const val DTW_MAX_DISTANCE_MAX_DP = 500
 
     // Auto-lock slider bounds.
     const val AUTO_LOCK_TIMEOUT_DEFAULT_S = 300

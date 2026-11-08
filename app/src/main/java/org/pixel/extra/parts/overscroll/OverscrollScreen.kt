@@ -1,17 +1,26 @@
 package org.pixel.extra.parts.overscroll
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,9 +43,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.pixel.extra.parts.R
+import org.pixel.extra.parts.ui.GroupCard
 import org.pixel.extra.parts.ui.edgeOutline
 import org.pixel.extra.parts.ui.sectionContentPadding
 
@@ -55,6 +66,7 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
     var presets by remember { mutableStateOf(emptyList<OverscrollStoredProfile>()) }
     var saved by remember { mutableStateOf(emptyList<OverscrollStoredProfile>()) }
     var activeName by remember { mutableStateOf<String?>(null) }
+    var appConfigs by remember { mutableStateOf(emptyList<OverscrollAppConfig>()) }
 
     LaunchedEffect(Unit) {
         values = OverscrollStore.loadValues(context)
@@ -62,12 +74,51 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
         presets = OverscrollStore.loadPresets(context)
         saved = OverscrollStore.getSavedProfiles(context)
         activeName = OverscrollStore.getActiveProfileName(context)
+        appConfigs = OverscrollStore.getAppConfigs(context)
+    }
+
+    fun refreshAll() {
+        scope.launch {
+            values = OverscrollStore.loadValues(context)
+            masterEnabled = OverscrollStore.isMasterEnabled(context)
+            saved = OverscrollStore.getSavedProfiles(context)
+            activeName = OverscrollStore.getActiveProfileName(context)
+            appConfigs = OverscrollStore.getAppConfigs(context)
+        }
     }
 
     fun refreshProfiles() {
         scope.launch {
             saved = OverscrollStore.getSavedProfiles(context)
             activeName = OverscrollStore.getActiveProfileName(context)
+        }
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val ok = OverscrollStore.exportTo(context, uri)
+                if (!ok) {
+                    Toast.makeText(context, context.getString(R.string.os_export_fail), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val ok = OverscrollStore.importFrom(context, uri)
+                if (ok) {
+                    refreshAll()
+                    Toast.makeText(context, context.getString(R.string.os_import_ok), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, context.getString(R.string.os_import_fail), Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -143,6 +194,7 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
                     scope.launch {
                         values = OverscrollStore.applyProfile(context, profile)
                         masterEnabled = OverscrollStore.isMasterEnabled(context)
+                        appConfigs = OverscrollStore.getAppConfigs(context)
                         refreshProfiles()
                     }
                 },
@@ -158,7 +210,12 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
                         refreshProfiles()
                     }
                 },
+                onImport = { importLauncher.launch(arrayOf("application/json")) },
+                onExport = { exportLauncher.launch("overscroll_settings.json") },
             )
+        }
+        item(key = "playground") {
+            OverscrollPlaygroundCard()
         }
         item(key = "physics") {
             OverscrollPhysicsGroup(
@@ -205,6 +262,43 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
                 onToggleLogging = { onToggle(OverscrollKeys.LOGGING, it) { v, c -> v.copy(logging = c) } },
             )
         }
+        item(key = "apps") {
+            OverscrollAppsSection(
+                apps = appConfigs,
+                masterEnabled = masterEnabled,
+                onAdd = { pkg ->
+                    if (appConfigs.any { it.pkg == pkg }) {
+                        Toast.makeText(context, context.getString(R.string.os_app_exists), Toast.LENGTH_SHORT).show()
+                    } else {
+                        val next = appConfigs + OverscrollAppConfig(pkg = pkg)
+                        appConfigs = next
+                        scope.launch {
+                            OverscrollStore.saveAppConfigs(context, next)
+                            OverscrollStore.clearActiveProfile(context)
+                            activeName = null
+                        }
+                    }
+                },
+                onUpdate = { updated ->
+                    val next = appConfigs.map { if (it.pkg == updated.pkg) updated else it }
+                    appConfigs = next
+                    scope.launch {
+                        OverscrollStore.saveAppConfigs(context, next)
+                        OverscrollStore.clearActiveProfile(context)
+                        activeName = null
+                    }
+                },
+                onDelete = { removed ->
+                    val next = appConfigs.filterNot { it.pkg == removed.pkg }
+                    appConfigs = next
+                    scope.launch {
+                        OverscrollStore.saveAppConfigs(context, next)
+                        OverscrollStore.clearActiveProfile(context)
+                        activeName = null
+                    }
+                },
+            )
+        }
         item(key = "reset") {
             Button(
                 onClick = {
@@ -228,6 +322,61 @@ fun OverscrollScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(text = stringResource(R.string.os_reset))
+            }
+        }
+    }
+}
+
+// Playground strip: a scrollable row of static cards so the current spring
+// and deformation setup can be felt immediately below the profiles.
+@Composable
+private fun OverscrollPlaygroundCard(modifier: Modifier = Modifier) {
+    GroupCard(
+        title = stringResource(R.string.os_playground_title),
+        modifier = modifier,
+    ) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp),
+        ) {
+            items(5, key = { "card_$it" }) { index ->
+                val cardShape = RoundedCornerShape(20.dp)
+                val container = MaterialTheme.colorScheme.surfaceContainer
+                Surface(
+                    color = container,
+                    shape = cardShape,
+                    modifier = Modifier
+                        .width(160.dp)
+                        .height(140.dp)
+                        .border(1.dp, container.edgeOutline(), cardShape),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = (index + 1).toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.os_playground_card),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
             }
         }
     }

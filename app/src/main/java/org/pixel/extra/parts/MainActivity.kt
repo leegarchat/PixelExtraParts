@@ -99,9 +99,22 @@ private val SectionEntries = listOf(
 
 private const val TOP_BAR_HEIGHT = 64 // dp
 
+// Gap between the collapsed bar bottom and the navigation-bar inset bottom.
+// 10.dp keeps the bar ~8-12.dp above the gesture-zone bottom edge, matching
+// the donor stance; the system navigationBars inset (safe area) is applied on top.
+private const val DOCK_BOTTOM_MARGIN_DP = 10
+
+// Cap of the remembered tab back stack (oldest entries are dropped).
+private const val MAX_TAB_HISTORY = 24
+
 @Composable
 private fun PepRoot() {
     var selectedKey by rememberSaveable { mutableStateOf(SectionRoutes.HOME) }
+    // Previous tab keys, oldest-first. Plain remember on purpose: history is a
+    // runtime navigation aid, not state worth restoring after process death
+    // (the fallback branch below still lands on Home in that case).
+    // Selecting Home resets it: Home is the exit root, back exits from there.
+    var tabBackStack by remember { mutableStateOf(emptyList<String>()) }
     var overflowExpanded by rememberSaveable { mutableStateOf(false) }
     var editorMode by rememberSaveable { mutableStateOf(false) }
     // Tuning state owned by the dock module: one holder shared by the dock
@@ -119,6 +132,36 @@ private fun PepRoot() {
     }
     BackHandler(enabled = !editorMode && overflowExpanded) {
         overflowExpanded = false
+    }
+    // Lowest root priority: pops the tab history toward Home. Disabled on Home
+    // with an empty stack so the system handles the press (app exit). Inner
+    // handlers win while visible: the tuning sheet and addon pages own their
+    // BackHandlers (composed later), hence no extra gating for them here.
+    BackHandler(
+        enabled = !editorMode && !overflowExpanded && !showTuning &&
+            (selectedKey != SectionRoutes.HOME || tabBackStack.isNotEmpty())
+    ) {
+        val previous = tabBackStack.lastOrNull()
+        if (previous != null) {
+            selectedKey = previous
+            tabBackStack = tabBackStack.dropLast(1)
+        } else {
+            // No history (e.g. restored straight into a section): land on Home.
+            tabBackStack = emptyList()
+            selectedKey = SectionRoutes.HOME
+        }
+    }
+
+    // Single tab-switch entry point: every dock/Home selection is recorded so
+    // back walks the same path in reverse instead of exiting the app.
+    fun selectTab(key: String) {
+        if (key == selectedKey) return
+        tabBackStack = if (key == SectionRoutes.HOME) {
+            emptyList()
+        } else {
+            (tabBackStack + selectedKey).takeLast(MAX_TAB_HISTORY)
+        }
+        selectedKey = key
     }
 
     val allEntries = remember { PinnedTabs + SectionEntries }
@@ -184,7 +227,7 @@ private fun PepRoot() {
                             editorMode = true
                         },
                     )
-                    else -> HomeScreen(onOpenSection = { selectedKey = it })
+                    else -> HomeScreen(onOpenSection = ::selectTab)
                 }
             }
         }
@@ -237,7 +280,7 @@ private fun PepRoot() {
                 tabs = PinnedTabs,
                 overflowItems = SectionEntries,
                 selectedKey = selectedKey,
-                onSelect = { selectedKey = it },
+                onSelect = ::selectTab,
                 expanded = overflowExpanded,
                 onExpandedChange = {
                     overflowExpanded = it
@@ -254,7 +297,7 @@ private fun PepRoot() {
                 favoritesSectionTitle = stringResource(R.string.tab_favorites),
                 modifier = Modifier
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(bottom = 24.dp, start = 16.dp, end = 16.dp),
+                    .padding(bottom = DOCK_BOTTOM_MARGIN_DP.dp, start = 16.dp, end = 16.dp),
             )
         }
 
