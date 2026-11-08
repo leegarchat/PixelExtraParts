@@ -24,7 +24,7 @@ SELINUX_*.md
 test_rework_*
 
 # PEP weave outputs (build-time generated, see weave/)
-/weave_gen/
+/soong/weave_gen/
 
 # Gradle standalone work (ignored tree: app_test/)
 /.gradle

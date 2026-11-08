@@ -1,8 +1,8 @@
 // PixelExtraParts compile-time weave (H1), build-time variant.
 //
 // Vanilla sources stay untouched in upstream trees. During the make phase
-// (device.mk) weave/weave_apply.py regenerates patched copies into
-// weave_gen/ (git-ignored) from live vanilla + weave/specs/*.patch.
+// (device.mk) soong/weave/weave_apply.py regenerates patched copies into
+// soong/weave_gen/ (git-ignored) from live vanilla + soong/weave/specs/*.patch.
 // This mutator then swaps them into the target modules.
 //
 // Drift behavior: a spec whose context no longer matches live vanilla

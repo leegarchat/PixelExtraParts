@@ -257,75 +257,75 @@ java_library {
 // Consumed by soong-pixelparts-plugin via Exclude_srcs/Srcs on
 // framework-minus-apex and SettingsLib. No upstream .bp is touched.
 
-// PixelExtraParts H1 weave: build-time generated sources (weave_gen/).
-// Produced by weave/weave_apply.py from live vanilla + weave/specs
+// PixelExtraParts H1 weave: build-time generated sources (soong/weave_gen/).
+// Produced by soong/weave/weave_apply.py from live vanilla + soong/weave/specs
 // during the make phase (see device.mk). Upstream trees stay vanilla.
 filegroup {
     name: "pixelparts_weave_framework",
     srcs: [
-        "weave_gen/frameworks/base/core/java/android/widget/EdgeEffect.java",
-        "weave_gen/frameworks/base/core/java/android/widget/Magnifier.java",
-        "weave_gen/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
-        "weave_gen/frameworks/base/core/java/android/app/Activity.java",
-        "weave_gen/frameworks/base/core/java/android/app/ActivityThread.java",
-        "weave_gen/frameworks/base/core/java/android/app/ApplicationPackageManager.java",
-        "weave_gen/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
+        "soong/weave_gen/frameworks/base/core/java/android/widget/EdgeEffect.java",
+        "soong/weave_gen/frameworks/base/core/java/android/widget/Magnifier.java",
+        "soong/weave_gen/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+        "soong/weave_gen/frameworks/base/core/java/android/app/Activity.java",
+        "soong/weave_gen/frameworks/base/core/java/android/app/ActivityThread.java",
+        "soong/weave_gen/frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+        "soong/weave_gen/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
 filegroup {
     name: "pixelparts_framework_helpers",
     srcs: [
-        "platform/framework_helpers/core/java/**/*.java",
+        "soong/platform/framework_helpers/core/java/**/*.java",
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
 filegroup {
     name: "pixelparts_weave_settingslib",
     srcs: [
-        "weave_gen/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
+        "soong/weave_gen/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
     ],
     visibility: ["//frameworks/base/packages/SettingsLib:__subpackages__"],
 }
 filegroup {
     name: "pixelparts_weave_services_core",
     srcs: [
-        "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
-        "weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
-        "weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }
 filegroup {
     name: "pixelparts_weave_services_impl",
     srcs: [
-        "weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
-        "weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+        "soong/weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }
 filegroup {
     name: "pixelparts_weave_thermal",
     srcs: [
-        "weave_gen/hardware/google/pixel/thermal/service.cpp",
-        "weave_gen/hardware/google/pixel/thermal/Thermal.cpp",
-        "weave_gen/hardware/google/pixel/thermal/thermal-helper.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_throttling.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_info.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_files.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/power_files.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_stats_helper.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_predictions_helper.cpp",
-        "weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
-        "weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/service.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/Thermal.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/thermal-helper.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_throttling.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_info.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_files.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/power_files.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_stats_helper.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_predictions_helper.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
+        "soong/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
     ],
     visibility: ["//packages/apps/PixelExtraParts/native/thermal_hal"],
 }
 filegroup {
     name: "pixelparts_services_helpers",
     srcs: [
-        "platform/services_helpers/**/*.java",
+        "soong/platform/services_helpers/**/*.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }

@@ -1,0 +1,224 @@
+[
+  {
+    "rel": "frameworks/base/core/java/android/widget/EdgeEffect.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/widget/EdgeEffect.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/widget/EdgeEffect.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/widget/Magnifier.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/widget/Magnifier.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/widget/Magnifier.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/window/WindowOnBackInvokedDispatcher.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/app/Activity.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/app/Activity.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/app/Activity.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/app/ActivityThread.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/app/ActivityThread.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/app/ActivityThread.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/app/ApplicationPackageManager.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/app/ApplicationPackageManager.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/java/com/android/server/SystemServer.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/java/com/android/server/SystemServer.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/Thermal.cpp",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/hardware/google/pixel/thermal/Thermal.cpp.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/Thermal.cpp",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/Thermal.h",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/hardware/google/pixel/thermal/Thermal.h.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/Thermal.h",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/thermal-helper.cpp",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/hardware/google/pixel/thermal/thermal-helper.cpp.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/thermal-helper.cpp",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/thermal-helper.h",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/hardware/google/pixel/thermal/thermal-helper.h.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/thermal-helper.h",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/powerhal_helper.h",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/hardware/google/pixel/thermal/utils/powerhal_helper.h.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.h",
+    "type": "patch"
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/service.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/service.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_throttling.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_throttling.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_info.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_info.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_files.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_files.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/power_files.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/power_files.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_stats_helper.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_stats_helper.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_predictions_helper.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_predictions_helper.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/power_files.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/power_files.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_files.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_files.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_info.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_info.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_predictions_helper.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_predictions_helper.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_stats_helper.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_stats_helper.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_throttling.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_throttling.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/thermal_watcher.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator_data.h",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator_data.h",
+    "type": "copy",
+    "spec": null
+  },
+  {
+    "rel": "hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal/utils/powerhal_helper.cpp",
+    "type": "copy",
+    "spec": null
+  }
+]

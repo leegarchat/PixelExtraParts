@@ -19,20 +19,20 @@
 
 Домены:
 
-- `soong/` — Go-плагин `soong-pixelparts-plugin` (`weave_mutator.go`).
+- `soong/` — конвейер build-time weave (всё в одном месте):
+  `weave_mutator.go` + `Android.bp` — Go-плагин `soong-pixelparts-plugin`.
   Логика оперирует только ИМЕНАМИ модулей (`framework-minus-apex`,
   `services.core.unboosted`, `services.impl`, `SettingsLib`) и ИМЕНАМИ
-  filegroup (`:pixelparts_*`). Физических путей не содержит — переезд
-  каталогов его не затрагивает.
-- `weave/` — build-time weave: `specs/*.patch` (диффы ваниль→мод),
+  filegroup (`:pixelparts_*`). Физических путей не содержит.
+- `soong/weave/` — спеки: `specs/*.patch` (диффы ваниль→мод),
   `manifest.json` (`rel` = живой файл, `spec` = дифф, `out` = `weave_gen/`),
   `weave_apply.py` (строгий аппликатор, дрейф = `PEP_WEAVE_ERROR`).
-  `weave_gen/` — generated, в git нет. НЕ ПЕРЕЕЗЖАЛ: на него завязаны
-  37 записей манифеста + `include_dirs` thermal + `.gitignore`.
-- `platform/framework_helpers/` — Java-хелперы framework
+  `soong/weave_gen/` — generated, в git нет (37 записей манифеста +
+  `include_dirs` thermal указывают сюда).
+- `soong/platform/framework_helpers/` — Java-хелперы framework
   (`CustomTransitionHelper`, `PixelPartsIconHelper`), компилируются В СОСТАВЕ
   `framework-minus-apex` через `:pixelparts_framework_helpers`.
-- `platform/services_helpers/` — хелперы сервисов (`DtwSystemService`,
+- `soong/platform/services_helpers/` — хелперы сервисов (`DtwSystemService`,
   `PixelPartsHardwareInput`, `PixelPartsKeepScreenOn`), компилируются В СОСТАВЕ
   `services.core.unboosted` через `:pixelparts_services_helpers`.
 - `native/lsplant/` — рантайм инжектора: `src/` (исходники `LsplantInject`),

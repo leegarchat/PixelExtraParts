@@ -23,20 +23,20 @@ cc_binary {
     // "multiple rules" at ninja load. overrides: keeps make-side sane.
     overrides: ["android.hardware.thermal-service.pixel"],
     srcs: [
-        // Build-time generated (//packages/apps/PixelExtraParts/weave_gen):
-        // live vanilla + weave/specs, see device.mk regen stanza.
+        // Build-time generated (//packages/apps/PixelExtraParts/soong/weave_gen):
+        // live vanilla + soong/weave/specs, see device.mk regen stanza.
         ":pixelparts_weave_thermal",
     ],
     vendor: true,
     relative_install_path: "hw",
     // Regen mirror (device.mk runs weave_apply.py before Soong parse):
-    // filegroup srcs live under weave_gen/, NOT under this directory, so
+    // filegroup srcs live under soong/weave_gen/, NOT under this directory, so
     // the implicit -I<module dir> doesn't cover them. Mirror the stock
     // layout explicitly so root-relative quotes like
     // "virtualtemp_estimator/virtualtemp_estimator.h" (utils/thermal_info.h)
     // resolve exactly as in hardware/google/pixel/thermal.
     include_dirs: [
-        "packages/apps/PixelExtraParts/weave_gen/hardware/google/pixel/thermal",
+        "packages/apps/PixelExtraParts/soong/weave_gen/hardware/google/pixel/thermal",
     ],
     vintf_fragment_modules: [
         "android.hardware.thermal-service.pixel.pep.xml",
