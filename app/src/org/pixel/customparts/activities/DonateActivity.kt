@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -190,8 +191,13 @@ fun DonateScreen(onBack: () -> Unit) {
         }
     }
 
+    val rawBase = stringResource(R.string.url_github_raw_base)
+    val repo = stringResource(R.string.url_github_repo)
+    val branch = stringResource(R.string.url_github_branch)
+    val donatePath = stringResource(R.string.url_donate_page_path)
+
     LaunchedEffect(refreshKey) {
-        val rawJsonUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/donate_page.json?t=${System.currentTimeMillis()}"
+        val rawJsonUrl = "$rawBase/$repo/refs/heads/$branch$donatePath?t=${System.currentTimeMillis()}"
         try {
             isLoading = true
             loadError = null

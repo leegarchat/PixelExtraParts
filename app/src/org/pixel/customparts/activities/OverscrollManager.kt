@@ -345,18 +345,20 @@ object OverscrollManager {
 
     // ── Network configs from GitHub ──
 
-    private const val GITHUB_API_URL = "https://api.github.com/repos/leegarchat/PixelExtraParts/contents/overscroll.configs?ref=lineage-24.0"
-    
     data class NetworkConfig(val name: String, val downloadUrl: String)
 
     /**
      * Fetches the list of .json files from the GitHub repo directory.
      * Returns list of NetworkConfig with display name (filename without .json) and raw download URL.
      */
-    suspend fun fetchNetworkConfigs(): Result<List<NetworkConfig>> = withContext(Dispatchers.IO) {
+    suspend fun fetchNetworkConfigs(context: Context): Result<List<NetworkConfig>> = withContext(Dispatchers.IO) {
         var conn: HttpURLConnection? = null
         try {
-            val url = URL(GITHUB_API_URL)
+            val apiBase = context.getString(org.pixel.customparts.R.string.url_github_api_base)
+            val repo = context.getString(org.pixel.customparts.R.string.url_github_repo)
+            val contentsPath = context.getString(org.pixel.customparts.R.string.url_overscroll_contents_path)
+            val branch = context.getString(org.pixel.customparts.R.string.url_github_branch)
+            val url = URL("$apiBase/repos/$repo$contentsPath?ref=$branch")
             conn = url.openConnection() as? HttpURLConnection
                 ?: return@withContext Result.failure(Exception("Unsupported connection type"))
             conn.requestMethod = "GET"

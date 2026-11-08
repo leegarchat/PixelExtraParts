@@ -56,6 +56,8 @@ var servicesCoreUnboostedExcludes = []string{
 	"java/com/android/server/pm/PackageInstallerService.java",
 	"java/com/android/server/pm/PackageInstallerSession.java",
 	"java/com/android/server/policy/PhoneWindowManager.java",
+	"java/com/android/server/TelephonyRegistry.java",
+	"java/com/android/server/notification/NotificationManagerService.java",
 }
 
 var servicesCoreUnboostedExtraSrcs = []string{

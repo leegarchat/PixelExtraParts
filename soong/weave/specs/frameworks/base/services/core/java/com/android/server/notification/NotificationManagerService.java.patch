@@ -1,0 +1,26 @@
+--- a/frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java
++++ b/frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java
+@@ -418,5 +418,6 @@
+ import com.android.server.IoThread;
+ import com.android.server.LocalServices;
++import com.android.server.PixelPartsCallState;
+ import com.android.server.SystemService;
+ import com.android.server.bitmapoffload.BitmapOffloadContract;
+ import com.android.server.bitmapoffload.BitmapOffloadInternal;
+@@ -2929,7 +2930,8 @@
+     void addNotification(NotificationRecord r) {
+         synchronized (mNotificationLock) {
+             mNotificationList.add(r);
+             mNotificationsByKey.put(r.getSbn().getKey(), r);
++            PixelPartsCallState.onNotificationPosted(getContext(), r.getSbn().getKey(), r.getNotification());
+             if (r.getSbn().isGroup()) {
+                 mSummaryByGroupKey.put(r.getGroupKey(), r);
+             }
+@@ -12095,6 +12097,7 @@
+             int rank, int count, boolean wasPosted, String listenerName,
+             @ElapsedRealtimeLong long cancellationElapsedTimeMs) {
+         final String canceledKey = r.getKey();
++        PixelPartsCallState.onNotificationRemoved(getContext(), canceledKey);
+         mTtlHelper.cancelScheduledTimeoutLocked(r);
+ 
+         // Record caller.

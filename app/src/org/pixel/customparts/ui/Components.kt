@@ -671,6 +671,12 @@ fun InfoDialog(
                         var reloadKey by remember { mutableIntStateOf(0) }
                         var isNetworkSource by remember { mutableStateOf(false) }
 
+                        val rawBase = stringResource(R.string.url_github_raw_base)
+                        val repo = stringResource(R.string.url_github_repo)
+                        val branch = stringResource(R.string.url_github_branch)
+                        val videoPrefix = stringResource(R.string.url_video_sample_path_prefix)
+                        val videoSuffix = stringResource(R.string.url_video_sample_path_suffix)
+
                         LaunchedEffect(videoResName, reloadKey) {
                             val TAG = "CustomPartsVideo"
 
@@ -684,7 +690,7 @@ fun InfoDialog(
                             isLoading = true
                             isError = false
                             
-                            val webUrl = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/VideoSample/$videoResName.mp4"
+                            val webUrl = "$rawBase/$repo/refs/heads/$branch$videoPrefix$videoResName$videoSuffix"
                             
                             
                             val resId = context.resources.getIdentifier(videoResName, "raw", context.packageName)

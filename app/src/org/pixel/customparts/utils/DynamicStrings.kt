@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import org.pixel.customparts.R
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -15,11 +16,14 @@ import java.util.Locale
 object RemoteStringsManager {
     private const val PREFS_NAME = "remote_strings_cache"
     private const val KEY_JSON = "json_data"
-    private const val BASE_URL_PATTERN = "https://raw.githubusercontent.com/leegarchat/PixelExtraParts/refs/heads/lineage-24.0/lang/strings_%s.json"
     private val overrides = mutableStateMapOf<Int, String>()
     private var isInitialized = false
-    private fun getUrlForLocale(lang: String): String {
-        return String.format(BASE_URL_PATTERN, lang)
+    private fun getUrlForLocale(context: Context, lang: String): String {
+        val rawBase = context.getString(R.string.url_github_raw_base)
+        val repo = context.getString(R.string.url_github_repo)
+        val branch = context.getString(R.string.url_github_branch)
+        val pathPattern = context.getString(R.string.url_lang_strings_path)
+        return "$rawBase/$repo/refs/heads/$branch" + String.format(pathPattern, lang)
     }
 
     suspend fun initialize(context: Context) {
@@ -43,10 +47,10 @@ object RemoteStringsManager {
 
     private suspend fun performUpdate(context: Context): Boolean {
         val currentLanguage = Locale.getDefault().language
-        var jsonString = fetchJson(getUrlForLocale(currentLanguage))
+        var jsonString = fetchJson(getUrlForLocale(context, currentLanguage))
 
         if (!isValidJson(jsonString) && currentLanguage != "en") {
-            jsonString = fetchJson(getUrlForLocale("en"))
+            jsonString = fetchJson(getUrlForLocale(context, "en"))
         }
 
         return if (isValidJson(jsonString)) {

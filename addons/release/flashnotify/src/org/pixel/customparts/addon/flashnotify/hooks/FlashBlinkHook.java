@@ -46,6 +46,13 @@ public final class FlashBlinkHook {
     private static volatile boolean sRadioRinging;
     private static java.lang.reflect.Method sIsRingingMethod;
     private static boolean sTestReceiverRegistered;
+    private static boolean sRomObserverRegistered;
+
+    /** ROM-published unified call state mirror: 0 idle, 1 ringing, 2 active. */
+    private static volatile int sRomCall;
+    private static final int ROM_IDLE = 0;
+    private static final int ROM_RINGING = 1;
+    private static final int ROM_ACTIVE = 2;
 
     /** Fired by the "Test blink" addon button (am broadcast). */
     public static final String ACTION_TEST =
@@ -108,6 +115,91 @@ public final class FlashBlinkHook {
         registerTestReceiver(app);
         registerCallListener(app);
         startAudioWatcher(app);
+        registerRomObserver(app);
+    }
+
+    /**
+     * Primary source: unified call state published by system_server
+     * (PixelPartsCallState via TelephonyRegistry + NotificationManagerService).
+     * Covers SIM ringing/active authoritatively and messenger calls that post
+     * call-style/fullScreenIntent notifications. The TelephonyCallback, audio
+     * mode watcher and notification trackers below stay as fallback for ROMs
+     * without the publisher and for self-managed calls with no notification.
+     */
+    private static void registerRomObserver(final Context context) {
+        if (context == null) return;
+        synchronized (LOCK) {
+            if (sRomObserverRegistered) return;
+            sRomObserverRegistered = true;
+        }
+        try {
+            android.net.Uri uri = android.provider.Settings.Global.getUriFor(
+                    Settings.KEY_ROM_STATE);
+            context.getContentResolver().registerContentObserver(uri, false,
+                    new android.database.ContentObserver(
+                            new android.os.Handler(context.getMainLooper())) {
+                        @Override public void onChange(boolean selfChange) {
+                            onRomStateChanged(context,
+                                    Settings.getRomState(context));
+                        }
+                    });
+            Log.i(TAG, "rom observer registered");
+            onRomStateChanged(context, Settings.getRomState(context));
+        } catch (Throwable t) {
+            Log.e(TAG, "rom observer failed", t);
+        }
+    }
+
+    private static void onRomStateChanged(Context context, int state) {
+        Log.i(TAG, "rom state=" + state);
+        boolean simOn = Settings.getCallsEnabled(context);
+        boolean voipOn = Settings.getVoipEnabled(context);
+        if (!simOn && !voipOn) {
+            sRomCall = ROM_IDLE;
+            return;
+        }
+        if (state == ROM_ACTIVE && !voipOn) {
+            // Answered SIM call with no messenger interest: same as the
+            // TelephonyCallback path, blinking stops once answered.
+            sRomCall = ROM_IDLE;
+            stopIfAllIdle();
+            return;
+        }
+        sRomCall = state;
+        if (state == ROM_IDLE) {
+            stopIfAllIdle();
+            return;
+        }
+        int strength = clamp(Settings.getStrength(context), 1, 45);
+        if (simOn && (state == ROM_RINGING || !voipOn)) {
+            int count = clamp(Settings.getSimCount(context), 1, 50);
+            int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
+            int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
+            Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
+                    + " pause=" + pause + " strength=" + strength);
+            sAudioBlink = false;
+            startBurst(context, blink, count, pause, strength);
+        } else if (voipOn) {
+            int count = clamp(Settings.getVoipCount(context), 1, 50);
+            int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
+            int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
+            Log.i(TAG, "rom voip: go blink=" + blink + " count=" + count
+                    + " pause=" + pause + " strength=" + strength);
+            startBurst(context, blink, count, pause, strength);
+        }
+    }
+
+    /** Halts the blink thread only when no source claims a live call. */
+    private static void stopIfAllIdle() {
+        if (sCallBlink || sAudioBlink || sRomCall != ROM_IDLE) {
+            return;
+        }
+        synchronized (LOCK) {
+            if (sVoipKey == null && sBlinkThread != null) {
+                Log.i(TAG, "all idle: halt blink");
+                sBlinkThread.interrupt();
+            }
+        }
     }
 
     /**
@@ -164,8 +256,8 @@ public final class FlashBlinkHook {
     }
 
     private static void onAudioRinging(Context context) {
-        if (sRadioRinging || sCallBlink) {
-            Log.i(TAG, "audio ring: SIM path owns it, skip");
+        if (sRadioRinging || sCallBlink || sRomCall != ROM_IDLE) {
+            Log.i(TAG, "audio ring: SIM/ROM path owns it, skip");
             return;
         }
         if (!telecomRinging(context)) {
@@ -189,10 +281,7 @@ public final class FlashBlinkHook {
     private static void onAudioIdle() {
         if (!sAudioBlink) return;
         sAudioBlink = false;
-        synchronized (LOCK) {
-            Log.i(TAG, "audio idle: halt blink");
-            if (sBlinkThread != null) sBlinkThread.interrupt();
-        }
+        stopIfAllIdle();
     }
 
     /** Repeats the pattern while the phone rings; stops on answer/hangup. */
@@ -230,9 +319,7 @@ public final class FlashBlinkHook {
                 if (sCallBlink) {
                     Log.i(TAG, "call ended, stop blink");
                     sCallBlink = false;
-                    synchronized (LOCK) {
-                        if (sBlinkThread != null) sBlinkThread.interrupt();
-                    }
+                    stopIfAllIdle();
                 }
             }
         }
@@ -375,9 +462,9 @@ public final class FlashBlinkHook {
         synchronized (LOCK) {
             if (key == null || !key.equals(sVoipKey)) return;
             sVoipKey = null;
-            Log.i(TAG, "voip call gone, stop blink");
-            if (sBlinkThread != null) sBlinkThread.interrupt();
+            Log.i(TAG, "voip call gone");
         }
+        stopIfAllIdle();
     }
 
     private static boolean isSilent(StatusBarNotification sbn,

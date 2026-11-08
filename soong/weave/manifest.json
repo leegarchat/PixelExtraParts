@@ -66,6 +66,18 @@
     "type": "patch"
   },
   {
+    "rel": "frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java",
+    "type": "patch"
+  },
+  {
+    "rel": "frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java",
+    "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java.patch",
+    "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java",
+    "type": "patch"
+  },
+  {
     "rel": "frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",
     "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java.patch",
     "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/core/java/com/android/server/wm/DisplayContent.java",

@@ -17,6 +17,13 @@ public final class Settings {
     public static final String KEY_VOIP_COUNT = "flashnotify_voip_count";
     public static final String KEY_VOIP_PAUSE_MS = "flashnotify_voip_pause_ms";
 
+    /**
+     * Canonical ROM-published unified call state (no suffix).
+     * Written by PixelPartsCallState in system_server:
+     * 0 = idle, 1 = ringing, 2 = active. Absent on ROMs without the weave.
+     */
+    public static final String KEY_ROM_STATE = "flashnotify_call_state";
+
     public static final boolean DEFAULT_ENABLED = true;
     public static final int DEFAULT_COUNT = 2;
     public static final int DEFAULT_TOTAL_MS = 1200;
@@ -58,6 +65,21 @@ public final class Settings {
 
     public static int getVoipPauseMs(Context c) {
         return getInt(c, KEY_VOIP_PAUSE_MS, 1000);
+    }
+
+    /** ROM-published unified call state, 0 when the ROM has no publisher. */
+    public static int getRomState(Context c) {
+        return getInt(c, KEY_ROM_STATE, 0);
+    }
+
+    /** True once system_server has published the unified state at least once. */
+    public static boolean hasRomState(Context c) {
+        try {
+            return android.provider.Settings.Global.getString(
+                    c.getContentResolver(), KEY_ROM_STATE) != null;
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     public static int getCount(Context c) {

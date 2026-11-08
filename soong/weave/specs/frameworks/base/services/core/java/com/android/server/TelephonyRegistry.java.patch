@@ -1,0 +1,9 @@
+--- a/frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java
++++ b/frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java
+@@ -4549,5 +4549,6 @@
+     private void broadcastCallStateChanged(int state, String incomingNumber, int phoneId,
+                 int subId) {
++        PixelPartsCallState.onTelephonyCallState(mContext, state);
+         final long ident = Binder.clearCallingIdentity();
+         try {
+             if (state == TelephonyManager.CALL_STATE_IDLE) {

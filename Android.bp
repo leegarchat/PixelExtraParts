@@ -312,6 +312,8 @@ filegroup {
         "soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
         "soong/weave_gen/frameworks/base/services/core/java/com/android/server/pm/PackageInstallerSession.java",
         "soong/weave_gen/frameworks/base/services/core/java/com/android/server/policy/PhoneWindowManager.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java",
+        "soong/weave_gen/frameworks/base/services/core/java/com/android/server/notification/NotificationManagerService.java",
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }

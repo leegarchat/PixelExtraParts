@@ -284,7 +284,7 @@ private fun NetworkConfigsDialog(
     var applyingConfig by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        val result = OverscrollManager.fetchNetworkConfigs()
+        val result = OverscrollManager.fetchNetworkConfigs(context)
         result.fold(
             onSuccess = {
                 configs = it
