@@ -283,7 +283,7 @@ fun MotionTuningSheet(
                             value = motion.bottomLiftDp,
                             range = 0f..64f,
                             step = 1f,
-                            default = 0f,
+                            default = 10f,
                             label = { v -> stringResource(R.string.fmt_dp, v.toInt()) },
                             onChange = { onUpdate(motion.copy(bottomLiftDp = it)) },
                         )

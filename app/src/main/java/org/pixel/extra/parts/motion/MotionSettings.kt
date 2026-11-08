@@ -38,7 +38,7 @@ data class MotionSettings(
     val dividerFadeStart: Float = 0.35f,
     val dividerFadeEnd: Float = 0.68f,
     // Placement of the whole dock above the navigation bar.
-    val bottomLiftDp: Float = 0f,
+    val bottomLiftDp: Float = 10f,
     // Compact physical scale of the unexpanded bar, in percent (100 = identity).
     val compactScalePct: Float = 100f,
     // Shared blur radius for every frosted surface, in px.

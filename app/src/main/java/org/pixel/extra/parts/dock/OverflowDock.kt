@@ -349,7 +349,7 @@ fun ExpressiveFloatingDockWithOverflow(
             // inset + outer margin, kept in sync with DOCK_BOTTOM_MARGIN_DP in
             // MainActivity + tuning lift) and a small safety margin.
             val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val dockChromeBottom = navBottom + 10.dp + mt.bottomLiftDp.dp
+            val dockChromeBottom = navBottom + 0.dp + mt.bottomLiftDp.dp
             val maxAllowedBarH =
                 (maxHeight - statusTop - 64.dp - dockChromeBottom - 8.dp).coerceAtLeast(CollapsedBarH)
 

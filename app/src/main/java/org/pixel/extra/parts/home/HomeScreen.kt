@@ -20,15 +20,33 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.navigation.SectionRoutes
 import org.pixel.extra.parts.ui.sectionContentPadding
+
+// Per-row icon tint, mirroring the old dashboard's colored icon containers
+// (primary/secondary/tertiary container content colors) without any
+// background box, so the flat §6.11 rows keep their color richness.
+private enum class HomeRowTint {
+    PRIMARY,
+    SECONDARY,
+    TERTIARY,
+}
+
+@Composable
+private fun HomeRowTint.color(): Color = when (this) {
+    HomeRowTint.PRIMARY -> MaterialTheme.colorScheme.onPrimaryContainer
+    HomeRowTint.SECONDARY -> MaterialTheme.colorScheme.onSecondaryContainer
+    HomeRowTint.TERTIARY -> MaterialTheme.colorScheme.onTertiaryContainer
+}
 
 // One row of the home hub. subtitleRes is null when the section exposes no
 // short description string; the row then renders title-only.
@@ -37,54 +55,64 @@ private data class HomeSectionEntry(
     @StringRes val titleRes: Int,
     @StringRes val subtitleRes: Int?,
     @DrawableRes val iconRes: Int,
+    val tint: HomeRowTint,
 )
 
 // Same sections as the dock pins and overflow slots, minus Home/Settings:
 // tap routes through the shared selected-key state, so the transition matches
-// a dock tab switch exactly. Row icons are the section tiles inherited from
-// the original PixelParts project (pep_bak/common/res/drawable).
+// a dock tab switch exactly. Row icons are the original QS tile glyphs
+// (pep_bak/common/res/drawable) tinted per row with the old dashboard's
+// icon-content colors; the palette glyph reads as display color and the
+// archive glyph as hidden apps.
 private val HomeSections = listOf(
     HomeSectionEntry(
         routeKey = SectionRoutes.DISPLAY,
         titleRes = R.string.tab_display,
         subtitleRes = R.string.display_desc,
         iconRes = R.drawable.ic_auto_hbm_tile,
+        tint = HomeRowTint.PRIMARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.SYSTEM_UI,
         titleRes = R.string.tab_systemui,
         subtitleRes = R.string.sysui_section_desc,
         iconRes = R.drawable.ic_activity_transition_tile,
+        tint = HomeRowTint.TERTIARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.OVERSCROLL,
         titleRes = R.string.tab_overscroll,
         subtitleRes = R.string.os_header_desc,
         iconRes = R.drawable.ic_overscroll_tile,
+        tint = HomeRowTint.SECONDARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.THERMAL,
         titleRes = R.string.tab_thermal,
         subtitleRes = R.string.thermal_desc,
         iconRes = R.drawable.ic_thermal_tile,
+        tint = HomeRowTint.PRIMARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.ICONS,
         titleRes = R.string.tab_icons,
         subtitleRes = R.string.icons_header_sub,
         iconRes = R.drawable.ic_saturation_tile,
+        tint = HomeRowTint.SECONDARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.HIDDEN_APPS,
         titleRes = R.string.tab_hidden_apps,
         subtitleRes = R.string.hidden_apps_subtitle,
-        iconRes = R.drawable.ic_auto_lock_tile,
+        iconRes = R.drawable.ic_archive,
+        tint = HomeRowTint.TERTIARY,
     ),
     HomeSectionEntry(
         routeKey = SectionRoutes.ADDONS,
         titleRes = R.string.tab_addons,
         subtitleRes = R.string.addons_desc,
         iconRes = R.drawable.ic_addon_tile,
+        tint = HomeRowTint.SECONDARY,
     ),
 )
 
@@ -126,6 +154,7 @@ fun HomeScreen(
                 title = stringResource(entry.titleRes),
                 subtitle = entry.subtitleRes?.let { stringResource(it) },
                 iconRes = entry.iconRes,
+                iconTint = entry.tint.color(),
                 showDivider = entry != HomeSections.last(),
                 onClick = { onOpenSection(entry.routeKey) },
             )
@@ -135,11 +164,14 @@ fun HomeScreen(
 
 // Plain section row per guideline §6.11: full-width, min-height 56.dp,
 // no background or border, divider below (except after the last row).
+// Typography and single-line ellipsis mirror the old dashboard's
+// MainMenuNavigationRow; the colored tile glyph carries its richness.
 @Composable
 private fun HomeSectionRow(
     title: String,
     subtitle: String?,
     @DrawableRes iconRes: Int,
+    iconTint: Color,
     showDivider: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -161,7 +193,7 @@ private fun HomeSectionRow(
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = iconTint,
                 modifier = Modifier.size(24.dp),
             )
             Column(
@@ -170,15 +202,18 @@ private fun HomeSectionRow(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }

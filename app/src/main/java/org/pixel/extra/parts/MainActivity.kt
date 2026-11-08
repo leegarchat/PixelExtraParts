@@ -19,6 +19,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,7 +47,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.pixel.extra.parts.addons.AddonsScreen
+import org.pixel.extra.parts.display.DisplayAutoHbmScreen
+import org.pixel.extra.parts.display.DisplayAutoLockScreen
+import org.pixel.extra.parts.display.DisplayDoubleTapScreen
+import org.pixel.extra.parts.display.DisplaySaturationScreen
 import org.pixel.extra.parts.display.DisplayScreen
+import org.pixel.extra.parts.display.DisplaySubLabels
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.dock.ExpressiveFloatingDockWithOverflow
 import org.pixel.extra.parts.hiddenapps.HiddenAppsScreen
@@ -102,7 +108,7 @@ private const val TOP_BAR_HEIGHT = 64 // dp
 // Gap between the collapsed bar bottom and the navigation-bar inset bottom.
 // 10.dp keeps the bar ~8-12.dp above the gesture-zone bottom edge, matching
 // the donor stance; the system navigationBars inset (safe area) is applied on top.
-private const val DOCK_BOTTOM_MARGIN_DP = 10
+private const val DOCK_BOTTOM_MARGIN_DP = 0
 
 // Cap of the remembered tab back stack (oldest entries are dropped).
 private const val MAX_TAB_HISTORY = 24
@@ -126,6 +132,10 @@ private fun PepRoot() {
     val blurState = rememberGraphicsLayerRecordingState()
     val blurRadius = motion.blurRadiusPx
     val rootBg = MaterialTheme.colorScheme.surfaceContainer
+    // Reference logic (PixelOFoxApp): header height = status bar + content band.
+    // The blur overlay spans the full height so it samples the status-bar zone too.
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topBarH = TOP_BAR_HEIGHT.dp + statusTop
 
     BackHandler(enabled = editorMode) {
         editorMode = false
@@ -169,7 +179,14 @@ private fun PepRoot() {
         SectionRoutes.ORDERED.withIndex().associate { it.value to it.index }
     }
     val current = allEntries.firstOrNull { it.key == selectedKey } ?: PinnedTabs.first()
-    val sectionLabel = stringResource(current.labelRes)
+    // Display subpages are not dock entries: resolve the top-bar title from
+    // the subpage map, otherwise fall back to the dock entry (or Home).
+    val subLabelRes = DisplaySubLabels[selectedKey]
+    val sectionLabel = if (subLabelRes != null) {
+        stringResource(subLabelRes)
+    } else {
+        stringResource(current.labelRes)
+    }
 
     Box(
         modifier = Modifier
@@ -182,7 +199,12 @@ private fun PepRoot() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .recordLayer(state = blurState, backgroundColor = rootBg, blurRadius = blurRadius)
+                .recordLayer(
+                    state = blurState,
+                    backgroundColor = rootBg,
+                    blurRadius = blurRadius,
+                    topEdgeFadeHeight = statusTop + 12.dp,
+                )
         ) {
             AnimatedContent(
                 targetState = selectedKey,
@@ -213,7 +235,11 @@ private fun PepRoot() {
                 modifier = Modifier.fillMaxSize(),
             ) { key ->
                 when (key) {
-                    SectionRoutes.DISPLAY -> DisplayScreen()
+                    SectionRoutes.DISPLAY -> DisplayScreen(onOpenSubsection = ::selectTab)
+                    SectionRoutes.DISPLAY_SATURATION -> DisplaySaturationScreen()
+                    SectionRoutes.DISPLAY_AUTO_HBM -> DisplayAutoHbmScreen()
+                    SectionRoutes.DISPLAY_DOUBLE_TAP -> DisplayDoubleTapScreen()
+                    SectionRoutes.DISPLAY_AUTO_LOCK -> DisplayAutoLockScreen()
                     SectionRoutes.SYSTEM_UI -> SystemUiScreen()
                     SectionRoutes.ADDONS -> AddonsScreen()
                     SectionRoutes.OVERSCROLL -> OverscrollScreen()
@@ -233,44 +259,55 @@ private fun PepRoot() {
         }
 
         // Floating overlays: siblings OUTSIDE recordLayer (no render loop).
-        TopStatusVeil(
-            backgroundColor = rootBg,
-            veilHeight = 32.dp,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
+        // Full-height header: the blur overlay covers the status-bar zone as
+        // well, the veil hides sampling softness at the very top edge, and the
+        // content row sits in the 64.dp band below the status bar.
         Box(
             modifier = Modifier
+                .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .height(TOP_BAR_HEIGHT.dp),
+                .height(topBarH),
             contentAlignment = Alignment.Center,
         ) {
             TopBarBlurOverlay(
-                modifier = Modifier.fillMaxSize(),
-                topBarHeight = TOP_BAR_HEIGHT.dp,
+                modifier = Modifier.fillMaxWidth(),
+                topBarHeight = topBarH,
                 blurState = blurState,
                 blurRadius = blurRadius,
             )
-            Text(
-                text = sectionLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+            TopStatusVeil(
+                backgroundColor = rootBg,
+                veilHeight = statusTop + 14.dp,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
-            IconButton(
-                onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    showTuning = true
-                },
-                modifier = Modifier.align(Alignment.CenterEnd),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = statusTop)
+                    .height(TOP_BAR_HEIGHT.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_tune),
-                    contentDescription = stringResource(R.string.motion_open_desc),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text(
+                    text = sectionLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                IconButton(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showTuning = true
+                    },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tune),
+                        contentDescription = stringResource(R.string.motion_open_desc),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         DockStrip(
