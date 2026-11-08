@@ -27,3 +27,5 @@
 /.kotlin
 /app_test/
 /thermal_hal/config/gen/
+
+/audits/
