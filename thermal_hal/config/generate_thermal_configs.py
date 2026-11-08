@@ -31,6 +31,8 @@ TARGETS_BATTERY = (
 )
 
 CONFIG_DIR_NAME = "configs"
+GEN_DIR_NAME = "gen"
+THERMAL_SWITCH_FRAGMENT = "init.thermal-switch.rc"
 COPY_RULES_FILENAME = "ThermalConfigCopyRules.mk"
 BASE_CONFIG_NAME = "thermal_info_config"
 BASE_CONFIG_FILENAME = f"{BASE_CONFIG_NAME}.json"
@@ -66,7 +68,6 @@ def parse_args():
     parser.add_argument("--vendor-path", required=True, help="Vendor tree path, for example vendor/google/husky")
     parser.add_argument("--thermal-json", help="Optional explicit source thermal_info_config.json path")
     parser.add_argument("--device-codename", help="Device codename used as generated config filename suffix")
-    parser.add_argument("--init-rc", required=True, help="PixelExtraParts init rc path to update")
     parser.add_argument("--quiet", action="store_true", help="Only print make-friendly status/error lines")
     return parser.parse_args()
 
@@ -341,66 +342,13 @@ def write_copy_rules(generated_base_names, destination_dir):
     write_text_if_changed(copy_rules_path, "\n".join(lines) + "\n")
 
 
-def strip_old_thermal_block(content):
-    lines = content.splitlines()
-    new_lines = []
-    index = 0
-
-    while index < len(lines):
-        stripped = lines[index].strip()
-
-        if stripped == THERMAL_BLOCK_START:
-            index += 1
-            while index < len(lines) and lines[index].strip() != THERMAL_BLOCK_END:
-                index += 1
-            if index < len(lines):
-                index += 1
-            continue
-
-        normalized = stripped.lstrip("# ").strip()
-        if normalized in (
-            "on property:persist.sys.pixelparts.thermal_config=*",
-            "on property:persist.sys.pixelparts.thermal_config_request=*",
-        ):
-            index += 1
-            while index < len(lines):
-                next_normalized = lines[index].strip().lstrip("# ").strip()
-                if (
-                    next_normalized.startswith("setprop vendor.thermal.config")
-                    or next_normalized.startswith("setprop vendor.pixelparts.thermal.config")
-                    or next_normalized.startswith(f"setprop {THERMAL_CONFIG_PROP}")
-                    or next_normalized.startswith(f"copy {THERMAL_CONFIG_DATA_DIR}/${{{THERMAL_CONFIG_PROP}}}")
-                    or next_normalized.startswith(f"chown system system {THERMAL_CONFIG_ACTIVE_PATH}")
-                    or next_normalized.startswith(f"chmod 0644 {THERMAL_CONFIG_ACTIVE_PATH}")
-                    or next_normalized.startswith(f"restorecon {THERMAL_CONFIG_ACTIVE_PATH}")
-                    or next_normalized.startswith("chown system system /data/vendor/pixelparts/ThermalConfigs/active")
-                    or next_normalized.startswith("chmod 0644 /data/vendor/pixelparts/ThermalConfigs/active")
-                    or next_normalized.startswith("restorecon /data/vendor/pixelparts/ThermalConfigs/active")
-                    or next_normalized.startswith("restart vendor.thermal-hal")
-                    or not next_normalized
-                ):
-                    index += 1
-                    continue
-                break
-            continue
-
-        if stripped == "on init" and index + 1 < len(lines) and THERMAL_AVAILABLE_PROP in lines[index + 1]:
-            index += 2
-            continue
-
-        new_lines.append(lines[index])
-        index += 1
-
-    while new_lines and not new_lines[-1].strip():
-        new_lines.pop()
-
-    return "\n".join(new_lines)
+def switch_fragment_path():
+    gen_dir = SCRIPT_DIR / GEN_DIR_NAME
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    return gen_dir / THERMAL_SWITCH_FRAGMENT
 
 
-def update_init_rc(init_rc_path, enabled):
-    content = read_text(init_rc_path) if init_rc_path.exists() else ""
-    content = strip_old_thermal_block(content)
-
+def write_switch_fragment(enabled):
     availability = "true" if enabled else "false"
     if enabled:
         switch_lines = [
@@ -440,9 +388,7 @@ def update_init_rc(init_rc_path, enabled):
         *switch_lines,
         THERMAL_BLOCK_END,
     ]
-
-    updated_content = content + "\n\n" + "\n".join(block) + "\n"
-    write_text_if_changed(init_rc_path, updated_content)
+    write_text_if_changed(switch_fragment_path(), "\n".join(block) + "\n")
 
 
 def generate_configs(source_path, device_codename, destination_dir):
@@ -476,7 +422,6 @@ def run(args):
 
     vendor_rel_path = to_root_relative(vendor_path)
     vendor_rules = parse_vendor_copy_rules(vendor_path)
-    init_rc_path = resolve_source_path(args.init_rc)
     device_codename = args.device_codename or vendor_path.name
 
     if args.thermal_json:
@@ -487,13 +432,13 @@ def run(args):
         source_path = find_default_source(vendor_path, vendor_rel_path, vendor_rules)
         if source_path is None:
             write_copy_rules([], "$(TARGET_COPY_OUT_VENDOR)/etc")
-            update_init_rc(init_rc_path, enabled=False)
+            write_switch_fragment(enabled=False)
             return f"PixelExtraPartsThermal=disabled vendor_path={args.vendor_path}"
 
     source_rel_path = to_root_relative(source_path)
     destination_dir = infer_destination_dir(source_rel_path, vendor_rel_path, vendor_rules)
     generated_files = generate_configs(source_path, device_codename, destination_dir)
-    update_init_rc(init_rc_path, enabled=True)
+    write_switch_fragment(enabled=True)
     return f"PixelExtraPartsThermal=enabled source={source_rel_path} destination={destination_dir} generated={len(generated_files)}"
 
 

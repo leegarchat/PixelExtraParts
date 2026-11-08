@@ -31,3 +31,4 @@ test_rework_*
 /build
 /.kotlin
 /app_test/
+/thermal_hal/config/gen/
