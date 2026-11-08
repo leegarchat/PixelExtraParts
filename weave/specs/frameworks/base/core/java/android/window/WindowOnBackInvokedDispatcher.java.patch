@@ -19,7 +19,7 @@
 +                boolean disableAnim = false;
 +                if (context != null) {
 +                    disableAnim = android.provider.Settings.Global.getInt(
-+                            context.getContentResolver(), "disable_predictive_back_anim_pine", 0) == 1;
++                            context.getContentResolver(), "disable_predictive_back_anim", 0) == 1;
 +                }
 +                if (priority == OnBackInvokedDispatcher.PRIORITY_SYSTEM && disableAnim) {
 +                    priority = OnBackInvokedDispatcher.PRIORITY_DEFAULT;

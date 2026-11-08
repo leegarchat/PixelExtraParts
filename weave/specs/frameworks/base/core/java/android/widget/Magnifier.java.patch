@@ -43,12 +43,12 @@
 +    // [CUSTOM INJECTION START] - Pixel Extra Parts: Magnifier Customization
 +    // =========================================================================================
 +
-+    // Settings Keys (LSPlant — hardcoded legacy suffix for system/framework build)
-+    private static final String KEY_ENABLED   = "magnifier_custom_enabled_pine";
-+    private static final String KEY_ZOOM      = "magnifier_custom_zoom_pine";
-+    private static final String KEY_SIZE      = "magnifier_custom_size_pine";
-+    private static final String KEY_SHAPE     = "magnifier_custom_shape_pine";
-+    private static final String KEY_OFFSET_Y  = "magnifier_custom_offset_y_pine";
++    // Settings Keys (direct Settings.Global names shared with the app UI)
++    private static final String KEY_ENABLED   = "magnifier_custom_enabled";
++    private static final String KEY_ZOOM      = "magnifier_custom_zoom";
++    private static final String KEY_SIZE      = "magnifier_custom_size";
++    private static final String KEY_SHAPE     = "magnifier_custom_shape";
++    private static final String KEY_OFFSET_Y  = "magnifier_custom_offset_y";
 +
 +    // Shape constants
 +    private static final int SHAPE_DEFAULT = 0;

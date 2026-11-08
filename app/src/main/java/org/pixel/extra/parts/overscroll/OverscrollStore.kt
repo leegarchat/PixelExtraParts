@@ -58,9 +58,9 @@ data class OverscrollValues(
     val normDetectMode: Int = OverscrollKeys.Defaults.NORM_DETECT_MODE,
 )
 
-// A stored profile: display name plus the raw cross-platform JSON payload.
-// The JSON format is preserved exactly as in the legacy implementation:
-// keys without the runtime suffix, numbers as doubles, meta fields ignored.
+// A stored profile: display name plus the raw JSON payload.
+// JSON keys match Settings.Global keys one to one;
+// numbers as doubles, meta fields ignored.
 data class OverscrollStoredProfile(
     val name: String,
     val json: JSONObject,
@@ -68,15 +68,9 @@ data class OverscrollStoredProfile(
 )
 
 // Persistence bridge between Settings.Global and the editor UI.
+// Settings keys and JSON payload keys are identical (direct names).
 object OverscrollStore {
     private const val PRESET_DIR = "overscroll_presets"
-
-    // Strips the platform suffix so JSON stays cross-platform.
-    private fun baseKey(key: String): String =
-        key.removeSuffix("_pine").removeSuffix("_xposed")
-
-    private fun fullKey(base: String): String =
-        if (base.startsWith("overscroll_")) base + OverscrollKeys.SUFFIX else base
 
     private fun getFloat(cr: ContentResolver, key: String, def: Float): Float {
         return try {
@@ -166,25 +160,25 @@ object OverscrollStore {
         Settings.Global.putInt(context.contentResolver, key, value)
     }
 
-    // Collects the current Settings.Global state into the cross-platform JSON
-    // payload (suffix-free keys). The per-package config string and master
+    // Collects the current Settings.Global state into the JSON
+    // payload. The per-package config string and master
     // flags travel inside the payload untouched.
     suspend fun collectJson(context: Context): JSONObject = withContext(Dispatchers.IO) {
         val cr = context.contentResolver
         val json = JSONObject()
         val values = loadSnapshot(cr)
         for ((key, number) in values) {
-            json.put(baseKey(key), number)
+            json.put(key, number)
         }
-        json.put(baseKey(OverscrollKeys.ENABLED), getInt(cr, OverscrollKeys.ENABLED, 1))
-        json.put(baseKey(OverscrollKeys.LOGGING), getInt(cr, OverscrollKeys.LOGGING, 0))
-        json.put(baseKey(OverscrollKeys.INVERT_ANCHOR), getInt(cr, OverscrollKeys.INVERT_ANCHOR, 1))
+        json.put(OverscrollKeys.ENABLED, getInt(cr, OverscrollKeys.ENABLED, 1))
+        json.put(OverscrollKeys.LOGGING, getInt(cr, OverscrollKeys.LOGGING, 0))
+        json.put(OverscrollKeys.INVERT_ANCHOR, getInt(cr, OverscrollKeys.INVERT_ANCHOR, 1))
         json.put(
-            baseKey(OverscrollKeys.NORM_ENABLED),
+            OverscrollKeys.NORM_ENABLED,
             getInt(cr, OverscrollKeys.NORM_ENABLED, 1),
         )
         json.put(
-            baseKey(OverscrollKeys.NORM_DETECT_MODE),
+            OverscrollKeys.NORM_DETECT_MODE,
             getInt(cr, OverscrollKeys.NORM_DETECT_MODE, 1),
         )
         val packages = try {
@@ -192,7 +186,7 @@ object OverscrollStore {
         } catch (_: Exception) {
             ""
         }
-        json.put(baseKey(OverscrollKeys.PACKAGES_CONFIG), packages)
+        json.put(OverscrollKeys.PACKAGES_CONFIG, packages)
         json
     }
 
@@ -253,7 +247,7 @@ object OverscrollStore {
         return result
     }
 
-    // Applies a profile payload: every numeric entry is routed to the suffixed
+    // Applies a profile payload: every numeric entry is routed to the
     // Settings.Global key, strings pass through, meta fields are skipped.
     // Returns the reloaded snapshot so the UI can refresh in one pass.
     suspend fun applyJson(context: Context, json: JSONObject): OverscrollValues =
@@ -263,9 +257,8 @@ object OverscrollStore {
             while (keys.hasNext()) {
                 val raw = keys.next()
                 if (raw == OverscrollKeys.ACTIVE_PROFILE_NAME || raw == "name") continue
-                var base = raw.removeSuffix("_pine").removeSuffix("_xposed")
-                if (base.endsWith("_v2")) base = base.removeSuffix("_v2")
-                val key = fullKey(base)
+                var key = raw
+                if (key.endsWith("_v2")) key = key.removeSuffix("_v2")
                 try {
                     when (val v = json.get(raw)) {
                         is Number -> {

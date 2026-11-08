@@ -39,15 +39,15 @@ import android.util.SparseArray;
 public final class CustomTransitionHelper {
     private static final String TAG = "CustomTransition";
 
-    // Settings.Global keys (legacy _pine suffix = native/system build)
-    private static final String KEY_OPEN = "activity_open_transition_pine";
-    private static final String KEY_CLOSE = "activity_close_transition_pine";
+    // Settings.Global keys shared with the app UI.
+    private static final String KEY_OPEN = "activity_open_transition";
+    private static final String KEY_CLOSE = "activity_close_transition";
     private static final String KEY_CUSTOM_PACKAGE =
-            "activity_transition_custom_package_pine";
+            "activity_transition_custom_package";
     private static final String KEY_CUSTOM_OPEN_PACKAGE =
-            "activity_open_custom_package_pine";
+            "activity_open_custom_package";
     private static final String KEY_CUSTOM_CLOSE_PACKAGE =
-            "activity_close_custom_package_pine";
+            "activity_close_custom_package";
 
     private static final String ACTION_REVIEW = "android.provider.action.REVIEW";
     private static final String ACTION_REVIEW_SECURE =

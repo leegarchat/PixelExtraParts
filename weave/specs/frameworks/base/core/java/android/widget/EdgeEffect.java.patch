@@ -14,7 +14,7 @@
  import android.view.animation.AnimationUtils;
  import android.view.animation.DecelerateInterpolator;
  import android.view.animation.Interpolator;
-@@ -227,6 +233,198 @@
+@@ -227,6 +233,182 @@
      private Matrix mTmpMatrix = null;
      private float[] mTmpPoints = null;
  
@@ -23,22 +23,6 @@
 +    // ═══════════════════════════════════════════════════════════════════
 +
 +    private static final String TAG_CUSTOM = "PixelPartsOverscroll";
-+    private static String sKeySuffix = "_pine";
-+
-+    /**
-+     * @hide
-+     */
-+    public static void configure(boolean useGlobal, @NonNull String suffix) {
-+        if (!useGlobal) {
-+            Log.w(TAG_CUSTOM, "Settings.Secure is no longer supported. Forcing Settings.Global.");
-+        }
-+        sKeySuffix = suffix;
-+    }
-+
-+    private static String resolveKey(String key) {
-+        String base = key.replaceAll("_(xposed|pine|native)$", "");
-+        return base + sKeySuffix;
-+    }
 +
 +    // ═══════════════════════════════════════════════════════════════════
 +    //  Custom bounce: Settings keys
@@ -1003,7 +987,7 @@
          double velocity = mVelocity;
  
          // Don't allow displacement to drop below 0. We don't want it stretching the opposite
-@@ -836,4 +1513,513 @@
+@@ -836,4 +1513,510 @@
          double expIntensity = EXP_STRETCH_INTENSITY * (1 - Math.exp(-overscroll * scalar));
          return sign * (float) (linearIntensity + expIntensity);
      }
@@ -1422,24 +1406,21 @@
 +    private static float getFloatSetting(Context ctx, String key, float def) {
 +        if (ctx == null) return def;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getFloat(ctx.getContentResolver(), resolved, def);
++            return Settings.Global.getFloat(ctx.getContentResolver(), key, def);
 +        } catch (Exception ignored) { return def; }
 +    }
 +
 +    private static int getIntSetting(Context ctx, String key, int def) {
 +        if (ctx == null) return def;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getInt(ctx.getContentResolver(), resolved, def);
++            return Settings.Global.getInt(ctx.getContentResolver(), key, def);
 +        } catch (Exception ignored) { return def; }
 +    }
 +
 +    private static String getStringSetting(Context ctx, String key) {
 +        if (ctx == null) return null;
 +        try {
-+            String resolved = resolveKey(key);
-+            return Settings.Global.getString(ctx.getContentResolver(), resolved);
++            return Settings.Global.getString(ctx.getContentResolver(), key);
 +        } catch (Exception ignored) { return null; }
 +    }
 +
