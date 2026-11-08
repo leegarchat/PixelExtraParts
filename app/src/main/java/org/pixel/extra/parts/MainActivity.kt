@@ -47,8 +47,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.pixel.extra.parts.activities.ActivityTransitionScreen
+import org.pixel.extra.parts.activities.AppIconsScreen
+import org.pixel.extra.parts.activities.AutoHbmScreen
+import org.pixel.extra.parts.activities.AutoLockScreen
+import org.pixel.extra.parts.activities.DisplaySettingsScreen
+import org.pixel.extra.parts.activities.DonateScreen
+import org.pixel.extra.parts.activities.DtwSettingsScreen
+import org.pixel.extra.parts.activities.HiddenLauncherAppsScreen
+import org.pixel.extra.parts.activities.IconShapeScreen
+import org.pixel.extra.parts.activities.MagnifierSettingsScreen
+import org.pixel.extra.parts.activities.OverscrollScreen
+import org.pixel.extra.parts.activities.RotationAnimationScreen
+import org.pixel.extra.parts.activities.SaturationScreen
+import org.pixel.extra.parts.activities.SystemUISettingsScreen
+import org.pixel.extra.parts.activities.ThermalConfigEditorApp
+import org.pixel.extra.parts.activities.ThermalConfigManagerApp
+import org.pixel.extra.parts.activities.ThermalScreen
 import org.pixel.extra.parts.dock.DockEntry
 import org.pixel.extra.parts.dock.ExpressiveFloatingDockWithOverflow
+import org.pixel.extra.parts.home.CatalogScreen
 import org.pixel.extra.parts.home.HomeScreen
 import org.pixel.extra.parts.motion.rememberFloatBarMotion
 import org.pixel.extra.parts.settings.MotionTuningSheet
@@ -117,6 +135,8 @@ private fun PepRoot() {
     var selectedKey by rememberSaveable { mutableStateOf("home") }
     var overflowExpanded by rememberSaveable { mutableStateOf(false) }
     var editorMode by rememberSaveable { mutableStateOf(false) }
+    // Hand-rolled back stack of ported section routes (no Navigation-Compose dependency).
+    var backstack by rememberSaveable { mutableStateOf(listOf<String>()) }
     // Tuning state owned by the dock module: one holder shared by the dock
     // and the tuning sheet (loaded from disk once, saved on every change).
     val motionHolder = rememberFloatBarMotion()
@@ -127,10 +147,14 @@ private fun PepRoot() {
     val blurRadius = motion.blurRadiusPx
     val rootBg = MaterialTheme.colorScheme.surfaceContainer
 
-    BackHandler(enabled = editorMode) {
+    val push: (String) -> Unit = { route -> backstack = backstack + route }
+    val pop: () -> Unit = { if (backstack.isNotEmpty()) backstack = backstack.dropLast(1) }
+
+    BackHandler(enabled = backstack.isNotEmpty()) { pop() }
+    BackHandler(enabled = backstack.isEmpty() && editorMode) {
         editorMode = false
     }
-    BackHandler(enabled = !editorMode && overflowExpanded) {
+    BackHandler(enabled = backstack.isEmpty() && !editorMode && overflowExpanded) {
         overflowExpanded = false
     }
 
@@ -141,6 +165,7 @@ private fun PepRoot() {
     val current = allEntries.firstOrNull { it.key == selectedKey } ?: PinnedTabs.first()
     val sectionLabel = current.labelArg?.let { stringResource(current.labelRes, it) }
         ?: stringResource(current.labelRes)
+    val legacyOpen = backstack.isNotEmpty()
 
     Box(
         modifier = Modifier
@@ -154,9 +179,11 @@ private fun PepRoot() {
                 .recordLayer(state = blurState, backgroundColor = rootBg, blurRadius = blurRadius)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                Spacer(modifier = Modifier.height(TOP_BAR_HEIGHT.dp + 8.dp))
+                if (!legacyOpen) {
+                    Spacer(modifier = Modifier.height(TOP_BAR_HEIGHT.dp + 8.dp))
+                }
                 AnimatedContent(
-                    targetState = selectedKey,
+                    targetState = if (legacyOpen) "legacy:${backstack.last()}" else selectedKey,
                     transitionSpec = {
                         val orderOf: (String) -> Int = { sectionOrder[it] ?: Int.MAX_VALUE }
                         val direction = if (orderOf(targetState) >= orderOf(initialState)) 1 else -1
@@ -183,9 +210,11 @@ private fun PepRoot() {
                     label = "ScreenTransition",
                     modifier = Modifier
                         .weight(1f)
-                        .padding(horizontal = 16.dp),
+                        .then(if (legacyOpen) Modifier else Modifier.padding(horizontal = 16.dp)),
                 ) { key ->
-                    if (key == "settings") {
+                    if (legacyOpen) {
+                        LegacyHost(route = backstack.last(), onBack = pop, onPush = push)
+                    } else if (key == "settings") {
                         SettingsScreen(
                             onOpenTuning = { showTuning = true },
                             onOpenEditor = {
@@ -193,6 +222,8 @@ private fun PepRoot() {
                                 editorMode = true
                             },
                         )
+                    } else if (key == "home") {
+                        CatalogScreen(onNavigate = push)
                     } else {
                         val entry = allEntries.firstOrNull { it.key == key } ?: PinnedTabs.first()
                         val entryLabel = entry.labelArg?.let { stringResource(entry.labelRes, it) }
@@ -204,49 +235,53 @@ private fun PepRoot() {
                     }
                 }
                 // Clearance above the floating dock (guideline 128-140.dp zone).
-                Spacer(modifier = Modifier.height(132.dp))
+                if (!legacyOpen) {
+                    Spacer(modifier = Modifier.height(132.dp))
+                }
             }
         }
 
-        // Floating overlays: siblings OUTSIDE recordLayer (no render loop).
-        TopStatusVeil(
-            backgroundColor = rootBg,
-            veilHeight = 32.dp,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .height(TOP_BAR_HEIGHT.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            TopBarBlurOverlay(
-                modifier = Modifier.fillMaxSize(),
-                topBarHeight = TOP_BAR_HEIGHT.dp,
-                blurState = blurState,
-                blurRadius = blurRadius,
+        if (!legacyOpen) {
+            // Floating overlays: siblings OUTSIDE recordLayer (no render loop).
+            TopStatusVeil(
+                backgroundColor = rootBg,
+                veilHeight = 32.dp,
+                modifier = Modifier.align(Alignment.TopCenter),
             )
-            Text(
-                text = sectionLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            IconButton(
-                onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    showTuning = true
-                },
-                modifier = Modifier.align(Alignment.CenterEnd),
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .height(TOP_BAR_HEIGHT.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_tune),
-                    contentDescription = stringResource(R.string.motion_open_desc),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                TopBarBlurOverlay(
+                    modifier = Modifier.fillMaxSize(),
+                    topBarHeight = TOP_BAR_HEIGHT.dp,
+                    blurState = blurState,
+                    blurRadius = blurRadius,
                 )
+                Text(
+                    text = sectionLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                IconButton(
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        showTuning = true
+                    },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tune),
+                        contentDescription = stringResource(R.string.motion_open_desc),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
         DockStrip(
@@ -285,5 +320,36 @@ private fun PepRoot() {
                 onDismiss = { showTuning = false },
             )
         }
+    }
+}
+
+// Every ported legacy screen behind a back-stack route. Deep links from tile
+// preferences land here in the future (TODO); for now everything opens home.
+@Composable
+private fun LegacyHost(
+    route: String,
+    onBack: () -> Unit,
+    onPush: (String) -> Unit,
+) {
+    when (route) {
+        "display" -> DisplaySettingsScreen(onBack = onBack, onNavigate = onPush)
+        "appicons" -> AppIconsScreen(onBack = onBack, onNavigate = onPush)
+        "shape" -> IconShapeScreen(onBack = onBack, onNavigate = onPush)
+        "saturation" -> SaturationScreen(onBack = onBack, onNavigate = onPush)
+        "autohbm" -> AutoHbmScreen(onBack = onBack, onNavigate = onPush)
+        "dtw" -> DtwSettingsScreen(onBack = onBack, onNavigate = onPush)
+        "magnifier" -> MagnifierSettingsScreen(onBack = onBack, onNavigate = onPush)
+        "thermal" -> ThermalConfigManagerApp(onBack = onBack, onNavigate = onPush)
+        "thermalStatus" -> ThermalScreen(onBack = onBack, onNavigate = onPush)
+        "thermalEditor" -> ThermalConfigEditorApp(openCreateProfile = false, onBack = onBack, onNavigate = onPush)
+        "thermalEditorCreate" -> ThermalConfigEditorApp(openCreateProfile = true, onBack = onBack, onNavigate = onPush)
+        "rotation" -> RotationAnimationScreen(onBack = onBack, onNavigate = onPush)
+        "transitions" -> ActivityTransitionScreen(onBack = onBack, onNavigate = onPush)
+        "overscroll" -> OverscrollScreen(onBack = onBack, onNavigate = onPush)
+        "autolock" -> AutoLockScreen(onBack = onBack, onNavigate = onPush)
+        "systemui" -> SystemUISettingsScreen(onBack = onBack, onNavigate = onPush)
+        "hidden" -> HiddenLauncherAppsScreen(onBack = onBack, onNavigate = onPush)
+        "donate" -> DonateScreen(onBack = onBack, onNavigate = onPush)
+        else -> DisplaySettingsScreen(onBack = onBack, onNavigate = onPush)
     }
 }

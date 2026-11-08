@@ -1,0 +1,174 @@
+package org.pixel.extra.parts.utils
+
+import android.content.Context
+import android.provider.Settings
+
+// Canonical keys carry NO engine suffix. Fresh hooks read bare base names.
+// Reads still fall back to legacy suffixed keys ("_pine", "_xposed", "_lsplant")
+// so user settings survive the engine rename without any migration step.
+object SettingsCompat {
+    private const val LEGACY_PINE_SUFFIX = "_pine"
+    private const val LEGACY_XPOSED_SUFFIX = "_xposed"
+    private const val LEGACY_LSPLANT_SUFFIX = "_lsplant"
+
+    private val SUFFIXED_KEY_BASES = setOf(
+        "launcher_recents_modify_enable",
+        "launcher_recents_disable_livetile",
+        "launcher_recents_carousel_scale",
+        "launcher_recents_carousel_spacing",
+        "launcher_recents_carousel_alpha",
+        "launcher_recents_carousel_blur_radius",
+        "launcher_recents_carousel_blur_overflow",
+        "launcher_recents_carousel_tint_color",
+        "launcher_recents_carousel_tint_intensity",
+        "launcher_recents_carousel_icon_offset_x",
+        "launcher_recents_carousel_icon_offset_y",
+        "launcher_recents_scale_enable",
+        "launcher_recents_scale_percent",
+        "launcher_homepage_sizer",
+        "launcher_homepage_h",
+        "launcher_homepage_v",
+        "launcher_homepage_hide_text",
+        "launcher_homepage_icon_size",
+        "launcher_homepage_text_mode",
+        "launcher_menupage_sizer",
+        "launcher_menupage_h",
+        "launcher_menupage_row_height",
+        "launcher_menupage_hide_text",
+        "launcher_menupage_icon_size",
+        "launcher_menupage_text_mode",
+        "launcher_suggestion_icon_size",
+        "launcher_suggestion_text_mode",
+        "launcher_search_icon_size",
+        "launcher_search_text_mode",
+        "launcher_suggestion_disable",
+        "launcher_dock_enable",
+        "launcher_hidden_search",
+        "launcher_hidden_dock",
+        "launcher_dock_padding",
+        "launcher_hotseat_icons",
+        "launcher_hotseat_hide_text",
+        "launcher_hotseat_icon_size",
+        "launcher_hotseat_text_mode",
+        "launcher_disable_google_feed",
+        "launcher_disable_top_widget",
+        "launcher_clear_all",
+        "launcher_clear_all_hide_actions_row",
+        "launcher_replace_on_clear",
+        "launcher_clear_all_bottom_margin",
+        "launcher_debug_enable",
+        "launcher_padding_homepage",
+        "launcher_padding_dock",
+        "launcher_padding_search",
+        "launcher_padding_dots",
+        "launcher_padding_dots_x",
+        "launcher_dt2s_enabled",
+        "overscroll_enabled",
+        "status_bar_use_app_icons",
+        "status_bar_monochrome_notification_icons",
+        "aod_use_app_icons",
+        "aod_monochrome_notification_icons",
+        "pixelparts_battery_info_refresh_interval_ms",
+        "pixelparts_battery_info_average_mode",
+        "gesture_bar_enabled",
+        "gesture_bar_width_percent",
+        "gesture_bar_height_dp",
+        "gesture_bar_offset_x_dp",
+        "gesture_bar_offset_y_dp",
+        "gesture_bar_reserved_area_dp",
+        "gesture_bar_gesture_area_dp",
+        "gesture_bar_hide_on_launcher",
+        "gesture_bar_hide_in_apps",
+        "gesture_bar_launcher_hide_timeout_ms",
+        "gesture_bar_app_hide_timeout_ms",
+        "gesture_bar_hide_on_lockscreen",
+        "gesture_bar_remove_reserved_area",
+        "gesture_bar_alpha_percent",
+        "gesture_bar_tint_enabled",
+        "gesture_bar_tint_color",
+        "gesture_bar_fade_in_ms",
+        "gesture_bar_fade_out_ms"
+    )
+
+    private fun stripRuntimeSuffix(key: String): String {
+        return key.removeSuffix(LEGACY_LSPLANT_SUFFIX)
+            .removeSuffix(LEGACY_PINE_SUFFIX)
+            .removeSuffix(LEGACY_XPOSED_SUFFIX)
+    }
+
+    private fun isSuffixedKey(key: String): Boolean {
+        return SUFFIXED_KEY_BASES.contains(stripRuntimeSuffix(key))
+    }
+
+    private fun readCandidates(baseKey: String): List<String> {
+        val stripped = stripRuntimeSuffix(baseKey)
+        return if (isSuffixedKey(stripped)) {
+            listOf(
+                stripped,
+                stripped + LEGACY_PINE_SUFFIX,
+                stripped + LEGACY_XPOSED_SUFFIX,
+                stripped + LEGACY_LSPLANT_SUFFIX
+            )
+        } else {
+            listOf(stripped)
+        }
+    }
+
+    /** Raw read: bare base key first, then legacy suffixed keys. Null when nothing is stored. */
+    private fun getRawString(context: Context, baseKey: String): String? {
+        val resolver = context.contentResolver
+        for (candidate in readCandidates(baseKey)) {
+            try {
+                val value = Settings.Global.getString(resolver, candidate)
+                if (value != null) return value
+            } catch (_: Throwable) { }
+        }
+        return null
+    }
+
+    @JvmStatic
+    fun key(base: String): String {
+        return stripRuntimeSuffix(base)
+    }
+
+    @JvmStatic
+    fun putInt(context: Context, key: String, value: Int) {
+        val resolvedKey = key(key)
+        Settings.Global.putInt(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
+    }
+
+    @JvmStatic
+    fun putFloat(context: Context, key: String, value: Float) {
+        val resolvedKey = key(key)
+        Settings.Global.putFloat(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
+    }
+
+    @JvmStatic
+    fun putString(context: Context, key: String, value: String?) {
+        val resolvedKey = key(key)
+        Settings.Global.putString(context.contentResolver, resolvedKey, value)
+        PixelPartsTileRefresher.requestForSetting(context, resolvedKey)
+    }
+
+    @JvmStatic
+    fun getInt(context: Context, key: String, defaultValue: Int): Int {
+        return getRawString(context, key)?.toIntOrNull() ?: defaultValue
+    }
+
+    @JvmStatic
+    fun getFloat(context: Context, key: String, defaultValue: Float): Float {
+        return getRawString(context, key)?.toFloatOrNull() ?: defaultValue
+    }
+
+    @JvmStatic
+    fun getString(context: Context, key: String, defaultValue: String?): String? {
+        return getRawString(context, key) ?: defaultValue
+    }
+
+    @JvmStatic
+    fun isEnabled(context: Context, key: String, defaultValue: Boolean = false): Boolean {
+        return getInt(context, key, if (defaultValue) 1 else 0) != 0
+    }
+}

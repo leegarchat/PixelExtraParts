@@ -15,6 +15,208 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".services.SaturationTileService"
+            android:label="@string/saturation_title"
+            android:icon="@drawable/ic_saturation_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <service
+            android:name=".services.OverscrollTileService"
+            android:label="@string/os_title_activity"
+            android:icon="@drawable/ic_overscroll_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <service
+            android:name=".services.ThermalManagerTileService"
+            android:label="@string/thermal_manager_title"
+            android:icon="@drawable/ic_thermal_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".services.PixelPartsLogTileService"
+            android:label="@string/sysui_log_service_title"
+            android:icon="@drawable/ic_log_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <service
+            android:name=".services.AutoHbmTileService"
+            android:label="@string/auto_hbm_title"
+            android:icon="@drawable/ic_auto_hbm_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+        <service
+            android:name=".services.AutoLockTileService"
+            android:label="@string/auto_lock_title"
+            android:icon="@drawable/ic_auto_lock_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".services.PermanentHbmTileService"
+            android:label="@string/permanent_hbm_title"
+            android:icon="@drawable/ic_auto_hbm_tile"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".services.MainActivityTileService"
+            android:label="@string/main_title"
+            android:icon="@drawable/ic_homepage_pixel_extra_parts"
+            android:exported="true"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".services.AutoHbmService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="ambient-light-based high-brightness monitor" />
+        </service>
+
+        <service
+            android:name=".services.AutoLockService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="auto-lock screen timer for media playback" />
+        </service>
+
+        <service
+            android:name=".services.ThermalProfileService"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <service
+            android:name=".services.PixelPartsLogService"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.TileHandlerActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".services.SleepReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.pixel.extra.parts.ACTION_SLEEP" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.BootCompletedReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="android.intent.action.SCREEN_ON" />
+            </intent-filter>
+        </receiver>
+
+        <activity-alias
+            android:name=".LauncherIconActivity"
+            android:targetActivity=".MainActivity"
+            android:label="@string/app_name"
+            android:icon="@mipmap/ic_launcher"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".PixelPartsActivityNetwork"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:icon="@drawable/ic_settings_outline"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".PixelPartsActivityBattery"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:icon="@drawable/ic_settings_outline"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".PixelPartsActivitySystem"
+            android:targetActivity=".MainActivity"
+            android:label="@string/main_title"
+            android:icon="@drawable/ic_settings_outline"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.settings.action.IA_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
     </application>
 
 </manifest>
