@@ -35,16 +35,20 @@
 - `soong/platform/services_helpers/` — хелперы сервисов (`DtwSystemService`,
   `PixelPartsHardwareInput`, `PixelPartsKeepScreenOn`), компилируются В СОСТАВЕ
   `services.core.unboosted` через `:pixelparts_services_helpers`.
-- `native/lsplant/` — рантайм инжектора: `src/` (исходники `LsplantInject`),
-  `libs/` (пребилты `liblsplant/dobby/c++_shared.so`), `lsplant-native/`
-  (`bridge/` — наш JNI-glue, собирается NDK-скриптом в пребилт
-  `libs/.../liblspbridge.so`); `third_party/` — только мастер-копии
-  движков + заголовки + provenance-маркеры, IDE/CI-мусор вычищен).
+- `lsplant_engine/` — рантайм инжектора отдельно от всего: `src/`
+  (исходники `LsplantInject`), `libs/` (пребилты
+  `liblsplant/dobby/c++_shared/lspbridge.so`), `lsplant-native/`
+  (`bridge/` — наш JNI-glue, собирается NDK-скриптом в пребилт;
+  `third_party/` — только мастер-копии движков + заголовки +
+  provenance-маркеры, IDE/CI-мусор вычищен).
   Java-пакеты (`org.pixel...manager.lsplant`) — это ПАКЕТЫ, а не пути:
   при переезде каталогов их не переименовывать.
-- `native/thermal_hal/` — форк HAL `.pep` (`overrides:`, без `stem:`),
-  свой `.rc`/`.xml`. Исходники — через `:pixelparts_weave_thermal`
-  из `weave_gen/` + `include_dirs` на зеркало `weave_gen/.../thermal`.
+- `thermal_hal/` — самодостаточный домен форка HAL `.pep` (`overrides:`,
+  без `stem:`), свой `.rc`/`.xml`. Исходники — через
+  `:pixelparts_weave_thermal` из `soong/weave_gen/` + `include_dirs`
+  на его зеркало. Внутри — `config/` (рантайм thermal-сборки):
+  `generate_thermal_configs.py` + `configs/` + `ThermalConfigCopyRules.mk`
+  (generated, в git нет).
 - `policy/sepolicy/` — весь sepolicy PEP (`system_ext/private`,
   `system_ext/public`, `vendor/`). Подключен тремя `*_SEPOLICY_DIRS`
   в `device.mk`. `domain.te`-исключение живёт в апстриме отдельно (ручной патч).

@@ -173,7 +173,7 @@ android_app {
 // (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
 cc_prebuilt_library_shared {
     name: "liblsplant",
-    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/liblsplant.so"],
+    srcs: ["lsplant_engine/libs/lsplant/arm64-v8a/liblsplant.so"],
     strip: {
     none: true,
     },
@@ -183,7 +183,7 @@ cc_prebuilt_library_shared {
 }
 cc_prebuilt_library_shared {
     name: "libdobby",
-    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libdobby.so"],
+    srcs: ["lsplant_engine/libs/lsplant/arm64-v8a/libdobby.so"],
     strip: {
     none: true,
     },
@@ -193,7 +193,7 @@ cc_prebuilt_library_shared {
 }
 cc_prebuilt_library_shared {
     name: "libc++_shared",
-    srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libc++_shared.so"],
+    srcs: ["lsplant_engine/libs/lsplant/arm64-v8a/libc++_shared.so"],
     strip: {
     none: true,
     },
@@ -224,23 +224,23 @@ java_library {
     // Xposed-compat shim over the LSPlant backend
     srcs: [
         // Общий интерфейс IHookEnvironment
-        "native/lsplant/src/org/pixel/customparts/core/**/*.kt",
-        "native/lsplant/src/org/pixel/customparts/core/**/*.java",
+        "lsplant_engine/src/org/pixel/customparts/core/**/*.kt",
+        "lsplant_engine/src/org/pixel/customparts/core/**/*.java",
         // Общие хуки (код реализации)
-        "native/lsplant/src/org/pixel/customparts/hooks/**/*.kt",
-        "native/lsplant/src/org/pixel/customparts/hooks/**/*.java",
+        "lsplant_engine/src/org/pixel/customparts/hooks/**/*.kt",
+        "lsplant_engine/src/org/pixel/customparts/hooks/**/*.java",
         // Менеджер инъекции (движок-независимый + LSPlant-бэкенд)
-        "native/lsplant/src/org/pixel/customparts/manager/lsplant/**/*.kt",
-        "native/lsplant/src/org/pixel/customparts/manager/lsplant/**/*.java",
-        "native/lsplant/src/org/pixel/customparts/lsplantinject/**/*.kt",
-        "native/lsplant/src/org/pixel/customparts/lsplantinject/**/*.java",
+        "lsplant_engine/src/org/pixel/customparts/manager/lsplant/**/*.kt",
+        "lsplant_engine/src/org/pixel/customparts/manager/lsplant/**/*.java",
+        "lsplant_engine/src/org/pixel/customparts/lsplantinject/**/*.kt",
+        "lsplant_engine/src/org/pixel/customparts/lsplantinject/**/*.java",
         // Xposed-совместимый слой поверх LSPlant
-        "native/lsplant/src/de/robv/android/xposed/**/*.java",
+        "lsplant_engine/src/de/robv/android/xposed/**/*.java",
         // Modern Xposed API 101 (модули Vector/LSPosed-формата)
-        "native/lsplant/src/io/github/libxposed/api/**/*.java",
+        "lsplant_engine/src/io/github/libxposed/api/**/*.java",
         
         // Затенённый commons-lang для XposedHelpers
-        "native/lsplant/src/external/org/apache/commons/lang3/**/*.java"
+        "lsplant_engine/src/external/org/apache/commons/lang3/**/*.java"
     ],
     installable: true,
     libs: [
@@ -320,7 +320,7 @@ filegroup {
         "soong/weave_gen/hardware/google/pixel/thermal/utils/thermal_watcher.cpp",
         "soong/weave_gen/hardware/google/pixel/thermal/virtualtemp_estimator/virtualtemp_estimator.cpp",
     ],
-    visibility: ["//packages/apps/PixelExtraParts/native/thermal_hal"],
+    visibility: ["//packages/apps/PixelExtraParts/thermal_hal"],
 }
 filegroup {
     name: "pixelparts_services_helpers",

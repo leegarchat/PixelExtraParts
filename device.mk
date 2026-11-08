@@ -54,19 +54,19 @@ ifeq ($(strip $(VENDOR_PATH)),)
 $(error PixelExtraParts requires VENDOR_PATH to generate thermal config copy rules)
 endif
 
-PIXEL_EXTRA_PARTS_THERMAL_RESULT := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/config/thermal/generate_thermal_configs.py --quiet --vendor-path $(VENDOR_PATH) --device-codename $(DEVICE_CODENAME) --init-rc $(PIXEL_EXTRA_PARTS_PATH)/config/init.pixelextraparts.rc $(if $(strip $(THERMAL_CUSTOM_JSON_PATH)),--thermal-json $(THERMAL_CUSTOM_JSON_PATH),) 2>&1)
+PIXEL_EXTRA_PARTS_THERMAL_RESULT := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/thermal_hal/config/generate_thermal_configs.py --quiet --vendor-path $(VENDOR_PATH) --device-codename $(DEVICE_CODENAME) --init-rc $(PIXEL_EXTRA_PARTS_PATH)/config/init.pixelextraparts.rc $(if $(strip $(THERMAL_CUSTOM_JSON_PATH)),--thermal-json $(THERMAL_CUSTOM_JSON_PATH),) 2>&1)
 
 ifneq ($(findstring PixelExtraPartsThermalError:,$(PIXEL_EXTRA_PARTS_THERMAL_RESULT)),)
 $(warning $(PIXEL_EXTRA_PARTS_THERMAL_RESULT))
 else
-$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/config/thermal/ThermalConfigCopyRules.mk)
+$(call inherit-product, $(PIXEL_EXTRA_PARTS_PATH)/thermal_hal/config/ThermalConfigCopyRules.mk)
 endif
 
 
 # Soong namespaces (plugin, filegroups, thermal fork).
 PRODUCT_SOONG_NAMESPACES += \
     $(PIXEL_EXTRA_PARTS_PATH) \
-    $(PIXEL_EXTRA_PARTS_PATH)/native/thermal_hal
+    $(PIXEL_EXTRA_PARTS_PATH)/thermal_hal
 
 # Soong plugin allowlist (build-time weave). Our bootstrap_go_package
 # is not in Soong's hardcoded list; this is the documented escape hatch.
