@@ -2,20 +2,22 @@
 
 Корень держит только агрегаторы сборки:
 
-- `Android.bp` — все Soong-модули: `init.pixelextraparts.rc` (из `config/`),
-  стоковая аппка `PixelCustomPartsSystem` (`common/` + `system/` + `lang/`,
-  platform-подпись, system_ext priv-app) + `apksig`/`aapt2`/`privapp_whitelist`,
+- `Android.bp` — все Soong-модули: `init.pixelextraparts.rc` собирается
+  `genrule pep_init_rc` (`cat` шаблона + thermal-фрагмента, см. ниже),
+  стоковая аппка `PixelCustomPartsSystem` (из `app/`, platform-подпись,
+  system_ext priv-app) + `apksig`/`aapt2`/`privapp_whitelist`,
   пребилты `liblsplant/dobby/c++_shared/lspbridge` + `LsplantInject`
-  (из `native/lsplant/`), пребилты аддонов (`addons/release/*/out/*.jar`),
-  filegroups weave (из `weave_gen/`) и хелперы (из `platform/`).
+  (из `lsplant_engine/`), пребилты аддонов (`addons/release/*/out/*.jar`),
+  filegroups weave (из `soong/weave_gen/`) и хелперы (из `soong/platform/`).
   Filegroups лежат здесь, т.к. их `srcs` тянут файлы из нескольких соседних
   деревьев, а Soong не разрешает `../` из подпапок.
 - `device.mk` — точка входа для продукта: `PRODUCT_PACKAGES`,
-  `PRODUCT_SOONG_NAMESPACES` (корень + `native/thermal_hal` — у него свой
+  `PRODUCT_SOONG_NAMESPACES` (корень + `thermal_hal` — у него свой
   `soong_namespace`), weave-regen (`build` до Soong), sepolicy-директории,
   thermal-генератор, `filter-out` стокового thermal-HAL.
-- `.gitignore` — игноры generated: `weave_gen/`, `config/thermal/configs`,
-  `ThermalConfigCopyRules.mk`, NDK-артефакты lsplant.
+- `.gitignore` — игноры generated: `soong/weave_gen/`,
+  `thermal_hal/config/{configs,gen}`, `ThermalConfigCopyRules.mk`,
+  NDK-артефакты lsplant, запаркованный `app_test/`.
 
 Домены:
 
@@ -47,17 +49,16 @@
   без `stem:`), свой `.rc`/`.xml`. Исходники — через
   `:pixelparts_weave_thermal` из `soong/weave_gen/` + `include_dirs`
   на его зеркало. Внутри — `config/` (рантайм thermal-сборки):
-  `generate_thermal_configs.py` + `configs/` + `ThermalConfigCopyRules.mk`
-  (generated, в git нет).
+  `generate_thermal_configs.py` (дерево НЕ трогает) + `configs/` +
+  `ThermalConfigCopyRules.mk` (generated, в git нет) + `gen/` (thermal-блок
+  `init.thermal-switch.rc`, generated, в git нет; решает enabled/disabled).
+- `init.pixelextraparts.rc` — СТАТИЧЕСКИЙ шаблон init-скрипта всего модуля
+  (app-директории, brightness; модуль `prebuilt_etc` берёт его НЕ напрямую,
+  а через `genrule pep_init_rc`: `cat` шаблона + thermal-фрагмента).
+  Дерево при сборке НЕ мутирует — замена прописана `cmd` в `Android.bp`.
 - `policy/sepolicy/` — весь sepolicy PEP (`system_ext/private`,
   `system_ext/public`, `vendor/`). Подключен тремя `*_SEPOLICY_DIRS`
   в `device.mk`. `domain.te`-исключение живёт в апстриме отдельно (ручной патч).
-- `config/thermal/` — `generate_thermal_configs.py` (пути вычисляет от
-  собственного `SCRIPT_DIR`, переездобезопасен) + `configs/` (generated,
-  в git нет) + `ThermalConfigCopyRules.mk` (generated, в git нет).
-- `init.pixelextraparts.rc` — init-скрипт всего модуля в корне
-  (app-директории, brightness, thermal-свитч; модуль `prebuilt_etc`).
-  Перезаписывается генератором thermal (safe-split) при каждой сборке.
 - `app/` — стоковая аппка единой цепочкой (как в проде, без изменений):
   `AndroidManifest.xml`, `src/`, `res/`, `lib/`, `lang/`, `proguard.flags`,
   `privapp-permissions-pixelparts.xml`, `donate_page.json`
