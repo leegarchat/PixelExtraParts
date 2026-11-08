@@ -1,0 +1,119 @@
+{
+    "id": "yandexmaps_fast",
+    "entryClass": "org.pixel.customparts.addon.yandexmaps.YandexMapsHook",
+    "name": "Yandex Maps Fast",
+    "author": "PixelExtraParts",
+    "description": "Vulkan render and declutter tweaks for Yandex Maps.",
+    "version": "1.0.0",
+    "targetPackages": [
+        "ru.yandex.yandexmaps"
+    ],
+    "enabled": true,
+    "accent": "#FFDE59",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 55,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "yandexmaps-fast",
+            "title": "Yandex Maps Fast",
+            "subtitle": "Render path and declutter",
+            "icon": "Rounded.Map",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#FFDE59",
+            "iconBackground": "#3E3424",
+            "group": "apps",
+            "priority": 50,
+            "settings": [
+                {
+                    "key": "yandexmaps_vulkan_enabled",
+                    "title": "Vulkan render",
+                    "description": "Force the Vulkan render path instead of OpenGL. Fixes ~10s map load on blocklisted GPUs. Falls back to OpenGL automatically if Vulkan fails.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_render",
+                    "categoryTitle": "Render path",
+                    "categoryDescription": "Takes effect on next cold start of Yandex Maps."
+                },
+                {
+                    "key": "yandexmaps_no_taxi",
+                    "title": "Hide taxi button",
+                    "description": "Removes the taxi price button from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "yandexmaps_fast_declutter",
+                    "categoryTitle": "Declutter",
+                    "categoryDescription": "Hides promo and ad UI."
+                },
+                {
+                    "key": "yandexmaps_feed_collapsed",
+                    "title": "Collapsed feed by default",
+                    "description": "Keeps the discovery bottom sheet collapsed instead of peeking open.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "yandexmaps_fast_declutter"
+                },
+                {
+                    "key": "yandexmaps_search_history",
+                    "title": "History tab by default",
+                    "description": "Opens search on the History tab instead of Categories.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "yandexmaps_fast_declutter"
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "description": "Vulkan-рендер и чистка интерфейса Яндекс Карт.",
+            "main": [
+                {
+                    "id": "yandexmaps-fast",
+                    "title": "Yandex Maps Fast",
+                    "subtitle": "Рендер и чистка интерфейса",
+                    "settings": [
+                        {
+                            "key": "yandexmaps_vulkan_enabled",
+                            "title": "Vulkan render",
+                            "description": "Принудительно использует Vulkan вместо OpenGL. Убирает ~10с загрузки карты на GPU из блоклиста.",
+                            "category": "yandexmaps_fast_render",
+                            "categoryTitle": "Путь рендера",
+                            "categoryDescription": "Применяется при следующем холодном старте Яндекс Карт."
+                        },
+                        {
+                            "key": "yandexmaps_no_taxi",
+                            "title": "Скрыть кнопку такси",
+                            "description": "Убирает кнопку цены такси из карточек мест.",
+                            "category": "yandexmaps_fast_declutter",
+                            "categoryTitle": "Чистка интерфейса",
+                            "categoryDescription": "Скрывает промо и рекламу."
+                        },
+                        {
+                            "key": "yandexmaps_feed_collapsed",
+                            "title": "Лента свернута по умолчанию",
+                            "description": "Держит нижнюю шторку свернутой, а не приоткрытой.",
+                            "category": "yandexmaps_fast_declutter"
+                        },
+                        {
+                            "key": "yandexmaps_search_history",
+                            "title": "История по умолчанию",
+                            "description": "Открывает поиск на вкладке История вместо Категорий.",
+                            "category": "yandexmaps_fast_declutter"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

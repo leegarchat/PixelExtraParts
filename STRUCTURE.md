@@ -1,12 +1,15 @@
-# Структура PixelExtraParts (без АПК)
+# Структура PixelExtraParts
 
 Корень держит только агрегаторы сборки:
 
 - `Android.bp` — все Soong-модули: `init.pixelextraparts.rc` (из `config/`),
+  стоковая аппка `PixelCustomPartsSystem` (`common/` + `system/` + `lang/`,
+  platform-подпись, system_ext priv-app) + `apksig`/`aapt2`/`privapp_whitelist`,
   пребилты `liblsplant/dobby/c++_shared/lspbridge` + `LsplantInject`
-  (из `native/lsplant/`), filegroups weave (из `weave_gen/`) и хелперы
-  (из `platform/`). Filegroups лежат здесь, т.к. их `srcs` тянут файлы
-  из нескольких соседних деревьев, а Soong не разрешает `../` из подпапок.
+  (из `native/lsplant/`), пребилты аддонов (`addons/release/*/out/*.jar`),
+  filegroups weave (из `weave_gen/`) и хелперы (из `platform/`).
+  Filegroups лежат здесь, т.к. их `srcs` тянут файлы из нескольких соседних
+  деревьев, а Soong не разрешает `../` из подпапок.
 - `device.mk` — точка входа для продукта: `PRODUCT_PACKAGES`,
   `PRODUCT_SOONG_NAMESPACES` (корень + `native/thermal_hal` — у него свой
   `soong_namespace`), weave-regen (`build` до Soong), sepolicy-директории,
@@ -34,8 +37,8 @@
   `services.core.unboosted` через `:pixelparts_services_helpers`.
 - `native/lsplant/` — рантайм инжектора: `src/` (исходники `LsplantInject`),
   `libs/` (пребилты `liblsplant/dobby/c++_shared.so`), `lsplant-native/`
-  (`bridge/` — наш JNI-glue, собирается из исходников модулем
-  `cc_library_shared liblspbridge`; `third_party/` — только мастер-копии
+  (`bridge/` — наш JNI-glue, собирается NDK-скриптом в пребилт
+  `libs/.../liblspbridge.so`); `third_party/` — только мастер-копии
   движков + заголовки + provenance-маркеры, IDE/CI-мусор вычищен).
   Java-пакеты (`org.pixel...manager.lsplant`) — это ПАКЕТЫ, а не пути:
   при переезде каталогов их не переименовывать.
@@ -50,8 +53,9 @@
   в git нет) + `ThermalConfigCopyRules.mk` (generated, в git нет).
 - `config/init.pixelextraparts.rc` — init-скрипт (модуль `prebuilt_etc`).
   Перезаписывается генератором thermal (safe-split) при каждой сборке.
-- `app/` — приложение `org.pixel.extra.parts` (см. `app/README.md`):
-  Gradle (`:app:assembleDebug`) для UI-стенда + Soong-зеркало `PixelExtraParts`
-  в корневом `Android.bp` для прошивки (platform-подпись, system_ext priv-app).
-  Два манифеста: `src/main` (debug, без `sharedUserId`) и `src/firmware`
-  (полный carte-blanche + `sharedUserId="android.uid.system"`).
+- `common/` + `system/` + `lang/` — стоковая аппка (как в проде, без изменений),
+  `proguard.flags`, `privapp-permissions-pixelparts.xml`, `donate_page.json`.
+- `addons/` — аддоны: `release/` — продовые (11 шт, `out/*.jar` зачекинены),
+  `tests/` — экспериментальные; `prebuild/` — общие зависимости сборки;
+  `build.sh` (`build.bat/ps1`) собирает по имени из `release/` и `tests/`.
+- `app_test/` — запаркованная Compose-работа (игнор в git, в сборку не входит).

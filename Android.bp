@@ -1,4 +1,3 @@
-
 prebuilt_etc {
     name: "init.pixelextraparts.rc",
     src: "config/init.pixelextraparts.rc",
@@ -8,8 +7,170 @@ prebuilt_etc {
 
 // LSPlant backend: official core (LGPL-3.0,
 // source https://github.com/LSPosed/LSPlant) + Dobby inline backend
-// (Apache-2.0, https://github.com/jmpews/Dobby) as SEPARATE prebuilt
-// .so files, + our JNI glue (liblspbridge) built from source below.
+// (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
+prebuilt_etc {
+    name: "privapp_whitelist_org.pixel.customparts",
+    sub_dir: "permissions",
+    src: "privapp-permissions-pixelparts.xml",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "ambient_extend_hook_addon",
+    src: "addons/release/ambient_extend_hook/out/ambient_extend_hook.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "settings_icon_style_override_addon",
+    src: "addons/release/settings_icon_style_override/out/settings_icon_style_override.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "settings_homepage_item_addon",
+    src: "addons/release/settings_homepage_item/out/settings_homepage_item.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "gcam_photo_torch_addon",
+    src: "addons/release/gcam_photo_torch/out/gcam_photo_torch.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "launcher_hooks_addon",
+    src: "addons/release/launcher_hooks/out/launcher_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "systemui_hooks_addon",
+    src: "addons/release/systemui_hooks/out/systemui_hooks.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "icon_manager_settings_addon",
+    src: "addons/release/icon_manager_settings/out/icon_manager_settings.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "ims_carrier_config_addon",
+    src: "addons/release/ims_carrier_config/out/ims_carrier_config.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "ram_purge_addon",
+    src: "addons/release/ram_purge/out/ram_purge.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "yandexmaps_fast_addon",
+    src: "addons/release/yandexmaps_fast/out/yandexmaps_fast.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+prebuilt_etc {
+    name: "flashnotify_addon",
+    src: "addons/release/flashnotify/out/flashnotify.jar",
+    sub_dir: "pixelparts/addons",
+    filename_from_src: true,
+    system_ext_specific: true,
+}
+java_import {
+    name: "apksig-jar",
+    jars: ["common/lib/apksig.jar"],
+    sdk_version: "current",
+}
+cc_prebuilt_library_shared {
+    name: "libaapt2_pixelparts", 
+    stem: "libaapt2",
+    
+    // Явно указываем архитектуру, чтобы сборка не ломалась на эмуляторах и других таргетах
+    arch: {
+        arm64: {
+            srcs: ["common/lib/arm64/libaapt2.so"],
+        },
+    },
+    
+    strip: {
+        none: true,
+    },
+    check_elf_files: false,
+    
+    // Убрали installable: false и compile_multilib. 
+    // Оставляем поведение по умолчанию.
+}
+android_app {
+    name: "PixelCustomPartsSystem",
+
+    manifest: "system/AndroidManifest.xml",
+    resource_dirs: [
+        "common/res"
+    ],
+    srcs: [
+        "common/src/**/*.kt",
+        "common/src/**/*.java",
+        "system/src/**/*.kt",
+        "system/src/**/*.java"
+    ],
+    use_embedded_native_libs: false,
+
+    static_libs: [
+        "apksig-jar",
+        "androidx.core_core",
+        "androidx.appcompat_appcompat",
+        "com.google.android.material_material",
+        "SettingsLib",
+        "androidx.core_core-ktx",
+        "androidx.activity_activity-compose",
+        "androidx.lifecycle_lifecycle-runtime-ktx",
+        "androidx.lifecycle_lifecycle-viewmodel-compose",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.foundation_foundation",
+        "androidx.compose.foundation_foundation-layout",
+        "androidx.compose.ui_ui",
+        "androidx.compose.ui_ui-tooling-preview",
+        "androidx.compose.material3_material3",
+        "androidx.compose.material_material-icons-extended",
+        "SettingsLib",
+        "org.lineageos.settings.resources", 
+    ],
+
+    certificate: "platform",
+    platform_apis: true,
+    privileged: true,
+    system_ext_specific: true,
+    aaptflags: ["--custom-package", "org.pixel.customparts"],
+    optimize: {
+        enabled: true,
+        proguard_flags_files: ["proguard.flags"],
+    },
+    required: [
+        "privapp_whitelist_org.pixel.customparts",
+        "init.pixelextraparts.rc",
+        "aapt2_pixelparts"
+    ],
+}
+
+// LSPlant backend: official core (LGPL-3.0,
+// source https://github.com/LSPosed/LSPlant) + Dobby inline backend
+// (Apache-2.0, https://github.com/jmpews/Dobby) + our JNI glue.
 cc_prebuilt_library_shared {
     name: "liblsplant",
     srcs: ["native/lsplant/libs/lsplant/arm64-v8a/liblsplant.so"],
@@ -20,7 +181,6 @@ cc_prebuilt_library_shared {
     system_ext_specific: false,
     installable: true,
 }
-
 cc_prebuilt_library_shared {
     name: "libdobby",
     srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libdobby.so"],
@@ -31,7 +191,6 @@ cc_prebuilt_library_shared {
     system_ext_specific: false,
     installable: true,
 }
-
 cc_prebuilt_library_shared {
     name: "libc++_shared",
     srcs: ["native/lsplant/libs/lsplant/arm64-v8a/libc++_shared.so"],
@@ -42,37 +201,24 @@ cc_prebuilt_library_shared {
     system_ext_specific: false,
     installable: true,
 }
-
-cc_library_shared {
+cc_prebuilt_library_shared {
     name: "liblspbridge",
-    // OUR JNI glue + ART resolver, built from source (not a prebuilt).
-    // No DT_NEEDED on LSPlant/Dobby: bound at runtime via dlopen/dlsym
-    // (foreign engine first, own prebuilts fallback).
-    srcs: [
-        "native/lsplant/lsplant-native/bridge/bridge.cpp",
-        "native/lsplant/lsplant-native/bridge/art_elf.cpp",
-    ],
-    local_include_dirs: ["native/lsplant/lsplant-native/bridge"],
-    include_dirs: [
-        "packages/apps/PixelExtraParts/native/lsplant/lsplant-native/third_party/dobby/include",
-        "packages/apps/PixelExtraParts/native/lsplant/lsplant-native/third_party/lsplant/include",
-    ],
-    cflags: [
-        "-Oz",
-        "-fvisibility=hidden",
-        "-Wall",
-    ],
-    cpp_std: "c++20",
-    shared_libs: [
-        "liblog",
-        "libdl",
-    ],
-    allow_undefined_symbols: true,
+    srcs: ["lsplant/libs/lsplant/arm64-v8a/liblspbridge.so"],
+    strip: {
+    none: true,
+    },
+    check_elf_files: false,
     system_ext_specific: false,
     installable: true,
 }
-
-
+cc_prebuilt_binary {
+    name: "aapt2_pixelparts",
+    srcs: ["common/lib/arm64/libaapt2.so"],
+    stem: "aapt2_pixelparts",
+    system_ext_specific: true,
+    strip: { none: true },
+    check_elf_files: false,
+}
 java_library {
     name: "LsplantInject",
     // Xposed-compat shim over the LSPlant backend
@@ -114,7 +260,6 @@ java_library {
 // PixelExtraParts H1 weave: build-time generated sources (weave_gen/).
 // Produced by weave/weave_apply.py from live vanilla + weave/specs
 // during the make phase (see device.mk). Upstream trees stay vanilla.
-
 filegroup {
     name: "pixelparts_weave_framework",
     srcs: [
@@ -128,7 +273,6 @@ filegroup {
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
-
 filegroup {
     name: "pixelparts_framework_helpers",
     srcs: [
@@ -136,7 +280,6 @@ filegroup {
     ],
     visibility: ["//frameworks/base:__subpackages__"],
 }
-
 filegroup {
     name: "pixelparts_weave_settingslib",
     srcs: [
@@ -144,7 +287,6 @@ filegroup {
     ],
     visibility: ["//frameworks/base/packages/SettingsLib:__subpackages__"],
 }
-
 filegroup {
     name: "pixelparts_weave_services_core",
     srcs: [
@@ -154,7 +296,6 @@ filegroup {
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }
-
 filegroup {
     name: "pixelparts_weave_services_impl",
     srcs: [
@@ -163,7 +304,6 @@ filegroup {
     ],
     visibility: ["//frameworks/base/services:__subpackages__"],
 }
-
 filegroup {
     name: "pixelparts_weave_thermal",
     srcs: [
@@ -182,7 +322,6 @@ filegroup {
     ],
     visibility: ["//packages/apps/PixelExtraParts/native/thermal_hal"],
 }
-
 filegroup {
     name: "pixelparts_services_helpers",
     srcs: [
@@ -194,37 +333,3 @@ filegroup {
 // PixelExtraParts app: Gradle (app/) for debug UI work, Soong mirror below
 // for firmware (platform cert, system_ext priv-app). package_name MUST match
 // applicationId in app/build.gradle.kts (guideline 13.4).
-prebuilt_etc {
-    name: "privapp_whitelist_org.pixel.extra.parts",
-    src: "app/privapp-permissions-extra-parts.xml",
-    sub_dir: "permissions",
-    filename_from_src: true,
-    system_ext_specific: true,
-}
-
-android_app {
-    name: "PixelExtraParts",
-    manifest: "app/src/firmware/AndroidManifest.xml",
-    resource_dirs: ["app/src/main/res"],
-    srcs: [
-        "app/src/main/java/**/*.kt",
-        "app/src/main/java/**/*.java",
-    ],
-    package_name: "org.pixel.extra.parts",
-    platform_apis: true,
-    certificate: "platform",
-    privileged: true,
-    system_ext_specific: true,
-    static_libs: [
-        "androidx.core_core",
-        "androidx.core_core-ktx",
-        "androidx.activity_activity-compose",
-        "androidx.compose.runtime_runtime",
-        "androidx.compose.foundation_foundation",
-        "androidx.compose.foundation_foundation-layout",
-        "androidx.compose.ui_ui",
-        "androidx.compose.animation_animation",
-        "androidx.compose.material3_material3",
-    ],
-    required: ["privapp_whitelist_org.pixel.extra.parts"],
-}

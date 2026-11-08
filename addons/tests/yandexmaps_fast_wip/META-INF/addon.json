@@ -1,0 +1,659 @@
+{
+    "id": "yandexmaps_fast",
+    "entryClass": "org.pixel.customparts.addon.yandexmaps.YandexMapsHook",
+    "name": "Yandex Maps Fast",
+    "author": "PixelExtraParts",
+    "description": "Vulkan render and declutter tweaks for Yandex Maps.",
+    "version": "1.0.0",
+    "targetPackages": [
+        "ru.yandex.yandexmaps"
+    ],
+    "enabled": true,
+    "accent": "#FFDE59",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 55,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "yandexmaps-fast",
+            "title": "Yandex Maps Fast",
+            "subtitle": "Render path and declutter",
+            "icon": "Rounded.Map",
+            "iconType": "app",
+            "iconShape": "circle",
+            "iconColor": "#FFDE59",
+            "iconBackground": "#3E3424",
+            "group": "apps",
+            "priority": 50,
+            "settings": [
+                {
+                    "key": "yandexmaps_vulkan_enabled",
+                    "title": "Vulkan render",
+                    "description": "Force the Vulkan render path instead of OpenGL. Fixes ~10s map load on blocklisted GPUs. Falls back to OpenGL automatically if Vulkan fails.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_render",
+                    "categoryTitle": "Render path",
+                    "categoryDescription": "Takes effect on next cold start of Yandex Maps."
+                },
+                {
+                    "key": "yandexmaps_no_taxi",
+                    "title": "Hide taxi button",
+                    "description": "Removes the taxi price button from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_declutter",
+                    "categoryTitle": "Declutter",
+                    "categoryDescription": "Hides promo and ad UI."
+                },
+                {
+                    "key": "yandexmaps_feed_mode",
+                    "title": "Discovery feed",
+                    "description": "Collapsed by default. var1: our anchor downgrade. var2: author-style content suppression. off: stock behavior.",
+                    "type": "select",
+                    "provider": "global",
+                    "default": "var1",
+                    "options": [
+                        {
+                            "value": "off",
+                            "label": "Off"
+                        },
+                        {
+                            "value": "var1",
+                            "label": "var1 (ours)"
+                        },
+                        {
+                            "value": "var2",
+                            "label": "var2 (author)"
+                        }
+                    ],
+                    "category": "yandexmaps_fast_declutter"
+                },
+                {
+                    "key": "yandexmaps_disc_tab",
+                    "title": "Discovery tab on main screen",
+                    "description": "Hides the Discovery entry tab on the main screen (author-style tab gate).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_discovery",
+                    "categoryTitle": "Discovery"
+                },
+                {
+                    "key": "yandexmaps_disc_objects",
+                    "title": "Discovery feed objects",
+                    "description": "Empties the Discovery shutter items and filters lists (author-style content suppression).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_discovery",
+                    "categoryTitle": "Discovery"
+                },
+                {
+                    "key": "yandexmaps_disc_button",
+                    "title": "Discovery shutter button",
+                    "description": "Removes the map button from the Discovery shutter content (author-style).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_discovery",
+                    "categoryTitle": "Discovery"
+                },
+                {
+                    "key": "yandexmaps_taxi_banners",
+                    "title": "Hide taxi banner",
+                    "description": "Forces the main-card taxi banner flag off (ExperimentsState). Supplements the place-card taxi button removal.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_taxi",
+                    "categoryTitle": "Taxi"
+                },
+                {
+                    "key": "yandexmaps_taxi_route",
+                    "title": "Taxi on route screen",
+                    "description": "Keeps the taxi option offered on the single-route screen (SingleRouteType noTaxi flag). Turn off to hide taxi there.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_taxi",
+                    "categoryTitle": "Taxi"
+                },
+                {
+                    "key": "yandexmaps_taxi_car",
+                    "title": "Taxi in route cards",
+                    "description": "Keeps the taxi snippet inside mixed route cards (route grouping). Turn off to exclude taxi from route cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_taxi",
+                    "categoryTitle": "Taxi"
+                },
+                {
+                    "key": "yandexmaps_tab_taxi",
+                    "title": "Taxi tab",
+                    "description": "Shows the taxi tab on the main screen (new and old tab-bar designs). Turn off to hide it.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_tabs",
+                    "categoryTitle": "Tabs"
+                },
+                {
+                    "key": "yandexmaps_tab_refuel",
+                    "title": "Refuel tab",
+                    "description": "Shows the refuel tab on the main screen (new and old tab-bar designs). Turn off to hide it.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_tabs",
+                    "categoryTitle": "Tabs"
+                },
+                {
+                    "key": "yandexmaps_tab_services",
+                    "title": "Filter bottom tab bar",
+                    "description": "Drops hidden taxi/refuel tabs from the bottom tab-bar config (BottomTabServices). No-op while both tabs are enabled.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_tabs",
+                    "categoryTitle": "Tabs"
+                },
+                {
+                    "key": "yandexmaps_search_line",
+                    "title": "Search icon shortcut",
+                    "description": "Long-press on the menu/search icons of the search line opens the PixelExtraParts settings.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_search",
+                    "categoryTitle": "Search"
+                },
+                {
+                    "key": "yandexmaps_search_history",
+                    "title": "Search history",
+                    "description": "Shows history on the search start screen. Turn off to force the DISABLED history mode.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_search",
+                    "categoryTitle": "Search"
+                },
+                {
+                    "key": "yandexmaps_search_rubrics",
+                    "title": "Luxury rubrics",
+                    "description": "Shows premium rubric cards on the search start screen. Turn off to hide them.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_search",
+                    "categoryTitle": "Search"
+                },
+                {
+                    "key": "yandexmaps_prof_plus",
+                    "title": "Plus in profile",
+                    "description": "Removes the Plus upsell from the profile (menu icons and promo row).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_profile",
+                    "categoryTitle": "Profile"
+                },
+                {
+                    "key": "yandexmaps_prof_advertiser",
+                    "title": "Advertiser in profile",
+                    "description": "Disables the 'advertise your business' (PlaceAd) item in the profile carousel.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_profile",
+                    "categoryTitle": "Profile"
+                },
+                {
+                    "key": "yandexmaps_prof_company",
+                    "title": "Company in profile",
+                    "description": "Skips the 'is this your company?' tooltip on the main tab.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_profile",
+                    "categoryTitle": "Profile"
+                },
+                {
+                    "key": "yandexmaps_prof_promo",
+                    "title": "Promo in profile",
+                    "description": "Removes the promo/game banner from the profile.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_profile",
+                    "categoryTitle": "Profile"
+                },
+                {
+                    "key": "yandexmaps_mus_auth",
+                    "title": "Music subscription",
+                    "description": "Reports an active music subscription to the app (unlocks music features in guidance).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_profile",
+                    "categoryTitle": "Profile"
+                },
+                {
+                    "key": "yandexmaps_navi_guidance_ad",
+                    "title": "Guidance advert",
+                    "description": "Stops route-position updates flowing into the car-guidance advert (billboard) controller.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_navi_car_banner",
+                    "title": "Car guidance banner",
+                    "description": "Never allows the car-guidance banner ad to be shown by its view.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_navi_ped_banner",
+                    "title": "Pedestrian banner",
+                    "description": "Keeps the pedestrian/eco guidance ads banner unpopulated.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_navi_routes",
+                    "title": "Routes places",
+                    "description": "Drops place entries from the navi suggest (routes) list.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_navi_refuel_toolbar",
+                    "title": "Refuel in toolbar",
+                    "description": "Removes the refuel entry from the navi-shutter rubrics grid.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_navi_refuel_settings",
+                    "title": "Refuel in settings",
+                    "description": "Removes the Refuel row from the settings screen list.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_navi",
+                    "categoryTitle": "Navigation"
+                },
+                {
+                    "key": "yandexmaps_misc_notif_cache",
+                    "title": "Notifications cache",
+                    "description": "Makes config-cache reads miss, so no stale cached payload (notifications/intro) is served.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": false,
+                    "category": "yandexmaps_fast_misc",
+                    "categoryTitle": "Misc"
+                },
+                {
+                    "key": "yandexmaps_misc_transport",
+                    "title": "Transport card",
+                    "description": "Disables the TransportCard experiment flags (stock-off behavior).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_misc",
+                    "categoryTitle": "Misc"
+                },
+                {
+                    "key": "yandexmaps_ad_promo",
+                    "title": "Promo blocks",
+                    "description": "Removes promo campaign blocks from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                },
+                {
+                    "key": "yandexmaps_ad_text",
+                    "title": "Text advertisement",
+                    "description": "Removes the bottom text advertisement from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                },
+                {
+                    "key": "yandexmaps_ad_advertiser",
+                    "title": "Become advertiser",
+                    "description": "Removes the 'become advertiser' row (verified-owner badge stays).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                },
+                {
+                    "key": "yandexmaps_ad_plus",
+                    "title": "Plus offers",
+                    "description": "Removes the Plus upsell block from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                },
+                {
+                    "key": "yandexmaps_ad_offers",
+                    "title": "Org offer banners",
+                    "description": "Removes organization offer banners and badges.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                },
+                {
+                    "key": "yandexmaps_ad_search",
+                    "title": "Search banner",
+                    "description": "Removes the search banner block from place cards.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "yandexmaps_fast_ads",
+                    "categoryTitle": "Placecard ads"
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "description": "Vulkan-рендер и чистка интерфейса Яндекс Карт.",
+            "main": [
+                {
+                    "id": "yandexmaps-fast",
+                    "title": "Yandex Maps Fast",
+                    "subtitle": "Рендер и чистка интерфейса",
+                    "settings": [
+                        {
+                            "key": "yandexmaps_vulkan_enabled",
+                            "title": "Vulkan render",
+                            "description": "Принудительно использует Vulkan вместо OpenGL. Убирает ~10с загрузки карты на GPU из блоклиста.",
+                            "category": "yandexmaps_fast_render",
+                            "categoryTitle": "Путь рендера",
+                            "categoryDescription": "Применяется при следующем холодном старте Яндекс Карт."
+                        },
+                        {
+                            "key": "yandexmaps_no_taxi",
+                            "title": "Скрыть кнопку такси",
+                            "description": "Убирает кнопку цены такси из карточек мест.",
+                            "category": "yandexmaps_fast_declutter",
+                            "categoryTitle": "Чистка интерфейса",
+                            "categoryDescription": "Скрывает промо и рекламу."
+                        },
+                        {
+                            "key": "yandexmaps_feed_mode",
+                            "title": "Лента Discovery",
+                            "description": "Свернута по умолчанию. var1: наш даунгрейд якорей. var2: подавление контента по автору. off: сток.",
+                            "options": [
+                                {
+                                    "value": "off",
+                                    "label": "Off"
+                                },
+                                {
+                                    "value": "var1",
+                                    "label": "var1 (ours)"
+                                },
+                                {
+                                    "value": "var2",
+                                    "label": "var2 (author)"
+                                }
+                            ],
+                            "category": "yandexmaps_fast_declutter"
+                        },
+                        {
+                            "key": "yandexmaps_disc_tab",
+                            "title": "Вкладка Discovery на главном экране",
+                            "description": "Скрывает входную вкладку Discovery на главном экране (гейт вкладки по автору).",
+                            "category": "yandexmaps_fast_discovery",
+                            "categoryTitle": "Лента Discovery"
+                        },
+                        {
+                            "key": "yandexmaps_disc_objects",
+                            "title": "Объекты ленты Discovery",
+                            "description": "Очищает списки объектов и фильтров шторки Discovery (подавление контента по автору).",
+                            "category": "yandexmaps_fast_discovery",
+                            "categoryTitle": "Лента Discovery"
+                        },
+                        {
+                            "key": "yandexmaps_disc_button",
+                            "title": "Кнопка шторки Discovery",
+                            "description": "Убирает кнопку карты из контента шторки Discovery (по автору).",
+                            "category": "yandexmaps_fast_discovery",
+                            "categoryTitle": "Лента Discovery"
+                        },
+                        {
+                            "key": "yandexmaps_taxi_banners",
+                            "title": "Скрыть баннер такси",
+                            "description": "Отключает флаг баннера такси на главной карточке (ExperimentsState). Дополняет удаление кнопки такси из карточек мест.",
+                            "category": "yandexmaps_fast_taxi",
+                            "categoryTitle": "Такси"
+                        },
+                        {
+                            "key": "yandexmaps_taxi_route",
+                            "title": "Такси на экране маршрута",
+                            "description": "Оставляет вариант такси на экране одиночного маршрута (флаг noTaxi). Выключите, чтобы скрыть такси.",
+                            "category": "yandexmaps_fast_taxi",
+                            "categoryTitle": "Такси"
+                        },
+                        {
+                            "key": "yandexmaps_taxi_car",
+                            "title": "Такси в карточках маршрутов",
+                            "description": "Оставляет сниппет такси в смешанных карточках маршрутов (группировка). Выключите, чтобы убрать такси из карточек.",
+                            "category": "yandexmaps_fast_taxi",
+                            "categoryTitle": "Такси"
+                        },
+                        {
+                            "key": "yandexmaps_tab_taxi",
+                            "title": "Вкладка такси",
+                            "description": "Показывает вкладку такси на главном экране (новый и старый дизайн таб-бара). Выключите, чтобы скрыть.",
+                            "category": "yandexmaps_fast_tabs",
+                            "categoryTitle": "Вкладки"
+                        },
+                        {
+                            "key": "yandexmaps_tab_refuel",
+                            "title": "Вкладка заправок",
+                            "description": "Показывает вкладку заправок на главном экране (новый и старый дизайн таб-бара). Выключите, чтобы скрыть.",
+                            "category": "yandexmaps_fast_tabs",
+                            "categoryTitle": "Вкладки"
+                        },
+                        {
+                            "key": "yandexmaps_tab_services",
+                            "title": "Фильтр таб-бара",
+                            "description": "Убирает скрытые вкладки такси/заправок из конфига нижнего таб-бара (BottomTabServices). Не действует, пока обе вкладки включены.",
+                            "category": "yandexmaps_fast_tabs",
+                            "categoryTitle": "Вкладки"
+                        },
+                        {
+                            "key": "yandexmaps_search_line",
+                            "title": "Шорткат иконки поиска",
+                            "description": "Долгое нажатие на иконки меню/поиска в строке поиска открывает настройки PixelExtraParts.",
+                            "category": "yandexmaps_fast_search",
+                            "categoryTitle": "Поиск"
+                        },
+                        {
+                            "key": "yandexmaps_search_history",
+                            "title": "История поиска",
+                            "description": "Показывает историю на стартовом экране поиска. Выключите, чтобы принудительно отключить историю (DISABLED).",
+                            "category": "yandexmaps_fast_search",
+                            "categoryTitle": "Поиск"
+                        },
+                        {
+                            "key": "yandexmaps_search_rubrics",
+                            "title": "Премиум-рубрики",
+                            "description": "Показывает премиальные карточки рубрик на стартовом экране поиска. Выключите, чтобы скрыть.",
+                            "category": "yandexmaps_fast_search",
+                            "categoryTitle": "Поиск"
+                        },
+                        {
+                            "key": "yandexmaps_prof_plus",
+                            "title": "Плюс в профиле",
+                            "description": "Убирает апсейл Плюса из профиля (иконки меню и промо-строка).",
+                            "category": "yandexmaps_fast_profile",
+                            "categoryTitle": "Профиль"
+                        },
+                        {
+                            "key": "yandexmaps_prof_advertiser",
+                            "title": "Реклама в профиле",
+                            "description": "Отключает пункт «реклама бизнеса» в карусели профиля.",
+                            "category": "yandexmaps_fast_profile",
+                            "categoryTitle": "Профиль"
+                        },
+                        {
+                            "key": "yandexmaps_prof_company",
+                            "title": "Компания в профиле",
+                            "description": "Не показывает тултип «это ваша компания?» на главной.",
+                            "category": "yandexmaps_fast_profile",
+                            "categoryTitle": "Профиль"
+                        },
+                        {
+                            "key": "yandexmaps_prof_promo",
+                            "title": "Промо в профиле",
+                            "description": "Убирает промо-баннер из профиля.",
+                            "category": "yandexmaps_fast_profile",
+                            "categoryTitle": "Профиль"
+                        },
+                        {
+                            "key": "yandexmaps_mus_auth",
+                            "title": "Подписка на музыку",
+                            "description": "Сообщает приложению об активной подписке на музыку (открывает музыку в навигации).",
+                            "category": "yandexmaps_fast_profile",
+                            "categoryTitle": "Профиль"
+                        },
+                        {
+                            "key": "yandexmaps_navi_guidance_ad",
+                            "title": "Реклама в навигации",
+                            "description": "Не отдаёт позицию маршрута в контроллер рекламы в навигации.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_navi_car_banner",
+                            "title": "Баннер в автонавигации",
+                            "description": "Запрещает показ рекламного баннера в автомобильной навигации.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_navi_ped_banner",
+                            "title": "Баннер в пешеходной навигации",
+                            "description": "Не заполняет рекламный баннер в пешеходной навигации.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_navi_routes",
+                            "title": "Места в маршрутах",
+                            "description": "Убирает места из списка подсказок маршрутов в навигации.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_navi_refuel_toolbar",
+                            "title": "Заправки в шторке",
+                            "description": "Убирает пункт заправок из сетки рубрик шторки навигации.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_navi_refuel_settings",
+                            "title": "Заправки в настройках",
+                            "description": "Убирает строку «Заправки» из списка настроек.",
+                            "category": "yandexmaps_fast_navi",
+                            "categoryTitle": "Навигация"
+                        },
+                        {
+                            "key": "yandexmaps_misc_notif_cache",
+                            "title": "Кеш уведомлений",
+                            "description": "Обнуляет чтение кеша конфигов: закэшированные уведомления/интро не показываются.",
+                            "category": "yandexmaps_fast_misc",
+                            "categoryTitle": "Прочее"
+                        },
+                        {
+                            "key": "yandexmaps_misc_transport",
+                            "title": "Транспортная карта",
+                            "description": "Отключает экспериментальные флаги транспортной карты (штатное «выключено»).",
+                            "category": "yandexmaps_fast_misc",
+                            "categoryTitle": "Прочее"
+                        },
+                        {
+                            "key": "yandexmaps_ad_promo",
+                            "title": "Промо-блоки",
+                            "description": "Убирает промо-блоки из карточек мест.",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        },
+                        {
+                            "key": "yandexmaps_ad_text",
+                            "title": "Текстовая реклама",
+                            "description": "Убирает нижнюю текстовую рекламу из карточек мест.",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        },
+                        {
+                            "key": "yandexmaps_ad_advertiser",
+                            "title": "Стать рекламодателем",
+                            "description": "Убирает строку «стать рекламодателем» (бейдж владельца остаётся).",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        },
+                        {
+                            "key": "yandexmaps_ad_plus",
+                            "title": "Плюс-офферы",
+                            "description": "Убирает апсейл Плюса из карточек мест.",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        },
+                        {
+                            "key": "yandexmaps_ad_offers",
+                            "title": "Офферы организаций",
+                            "description": "Убирает баннеры и бейджи офферов организаций.",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        },
+                        {
+                            "key": "yandexmaps_ad_search",
+                            "title": "Поисковый баннер",
+                            "description": "Убирает поисковый баннер из карточек мест.",
+                            "category": "yandexmaps_fast_ads",
+                            "categoryTitle": "Реклама в карточках"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

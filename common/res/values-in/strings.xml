@@ -1,0 +1,1374 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- General / Navigation -->
+    <string name="os_title_activity">Fisika Gulir</string>
+    <string name="os_title_playground">Playground (Uji)</string>
+    <string name="os_btn_back">Kembali</string>
+    <string name="btn_back">Kembali</string>
+    <string name="os_btn_reset">Atur ulang pengaturan</string>
+    <string name="os_msg_reset_done">Dikembalikan ke pengaturan default</string>
+    <string name="os_msg_import_success">Pengaturan berhasil diimpor</string>
+    <string name="os_msg_app_exists">Aplikasi ini sudah ada di daftar</string>
+
+    <!-- Master Switch (Dynamic) -->
+    <!-- Xposed Mode -->
+    <string name="os_label_master_xposed">Modul Xposed</string>
+    <string name="os_desc_master_xposed">Menggunakan framework Xposed untuk menghook kelas sistem EdgeEffect.\n\nMemungkinkan injeksi fisika ke semua aplikasi tanpa memodifikasi sistem. Jika modul tidak aktif di LSPosed, efek hanya akan bekerja di aplikasi ini (mode demo).</string>
+    
+    <!-- Native Mode -->
+    <string name="os_label_master_native">Integrasi Sistem</string>
+    <string name="os_desc_master_native">Mengaktifkan implementasi fisika bawaan firmware (Native).\n\nBekerja langsung melalui kelas sistem Pixel Parts tanpa hook, menjamin performa dan kompatibilitas maksimal.</string>
+
+    <!-- SystemUI Settings -->
+    <string name="sysui_settings_title">Pengaturan SystemUI</string>
+    <string name="sysui_lockscreen_title">Pengaturan Layar Kunci</string>
+    <string name="sysui_lockscreen_subtitle">Konfigurasi informasi pengisian daya dan gestur di layar kunci</string>
+
+    <string name="sysui_shade_title">Panel Notifikasi</string>
+    <string name="sysui_shade_subtitle">Pemutar kompak dan scrim</string>
+
+    <!-- Magnifier (text loupe) -->
+    <string name="magnifier_section_title">Kaca Pembesar Teks</string>
+    <string name="magnifier_enable_title">Zoom Kustom</string>
+    <string name="magnifier_enable_summary">Ubah tingkat pembesaran kaca pembesar teks</string>
+    <string name="magnifier_zoom_title">Tingkat Pembesaran</string>
+    <string name="magnifier_size_title">Ukuran Jendela</string>
+    <string name="magnifier_shape_title">Bentuk Jendela</string>
+    <string name="magnifier_shape_default">Default</string>
+    <string name="magnifier_shape_square">Persegi</string>
+    <string name="magnifier_shape_circle">Lingkaran</string>
+    <string name="magnifier_offset_y_title">Offset Vertikal</string>
+    <string name="magnifier_xposed_warning_title">Modul Xposed Diperlukan</string>
+    <string name="magnifier_xposed_warning_desc">Modifikasi kaca pembesar bekerja per-aplikasi. Aktifkan modul Xposed untuk setiap aplikasi tempat kaca pembesar yang dimodifikasi harus muncul.</string>
+    <string name="magnifier_preview_label">Pratinjau</string>
+    <string name="magnifier_sample_text">Teks contoh untuk pengujian kaca pembesar</string>
+    <string name="overscroll_xposed_warning_title">Modul Xposed Diperlukan</string>
+    <string name="overscroll_xposed_warning_desc">Modifikasi overscroll bekerja per-aplikasi. Aktifkan modul Xposed untuk setiap aplikasi tempat efek tepi yang dimodifikasi harus muncul.</string>
+
+    <string name="sysui_media_player_title">Pemutar Media</string>
+    <string name="sysui_media_compact_mode_title">Mode Kompak</string>
+    <string name="sysui_media_compact_mode_off">Nonaktif</string>
+    <string name="sysui_media_compact_mode_small">Kompak</string>
+    <string name="sysui_media_compact_mode_header">Hanya Header</string>
+    <string name="sysui_media_compact_mode_very_small">Sangat Kompak</string>
+
+    <string name="sysui_media_bg_alpha_title">Opasitas latar pemutar</string>
+
+    <string name="sysui_media_hide_title">Sembunyikan pemutar media</string>
+    <string name="sysui_media_hide_qs">Sembunyikan di Pengaturan Cepat</string>
+    <string name="sysui_media_hide_notifications">Sembunyikan di notifikasi</string>
+    <string name="sysui_media_hide_lockscreen">Sembunyikan di layar kunci</string>
+
+    <string name="sysui_shade_surface_title">Latar panel</string>
+    <string name="sysui_shade_surface_solid">Panel solid (tanpa scrim)</string>
+    <string name="sysui_shade_blur_title">Blur latar belakang</string>
+    <string name="sysui_shade_zoom_title">Zoom latar belakang</string>
+    <string name="sysui_shade_disable_scale_threshold_title">Nonaktifkan ambang batas skala</string>
+    <string name="sysui_shade_scrim_title">Kustomisasi scrim</string>
+    <string name="sysui_shade_notif_scrim_alpha_title">Alpha scrim notifikasi</string>
+    <string name="sysui_shade_main_scrim_alpha_title">Alpha scrim utama</string>
+    <string name="sysui_shade_notif_scrim_tint_title">Warna scrim notifikasi</string>
+    <string name="sysui_shade_notif_scrim_tint_color">Warna tint</string>
+    <string name="sysui_shade_main_scrim_tint_title">Warna scrim utama</string>
+    <string name="sysui_shade_main_scrim_tint_color">Warna tint</string>
+    <string name="sysui_shade_override_enable">Pengali alpha relatif</string>
+
+    <string name="sysui_charging_info_title">Informasi Pengisian Daya</string>
+    <string name="sysui_charging_info_enable">Aktifkan informasi pengisian daya kustom</string>
+    <string name="sysui_show_wattage">Tampilkan daya</string>
+    <string name="sysui_show_voltage">Tampilkan tegangan</string>
+    <string name="sysui_show_current">Tampilkan arus (mA)</string>
+    <string name="sysui_show_temp">Tampilkan suhu baterai</string>
+    <string name="sysui_show_percent">Tampilkan level baterai</string>
+    <string name="sysui_show_standard">Tampilkan teks standar (Cepat/Lambat)</string>
+    <string name="sysui_show_custom_symbol">Tampilkan simbol kustom</string>
+    <string name="sysui_custom_symbol">Simbol kustom (mis: ⚡)</string>
+    <string name="sysui_sensor_interval_title">Interval pembaruan sensor</string>
+    <string name="sysui_average_mode_title">Tampilkan nilai rata-rata pengisian daya</string>
+
+
+    <string name="os_status_active">Aktif</string>
+    <string name="os_status_disabled">Nonaktif</string>
+    
+    <!-- Xposed Dialogs -->
+    <string name="os_dialog_xposed_title">Xposed tidak aktif</string>
+    <string name="os_dialog_xposed_msg">Tidak dapat memasang hook.\n\nAplikasi tidak mendeteksi framework LSPosed yang aktif. Tanpa itu, intersepsi panggilan sistem tidak mungkin; pengaturan hanya akan bekerja di dalam aplikasi ini.</string>
+
+    <!-- Profiles UI -->
+    <string name="os_group_profiles">Profil</string>
+    <string name="os_prof_btn_export">Ekspor</string>
+    <string name="os_prof_btn_import">Impor</string>
+    <string name="os_prof_btn_network">Konfigurasi Online</string>
+    <string name="os_prof_btn_create">Simpan profil baru</string>
+    <string name="os_prof_header_list">Profil tersimpan</string>
+    <string name="os_net_dialog_title">Konfigurasi Online</string>
+    <string name="os_net_loading">Memuat…</string>
+    <string name="os_net_empty">Konfigurasi tidak ditemukan</string>
+    <string name="os_net_error">Gagal memuat</string>
+    <string name="os_net_applied">Konfigurasi diterapkan: %s</string>
+    <string name="os_prof_item_active">Aktif</string>
+    <string name="os_prof_item_tap">Ketuk untuk memuat</string>
+    <string name="os_prof_dialog_title">Profil Baru</string>
+    <string name="os_prof_dialog_hint">Masukkan nama profil</string>
+    <string name="os_prof_btn_save">Simpan</string>
+    <string name="btn_save">Simpan</string>
+    <string name="os_prof_delete_desc">Hapus profil</string>
+
+    <!-- Physics Group -->
+    <string name="os_group_physics">Fisika Pegas</string>
+
+    <string name="os_lbl_physics_pull">Faktor tarik</string>
+    <string name="os_desc_physics_pull">Pengali jarak saat menarik manual (onPull).\n\n• Nilai &gt;= 1.0: mengikuti jari secara linear.\n• Nilai &lt; 1.0: mengaktifkan resistensi nonlinear (karet gelang) — semakin jauh ditarik, semakin kuat resistensinya.</string>
+
+    <string name="os_lbl_physics_stiffness">Kekakuan</string>
+    <string name="os_desc_physics_stiffness">Konstanta pegas (k).\n\nMenentukan kekuatan yang mengembalikan daftar ke posisi awal. Mempengaruhi frekuensi osilasi saat memantul.</string>
+
+    <string name="os_lbl_physics_damping">Peredaman</string>
+    <string name="os_desc_physics_damping">Rasio peredaman (ζ).\n\nMenyerap energi pegas. Menentukan seberapa cepat osilasi mereda setelah dilepas atau menabrak tepi.</string>
+
+    <string name="os_lbl_physics_fling">Impuls lemparan</string>
+    <string name="os_desc_physics_fling">Pengali kecepatan masuk pada onAbsorb (benturan inersia).\n\nMeningkatkan amplitudo pantulan saat pengguliran cepat.\nCatatan: untuk nilai tinggi (&gt;1.0), kode secara dinamis mengurangi kekakuan pegas agar benturan terasa lebih "lembut".</string>
+
+    <string name="os_lbl_physics_res_exp">Kurva resistensi</string>
+    <string name="os_desc_physics_res_exp">Nilai eksponen rumus resistensi.\n\nHanya bekerja jika faktor tarik &lt; 1.0. Menentukan kecuraman pertumbuhan gaya saat menarik di tepi.</string>
+
+    <!-- Visual Scales -->
+    <string name="os_mode_off">Nonaktif</string>
+    <string name="os_mode_shrink">Kompres</string>
+    <string name="os_mode_grow">Renggang</string>
+    <string name="os_lbl_scale_mode">Mode deformasi</string>
+    <string name="os_lbl_scale_int">Intensitas</string>
+    <string name="os_lbl_scale_limit">Batas</string>
+    <string name="os_lbl_anchor_x">Titik jangkar X</string>
+    <string name="os_lbl_anchor_y">Titik jangkar Y</string>
+
+    <string name="os_group_visual_vert">Deformasi vertikal</string>
+    <string name="os_desc_visual_vert">Mengubah skala (ScaleY) konten RenderNode secara vertikal.\n\n• Kompres: meratakan konten saat benturan.\n• Renggang: memanjangkan konten (efek karet).</string>
+
+    <string name="os_group_visual_zoom">Zoom (skala XY)</string>
+    <string name="os_desc_visual_zoom">Mengubah skala keseluruhan (ScaleX dan ScaleY) dari seluruh kontainer.\n\nMenciptakan efek zoom saat berinteraksi dengan tepi.</string>
+
+    <string name="os_group_visual_horz">Deformasi horizontal</string>
+    <string name="os_desc_visual_horz">Mengubah skala (ScaleX) sepanjang lebar.\n\nMemungkinkan "efek barel" atau penyempitan daftar saat menarik.</string>
+
+    <string name="misc_group_title">Lain-lain</string>
+
+    <string name="os_desc_scale_intensity">Koefisien pengaruh perpindahan terhadap skala. Semakin tinggi nilainya, semakin kuat distorsi pada perpindahan yang sama.</string>
+    <string name="os_desc_scale_limit">Batas keras distorsi (min/maks skala) untuk mencegah artefak visual saat tarikan kuat.</string>
+    <string name="os_desc_scale_anchor">Koordinat titik di mana penskalaan dilakukan (0.0 - 1.0). 0.5 adalah pusat.</string>
+
+    <string name="os_lbl_min_vel">Cutoff kecepatan</string>
+    <string name="os_desc_min_vel">Ambang batas peluruhan kecepatan pegas.\n\nMenentukan kapan perhitungan fisika dihentikan paksa. Jika kecepatan pegas turun di bawah nilai ini, animasi berakhir. Membantu menghindari getaran mikro di akhir.</string>
+
+    <string name="os_lbl_min_val">Cutoff amplitudo</string>
+    <string name="os_desc_min_val">Ambang batas peluruhan amplitudo.\n\nJika perpindahan yang tersisa (dalam piksel) menjadi lebih kecil dari nilai ini, animasi dianggap selesai. Meningkatkan membuat kembalinya ke keadaan awal terlihat lebih tajam dan lebih cepat.</string>
+
+    <!-- Anchor Logic -->
+    <string name="os_lbl_invert_anchor">Jangkar pintar</string>
+    <string name="os_desc_invert_anchor">Secara otomatis membalikkan koordinat jangkar saat berinteraksi dengan tepi kanan atau bawah.\n\n• AKTIF: koordinat 0.0 selalu berarti "tepi yang ditarik".\n• NONAKTIF: koordinat bersifat absolut (0.0 selalu kiri/atas, 1.0 selalu kanan/bawah), terlepas dari arah swipe.</string>
+
+    <!-- Horizontal Specific Anchors -->
+    <string name="os_lbl_anchor_x_horiz">Jangkar X (Horizontal)</string>
+    <string name="os_desc_anchor_x_horiz">Titik skala sepanjang sumbu utama (arah gulir) untuk daftar horizontal.\n\nMenentukan bagian mana dari lebar layar yang terutama terdistorsi saat menarik.</string>
+
+    <string name="os_lbl_anchor_y_horiz">Jangkar Y (Horizontal)</string>
+    <string name="os_desc_anchor_y_horiz">Titik skala sepanjang sumbu melintang (tinggi) untuk daftar horizontal.\n\nMemungkinkan menggeser pusat efek ke atas atau bawah relatif terhadap pusat daftar.</string>
+    <string name="os_lbl_scale_int_horiz">Intensitas (Horizontal)</string>
+    <string name="os_desc_scale_int_horiz">Menentukan kekuatan efek khusus untuk daftar horizontal (LazyRow, ViewPager). Memungkinkan pengaturan terpisah dari pengguliran vertikal.</string>
+
+
+    <!-- Advanced -->
+    <string name="os_group_advanced">Parameter sistem</string>
+    
+    <string name="os_lbl_input_smooth">Filter masukan</string>
+    <string name="os_desc_input_smooth">Filter low-pass untuk koordinat jari pada onPull.\n\nMenghaluskan noise sensor sebelum dikirim ke model fisika. Nilai tinggi membuat respons terasa "kental".</string>
+    <string name="os_lbl_anim_speed">Kecepatan animasi (%)</string>
+    <string name="os_desc_anim_speed">Pengali global kecepatan animasi.\n\nDiterapkan pada semua pengaturan fisika dan visual.\n100%% = kecepatan standar, di bawah 100%% memperlambat, di atas 100%% mempercepat.</string>
+    <string name="os_lbl_lerp_idle">Penghalusan: JARI</string>
+    <string name="os_desc_lerp_idle">Kecepatan interpolasi (LERP) saat interaksi langsung (onPull).\n\nMenentukan seberapa cepat grafik mengikuti jari saat pegas TIDAK berjalan (nonaktif). Lebih rendah = lebih halus, tetapi dengan jeda.</string>
+
+    <string name="os_lbl_lerp_run">Penghalusan: PEGAS</string>
+    <string name="os_desc_lerp_run">Kecepatan interpolasi (LERP) selama animasi aktif (onRelease/onAbsorb).\n\nMenentukan kehalusan gerakan saat model fisika berjalan (pegas aktif).</string>
+
+    <string name="os_lbl_compose_scale">Pembagi Compose</string>
+    <string name="os_desc_compose_scale">Koefisien normalisasi untuk Jetpack Compose.\n\nCompose mengirimkan delta gulir dalam satuan lain atau mengakumulasinya secara berbeda. Pembagi ini mengurangi nilai onPull yang masuk untuk menyelaraskan fisika dengan sistem View.</string>
+
+    <!-- Apps -->
+    <string name="os_group_apps">Konfigurasi Aplikasi</string>
+    <string name="os_btn_add_app">Tambah aplikasi</string>
+    <string name="os_btn_cancel">Batal</string>
+    <string name="btn_cancel">Batal</string>
+    <string name="btn_restart_launcher">Terapkan dan mulai ulang launcher</string>
+    
+    <!-- App Config Items -->
+    <string name="os_app_filter">Penghalusan</string>
+    <string name="os_app_ignore">Nonaktifkan</string>
+    <string name="os_app_scale">Pengali individual</string>
+    <string name="os_app_select_title">Pilih aplikasi</string>
+    <string name="os_app_search_hint">Cari berdasarkan nama atau paket...</string>
+    
+    <!-- Other -->
+    <string name="os_card_example_text">Konten contoh untuk pengujian fisika.</string>
+
+    <!-- THERMAL MANAGER -->
+    <string name="thermal_title">Profil Termal</string>
+    
+    <!-- Info Header -->
+    <string name="thermal_info_title">Cara Kerja (Tensor)</string>
+    <string name="thermal_info_summary">Berbeda dengan chip Qualcomm, manajemen panas Google Tensor tidak melalui parameter kernel langsung, melainkan melalui file konfigurasi (thermal_info_config.json).\n\nModul ini bekerja di level sistem: mengubah properti khusus (prop) yang memaksa layanan Thermal HAL memuat file konfigurasi alternatif dengan ambang batas throttling yang berbeda.\n\nIni adalah metode penyesuaian yang aman dan "native" yang dirancang oleh arsitektur Pixel. Diperlukan restart untuk menerapkan perubahan.</string>
+
+    <!-- Sections -->
+    <string name="thermal_sec_battery">Baterai</string>
+    <string name="thermal_sec_soc">Prosesor (SoC)</string>
+
+    <!-- Modes -->
+    <string name="thermal_mode_stock">Bawaan</string>
+    <string name="thermal_mode_soft">Ringan (+5°C)</string>
+    <string name="thermal_mode_medium">Sedang (+9°C)</string>
+    <string name="thermal_mode_hard">Agresif (+15°C)</string>
+    <string name="thermal_mode_off">Ekstrem (Nonaktif)</string>
+
+    <!-- Battery Descriptions -->
+    <string name="thermal_desc_bat_stock">Batas pabrik default. Memastikan keamanan dan masa pakai baterai maksimal.</string>
+    <string name="thermal_desc_bat_soft">Sedikit menaikkan ambang batas (+5°C). Membantu menghindari perlambatan pengisian daya saat pemanasan moderat.</string>
+    <string name="thermal_desc_bat_medium">Profil seimbang (+9°C). Kompromi antara kecepatan pengisian daya dan panas bodi.</string>
+    <string name="thermal_desc_bat_hard">PERINGATAN: Batas tinggi (+15°C). Pemanasan yang terasa saat pengisian cepat mungkin terjadi. Mempercepat degradasi kimia baterai.</string>
+    <string name="thermal_desc_bat_off">BAHAYA: Perlindungan panas hampir sepenuhnya dinonaktifkan (+90°C). Risiko tinggi pembengkakan baterai dan kerusakan perangkat.</string>
+
+    <!-- SoC Descriptions -->
+    <string name="thermal_desc_soc_stock">Algoritma default. Penurunan frekuensi agresif (throttling) untuk menjaga suhu bodi tetap rendah.</string>
+    <string name="thermal_desc_soc_soft">Profil ringan (+5°C). Mengizinkan prosesor mempertahankan frekuensi tinggi lebih lama di bawah beban.</string>
+    <string name="thermal_desc_soc_medium">Optimal untuk gaming (+9°C). Secara signifikan mengurangi penurunan FPS, bodi akan hangat.</string>
+    <string name="thermal_desc_soc_hard">Performa maksimal (+15°C). Perangkat bisa menjadi sangat panas. Disarankan hanya untuk tugas singkat.</string>
+    <string name="thermal_desc_soc_off">EKSTREM: Throttling dinonaktifkan. Prosesor akan panas hingga shutdown darurat. Hanya untuk benchmark.</string>
+
+    <!-- Dialogs -->
+    <string name="thermal_dialog_reboot_title">Perlu restart</string>
+    <string name="thermal_dialog_safe_msg">Profil termal baru dipilih.\n\nLayanan Thermal HAL akan membaca pengaturan baru saat startup sistem berikutnya. Restart perangkat sekarang?</string>
+    <string name="thermal_dialog_risk_msg">PERHATIAN: Anda telah memilih mode suhu agresif!\n\nIni dapat menyebabkan pemanasan bodi yang kuat dan degradasi komponen yang dipercepat.\n\nDiperlukan restart untuk menerapkan pengaturan.</string>
+    
+    <string name="btn_ok">Mengerti</string>
+    <string name="btn_reboot">Restart</string>
+    <string name="btn_confirm">Konfirmasi</string>
+
+    <!-- Reboot Bubble -->
+    <string name="reboot_launcher">Restart Launcher</string>
+    <string name="bubble_show_desktop_icon">Tampilkan di layar utama</string>
+    <string name="reboot_systemui">Restart SystemUI</string>
+    <string name="reboot_system">Restart Sistem</string>
+    <string name="reboot_confirm_system_title">Restart perangkat?</string>
+    <string name="reboot_confirm_system_msg">Perangkat akan segera di-restart. Simpan pekerjaan Anda sebelum melanjutkan.</string>
+    <string name="reboot_confirm_sysui_title">Restart SystemUI?</string>
+    <string name="reboot_confirm_sysui_msg">SystemUI akan di-restart. Bilah navigasi, bilah status, dan notifikasi akan menghilang sebentar.</string>
+
+    <!-- LAUNCHER SETTINGS -->
+    <string name="launcher_settings_title">Lainnya</string>
+    <string name="launcher_search_section">Pencarian &amp; Navigasi</string>
+
+    <!-- Launcher Navigation Items -->
+    <string name="launcher_group_general">Umum</string>
+    <string name="launcher_search_feed_title">Pencarian &amp; Feed</string>
+    <string name="launcher_search_feed_subtitle">Konfigurasi pencarian native dan Google Feed</string>
+    <string name="launcher_group_appearance">Tampilan</string>
+    <string name="launcher_grid_title">Pengaturan Grid</string>
+    <string name="launcher_grid_subtitle">Sesuaikan baris dan kolom</string>
+    <string name="launcher_group_recents_features">Fitur Recents</string>
+    <string name="launcher_clear_all_nav_title">Tombol Hapus Semua</string>
+    <string name="launcher_clear_all_nav_subtitle">Sesuaikan perilaku tombol Hapus Semua</string>
+    <string name="launcher_group_gestures">Gestur</string>
+    <string name="launcher_gestures_title">Gestur</string>
+    <string name="launcher_gestures_subtitle">Ketuk ganda untuk tidur dan lainnya</string>
+    <string name="launcher_group_recents_customization">Kustomisasi Recents</string>
+    <string name="launcher_recents_menu_title">Menu Recents</string>
+    <string name="launcher_recents_menu_subtitle">Konfigurasi carousel, skala, blur, dan lainnya</string>
+    
+    <string name="launcher_search_title">Pencarian Native</string>
+    <string name="launcher_search_desc">Memaksa aktivasi antarmuka pencarian bawaan di Pixel Launcher.\n\nGoogle sering mengubah perilaku pencarian "server-side" dengan mengganti pencarian lokal cepat dengan peluncuran lambat aplikasi Google. Opsi ini memperbaiki flag \'device_config\' dan memulihkan pencarian cepat aplikasi dan kontak.</string>
+
+
+    <!-- //// -->
+    <string name="donate_progress_title">Progres donasi</string>
+    <string name="menu_refresh">Segarkan</string>
+    <string name="donate_open_target">Buka halaman donasi</string>
+    <string name="donate_error_loading">Gagal memuat data</string>
+    <string name="donate_retry">Coba lagi</string>
+    <string name="donate_title">Dukungan dan Tautan</string>
+    <string name="donate_desc_short">GitHub, Telegram, Boosty</string>
+    <string name="donate_header">Dukung proyek</string>
+    <string name="donate_desc_long">Jika Anda menyukai modul ini dan ingin mendukung pengembangannya, Anda bisa melakukannya melalui Boosty.</string>
+    <string name="donate_btn_boosty">Ke Boosty</string>
+    <string name="donate_links_header">Tautan berguna</string>
+    <string name="error_network">Kesalahan jaringan</string>
+    <string name="refresh_strings">String halaman diperbarui</string>
+    <string name="donate_page_updated">Halaman diperbarui</string>
+    <string name="donate_page_updated_error">Gagal memuat data</string>
+
+    <string name="launcher_clear_all_title">Tombol Hapus Semua</string>
+    <string name="launcher_clear_all_desc">Menambahkan tombol untuk menutup semua aplikasi di menu Recents.\n\nMendukung beberapa mode tampilan untuk integrasi ke antarmuka standar.</string>
+    <string name="launcher_clear_all_enable_title">Aktifkan tombol Hapus Semua</string>
+    <string name="launcher_ca_hide_actions_row_title">Sembunyikan tombol aksi default</string>
+
+    <string name="launcher_ca_mode_float">Tengah bawah</string>
+    <string name="launcher_ca_mode_screenshot">Ganti "Screenshot"</string>
+    <string name="launcher_ca_mode_select">Ganti "Pilih"</string>
+
+    <string name="launcher_ca_margin">Posisi (jarak bawah)</string>
+    <string name="launcher_btn_restart">Restart launcher</string>
+    <string name="launcher_ca_margin_desc">Mengatur posisi vertikal tombol mengambang. Nilainya adalah pengali dari jarak default.</string>
+    <string name="launcher_ca_hide_actions_row_desc">Menyembunyikan tombol sistem "Screenshot" dan "Pilih" di Recents sambil mempertahankan logika kontainer dan tombol Hapus Semua kustom Anda.</string>
+    <!-- ///// -->
+    <!-- DOUBLE TAP (DT) SETTINGS -->
+    <string name="dt_category_title">Gestur ketuk ganda</string>
+    <string name="dt_sec_wake">Bangunkan</string>
+    <string name="dt_sec_sleep">Tidurkan</string>
+
+    <!-- DT2W (Wake) -->
+    <string name="dt2w_title">Ketuk ganda untuk bangun</string>
+    
+    <string name="dt2w_desc_xposed">Hook Xposed untuk SystemUI.\n\nMengintersep event sensor di kelas DozeTriggers dan mengemulasi bangun, karena dukungan hardware sering dinonaktifkan atau dibatasi di perangkat Pixel.</string>
+    <string name="dt2w_desc_native">Integrasi sistem (Native).\n\nMenggunakan kode bawaan firmware untuk memproses event sentuh dalam mode Doze, memastikan bangun tanpa hook pihak ketiga.</string>
+    
+    <string name="dt2w_info_title">Cara kerja</string>
+    <string name="dt2w_info_desc">Ini adalah emulasi software, bukan fungsi hardware kernel.\n\n<b>Prinsip:</b>\nSistem menjaga digitizer tetap aktif di mode AOD/Doze dan menganalisis sentuhan.\n\n<b>Penting:</b>\n• Sedikit jeda mungkin terjadi karena pemrosesan software.\n• Dapat sedikit mempengaruhi konsumsi baterai (Deep Sleep).</string>
+
+    <string name="dt2w_timeout_title">Interval ketuk</string>
+    <string name="dt2w_timeout_desc">Waktu maksimum antara dua sentuhan (dalam ms) agar dianggap sebagai ketuk ganda.</string>
+
+    <!-- DT2S (Sleep) -->
+    <string name="dt2s_title">Ketuk ganda untuk tidur</string>
+    
+    <string name="dt2s_desc_xposed">Hook Xposed untuk Pixel Launcher.\n\nMengintersep method \'onTouchEvent\' di kelas Workspace launcher dan memungkinkan mengunci layar dengan mengetuk area kosong.</string>
+    <string name="dt2s_desc_native">Injeksi kode native.\n\nMenggunakan framework yang dimodifikasi untuk mendaftarkan \'ActivityLifecycleCallbacks\' di proses Launcher3. Saat Activity dimulai, root Workspace View secara otomatis ditemukan dan \'OnTouchListener\' kustom dipasang. Bekerja tanpa Xposed dan tidak memerlukan hak root untuk launcher itu sendiri.</string>
+
+    <string name="dt2s_info_title">Kekhususan DT2S</string>
+    <string name="dt2s_info_desc">Memungkinkan mematikan layar dengan mengetuk ganda pada area kosong desktop.\n\n<b>Keterbatasan:</b>\n• Hanya bekerja di Pixel Launcher.\n• Tidak merespons widget atau ikon.\n• Dapat konflik dengan gestur swipe jika "toleransi perpindahan" diatur terlalu agresif.</string>
+
+    <string name="dt2s_timeout_title">Interval ketuk</string>
+    <string name="dt2s_slop_title">Toleransi perpindahan</string>
+    <string name="dt2s_slop_desc">Jarak maksimum (dalam piksel) yang dapat ditempuh jari antara dua sentuhan. Kurangi nilainya jika ketukan sering terdeteksi sebagai swipe.</string>
+
+    <!-- COMPONENTS UI -->
+    <string name="common_range_format">Rentang: %1$d - %2$d</string>
+    <string name="common_input_label">Masukkan nilai</string>
+    <string name="common_video_placeholder">Demonstrasi video</string>
+
+    <!-- GLOBAL COMMON -->
+    <string name="app_name">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_title">Pixel Extra Parts</string>
+    <string name="settings_homepage_pixel_parts_summary">Peningkatan tambahan untuk Pixel Anda</string>
+    <string name="btn_apply">Terapkan</string>
+    <string name="btn_default">Default</string>
+    <string name="btn_close">Tutup</string>
+    <string name="btn_exit">Keluar</string>
+    <string name="btn_restart">Restart</string>
+    <string name="nav_back">Kembali</string>
+
+    <!-- Shared Dialogs -->
+    <string name="xposed_required_title">Xposed diperlukan</string>
+    <string name="xposed_required_message">Fitur ini memerlukan modul Xposed aktif.</string>
+    
+    <string name="status_active">Aktif</string>
+    <string name="status_disabled">Nonaktif</string>
+    <string name="status_error">Error</string>
+
+    <!-- MAIN ACTIVITY -->
+    <string name="main_title">Pixel Extra Parts</string>
+    <string name="main_desc">Modul dan tweak kustom</string>
+    
+    <string name="main_header_gesture">Gestur &amp; Input</string>
+    <string name="main_header_system">Sistem</string>
+    <string name="main_header_network">Jaringan &amp; Konektivitas</string>
+    <string name="main_header_launcher">Pixel Launcher</string>
+    <string name="main_header_systemui">SystemUI</string>
+    <string name="main_header_camera">Kamera</string>
+
+    <!-- Test things (debug section, hidden by default) -->
+    <string name="test_things_title">Fitur pengujian</string>
+    <string name="test_things_desc">Fitur eksperimental dalam pengembangan</string>
+    
+    <string name="main_root_title">Tidak ada akses Root</string>
+    <string name="main_root_desc">Aplikasi memerlukan hak superuser (Root) dan framework Xposed aktif.\n\nSilakan instal Magisk/KernelSU dan berikan izin.</string>
+
+    <string name="dt_desc_activity">Manajemen gestur bangun dan tidur</string>
+    <string name="launcher_title_activity">Lainnya</string>
+    <string name="os_desc_activity">Pengaturan elastisitas dan inersia gulir</string>
+    
+    <string name="dt_title_activity">Ketuk Ganda</string>
+    
+    <string name="launcher_desc_activity">Pengaturan lainnya</string>
+    
+    <string name="thermal_title_activity">Profil Termal</string>
+    
+    <string name="thermal_desc_activity">Manajemen throttling (Tensor)</string>
+
+    <string name="os_desc_anchor">Titik jangkar transformasi.</string>
+
+    <!-- Delta Normalization (Compose Smoothing) -->
+    <string name="os_group_norm">Penghalusan delta Compose</string>
+    <string name="os_desc_norm_group">Sistem normalisasi cerdas untuk implementasi gulir Jetpack Compose.\n\nCompose mengirimkan delta yang diperkuat dibandingkan gulir View klasik. Modul ini secara otomatis mendeteksi instance Compose dan secara halus mengurangi delta mereka ke level View standar.\n\nDikalibrasi secara empiris: delta Compose ~5× lebih besar dari delta View untuk gestur identik.</string>
+    <string name="os_lbl_norm_enabled">Aktifkan normalisasi</string>
+    <string name="os_desc_norm_enabled">Tombol utama normalisasi delta cerdas.\n\nSaat diaktifkan, sistem menganalisis setiap instance EdgeEffect dan menerapkan faktor koreksi pada delta Compose yang diperkuat.\n\nDapat dibiarkan aktif dengan aman — tidak mempengaruhi aplikasi dengan delta normal.</string>
+    <string name="os_lbl_norm_ref_delta">Delta referensi</string>
+    <string name="os_desc_norm_ref_delta">Nilai delta "normal" baseline (fraksi dari effectiveSize).\n\nDitentukan secara empiris dari aplikasi berbasis View. Jika rata-rata bergerak melebihi ini × pengali deteksi, instance dianggap diperkuat.\n\nDefault: 0.00001 (sangat sensitif). Naikkan jika ada deteksi palsu pada aplikasi normal.</string>
+    <string name="os_lbl_norm_detect_mul">Pengali deteksi</string>
+    <string name="os_desc_norm_detect_mul">Pengali ambang batas untuk deteksi amplifikasi.\n\nAktivasi: rata-rata_bergerak &gt; referensi × nilai ini.\n3.3 = mendeteksi Compose dengan andal (~5× dari View), tidak terpicu pada aplikasi View.\n\nNaikkan jika ada deteksi palsu, turunkan jika Compose tidak terdeteksi.</string>
+    <string name="os_lbl_norm_factor">Faktor koreksi</string>
+    <string name="os_desc_norm_factor">Pengali untuk delta yang diperkuat.\n\n0.2 = membawa ke level View (dari analisis: ref/compose ≈ 0.195).\n0.5 = bagi dua. 1.0 = tanpa perubahan.\n\nLebih kecil = pantulan lebih lemah, lebih besar = lebih kuat.</string>
+    <string name="os_lbl_norm_window">Ukuran jendela</string>
+    <string name="os_desc_norm_window">Jumlah sampel |delta| terakhir untuk analisis.\n\nLebih kecil = deteksi lebih cepat, tetapi lebih sensitif terhadap noise.\nLebih besar = lebih stabil, tetapi adaptasi lebih lambat.\n\nRentang: 2–64.</string>
+    <string name="os_lbl_norm_ramp">Event ramp-up</string>
+    <string name="os_desc_norm_ramp">Berapa event untuk transisi dari 1.0 ke faktor.\n\n1–4 = hampir instan. 8–12 = transisi halus.\n\nMencegah lompatan visual saat normalisasi diaktifkan.</string>
+    <string name="os_lbl_norm_detect_mode">Mode deteksi</string>
+    <string name="os_desc_norm_detect_mode">Bagaimana instance Compose diidentifikasi.\n\n0 = Hanya perilaku (jendela bergerak dari delta)\n1 = Hibrid: stack trace memberikan ID instan, jendela mengonfirmasi\n2 = Hanya stack trace (tanpa analisis jendela)\n\nHibrid (1) direkomendasikan untuk akurasi + kecepatan terbaik.</string>
+    <string name="os_norm_mode_behavior">Hanya perilaku</string>
+    <string name="os_norm_mode_hybrid">Hibrid (direkomendasikan)</string>
+    <string name="os_norm_mode_stacktrace">Hanya stack trace</string>
+
+    <!-- Grid Sizer / App Drawer Customization -->
+    <string name="grid_group_homepage">Kustomisasi layar utama</string>
+    <string name="grid_lbl_home_enable">Sesuaikan grid layar utama</string>
+    <string name="grid_desc_home_enable">Mengaktifkan kustomisasi kolom dan baris grid layar utama.</string>
+    
+    <string name="grid_lbl_columns">Kolom</string>
+    <string name="grid_desc_home_cols">Jumlah kolom di layar utama.</string>
+    
+    <string name="grid_lbl_rows">Baris</string>
+    <string name="grid_desc_home_rows">Jumlah baris di layar utama.</string>
+    
+    <string name="grid_lbl_hide_text">Sembunyikan label</string>
+    <string name="grid_desc_home_hide_text">Menyembunyikan label ikon di layar utama.</string>
+
+    <string name="grid_lbl_icon_size">Ukuran ikon</string>
+    <string name="grid_desc_home_icon_size">Menyesuaikan ukuran ikon di layar utama (100%% adalah default).</string>
+    <string name="grid_desc_drawer_icon_size">Menyesuaikan ukuran ikon di drawer aplikasi (100%% adalah default).</string>
+    <string name="grid_desc_dock_icon_size">Menyesuaikan ukuran ikon di dock (100%% adalah default).</string>
+
+    <string name="grid_lbl_text_mode">Mode tampilan teks</string>
+    <string name="grid_desc_text_mode">Bagaimana label ikon ditampilkan saat teks terlihat.</string>
+    <string name="grid_text_mode_default">Potong</string>
+    <string name="grid_text_mode_two_line">Dua baris</string>
+    <string name="grid_text_mode_marquee">Berjalan</string>
+
+    <string name="grid_group_drawer">Kustomisasi drawer aplikasi</string>
+    <string name="grid_lbl_drawer_enable">Sesuaikan drawer aplikasi</string>
+    <string name="grid_desc_drawer_enable">Mengaktifkan kustomisasi grid dan tata letak drawer aplikasi.</string>
+    
+    <string name="grid_lbl_drawer_cols">Kolom menu</string>
+    <string name="grid_desc_drawer_cols">Jumlah kolom di drawer aplikasi.</string>
+    
+    <string name="grid_lbl_row_height">Tinggi baris</string>
+    <string name="grid_desc_row_height">Menyesuaikan jarak vertikal antar baris di drawer aplikasi (100% adalah default).</string>
+    
+    <string name="grid_lbl_drawer_hide_text">Sembunyikan teks menu</string>
+    <string name="grid_desc_drawer_hide_text">Menyembunyikan label ikon di drawer aplikasi.</string>
+
+    <!-- Dock Grid Section -->
+    <string name="grid_group_dock">Kustomisasi dock</string>
+    <string name="grid_lbl_dock_icons">Jumlah ikon dock</string>
+    <string name="grid_desc_dock_icons">Jumlah ikon di bar dock.</string>
+    <string name="grid_lbl_dock_hide_text">Sembunyikan teks dock</string>
+    <string name="grid_desc_dock_hide_text">Menyembunyikan label ikon di dock.</string>
+
+    <string name="grid_lbl_search_cols">Kolom pencarian</string>
+    <string name="grid_desc_search_cols">Jumlah kolom untuk hasil dan saran pencarian di drawer aplikasi.</string>
+    <!-- Search Widget & Dock Section -->
+    <string name="search_widget_group_title">Widget Pencarian dan Dock</string>
+    
+    <string name="search_widget_enable_dock">Aktifkan kustomisasi dock</string>
+    <string name="search_widget_desc_dock">Tombol utama untuk semua modifikasi dock dan bilah pencarian di bawah.</string>
+    
+    <string name="search_widget_hide_search">Sembunyikan bilah pencarian</string>
+    <string name="search_widget_desc_hide_search">Menyembunyikan widget pencarian di bawah.</string>
+    
+    <string name="search_widget_hide_dock">Sembunyikan ikon dock</string>
+    <string name="search_widget_desc_hide_dock">Menyembunyikan area ikon dock bawah (Hotseat).</string>
+    <string name="pref_recents_size_summary">pref_recents_size_summary</string>
+    <string name="info_recents_size">info_recents_size</string>
+    
+    <string name="search_widget_padding_home">Padding atas layar utama</string>
+    <string name="search_widget_desc_padding_home">Menyesuaikan padding atas untuk ikon workspace (meregangkan dari atas).</string>
+    
+    <string name="search_widget_padding_home_bottom">Padding bawah layar utama</string>
+    <string name="search_widget_desc_padding_home_bottom">Menyesuaikan padding bawah untuk ikon workspace (meregangkan dari bawah).</string>
+    
+    <string name="search_widget_padding_dock">Padding ikon dock</string>
+    <string name="search_widget_desc_padding_dock">Menyesuaikan posisi vertikal ikon dock (+/-).</string>
+    
+    <string name="search_widget_padding_search">Padding widget pencarian</string>
+    <string name="search_widget_desc_padding_search">Menyesuaikan posisi vertikal widget pencarian (+/-).</string>
+
+    <string name="search_widget_padding_dots">Padding titik</string>
+    <string name="search_widget_desc_padding_dots">Menyesuaikan posisi vertikal titik indikator halaman.</string>
+    <string name="search_widget_padding_dots_x">Offset horizontal titik</string>
+    <string name="search_widget_desc_padding_dots_x">Menyesuaikan posisi horizontal titik indikator halaman.</string>
+
+    <!-- Recents Size -->
+    <string name="title_recents_size">Ukuran Kartu Recents</string>
+    <string name="desc_recents_size">Menyesuaikan ukuran kartu tugas di overview</string>
+    <string name="pref_recents_size_enable">Aktifkan ukuran kustom</string>
+    <string name="pref_recents_size_scale">Skala (%)</string>
+    <string name="pref_recents_carousel_enable">Efek carousel (gaya OnePlus)</string>
+    <string name="pref_recents_icons_enable">Baris ikon aplikasi</string>
+
+    <!-- Recents Menu Screen -->
+    <string name="recents_menu_screen_title">Menu Recents</string>
+    <string name="recents_group_general">Manajemen umum</string>
+    <string name="recents_enable_modding">Aktifkan modding Recents</string>
+    <string name="recents_disable_live_tile">Nonaktifkan live tile</string>
+    <string name="recents_disable_live_tile_desc">Menampilkan snapshot alih-alih preview langsung</string>
+    <string name="recents_group_scaling">Skalasi kartu dasar</string>
+    <string name="recents_enable_static_scale">Aktifkan skala statis</string>
+    <string name="recents_scale_percent">Skala (%)</string>
+    <string name="recents_group_carousel_geometry">Carousel: Geometri</string>
+    <string name="recents_carousel_min_scale">Skala min (tepi)</string>
+    <string name="recents_carousel_spacing">Jarak / Tumpang tindih</string>
+    <string name="recents_carousel_min_alpha">Alpha min (tepi)</string>
+    <string name="recents_group_carousel_blur">Carousel: Blur</string>
+    <string name="recents_carousel_blur_radius">Radius blur maks</string>
+    <string name="recents_blur_overflow">Blur seluruh kartu</string>
+    <string name="recents_blur_overflow_desc">Terapkan ke seluruh kartu, bukan hanya thumbnail</string>
+    <string name="recents_group_carousel_tint">Carousel: Tint</string>
+    <string name="recents_tint_intensity">Intensitas tint</string>
+    <string name="recents_select_tint_color">Pilih warna tint</string>
+    <string name="recents_group_icon_offset">Carousel: Offset ikon</string>
+    <string name="recents_icon_offset_x">Offset ikon X</string>
+    <string name="recents_icon_offset_y">Offset ikon Y</string>
+
+    <!-- Gestures Screen -->
+    <string name="gestures_screen_title">Gestur</string>
+
+    <!-- Clear All Screen-->
+    <string name="clear_all_screen_title">Tombol Hapus Semua</string>
+
+    <!-- Grid Settings Screen -->
+    <string name="grid_screen_title">Pengaturan Grid</string>
+    <string name="grid_homepage_title">Pengaturan Layar Utama</string>
+    <string name="grid_homepage_dock_title">Bar Dock</string>
+    <string name="grid_menupage_title">Halaman Menu</string>
+    <string name="grid_menupage_enable">Sesuaikan halaman menu</string>
+    <string name="grid_menupage_search_title">Hasil pencarian</string>
+    <string name="grid_menupage_suggestions_title">Daftar saran</string>
+    <string name="grid_menupage_apps_title">Daftar aplikasi</string>
+    <string name="grid_menupage_suggestions_disable">Nonaktifkan daftar saran</string>
+    <string name="grid_text_mode_hide">Sembunyikan teks</string>
+
+    <!-- Search &amp; Feed Screen -->
+    <string name="search_feed_screen_title">Pencarian &amp; Feed</string>
+
+    <!-- Quickstep Section -->
+    <string name="quickstep_warning_title">Fitur eksperimental</string>
+    <string name="quickstep_warning_text">Fitur ini sepenuhnya menggantikan tampilan Quickstep native dengan implementasi kustom. Gangguan visual atau crash mungkin terjadi. Gunakan dengan risiko Anda sendiri. Nonaktifkan opsi ini jika bermasalah.</string>
+    <string name="quickstep_engine_title">Engine Quickstep Kustom</string>
+    <string name="quickstep_engine_summary">Ganti Recents native dengan implementasi kustom</string>
+    <string name="quickstep_engine_info">Mengaktifkan tampilan Recents yang sepenuhnya kustom dengan berbagai gaya visual dan animasi. Menggantikan Recents default Pixel Launcher sepenuhnya.</string>
+    <string name="quickstep_style_title">Gaya Recents</string>
+    <string name="quickstep_style_stock">Standar</string>
+    <string name="quickstep_style_stock_desc">Tata letak kartu horizontal bersih</string>
+    <string name="quickstep_style_ios">Gaya iOS</string>
+    <string name="quickstep_style_ios_desc">Kartu bertumpuk vertikal dengan efek 3D</string>
+    <string name="quickstep_style_oneplus">Gaya OnePlus</string>
+    <string name="quickstep_style_oneplus_desc">Carousel dengan kartu tengah yang difokuskan</string>
+    <string name="quickstep_style_minimal">Minimal</string>
+    <string name="quickstep_style_minimal_desc">Kartu kecil dengan ikon saja</string>
+    <string name="content_desc_selected">Dipilih</string>
+
+    
+    <string name="launcher_feed_title">Nonaktifkan Google Feed</string>
+    <string name="launcher_feed_desc">Menonaktifkan layar -1 (Google Discover/Feed) di layar utama.</string>
+
+    <string name="launcher_top_widget_title">Nonaktifkan widget atas</string>
+    <string name="launcher_top_widget_desc">Menghapus widget "At a Glance" permanen dari layar utama, memungkinkan penempatan ikon di sana.</string>
+
+    <!-- Animation Theme Manager -->
+    <string name="anim_theme_create_title">Buat tema animasi</string>
+    <string name="anim_theme_style_name">Nama gaya</string>
+    <string name="anim_theme_open_enter">Buka — Masuk</string>
+    <string name="anim_theme_open_exit">Buka — Keluar</string>
+    <string name="anim_theme_close_enter">Tutup — Masuk</string>
+    <string name="anim_theme_close_exit">Tutup — Keluar</string>
+    <string name="anim_theme_tap_to_select">Ketuk untuk memilih file XML</string>
+    <string name="anim_theme_compile_btn">Kompilasi &amp; Instal</string>
+    <string name="anim_theme_log_title">Log build</string>
+    <string name="anim_theme_installed_title">Tema terinstal</string>
+    <string name="anim_theme_none_installed">Tidak ada tema animasi terinstal</string>
+    <string name="anim_theme_paste_xml">Tempel XML</string>
+    <string name="anim_theme_xml_hint">Tempel XML animasi di sini…</string>
+    <string name="anim_theme_input_mode_file">File</string>
+    <string name="anim_theme_input_mode_xml">Teks XML</string>
+
+    <!-- Built-in Animations -->
+    <string name="anim_builtin_title">Animasi bawaan</string>
+    <string name="anim_builtin_disabled">Nonaktif</string>
+    <string name="anim_builtin_custom">Tema kustom</string>
+    <string name="anim_preview_open">Buka</string>
+    <string name="anim_preview_close">Tutup</string>
+    <string name="anim_apply_both">Terapkan keduanya</string>
+    <string name="anim_apply_open">Terapkan buka</string>
+    <string name="anim_apply_close">Terapkan tutup</string>
+    <string name="anim_current_open">Buka saat ini: %s</string>
+    <string name="anim_current_close">Tutup saat ini: %s</string>
+
+    <!-- Animation type names -->
+    <string name="anim_group_slide">Geser</string>
+    <string name="anim_group_card_stack">Tumpukan kartu</string>
+    <string name="anim_group_train">Kereta</string>
+    <string name="anim_group_ios">Paralaks iOS</string>
+    <string name="anim_group_fade">Pudar</string>
+    <string name="anim_group_zoom">Zoom</string>
+    <string name="anim_group_modal">Modal</string>
+    <string name="anim_group_depth">Kedalaman</string>
+    <string name="anim_group_pivot">Pivot</string>
+
+    <!-- Direction names -->
+    <string name="anim_dir_right">Kanan</string>
+    <string name="anim_dir_left">Kiri</string>
+    <string name="anim_dir_top">Atas</string>
+    <string name="anim_dir_bottom">Bawah</string>
+
+    <!-- Activity Transition Settings -->
+    <string name="anim_transition_title">Transisi aktivitas</string>
+    <string name="anim_transition_subtitle">Tema kustom dan transisi bawaan</string>
+    <string name="anim_predictive_back_title">Nonaktifkan gestur kembali prediktif</string>
+    <string name="anim_predictive_back_desc">Menghapus animasi kembali swipe sistem</string>
+    <string name="anim_no_animation_title">Tanpa animasi</string>
+    <string name="anim_no_animation_desc">Menonaktifkan animasi transisi sepenuhnya</string>
+    <string name="anim_constructor_title">Konstruktor Animasi</string>
+    <string name="anim_constructor_preview">Pratinjau</string>
+    <string name="anim_constructor_style_name">Nama gaya</string>
+    <string name="anim_constructor_build_theme">Bangun tema</string>
+    <string name="anim_constructor_hide">Sembunyikan</string>
+    <string name="anim_constructor_show_xml">Tampilkan XML</string>
+    <string name="anim_constructor_hide_xml">Sembunyikan XML</string>
+    <string name="anim_dialog_cancel">Batal</string>
+    <string name="anim_active_open_close">Buka + Tutup</string>
+    <string name="anim_installing">Menginstal…</string>
+    <string name="anim_install_success">✓ Tema berhasil diinstal!</string>
+    <string name="anim_install_failed">Instalasi gagal</string>
+    <string name="anim_install_failed_log">✗ Instalasi gagal</string>
+    <string name="anim_compile_failed">Kompilasi gagal</string>
+    <string name="anim_cd_delete">Hapus</string>
+    <string name="anim_cd_confirm_delete">Konfirmasi hapus</string>
+    <string name="anim_cd_reset">Reset</string>
+    <string name="anim_cd_copy">Salin</string>
+    <string name="anim_param_translate">Terjemahan</string>
+    <string name="anim_param_scale">Skala</string>
+    <string name="anim_param_alpha">Alpha</string>
+    <string name="anim_param_rotate">Rotasi</string>
+    <string name="anim_param_pivot">Pivot</string>
+    <string name="anim_param_timing">Waktu</string>
+    <string name="anim_param_interpolator">Interpolator</string>
+
+    <!-- Addon Manager -->
+    <string name="addon_title">Addon LSPlant</string>
+    <string name="addon_desc">Kelola modul hook eksternal</string>
+    <string name="addon_count">%d modul terinstal</string>
+    <string name="addon_active_count">Aktif: %1$d dari %2$d</string>
+    <string name="addon_safe_mode_title">Mode aman aktif</string>
+    <string name="addon_safe_mode_desc">Addon telah dinonaktifkan karena crash berulang. Jika masalah disebabkan oleh addon yang bermasalah, Anda dapat menonaktifkannya sebelum keluar dari mode aman.</string>
+    <string name="addon_safe_mode_exit">Keluar dari mode aman</string>
+    <string name="addon_tab_jars">JAR</string>
+    <string name="addon_tab_modules">Modul APK</string>
+    <string name="addon_modules_empty_title">Tidak ada modul Xposed ditemukan</string>
+    <string name="addon_modules_empty_desc">Aplikasi terinstal dengan modul LSPosed/Vector muncul di sini</string>
+    <string name="addon_section_system">Modul sistem</string>
+    <string name="addon_section_user">Modul terinstal</string>
+    <string name="addon_system_empty_title">Tidak ada modul sistem</string>
+    <string name="addon_system_empty_desc">Modul sistem sudah terinstal bersama firmware</string>
+    <string name="addon_user_empty_title">Tidak ada modul pengguna terinstal</string>
+    <string name="addon_user_empty_desc">Impor addon .jar untuk memulai</string>
+    <string name="addon_import">Impor addon</string>
+    <string name="addon_import_desc">Pilih file addon .jar</string>
+    <string name="addon_import_success">Addon diimpor</string>
+    <string name="addon_import_failed">Impor gagal</string>
+    <string name="addon_empty_title">Tidak ada addon terinstal</string>
+    <string name="addon_empty_desc">Impor addon .jar untuk memulai</string>
+    <string name="addon_delete_title">Hapus addon</string>
+    <string name="addon_delete_confirm">Hapus "%s"?\n\nFile JAR akan dihapus dan semua pengaturan direset.</string>
+    <string name="addon_scope_default">Target default</string>
+    <string name="addon_scope_custom">Kustom saja</string>
+    <string name="addon_scope_merge">Gabungkan keduanya</string>
+    <string name="addon_scope_label_default">Cakupan default</string>
+    <string name="addon_scope_label_custom">Cakupan kustom</string>
+    <string name="addon_scope_label_merge">Cakupan gabungan</string>
+    <string name="addon_target_scope">Cakupan target</string>
+    <string name="addon_targets_default">Target default</string>
+    <string name="addon_targets_custom">Target kustom</string>
+    <string name="addon_builtin_badge">bawaan</string>
+    <string name="addon_builtin_plus_addon">Bawaan + Addon</string>
+    <string name="addon_enabled">Aktif</string>
+    <string name="addon_btn_save">Simpan</string>
+    <string name="addon_btn_cancel">Batal</string>
+    <string name="addon_btn_remove">Hapus</string>
+    <string name="addon_settings_title">Pengaturan modul</string>
+    <string name="addon_range_format">Rentang: %1$s — %2$s</string>
+    <string name="addon_file_not_set">Belum diatur</string>
+    <string name="addon_file_saved">File disimpan</string>
+    <string name="addon_file_copy_failed">Gagal menyalin</string>
+    <string name="addon_apps_selected">%d aplikasi dipilih</string>
+    <string name="addon_select_apps">Pilih aplikasi</string>
+    <string name="addon_selected_count">%d dipilih</string>
+    <string name="addon_confirm_count">Konfirmasi (%d)</string>
+    <string name="addon_search_apps">Cari aplikasi\u2026</string>
+    <string name="addon_show_system">Tampilkan aplikasi sistem</string>
+    <string name="addon_hide_system">Sembunyikan aplikasi sistem</string>
+    <string name="addon_no_apps_match">Tidak ada aplikasi untuk "%s"</string>
+    <string name="addon_no_apps_available">Tidak ada aplikasi tersedia</string>
+    <string name="addon_default_target_badge">Target default</string>
+    <string name="addon_author_unknown">Tidak diketahui</string>
+
+    <!-- Addon Manager: Active Apps -->
+    <string name="addon_active_apps_title">Aplikasi Aktif</string>
+    <string name="addon_active_apps_desc">%d aplikasi dengan hook aktif</string>
+    <string name="addon_active_apps_empty">Tidak ada hook aktif</string>
+    <string name="addon_active_apps_modules">%d modul</string>
+
+    <string name="overscroll_add_tile">Tambah tile Overscroll</string>
+    <string name="display_title">Layar</string>
+    <string name="display_desc">Kontrol warna layar dan kecerahan</string>
+    <string name="display_section_screen">Layar</string>
+    <string name="app_icons_title">Ikon Aplikasi</string>
+    <string name="app_icons_summary">Ganti ikon aplikasi dari penyimpanan Pixel Parts</string>
+    <string name="app_icons_placeholder_title">Tempat antarmuka</string>
+    <string name="app_icons_placeholder_summary">Kontrol ikon aplikasi akan ditambahkan di tahap berikutnya.</string>
+    <string name="app_icons_refresh">Segarkan paket ikon</string>
+    <string name="app_icons_packs_section">Paket ikon</string>
+    <string name="app_icons_all_apps_section">Semua aplikasi</string>
+    <string name="app_icons_pack_count_format">%1$d paket ikon</string>
+    <string name="app_icons_app_count_format">%1$d aplikasi</string>
+    <string name="app_icons_supported_count_format">Aplikasi didukung: %1$d • Ikon: %2$d • Diterapkan: %3$d</string>
+    <string name="app_icons_no_icon_packs">Tidak ada paket ikon terinstal</string>
+    <string name="app_icons_no_apps">Tidak ada aplikasi untuk ditampilkan</string>
+    <string name="app_icons_load_failed">Gagal memuat data ikon</string>
+    <string name="app_icons_apply_all">Terapkan semua</string>
+    <string name="app_icons_apply_partial">Terapkan sebagian</string>
+    <string name="app_icons_applied_button">Diterapkan</string>
+    <string name="app_icons_view_pack">Lihat set</string>
+    <string name="app_icons_apply_update">Terapkan pembaruan</string>
+    <string name="app_icons_apply_selected">Terapkan yang dipilih</string>
+    <string name="app_icons_requires_update">Perlu pembaruan</string>
+    <string name="app_icons_status_not_applied">Belum diterapkan</string>
+    <string name="app_icons_status_full">Diterapkan penuh</string>
+    <string name="app_icons_status_partial">Diterapkan sebagian</string>
+    <string name="app_icons_pack_missing_status">Paket dihapus</string>
+    <string name="app_icons_pack_missing_message">Paket ikon ini tidak lagi terinstal. Anda hanya bisa mengelola atau menghapus ikon yang sudah diterapkan darinya.</string>
+    <string name="app_icons_show_system_title">Tampilkan aplikasi sistem</string>
+    <string name="app_icons_show_system_summary">Sertakan paket sistem dalam daftar</string>
+    <string name="app_icons_show_hidden_title">Tampilkan aplikasi tersembunyi</string>
+    <string name="app_icons_show_hidden_summary">Sertakan aplikasi tanpa entri launcher</string>
+    <string name="app_icons_not_applied_to_app">Paket ikon belum diterapkan</string>
+    <string name="app_icons_applied_from_format">Diterapkan dari: %1$s</string>
+    <string name="app_icons_supported_apps_title">Aplikasi yang didukung</string>
+    <string name="app_icons_pack_contents_title">Isi paket ikon</string>
+    <string name="app_icons_current_icon_title">Ikon kustom saat ini</string>
+    <string name="app_icons_available_icons_title">Ikon yang tersedia</string>
+    <string name="app_icons_dialog_search_hint">Cari aplikasi, paket, atau sumber daya</string>
+    <string name="app_icons_no_supported_apps">Tidak ada aplikasi didukung</string>
+    <string name="app_icons_no_pack_icons">Tidak ada ikon di paket ini</string>
+    <string name="app_icons_no_app_candidates">Tidak ada paket ikon terinstal yang berisi ikon untuk aplikasi ini</string>
+    <string name="app_icons_apply_result_format">Diterapkan: %1$d, gagal: %2$d</string>
+    <string name="app_icons_apply_failed">Tidak dapat menerapkan ikon</string>
+    <string name="app_icons_operation_running">Operasi ikon sudah berjalan</string>
+    <string name="app_icons_restore_default">Kembalikan ikon default</string>
+    <string name="app_icons_cancel_all">Urungkan semua dari paket ini</string>
+    <string name="app_icons_module_enabled_title">Penggantian ikon</string>
+    <string name="app_icons_module_enabled_summary">Mengaktifkan ikon seluruh sistem dan hook Pixel Launcher</string>
+    <string name="app_icons_launcher_only_title">Hanya launcher</string>
+    <string name="app_icons_launcher_only_summary">Hanya biarkan hook launcher LSPlant/Xposed yang aktif</string>
+    <string name="app_icons_advanced_settings_title">Lanjutan</string>
+    <string name="app_icons_advanced_settings_summary">Bentuk, notifikasi, dan perilaku launcher</string>
+    <string name="app_icons_system_stretch_shape_title">Bentuk di Pengaturan</string>
+    <string name="app_icons_system_stretch_shape_summary">Memotong ikon PixelParts ke bentuk ikon sistem di Pengaturan</string>
+    <string name="app_icons_system_shape_scale_title">Ukuran di Pengaturan</string>
+    <string name="app_icons_system_remove_shape_title">Tanpa bentuk di Pengaturan</string>
+    <string name="app_icons_system_remove_shape_summary">Menampilkan ikon PixelParts di Pengaturan tanpa latar adaptif putih</string>
+    <string name="app_icons_notification_stretch_shape_title">Bentuk notifikasi</string>
+    <string name="app_icons_notification_stretch_shape_summary">Memotong ikon notifikasi PixelParts di panel dan layar kunci</string>
+    <string name="app_icons_notification_shape_scale_title">Ukuran notifikasi</string>
+    <string name="app_icons_notification_remove_shape_title">Tanpa bentuk notifikasi</string>
+    <string name="app_icons_notification_remove_shape_summary">Menampilkan ikon notifikasi PixelParts tanpa latar adaptif putih</string>
+    <string name="app_icons_launcher_stretch_shape_title">Bentuk launcher</string>
+    <string name="app_icons_launcher_stretch_shape_summary">Memotong ikon PixelParts ke bentuk launcher tanpa latar putih</string>
+    <string name="app_icons_launcher_shape_scale_title">Ukuran launcher</string>
+    <string name="app_icons_launcher_remove_shape_title">Tanpa bentuk launcher</string>
+    <string name="app_icons_launcher_remove_shape_summary">Membiarkan ikon PixelParts tanpa bungkus saat Pixel Launcher membangun cache ikon</string>
+    <string name="app_icons_shape_scale_summary">0,00%% menyembunyikan foreground, 72,00%% adalah pas default, 200,00%% meluber dari bentuk.</string>
+    <string name="app_icons_shape_scale_value_format">%1$.2f%%</string>
+    <string name="app_icons_shape_background_tint_title">Latar bentuk</string>
+    <string name="app_icons_shape_background_tint_summary">Mengisi ruang transparan dengan warna atau warna otomatis per ikon.</string>
+    <string name="app_icons_shape_foreground_tint_title">Tint foreground</string>
+    <string name="app_icons_shape_foreground_tint_summary">Mewarnai foreground yang diskala dengan warna atau kontras otomatis.</string>
+    <string name="app_icons_tint_mode_off">Nonaktif</string>
+    <string name="app_icons_tint_mode_auto">Otomatis</string>
+    <string name="app_icons_tint_mode_custom">Kustom</string>
+    <string name="app_icons_import_custom_icon">Impor ikon kustom</string>
+    <string name="app_icons_choose_from_pack">Pilih dari paket ikon</string>
+    <string name="app_icons_detected_alternatives_title">Alternatif terdeteksi</string>
+    <string name="app_icons_all_pack_icons_title">Semua ikon paket</string>
+    <string name="app_icons_custom_icon_source">Ikon kustom</string>
+    <string name="app_icons_progress_importing_icon">Mengimpor ikon kustom</string>
+    <string name="app_icons_per_app_shape_title">Pengaturan bentuk per aplikasi</string>
+    <string name="app_icons_per_app_shape_summary">Override khusus aplikasi ini</string>
+    <string name="app_icons_per_app_system_area">Pengaturan</string>
+    <string name="app_icons_per_app_notification_area">Notifikasi</string>
+    <string name="app_icons_per_app_launcher_area">Pixel Launcher</string>
+    <string name="app_icons_per_app_stretch_shape">Rentangkan ke bentuk</string>
+    <string name="app_icons_per_app_stretch_shape_summary">Override rentangan untuk ikon aplikasi ini</string>
+    <string name="app_icons_per_app_remove_shape">Hapus bentuk</string>
+    <string name="app_icons_per_app_remove_shape_summary">Override latar adaptif untuk aplikasi ini</string>
+    <string name="app_icons_per_app_shape_scale">Skala bentuk</string>
+    <string name="app_icons_save_individual_settings">Simpan pengaturan</string>
+    <string name="app_icons_reset_individual_settings">Gunakan global</string>
+    <string name="app_icons_progress_applying_pack">Menerapkan paket ikon</string>
+    <string name="app_icons_progress_applying_selected">Menerapkan ikon terpilih</string>
+    <string name="app_icons_progress_applying_app">Menerapkan ikon aplikasi</string>
+    <string name="app_icons_progress_restoring_icon">Mengembalikan ikon default</string>
+    <string name="app_icons_progress_removing_pack">Menghapus ikatan paket ikon</string>
+    <string name="app_icons_progress_clearing_all">Membersihkan override ikon</string>
+    <string name="app_icons_progress_completed">Operasi ikon selesai</string>
+    <string name="app_icons_progress_percent_format">%1$d%%</string>
+    <string name="app_icons_progress_counts_format">%1$d/%2$d • Diterapkan: %3$d • Dihapus: %4$d • Dilewati: %5$d • Gagal: %6$d</string>
+    <string name="app_icons_apply_mode_title">Mode penerapan</string>
+    <string name="app_icons_apply_mode_all_pack">Semua ikon dari paket ini</string>
+    <string name="app_icons_apply_mode_system_only">Hanya aplikasi sistem</string>
+    <string name="app_icons_apply_mode_user_only">Hanya aplikasi pengguna</string>
+    <string name="app_icons_apply_mode_installed_only">Hanya aplikasi terinstal dan tersedia</string>
+    <string name="app_icons_apply_finished_title">Ikon diperbarui</string>
+    <string name="app_icons_apply_finished_message_format">Diterapkan: %1$d • Dihapus: %2$d • Dilewati: %3$d • Gagal: %4$d. Restart sistem untuk menyegarkan semua cache ikon.</string>
+    <string name="app_icons_reboot_system">Restart sistem</string>
+    <string name="app_icons_clear_all">Hapus semua ikon</string>
+    <string name="app_icons_clear_all_confirm_title">Hapus semua override ikon?</string>
+    <string name="app_icons_clear_all_confirm_message">Semua ikatan ikon, file ekspor, metadata paket, dan pengaturan ikon per aplikasi akan dihapus.</string>
+    <string name="icon_shape_title">Bentuk ikon</string>
+    <string name="icon_shape_summary">Overlay bentuk adaptif preset dan kustom</string>
+    <string name="icon_shape_default">Default</string>
+    <string name="icon_shape_presets_section">Preset</string>
+    <string name="icon_shape_custom_section">Bentuk kustom</string>
+    <string name="icon_shape_custom_name">Nama bentuk</string>
+    <string name="icon_shape_custom_apply">Bangun</string>
+    <string name="icon_shape_import">Impor</string>
+    <string name="icon_shape_import_apply">Bangun hasil impor</string>
+    <string name="icon_shape_launcher_section">Launcher</string>
+    <string name="icon_shape_workspace_match_all_apps_title">Beranda = Semua Aplikasi</string>
+    <string name="icon_shape_workspace_match_all_apps_summary">Gunakan bentuk drawer di Beranda</string>
+    <string name="icon_shape_workspace_match_all_apps_info">Menerapkan pass bentuk launcher ke setiap ikon Beranda, termasuk aplikasi tanpa override PixelParts. Opsi ini saling eksklusif dengan memakai bentuk Beranda di Semua Aplikasi.</string>
+    <string name="icon_shape_ignore_custom_settings_title">Abaikan bentuk kustom</string>
+    <string name="icon_shape_ignore_custom_settings_summary">Lewati override bentuk PixelParts</string>
+    <string name="icon_shape_ignore_custom_settings_info">Mengabaikan pengaturan bentuk kustom per aplikasi dan PixelParts sambil menjaga jalur bentuk stock Pixel Launcher. Gunakan saat default Google harus menang atas override PixelParts.</string>
+    <string name="icon_shape_all_apps_follow_workspace_title">Semua Aplikasi = Beranda</string>
+    <string name="icon_shape_all_apps_follow_workspace_summary">Gunakan bentuk Beranda di drawer</string>
+    <string name="icon_shape_all_apps_follow_workspace_info">Membiarkan ikon Semua Aplikasi memakai jalur bentuk launcher yang biasa dipakai Pixel Launcher di layar Beranda. Opsi ini saling eksklusif dengan menyamakan ikon Beranda ke Semua Aplikasi.</string>
+    <string name="icon_shape_all_apps_themed_icons_title">Tematik di Semua Aplikasi</string>
+    <string name="icon_shape_all_apps_themed_icons_summary">Aktifkan ikon drawer monokrom</string>
+    <string name="icon_shape_all_apps_themed_icons_info">Memaksa Pixel Launcher memakai jalur ikon bertema juga di drawer aplikasi. Stock Pixel Launcher mengaktifkan ikon monokrom di Beranda, tapi biasanya melewatkannya untuk Semua Aplikasi.</string>
+    <string name="icon_shape_all_apps_suggestions_themed_icons_title">Tematik di saran</string>
+    <string name="icon_shape_all_apps_suggestions_themed_icons_summary">Aktifkan ikon mono baris prediksi</string>
+    <string name="icon_shape_all_apps_suggestions_themed_icons_info">Memaksa Pixel Launcher memakai ikon bertema di baris prediksi di atas Semua Aplikasi. Ini terpisah dari daftar biasa agar saran bisa disetel sendiri.</string>
+    <string name="icon_shape_mode_superellipse">Squircle</string>
+    <string name="icon_shape_mode_polygon">Poligon</string>
+    <string name="icon_shape_mode_flower">Bunga</string>
+    <string name="icon_shape_roundness">Kebulatan</string>
+    <string name="icon_shape_sides">Sisi</string>
+    <string name="icon_shape_inset">Inset</string>
+    <string name="icon_shape_wave">Gelombang</string>
+    <string name="icon_shape_rotation">Rotasi</string>
+    <string name="icon_shape_scale_x">Lebar</string>
+    <string name="icon_shape_scale_y">Tinggi</string>
+    <string name="icon_shape_offset_x">Offset X</string>
+    <string name="icon_shape_offset_y">Offset Y</string>
+    <string name="icon_shape_apply">Terapkan</string>
+    <string name="icon_shape_active">Aktif</string>
+    <string name="icon_shape_delete">Hapus</string>
+    <string name="icon_shape_delete_confirm">Konfirmasi hapus</string>
+    <string name="icon_shape_source_default">Default sistem</string>
+    <string name="icon_shape_source_installed">Overlay terinstal</string>
+    <string name="icon_shape_source_builtin">Preset PixelParts</string>
+    <string name="icon_shape_source_custom">Overlay kustom</string>
+    <string name="icon_shape_apply_success">Bentuk ikon diterapkan</string>
+    <string name="icon_shape_apply_failed">Tidak dapat menerapkan bentuk ikon</string>
+    <string name="icon_shape_custom_invalid">Path mask ikon tidak valid</string>
+    <string name="icon_shape_import_success">Mask XML/SVG diimpor</string>
+    <string name="icon_shape_delete_success">Bentuk kustom dihapus</string>
+    <string name="icon_shape_delete_failed">Tidak dapat menghapus bentuk kustom</string>
+    <string name="icon_shape_compile_dialog_compiling">Membangun bentuk ikon</string>
+    <string name="icon_shape_compile_dialog_installing">Menginstal bentuk ikon</string>
+    <string name="icon_shape_compile_dialog_success">Bentuk dibangun</string>
+    <string name="icon_shape_compile_dialog_error">Pembangunan bentuk gagal</string>
+    <string name="icon_shape_compile_dialog_cancelled">Pembangunan bentuk dibatalkan</string>
+    <string name="icon_shape_compile_dialog_progress">%1$d%% selesai</string>
+    <string name="icon_shape_compile_dialog_cancel">Batal</string>
+    <string name="icon_shape_compile_dialog_ok">OK</string>
+    <string name="saturation_title">Saturasi</string>
+    <string name="saturation_summary">Kontrol saturasi warna layar</string>
+    <string name="saturation_enable_title">Gunakan saturasi kustom</string>
+    <string name="saturation_enable_summary">Terapkan level saturasi pilihan segera</string>
+    <string name="saturation_level_title">Level saturasi</string>
+    <string name="saturation_preview_title">Pratinjau</string>
+    <string name="saturation_preview_content_description">Gambar pratinjau saturasi layar</string>
+    <string name="saturation_footer_summary">Mengganti mode warna di pengaturan Android dapat menimpa nilai ini dan perlu diterapkan ulang.</string>
+    <string name="saturation_add_tile">Tambah tile Saturasi</string>
+    <string name="saturation_tile_active">Saturasi kustom aktif</string>
+    <string name="saturation_tile_inactive">Saturasi kustom nonaktif</string>
+    <string name="saturation_apply_failed">Tidak dapat menerapkan saturasi layar</string>
+    <string name="tile_added">Tile ditambahkan</string>
+    <string name="tile_not_added">Tile tidak ditambahkan</string>
+    <string name="tile_already_added">Tile sudah ditambahkan</string>
+    <string name="tile_request_unavailable">Permintaan tile tidak tersedia di build ini</string>
+    <string name="auto_hbm_title">AutoHBM</string>
+    <string name="auto_hbm_summary">Naikkan kecerahan panel di cahaya kuat</string>
+    <string name="auto_hbm_notification_auto_title">AutoHBM aktif</string>
+    <string name="auto_hbm_notification_permanent_title">HBM aktif</string>
+    <string name="auto_hbm_notification_auto_summary">Layanan HBM otomatis aktif.</string>
+    <string name="auto_hbm_notification_permanent_summary">Layanan HBM permanen aktif.</string>
+    <string name="auto_hbm_notification_disable">Nonaktifkan</string>
+    <string name="auto_hbm_notification_live">Lux %1$d · puncak %2$d · kunci %3$s</string>
+    <string name="auto_hbm_notification_lock_on">Kunci aktif</string>
+    <string name="auto_hbm_notification_lock_off">Kunci nonaktif</string>
+    <string name="auto_hbm_permanent_unsupported">Tidak didukung di perangkat ini</string>
+    <string name="dtw_title">Ketuk Dua Kali untuk Bangun</string>
+    <string name="dtw_summary">Bangunkan layar dengan ketukan ganda</string>
+    <string name="dtw_enable_title">Aktifkan DT2W</string>
+    <string name="dtw_enable_summary">Aktifkan ketuk dua kali untuk bangun saat layar mati</string>
+    <string name="dtw_tap_count_title">Jumlah ketukan</string>
+    <string name="dtw_tap_count_summary">Jumlah ketukan untuk bangun (1-3)</string>
+    <string name="dtw_timeout_title">Timeout ketukan</string>
+    <string name="dtw_timeout_summary">Interval maks antar ketukan</string>
+    <string name="dtw_coordinate_check_title">Cek koordinat</string>
+    <string name="dtw_coordinate_check_summary">Periksa kecocokan koordinat ketukan dalam ambang</string>
+    <string name="dtw_coordinate_preview_title">Area ketukan kedua yang diizinkan</string>
+    <string name="dtw_coordinate_preview_summary">Ini hanya pratinjau visual, bukan tempat ketuk yang tetap. Anda tidak perlu mengetuk tengah layar: ini menunjukkan seberapa jauh ketukan kedua boleh dari ketukan pertama.</string>
+    <string name="dtw_coordinate_preview_value">Jarak maksimum: %1$d dp</string>
+    <string name="dtw_max_distance_title">Jarak maks</string>
+    <string name="dtw_max_distance_summary">Jarak maks antar ketukan dalam dp</string>
+    <string name="dtw_unsupported">Perangkat tidak mendukung sensor sentuh tunggal</string>
+    <string name="auto_lock_title">Kunci otomatis</string>
+    <string name="auto_lock_summary">Kunci layar setelah tidak aktif</string>
+    <string name="auto_lock_enable_title">Kunci otomatis</string>
+    <string name="auto_lock_enable_summary">Berguna untuk video dan aplikasi lain yang menjaga layar menyala. Layar terkunci saat Anda berhenti menggunakannya.</string>
+    <string name="auto_lock_blocker_only_title">Hanya saat perlu</string>
+    <string name="auto_lock_blocker_only_summary">Jalankan timer hanya saat aplikasi mencegah layar tidur.</string>
+    <string name="auto_lock_pause_media_title">Jeda media</string>
+    <string name="auto_lock_pause_media_summary">Jeda video atau audio aktif sebelum mengunci layar.</string>
+    <string name="auto_lock_timer_section">Timer</string>
+    <string name="auto_lock_timeout_title">Timeout tidak aktif</string>
+    <string name="auto_lock_timeout_description">Waktu tanpa interaksi sebelum layar terkunci.</string>
+    <string name="auto_lock_notification_title">Kunci Otomatis aktif</string>
+    <string name="auto_lock_notification_text">Akan terkunci setelah %1$s tidak aktif</string>
+    <string name="auto_lock_notification_countdown">Terkunci dalam %1$d dtk · smart %2$s · media %3$s</string>
+    <string name="auto_lock_notification_waiting">Menunggu aplikasi · smart %1$s · media %2$s</string>
+    <string name="auto_lock_state_on">aktif</string>
+    <string name="auto_lock_state_off">nonaktif</string>
+    <string name="auto_lock_notification_smart_on">Smart aktif</string>
+    <string name="auto_lock_notification_smart_off">Smart nonaktif</string>
+    <string name="auto_lock_notification_pause_on">Jeda aktif</string>
+    <string name="auto_lock_notification_pause_off">Jeda nonaktif</string>
+    <string name="auto_lock_notification_disable">Nonaktifkan</string>
+    <string name="auto_lock_tile_off">Nonaktif</string>
+    <string name="auto_lock_tile_always">Aktif · %1$s</string>
+    <string name="auto_lock_tile_blocker_only">Smart · %1$s</string>
+    <string name="auto_lock_time_seconds">%1$d dtk</string>
+    <string name="auto_lock_time_seconds_short">dtk</string>
+    <string name="auto_lock_time_minutes">%1$d mnt</string>
+    <string name="auto_lock_time_minutes_short">mnt</string>
+    <string name="auto_lock_time_hours">%1$d jam</string>
+    <string name="auto_lock_time_hours_short">jam</string>
+    <string name="auto_lock_time_format">%1$s / %2$s</string>
+    <string name="auto_lock_time_format_with_secs">%1$s / %2$s %3$s</string>
+    <string name="auto_hbm_enable_title">Aktifkan HBM otomatis</string>
+    <string name="auto_hbm_mode_title">Mode HBM</string>
+    <string name="auto_hbm_mode_auto">Otomatis (berbasis sensor)</string>
+    <string name="auto_hbm_mode_permanent">Maksimum permanen</string>
+    <string name="auto_hbm_permanent_title">HBM Permanen</string>
+    <string name="auto_hbm_permanent_summary">Pertahankan kecerahan layar maksimum selama mode ini aktif. Kontrol cahaya otomatis di bawah tidak aktif.</string>
+    <string name="auto_hbm_brightness_lock_title">Kunci kecerahan</string>
+    <string name="auto_hbm_brightness_lock_summary">Kunci kecerahan di maksimum dan blokir slider sistem selama HBM aktif.</string>
+    <string name="auto_hbm_auto_disabled_in_permanent">Pengaturan ambang dan ramp cahaya otomatis dinonaktifkan di mode permanen</string>
+    <string name="auto_hbm_current_lux_title">Level cahaya saat ini</string>
+    <string name="auto_hbm_threshold_title">Ambang cahaya</string>
+    <string name="auto_hbm_enable_time_title">Tunda aktif</string>
+    <string name="auto_hbm_disable_time_title">Tunda nonaktif</string>
+    <string name="auto_hbm_smooth_ramp_title">Ramp kecerahan halus</string>
+    <string name="auto_hbm_smooth_ramp_summary">Naikkan kecerahan bertahap alih-alih melompat ke maksimum</string>
+    <string name="auto_hbm_ramp_time_title">Durasi ramp</string>
+    <string name="auto_hbm_max_active_time_title">Timeout kecerahan maks</string>
+    <string name="auto_hbm_cooldown_time_title">Cooldown setelah timeout</string>
+    <string name="auto_hbm_check_interval_title">Interval cek lux</string>
+    <string name="auto_hbm_temperature_limit_title">Batas suhu SoC</string>
+    <string name="auto_hbm_temperature_unknown">tidak diketahui</string>
+    <string name="auto_hbm_timeout_toast">HBM dinonaktifkan setelah waktu aktif maksimum</string>
+    <string name="auto_hbm_thermal_toast">HBM dinonaktifkan pada batas suhu</string>
+    <string name="auto_hbm_restored_toast">HBM dipulihkan setelah cooldown aman</string>
+    <string name="auto_hbm_add_tile">Tambah tile AutoHBM</string>
+    <string name="auto_hbm_status_monitoring">Memantau cahaya sekitar</string>
+    <string name="auto_hbm_status_active">Kecerahan tinggi aktif</string>
+    <string name="auto_hbm_status_format">Ambang: %1$d lx • Kecerahan: %2$d/%3$d • %4$s: %5$s</string>
+    <string name="auto_hbm_unsupported_title">Node kecerahan panel tidak tersedia</string>
+    <string name="auto_hbm_unsupported_summary">Auto HBM membutuhkan /sys/class/backlight/panel0-backlight/brightness dan max_brightness. Build atau perangkat ini tidak menyediakan node panel Pixel yang diharapkan.</string>
+    <string name="auto_hbm_tile_off">Nonaktif</string>
+    <string name="auto_hbm_tile_monitoring">Memantau</string>
+    <string name="auto_hbm_tile_active">Kecerahan maks</string>
+    <string name="auto_hbm_tile_unsupported">Tidak didukung</string>
+    <string name="permanent_hbm_title">HBM</string>
+    <string name="permanent_hbm_tile_on">Aktif</string>
+    <string name="permanent_hbm_tile_off">Nonaktif</string>
+    <string name="permanent_hbm_tile_unsupported">Tidak didukung</string>
+    <string name="sysui_gesture_bar_title">Bar Gesture</string>
+    <string name="sysui_gesture_bar_subtitle">Ukuran, warna, dan area gesture handle</string>
+    <string name="sysui_log_service_title">Logging Latar</string>
+    <string name="sysui_log_service_enable_title">Catat log di latar</string>
+    <string name="sysui_log_service_enable_summary">Menjaga layanan Pixel Extra Parts berjalan dan menyimpan log di /sdcard/PixelExtraPartsLogs/Tanggal</string>
+    <string name="sysui_log_service_start">Mulai</string>
+    <string name="sysui_log_service_stop">Berhenti</string>
+    <string name="sysui_log_service_status_running">Proses berjalan</string>
+    <string name="sysui_log_service_status_stopped">Proses berhenti</string>
+    <string name="sysui_log_service_add_tile">Tambah tile Logging</string>
+    <string name="sysui_logcat_title">Catat logcat</string>
+    <string name="sysui_logcat_summary">Menulis buffer logcat main, system, dan events untuk debug modul</string>
+    <string name="sysui_dmesg_title">Catat dmesg</string>
+    <string name="sysui_dmesg_summary">Menulis pesan kernel saat akses dmesg tersedia di build ini</string>
+    <string name="sysui_crash_log_title">Tangkap crash aplikasi</string>
+    <string name="sysui_crash_log_summary">Menulis buffer logcat crash terpisah untuk uji crash launcher dan SystemUI</string>
+    <string name="notification_icon_overrides_title">Ikon Notifikasi</string>
+    <string name="status_bar_app_icons_title">Ikon aplikasi status bar</string>
+    <string name="status_bar_app_icons_summary">Gunakan ikon sumber aplikasi di status bar terbuka</string>
+    <string name="status_bar_monochrome_icons_title">Ikon status bar monokrom</string>
+    <string name="status_bar_monochrome_icons_summary">Desaturasi ikon aplikasi status bar</string>
+    <string name="aod_app_icons_title">Ikon aplikasi AOD</string>
+    <string name="aod_app_icons_summary">Gunakan ikon sumber untuk ikon notifikasi AOD dan ambient</string>
+    <string name="aod_monochrome_icons_title">Ikon AOD monokrom</string>
+    <string name="aod_monochrome_icons_summary">Desaturasi ikon aplikasi AOD</string>
+    <string name="gesture_bar_settings_title">Pengaturan Bar Gesture</string>
+    <string name="gesture_bar_behavior_title">Perilaku</string>
+    <string name="gesture_bar_enable_title">Kustomisasi bar gesture</string>
+    <string name="gesture_bar_enable_summary">Menerapkan hook handle SystemUI dan Pixel Launcher</string>
+    <string name="gesture_bar_hide_launcher_title">Sembunyikan di beranda Pixel Launcher</string>
+    <string name="gesture_bar_hide_launcher_summary">Biarkan handle tersembunyi saat desktop fokus</string>
+    <string name="gesture_bar_launcher_hide_timeout_title">Timeout sembunyi launcher</string>
+    <string name="gesture_bar_hide_apps_title">Sembunyikan di aplikasi</string>
+    <string name="gesture_bar_hide_apps_summary">Biarkan handle tersembunyi saat aplikasi fokus</string>
+    <string name="gesture_bar_app_hide_timeout_title">Timeout sembunyi aplikasi</string>
+    <string name="gesture_bar_hide_lockscreen_title">Sembunyikan di layar kunci</string>
+    <string name="gesture_bar_hide_lockscreen_summary">Memudarkan handle saat keyguard tampil</string>
+    <string name="gesture_bar_remove_reserved_title">Hapus inset aplikasi cadangan</string>
+    <string name="gesture_bar_remove_reserved_summary">Biarkan aplikasi menggambar ke area bawah sambil gesture swipe tetap aktif</string>
+    <string name="gesture_bar_geometry_title">Ukuran dan posisi</string>
+    <string name="gesture_bar_width_title">Lebar</string>
+    <string name="gesture_bar_height_title">Tinggi</string>
+    <string name="gesture_bar_offset_x_title">Offset horizontal</string>
+    <string name="gesture_bar_offset_y_title">Offset vertikal</string>
+    <string name="gesture_bar_reserved_area_title">Inset aplikasi cadangan</string>
+    <string name="gesture_bar_area_title">Area gesture bawah</string>
+    <string name="gesture_bar_visibility_title">Visibilitas</string>
+    <string name="gesture_bar_alpha_title">Opasitas</string>
+    <string name="gesture_bar_fade_in_title">Durasi fade in</string>
+    <string name="gesture_bar_fade_out_title">Durasi fade out</string>
+    <string name="gesture_bar_appearance_title">Warna</string>
+    <string name="gesture_bar_tint_title">Warna kustom</string>
+    <string name="gesture_bar_tint_summary">Menimpa tint handle terang/gelap otomatis</string>
+    <string name="gesture_bar_tint_color_title">Warna handle</string>
+    <string name="gesture_bar_tint_color_summary">Dipakai saat warna kustom aktif</string>
+    <string name="magnifier_add_tile">Tambah tile Kaca Pembesar</string>
+    <string name="charging_info_add_tile">Tambah tile Info Cas</string>
+    <string name="sysui_notifications_title">Notifikasi</string>
+    <string name="sysui_aod_full_color_icons_title">Ikon notifikasi AOD penuh warna</string>
+    <string name="sysui_aod_full_color_icons_summary">Menjaga ikon aplikasi notifikasi berwarna di always-on display</string>
+    <string name="launcher_hidden_apps_title">Sembunyikan aplikasi dari launcher</string>
+    <string name="launcher_hidden_apps_subtitle">Pilih aplikasi yang tidak tampil di drawer</string>
+    <string name="launcher_hidden_apps_controls_title">Tampilan</string>
+    <string name="launcher_hidden_apps_system_title">Aplikasi sistem</string>
+    <string name="launcher_hidden_apps_system_summary">Sertakan paket sistem</string>
+    <string name="launcher_hidden_apps_list_title">Aplikasi</string>
+    <string name="launcher_hidden_apps_search_hint">Cari aplikasi atau paket</string>
+    <string name="launcher_hidden_apps_restart_warning">Restart launcher untuk menerapkan perubahan.</string>
+    <string name="launcher_hidden_apps_empty">Tidak ada aplikasi untuk ditampilkan</string>
+    <string name="launcher_hidden_apps_error">Gagal memuat daftar aplikasi</string>
+    <string name="launcher_hidden_apps_apply_error">Gagal memperbarui status sembunyi</string>
+    <string name="launcher_hidden_apps_system_badge">s</string>
+    <string name="launcher_hidden_apps_system_toast">Ini aplikasi sistem</string>
+    <string name="dt2w_add_tile">Tambah tile DT2W</string>
+    <string name="main_add_tile">Tambah tile aplikasi</string>
+    <string name="main_search_hint">Cari pengaturan</string>
+    <string name="main_search_results_title">Hasil pencarian</string>
+    <string name="main_search_no_results">Tidak ada hasil untuk "%1$s"</string>
+    <string name="thermal_manager_title">Manajer Termal</string>
+    <string name="thermal_manager_desc_activity">Edit dan terapkan config termal JSON</string>
+    <string name="thermal_manager_add_tile">Tambah tile Manajer Termal</string>
+    <string name="thermal_manager_tile_queue">Antrean profil tile</string>
+    <string name="thermal_manager_tile_queue_add">Tambah profil</string>
+    <string name="thermal_manager_tile_queue_empty">Antrean kosong</string>
+    <string name="thermal_manager_tile_queue_count">%1$d/%2$d dipilih</string>
+    <string name="thermal_manager_tile_queue_move_up">Pindah ke atas</string>
+    <string name="thermal_manager_tile_queue_move_down">Pindah ke bawah</string>
+    <string name="thermal_manager_tile_queue_remove">Hapus dari antrean</string>
+    <string name="thermal_manager_editor_title">Editor config</string>
+    <string name="thermal_manager_open_editor">Buka editor config</string>
+    <string name="thermal_manager_saved_configs">Config tersimpan</string>
+    <string name="thermal_manager_saved_count">%1$d tersimpan</string>
+    <string name="thermal_manager_saved_empty">Belum ada config kustom tersimpan</string>
+    <string name="thermal_manager_user_configs">Config</string>
+    <string name="thermal_manager_system_configs">Config sistem</string>
+    <string name="thermal_manager_user_configs_empty">Tidak ada config. Buat sendiri atau impor.</string>
+    <string name="thermal_manager_system_configs_empty">Tidak ada config sistem</string>
+    <string name="thermal_manager_import">Impor</string>
+    <string name="thermal_manager_export">Ekspor</string>
+    <string name="thermal_manager_delete">Hapus</string>
+    <string name="thermal_manager_edit">Edit</string>
+    <string name="thermal_manager_clone">Gunakan sebagai dasar</string>
+    <string name="thermal_manager_create_from">Buat dari</string>
+    <string name="thermal_manager_apply">Terapkan</string>
+    <string name="thermal_manager_actions">Aksi</string>
+    <string name="thermal_manager_info">Info field</string>
+    <string name="thermal_manager_create_config">Buat config manual</string>
+    <string name="thermal_manager_config_name">Nama config</string>
+    <string name="thermal_manager_name_help">Spasi menjadi underscore. Diizinkan: huruf, digit, titik, strip, underscore.</string>
+    <string name="thermal_manager_profile_name">Nama profil</string>
+    <string name="thermal_manager_file_name_optional">Nama file (opsional)</string>
+    <string name="thermal_manager_file_name_help">Jika kosong, PixelParts mengubah nama profil ke karakter latin.</string>
+    <string name="thermal_manager_search_hint">Cari field, sensor, nilai, path</string>
+    <string name="thermal_manager_editor_profiles_collapsed">Daftar profil disembunyikan</string>
+    <string name="thermal_manager_profiles_collapsed">Disembunyikan</string>
+    <string name="thermal_manager_editor_tab_soc">SOC</string>
+    <string name="thermal_manager_editor_tab_battery">Baterai</string>
+    <string name="thermal_manager_editor_tab_all">Semua</string>
+    <string name="thermal_manager_editor_tree_title">Konfigurator</string>
+    <string name="thermal_manager_editor_tree_empty">Tidak ada field yang bisa diedit di tampilan ini</string>
+    <string name="thermal_manager_search_count">Menampilkan %1$d dari %2$d field</string>
+    <string name="thermal_manager_search_empty">Tidak ada field yang cocok</string>
+    <string name="thermal_manager_save">Simpan</string>
+    <string name="thermal_manager_save_apply">Simpan dan terapkan</string>
+    <string name="thermal_manager_source_vendor">Original vendor</string>
+    <string name="thermal_manager_source_copy">Salinan %1$s</string>
+    <string name="thermal_manager_source">Sumber: %1$s</string>
+    <string name="thermal_manager_loading">Memuat config termal...</string>
+    <string name="thermal_manager_badge_throttle">Throttling</string>
+    <string name="thermal_manager_badge_known">Dikenal</string>
+    <string name="thermal_manager_badge_unknown">Tidak dikenal</string>
+    <string name="thermal_manager_name_invalid">Masukkan nama file latin</string>
+    <string name="thermal_manager_saved">Tersimpan: %1$s</string>
+    <string name="thermal_manager_deleted">Dihapus: %1$s</string>
+    <string name="thermal_manager_delete_failed">Tidak dapat menghapus: %1$s</string>
+    <string name="thermal_manager_exported">Config diekspor</string>
+    <string name="thermal_manager_export_failed">Ekspor gagal: %1$s</string>
+    <string name="thermal_manager_imported">Diimpor: %1$s</string>
+    <string name="thermal_manager_import_failed">Impor gagal: %1$s</string>
+    <string name="thermal_manager_applied">Diterapkan: %1$s</string>
+    <string name="thermal_manager_apply_failed">Tidak dapat mengatur properti config termal</string>
+    <string name="thermal_manager_error_bad_json">JSON buruk: %1$s</string>
+    <string name="thermal_manager_error_vendor_missing">Tidak dapat membaca original vendor: %1$s</string>
+    <string name="thermal_manager_error_read_file">Tidak dapat membaca config: %1$s</string>
+    <string name="thermal_manager_error_save">Tidak dapat menyimpan config: %1$s</string>
+    <string name="thermal_manager_routing_title">Routing runtime</string>
+    <string name="thermal_manager_global_profile">Profil global</string>
+    <string name="thermal_manager_stock_profile">Stock</string>
+    <string name="thermal_manager_follow_global">Ikuti global</string>
+    <string name="thermal_manager_following_global">Mengikuti global: %1$s</string>
+    <string name="thermal_manager_profile_system">Sistem</string>
+    <string name="thermal_manager_profile_user">Pengguna</string>
+    <string name="thermal_manager_profile_file">File: %1$s</string>
+    <string name="thermal_manager_profile_path">Path: %1$s</string>
+    <string name="thermal_manager_create_profile_short">Buat profil</string>
+    <string name="thermal_manager_create_profile_hint">Buat profil baru dari config termal vendor</string>
+    <string name="thermal_manager_show_system_title">Tampilkan aplikasi sistem</string>
+    <string name="thermal_manager_show_system_summary">Sertakan paket sistem dalam daftar routing</string>
+    <string name="thermal_manager_app_search_hint">Cari aplikasi atau paket</string>
+    <string name="thermal_manager_profile_search_hint">Cari profil atau file</string>
+    <string name="thermal_manager_profile_search_empty">Tidak ada profil yang cocok</string>
+    <string name="thermal_manager_apps_loading">Memuat aplikasi...</string>
+    <string name="thermal_manager_apps_empty">Tidak ada aplikasi yang cocok</string>
+    <string name="thermal_manager_apps_title">Profil aplikasi</string>
+    <string name="thermal_manager_app_system">Sistem</string>
+    <string name="thermal_manager_app_user">Pengguna</string>
+    <string name="thermal_manager_selection_global">Global</string>
+    <string name="thermal_manager_selection_selected">Dipilih</string>
+    <string name="thermal_manager_system_badge">S</string>
+    <string name="thermal_manager_vendor_preset">Preset vendor</string>
+    <string name="thermal_manager_vendor_locked">Preset vendor tidak dapat dihapus</string>
+    <string name="thermal_manager_vendor_read_only">Preset vendor hanya-baca. Clone sebelum mengedit.</string>
+    <string name="thermal_manager_default_profile_name">Termal kustom</string>
+    <string name="thermal_manager_imported_profile_file_name">imported_thermal.json</string>
+    <string name="thermal_manager_error_read_selected_file">Tidak dapat membaca file terpilih</string>
+    <string name="thermal_manager_error_open_export_target">Tidak dapat membuka target ekspor</string>
+    <string name="thermal_manager_error_create_dir">Tidak dapat membuat %1$s</string>
+    <string name="thermal_manager_error_circular_include">Include config termal sirkular: %1$s</string>
+    <string name="thermal_manager_error_root_json_object">Nilai JSON root harus berupa objek</string>
+    <string name="thermal_manager_error_expected_bool">%1$s: diharapkan true atau false</string>
+    <string name="thermal_manager_error_empty_number">%1$s: angka kosong</string>
+    <string name="thermal_manager_error_expected_json_array">%1$s: diharapkan array JSON</string>
+    <string name="thermal_manager_error_severity_array_size">%1$s: array severity harus berisi 7 nilai</string>
+    <string name="thermal_manager_import_missing_key">Kunci hilang: %1$s</string>
+    <string name="thermal_manager_import_missing_entry">Entri hilang: %1$s</string>
+    <string name="thermal_manager_import_missing_object_schema">Skema objek hilang: %1$s</string>
+    <string name="thermal_manager_json_root">root</string>
+    <string name="thermal_manager_json_label">JSON</string>
+    <string name="thermal_manager_export_label">export</string>
+    <string name="thermal_manager_import_label">import</string>
+    <string name="thermal_manager_value_json_array">Array JSON</string>
+    <string name="thermal_manager_value_boolean">true / false</string>
+    <string name="thermal_manager_value_number">angka</string>
+    <string name="thermal_manager_value_null">null</string>
+    <string name="thermal_manager_value_text">teks</string>
+    <string name="thermal_manager_section_root">Root</string>
+    <string name="thermal_manager_section_sensors">Sensor</string>
+    <string name="thermal_manager_section_cooling_devices">Perangkat pendingin</string>
+    <string name="thermal_manager_section_power_rails">Power rail</string>
+    <string name="thermal_manager_section_stats">Statistik</string>
+    <string name="thermal_manager_section_log_info">Info log</string>
+    <string name="thermal_manager_section_includes">Includes</string>
+    <string name="thermal_manager_field_help_pidinfo_fallback">Parameter kontroler PID. Mengubah seberapa cepat dan kuat perangkat pendingin menurunkan daya saat overheat.</string>
+    <string name="thermal_manager_field_help_binded_cdev_fallback">Ikatan sensor ke perangkat pendingin. Field ini memberi tahu Thermal HAL batas mana yang diterapkan saat ambang tercapai.</string>
+    <string name="thermal_manager_field_help_profile_fallback">Override profil Thermal HAL. Ukuran dan isi BindedCdevInfo harus tetap kompatibel dengan daftar sensor dasar.</string>
+    <string name="thermal_manager_field_help_stats_fallback">Field statistik Thermal HAL. Mempengaruhi logging metrik termal dan biasanya tidak mengubah throttling itu sendiri.</string>
+    <string name="thermal_manager_field_help_unknown">Field JSON PixelParts yang tidak dikenal. Akan disimpan apa adanya ke config final. Periksa thermal_info.cpp atau config vendor stock sebelum mengedit.</string>
+    <string name="thermal_manager_field_help_type">Tipe entitas termal AIDL: BATTERY, SKIN, CPU, GPU, USB_PORT, dan lainnya. Framework memakainya untuk callback, UI, dan keputusan sistem.</string>
+    <string name="thermal_manager_field_help_hot_threshold">Tujuh ambang panas per severity: NONE, LIGHT, MODERATE, SEVERE, CRITICAL, EMERGENCY, SHUTDOWN. Nilai lebih tinggi menunda level itu. "NaN" menonaktifkan satu level.</string>
+    <string name="thermal_manager_field_help_hot_hysteresis">Histeresis untuk keluar dari level severity panas. HAL menghapus severity hanya setelah suhu turun di bawah HotThreshold minus nilai ini.</string>
+    <string name="thermal_manager_field_help_cold_threshold">Ambang severity dingin. Lebih jarang dari ambang panas, tapi memakai array tujuh level yang sama. "NaN" menonaktifkan satu level.</string>
+    <string name="thermal_manager_field_help_cold_hysteresis">Histeresis untuk severity dingin. Menghindari perubahan status cepat saat nilai sensor dekat batas.</string>
+    <string name="thermal_manager_field_help_multiplier">Pengali sensor mentah atau sysfs. Di banyak node termal Pixel, 0,001 mengubah miliderajat ke Celsius.</string>
+    <string name="thermal_manager_field_help_polling_delay">Interval polling sensor aktif dalam milidetik saat sensor di luar loop throttling pasif. Nilai lebih rendah bereaksi lebih cepat tapi menambah wakeup.</string>
+    <string name="thermal_manager_field_help_passive_delay">Interval polling dalam mode throttling pasif atau aktif. Sangat memengaruhi respons throttling PID dan hard-limit.</string>
+    <string name="thermal_manager_field_help_virtual_sensor">Flag sensor virtual. Nilainya dihitung dari sensor lain alih-alih dibaca langsung dari sysfs atau properti.</string>
+    <string name="thermal_manager_field_help_formula">Formula sensor atau rail virtual, seperti MAXIMUM atau WEIGHTED_AVG, plus varian lain yang didukung parser.</string>
+    <string name="thermal_manager_field_help_combination">Sensor atau power rail input untuk nilai virtual. Urutan harus cocok dengan Coefficient.</string>
+    <string name="thermal_manager_field_help_coefficient">Bobot untuk Combination. Pada rata-rata berbobot, bobot menentukan kontribusi tiap input ke suhu atau daya final.</string>
+    <string name="thermal_manager_field_help_coefficient_type">Tipe Coefficient untuk formula. Parser memakainya untuk menafsirkan array Coefficient dengan benar.</string>
+    <string name="thermal_manager_field_help_combination_type">Tipe entitas input untuk kalkulasi virtual. Membedakan kombinasi sensor dan rail di config lanjutan.</string>
+    <string name="thermal_manager_field_help_offset">Offset setelah kalkulasi formula sensor virtual. Sering dipakai model kalibrasi suhu skin Pixel.</string>
+    <string name="thermal_manager_field_help_trigger_sensor">Sensor yang event-nya membangunkan sensor virtual dan menghitung ulang nilainya.</string>
+    <string name="thermal_manager_field_help_send_callback">Mengizinkan callback framework saat severity sensor berubah. Memengaruhi ThermalService Android dan aplikasi yang memantau status termal.</string>
+    <string name="thermal_manager_field_help_send_power_hint">Mengizinkan Thermal HAL mengirim hint PowerHAL saat status sensor berubah. Dapat mengubah perilaku scheduler dan performa.</string>
+    <string name="thermal_manager_field_help_hidden">Menyembunyikan sensor dari daftar publik tanpa menonaktifkan pemakaian internal oleh sensor virtual atau aturan throttling.</string>
+    <string name="thermal_manager_field_help_version">Versi model atau skema sensor tertentu. Biasanya informatif untuk model termal Pixel.</string>
+    <string name="thermal_manager_field_help_profile">Override runtime untuk mode termal. Biasanya mengubah limit BindedCdevInfo, sementara daftar pendingin harus tetap kompatibel dengan config dasar.</string>
+    <string name="thermal_manager_field_help_mode">Nama mode profil termal untuk override. HAL menerapkannya lewat mekanisme profil saat sistem memilih mode itu.</string>
+    <string name="thermal_manager_field_help_pid_info">Blok kontroler PID. Menghitung daya yang diminta untuk pendingin dari error antara suhu saat ini dan ambang.</string>
+    <string name="thermal_manager_field_help_k_po">Koefisien proporsional PID saat overheat di atas ambang. Nilai lebih tinggi memotong daya lebih cepat dan keras.</string>
+    <string name="thermal_manager_field_help_k_pu">Koefisien proporsional PID saat kembali di bawah ambang. Memengaruhi pemulihan daya setelah dingin.</string>
+    <string name="thermal_manager_field_help_k_i">Koefisien integral PID. Mengakumulasi error dari waktu ke waktu; terlalu tinggi bisa menahan throttling terlalu lama atau membuat osilasi.</string>
+    <string name="thermal_manager_field_help_k_io">Koefisien integral untuk jalur overshoot saat config memisah K_I untuk overheat dan pemulihan.</string>
+    <string name="thermal_manager_field_help_k_iu">Koefisien integral untuk jalur undershoot atau pemulihan saat config memisah K_I.</string>
+    <string name="thermal_manager_field_help_k_d">Koefisien diferensial PID. Bereaksi pada kecepatan perubahan suhu dan biasanya menghaluskan lonjakan tiba-tiba.</string>
+    <string name="thermal_manager_field_help_i_max">Batas atas suku integral PID. Mencegah akumulasi permintaan throttling tanpa akhir.</string>
+    <string name="thermal_manager_field_help_s_power">Daya berkelanjutan untuk model PID. HAL memakainya sebagai daya dasar untuk menghitung anggaran daya.</string>
+    <string name="thermal_manager_field_help_min_alloc_power">Daya minimum yang bisa dialokasikan PID ke pendingin terikat.</string>
+    <string name="thermal_manager_field_help_max_alloc_power">Daya maksimum yang bisa dialokasikan PID ke pendingin terikat. Biasanya membatasi performa saat panas.</string>
+    <string name="thermal_manager_field_help_i_cutoff">Ambang cutoff suku integral PID. Menghindari akumulasi integral saat error kecil atau mode stabil.</string>
+    <string name="thermal_manager_field_help_i_default">Nilai integral PID awal. Dipakai sebagai titik awal kontroler.</string>
+    <string name="thermal_manager_field_help_i_default_pct">Nilai integral PID awal sebagai persen dari rentang.</string>
+    <string name="thermal_manager_field_help_i_trend">Tren integral atau pemulihan. Pengaturan parser tambahan untuk perilaku PID saat suhu berubah.</string>
+    <string name="thermal_manager_field_help_tran_cycle">Siklus transisi PID. Memengaruhi kecepatan kontroler berpindah antar status.</string>
+    <string name="thermal_manager_field_help_binded_cdev_info">Perangkat pendingin yang diikat ke sensor. Mengubah severity sensor atau permintaan PID menjadi batas frekuensi atau daya nyata.</string>
+    <string name="thermal_manager_field_help_cdev_request">Nama perangkat pendingin dari bagian CoolingDevices. Harus sama persis atau HAL tidak bisa menerapkan batas.</string>
+    <string name="thermal_manager_field_help_limit_info">Nilai hard-limit untuk tujuh level severity. Biasanya status pendinginan: 0 tanpa batas, lebih tinggi berarti batas lebih kuat.</string>
+    <string name="thermal_manager_field_help_limit_info_frequency">Hard-limit alternatif sebagai frekuensi saat pendingin memakai pemetaan frekuensi.</string>
+    <string name="thermal_manager_field_help_cdev_ceiling">Plafon status pendinginan untuk PID per severity. Membatasi seberapa jauh PID bisa men-throttle perangkat.</string>
+    <string name="thermal_manager_field_help_cdev_ceiling_frequency">Plafon frekuensi untuk jalur pendinginan PID atau frekuensi.</string>
+    <string name="thermal_manager_field_help_cdev_weight_for_pid">Bobot perangkat pendingin dalam alokasi PID. Mendistribusikan anggaran termal antara CPU, GPU, TPU, dan pendingin lain.</string>
+    <string name="thermal_manager_field_help_max_release_step">Langkah lepas batas maksimum per siklus. Nilai lebih rendah membuat pemulihan lebih halus.</string>
+    <string name="thermal_manager_field_help_max_throttle_step">Langkah naik throttle maksimum per siklus. Nilai lebih tinggi memotong performa lebih cepat saat overheat.</string>
+    <string name="thermal_manager_field_help_binded_power_rail">Power rail yang diikat ke pendingin untuk akunting daya. Harus cocok dengan bagian PowerRails.</string>
+    <string name="thermal_manager_field_help_power_threshold">Ambang daya untuk logika throttling berbasis daya atau pengecualian bila dikonfigurasi.</string>
+    <string name="thermal_manager_field_help_release_logic">Aturan lepas hard-limit. Mengubah kondisi HAL memulihkan performa.</string>
+    <string name="thermal_manager_field_help_disabled">Menonaktifkan ikatan pendingin tertentu dalam override profil tanpa menghapusnya dari skema.</string>
+    <string name="thermal_manager_field_help_write_path">Path sysfs tempat HAL menulis status atau batas pendinginan. Path salah membuat pendingin tidak efektif.</string>
+    <string name="thermal_manager_field_help_state2_power">Tabel status ke daya. Alokasi PID dan daya memakainya untuk mengubah status menjadi anggaran daya.</string>
+    <string name="thermal_manager_field_help_power_rail">Nama power rail yang menyediakan statistik energi atau daya untuk pendingin atau sensor.</string>
+    <string name="thermal_manager_field_help_power_sample_delay">Jeda antar sampel daya dalam milidetik. Memengaruhi akurasi dan latensi pengukuran rail.</string>
+    <string name="thermal_manager_field_help_power_sample_count">Jumlah sampel untuk merata-rata data rail. Lebih banyak sampel lebih stabil tapi lebih lambat.</string>
+    <string name="thermal_manager_field_help_virtual_rails">Flag power rail virtual. Nilainya dibangun dari Combination dan Coefficient alih-alih dibaca langsung.</string>
+    <string name="thermal_manager_field_help_record_with_default_threshold">Entitas yang helper stats-nya mencatat event memakai ambang default.</string>
+    <string name="thermal_manager_field_help_record_with_threshold">Entitas berambang kustom untuk statistik termal. Tidak harus cocok dengan ambang throttling.</string>
+    <string name="thermal_manager_field_help_default_threshold_enable_all">Mengaktifkan logging ambang default untuk setiap entitas di bagian statistik.</string>
+    <string name="thermal_manager_field_help_thresholds">Nilai ambang statistik. Harus urut menaik atau parser menolak blok statistik.</string>
+    <string name="thermal_manager_field_help_logging_name">Nama metrik yang ditulis helper stats. Berguna saat satu nilai fisik dicatat beberapa cara.</string>
+    <string name="thermal_manager_field_help_abnormality">Pengaturan deteksi perilaku termal abnormal, seperti diagnostik outlier dan sensor macet.</string>
+    <string name="thermal_manager_field_help_outlier">Config deteksi outlier suhu relatif terhadap rentang yang diizinkan.</string>
+    <string name="thermal_manager_field_help_stuck">Config deteksi sensor macet yang nilainya tidak berubah terlalu lama.</string>
+    <string name="thermal_manager_field_help_monitor">Sensor atau pendingin yang dipantau logika stats atau abnormality.</string>
+    <string name="thermal_manager_field_help_temp_range">Rentang suhu yang diizinkan untuk deteksi outlier.</string>
+    <string name="thermal_manager_field_help_temp_stuck">Parameter deteksi macet: berapa polling dan berapa lama nilai boleh tidak berubah.</string>
+    <string name="thermal_manager_field_help_min_polling_count">Jumlah siklus polling minimum sebelum deteksi macet valid.</string>
+    <string name="thermal_manager_field_help_min_stuck_duration">Durasi suhu tidak berubah minimum untuk deteksi macet.</string>
+    <string name="thermal_manager_field_help_record_vote_per_sensor">Statistik vote pendingin per sensor. Membantu tahu sensor mana yang meminta throttling.</string>
+    <string name="thermal_manager_field_help_excluded_power_info">Pengecualian akunting daya untuk sensor. Dipakai saat sebagian rail atau pendingin harus dikecualikan.</string>
+    <string name="thermal_manager_field_help_predictor_info">Blok model prediksi untuk sensor. Parser memakainya untuk meramal suhu di horizon depan.</string>
+    <string name="thermal_manager_field_help_prediction_weight">Bobot model prediksi. Jumlah atau skala salah membuat ramalan tidak berguna.</string>
+    <string name="thermal_manager_field_help_include">Config JSON tambahan. HAL PixelParts mendukung path absolut berawalan slash dan nama relatif dari /vendor/etc.</string>
+    <string name="anim_compile_dialog_compiling">Membangun tema animasi</string>
+    <string name="anim_compile_dialog_installing">Menginstal tema animasi</string>
+    <string name="anim_compile_dialog_success">Tema terinstal</string>
+    <string name="anim_compile_dialog_error">Operasi gagal</string>
+    <string name="anim_compile_dialog_cancelled">Operasi dibatalkan</string>
+    <string name="anim_compile_dialog_progress">%1$d%% selesai</string>
+    <string name="anim_compile_dialog_cancel">Batal</string>
+    <string name="anim_compile_dialog_ok">OK</string>
+    <string name="activity_transition_add_tile">Tambah tile Transisi Aktivitas</string>
+    <string name="addon_settings_empty">Tidak ada pengaturan untuk halaman ini</string>
+    <string name="addon_no_inline_settings_hint">Modul ini tidak punya pengaturan kartu inline. Semua pengaturan ada di halaman aktivitas bawaan:</string>
+    <string name="addon_show_system_desc">Sertakan paket sistem dalam daftar</string>
+    <string name="addon_launchable_only">Hanya yang bisa diluncurkan</string>
+    <string name="addon_launchable_only_desc">Tampilkan aplikasi dengan entri launcher</string>
+    <string name="addon_color_pick">Pilih</string>
+    <string name="addon_settings_import">Impor</string>
+    <string name="addon_settings_export">Ekspor</string>
+    <string name="addon_export_settings_title">Hanya pengaturan</string>
+    <string name="addon_export_settings_desc">Ekspor nilai kunci saat ini sebagai JSON</string>
+    <string name="addon_export_module_title">JAR modul</string>
+    <string name="addon_export_module_desc">Ekspor file modul addon</string>
+    <string name="addon_update_check">Cek pembaruan</string>
+    <string name="addon_update_checking">Memeriksa...</string>
+    <string name="addon_update_install">Perbarui</string>
+    <string name="addon_update_installing">Memperbarui...</string>
+    <string name="addon_update_available">Pembaruan tersedia: %1$s</string>
+    <string name="addon_update_none">Tidak ada pembaruan</string>
+    <string name="addon_update_installed">Pembaruan terinstal</string>
+    <string name="addon_update_failed">Pembaruan gagal</string>
+    <string name="addon_delete_data_update_confirm">Hapus update data untuk "%s"?\n\nAddon sistem akan tetap terinstal.</string>
+    <string name="addon_tile_add">Tambah tile</string>
+    <string name="addon_tile_bind">Ikat tile</string>
+    <string name="addon_tile_name">Nama tile</string>
+    <string name="addon_tile_setting">Pengaturan</string>
+    <string name="addon_tile_long_press">Tekan lama</string>
+    <string name="addon_tile_configurable">Tile terkonfigurasi</string>
+    <string name="addon_tile_not_added">Belum ditambahkan</string>
+    <string name="addon_tile_slot">Slot %1$d</string>
+    <string name="rotation_anim_title">Animasi Rotasi</string>
+    <string name="rotation_anim_subtitle">Kustomisasi gaya animasi rotasi layar</string>
+    <string name="rotation_anim_current">Saat ini: %s</string>
+    <string name="rotation_anim_reset">Reset ke default</string>
+    <string name="rotation_anim_builtin_title">Gaya Bawaan</string>
+    <string name="rotation_anim_custom_title">Tema Kustom</string>
+    <string name="rotation_anim_no_themes">Tidak ada tema kustom terinstal</string>
+    <string name="rotation_anim_import_title">Impor Tema</string>
+    <string name="rotation_anim_style_name">Nama gaya</string>
+    <string name="rotation_anim_exit_file">Animasi keluar</string>
+    <string name="rotation_anim_enter_file">Animasi masuk</string>
+    <string name="rotation_anim_no_file">Tidak ada file dipilih</string>
+    <string name="rotation_anim_compile_btn">Bangun &amp; Instal</string>
+    <string name="rotation_anim_log_title">Log Build</string>
+    <string name="rotation_anim_active">Aktif</string>
+    <string name="rotation_anim_apply">Terapkan</string>
+    <string name="rotation_anim_delete">Hapus</string>
+    <string name="rotation_anim_delete_confirm">Konfirmasi hapus</string>
+    <string name="rotation_anim_cancel">Batal</string>
+    <string name="rotation_anim_preview">Pratinjau</string>
+    <string name="rotation_anim_default">Default</string>
+    <string name="rotation_anim_custom">APK Kustom</string>
+    <string name="rotation_anim_constructor_title">Konstruktor Animasi Rotasi</string>
+    <string name="rotation_anim_constructor_exit">Keluar</string>
+    <string name="rotation_anim_constructor_enter">Masuk</string>
+    <string name="rotation_anim_constructor_preview">Pratinjau rotasi</string>
+    <string name="rotation_anim_constructor_style_name">Nama tema</string>
+    <string name="rotation_anim_constructor_style_hint">mis. kartu berputar</string>
+    <string name="rotation_anim_constructor_build">Bangun Tema Rotasi</string>
+    <string name="rotation_anim_constructor_hide">Sembunyikan</string>
+    <string name="rotation_anim_constructor_show_xml">Tampilkan XML</string>
+    <string name="rotation_anim_constructor_hide_xml">Sembunyikan XML</string>
+    <string name="rotation_style_windows_phone">Windows Phone</string>
+    <string name="rotation_style_win10_11">Windows 10/11</string>
+    <string name="rotation_style_cube">Kubus</string>
+    <string name="rotation_style_zoom">Zoom</string>
+    <string name="rotation_style_slide">Geser</string>
+    <string name="rotation_style_flip">Balik</string>
+    <string name="rotation_style_fade">Fade</string>
+    <string name="rotation_style_bounce">Pantul</string>
+</resources>

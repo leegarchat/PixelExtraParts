@@ -26,10 +26,8 @@ test_rework_*
 # PEP weave outputs (build-time generated, see weave/)
 /weave_gen/
 
-# Gradle (app/ standalone UI work)
+# Gradle standalone work (ignored tree: app_test/)
 /.gradle
-/app/build
 /build
 /.kotlin
-
 /app_test/

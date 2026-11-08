@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zoom: the old window grows away while fading out. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <scale
+        android:fromXScale="1.0" android:toXScale="1.16"
+        android:fromYScale="1.0" android:toYScale="1.16"
+        android:pivotX="50%" android:pivotY="50%"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_cubic"
+        android:duration="260" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_cubic"
+        android:duration="260" />
+</set>

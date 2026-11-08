@@ -1,0 +1,66 @@
+{
+    "id": "ram_purge",
+    "name": "RAM Purge",
+    "author": "Pixel Extra Parts",
+    "description": "Manual background purge (kill-all) without root. Uses system-uid privileges.",
+    "version": "1.0.0",
+    "enabled": true,
+    "accent": "#FFB74D",
+    "backgroundMode": "gradient",
+    "backgroundAlpha": 45,
+    "backgroundGradientSteps": [
+        0,
+        55,
+        100
+    ],
+    "settings": [],
+    "main": [
+        {
+            "id": "ram-purge",
+            "title": "RAM Purge",
+            "subtitle": "Manual background cleanup",
+            "group": "system",
+            "priority": 87,
+            "settings": [
+                {
+                    "key": "ram_purge_info",
+                    "type": "info",
+                    "title": "How it works",
+                    "description": "Kills all cached/background processes via ActivityManager. Foreground, visible and foreground-service processes are untouched. Needs no root: PEP runs as system uid and already holds KILL_ALL_BACKGROUND_PROCESSES."
+                },
+                {
+                    "key": "ram_purge_now",
+                    "title": "Purge background now",
+                    "description": "Runs am kill-all. Best used on a settled system, not in a loop.",
+                    "type": "button",
+                    "command": "am kill-all && echo BACKGROUND PURGED",
+                    "showOutput": true
+                }
+            ]
+        }
+    ],
+    "locales": {
+        "ru": {
+            "description": "Ручная выгрузка фона (kill-all) без рута. Использует системные привилегии.",
+            "main": [
+                {
+                    "id": "ram-purge",
+                    "title": "RAM Purge",
+                    "subtitle": "Ручная чистка фона",
+                    "settings": [
+                        {
+                            "key": "ram_purge_info",
+                            "title": "Как работает",
+                            "description": "Убивает все кэшированные/фоновые процессы через ActivityManager. Foreground, видимые и процессы с foreground-сервисами не трогает. Рут не нужен: PEP работает как system uid и уже имеет KILL_ALL_BACKGROUND_PROCESSES."
+                        },
+                        {
+                            "key": "ram_purge_now",
+                            "title": "Выгрузить фон",
+                            "description": "Выполняет am kill-all. Лучше на осевшей системе, не в цикле."
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
