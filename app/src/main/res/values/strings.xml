@@ -149,6 +149,9 @@
     <string name="sysui_rot_status">Style: %1$s</string>
     <!-- Display section -->
     <string name="display_desc">Screen color and brightness controls</string>
+    <string name="home_group_system">System</string>
+    <string name="home_group_misc">Misc</string>
+    <string name="display_group_screen">Screen</string>
     <string name="display_advanced_title">Advanced</string>
     <string name="display_mode_always">Always</string>
     <string name="display_fmt_lux">%1$d lx</string>

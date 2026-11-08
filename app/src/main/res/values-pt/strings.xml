@@ -149,6 +149,9 @@
     <string name="sysui_rot_status">Estilo: %1$s</string>
     <!-- Display section -->
     <string name="display_desc">Cores do ecrã e controlos de brilho</string>
+    <string name="home_group_system">Sistema</string>
+    <string name="home_group_misc">Outros</string>
+    <string name="display_group_screen">Tela</string>
     <string name="display_advanced_title">Avançado</string>
     <string name="display_mode_always">Sempre</string>
     <string name="display_fmt_lux">%1$d lx</string>

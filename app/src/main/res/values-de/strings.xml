@@ -149,6 +149,9 @@
     <string name="sysui_rot_status">Stil: %1$s</string>
     <!-- Display section -->
     <string name="display_desc">Bildschirmfarben und Helligkeit steuern</string>
+    <string name="home_group_system">System</string>
+    <string name="home_group_misc">Sonstiges</string>
+    <string name="display_group_screen">Bildschirm</string>
     <string name="display_advanced_title">Erweitert</string>
     <string name="display_mode_always">Immer</string>
     <string name="display_fmt_lux">%1$d lx</string>

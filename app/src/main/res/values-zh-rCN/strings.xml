@@ -149,6 +149,9 @@
     <string name="sysui_rot_status">样式：%1$s</string>
     <!-- Display section -->
     <string name="display_desc">屏幕色彩与亮度控制</string>
+    <string name="home_group_system">系统</string>
+    <string name="home_group_misc">其他</string>
+    <string name="display_group_screen">屏幕</string>
     <string name="display_advanced_title">高级</string>
     <string name="display_mode_always">始终</string>
     <string name="display_fmt_lux">%1$d lx</string>

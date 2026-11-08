@@ -149,6 +149,9 @@
     <string name="sysui_rot_status">Стиль: %1$s</string>
     <!-- Display section -->
     <string name="display_desc">Цвета экрана и управление яркостью</string>
+    <string name="home_group_system">Система</string>
+    <string name="home_group_misc">Разное</string>
+    <string name="display_group_screen">Экран</string>
     <string name="display_advanced_title">Расширенные</string>
     <string name="display_mode_always">Всегда</string>
     <string name="display_fmt_lux">%1$d lx</string>
