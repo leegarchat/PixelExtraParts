@@ -64,6 +64,9 @@ internal data class DockChrome(
     val progress: Float,
     val widthPhase: Float,
     val heightPhase: Float,
+    // Editor-mode list scroll: 0 = bottom-anchored, grows upward to reveal
+    // earlier rows. Rendering adds it to every row/header offset directly.
+    val editorScrollPx: Float,
 )
 
 // Live drag/settle snapshot shared by the row children. Rows are passive
@@ -99,11 +102,13 @@ internal fun DockChrome.slotTopY(slot: Int, overCount: Int, tabCount: Int): Floa
 // the arrangement commitDrop actually swapped in. Term-by-term it
 // equals the static row's rest position post-commit (same space,
 // same slotTopY math); it must stay in sync with slotTopY.
+// scrollPx is the editor-mode list scroll added on top of the base.
 internal fun DockChrome.committedSlotTopY(
     slot: Int,
     over: Int,
     tabs: Int,
     maxAllowedBarHPx: Float,
+    scrollPx: Float,
 ): Float {
     val pinnedTopFromBottom =
         footerHPx + tabs * pillHPx + (tabs - 1).coerceAtLeast(0) * rowGapPx
@@ -114,7 +119,7 @@ internal fun DockChrome.committedSlotTopY(
     val mainTopFromBottom = overTopFromBottom + rowGapPx + sectionHeaderHPx
     val barHPx = (expandedPadTopPx + mainTopFromBottom)
         .coerceAtMost(maxAllowedBarHPx)
-    return if (slot < over) {
+    val baseTop = if (slot < over) {
         val fromBottom = over - 1 - slot
         val itemTopFromBottom =
             overBottomFromBottom + fromBottom * (pillHPx + rowGapPx) + pillHPx
@@ -124,4 +129,5 @@ internal fun DockChrome.committedSlotTopY(
         val stepsAboveDivider = (tabs - 1 - tabIdx).coerceAtLeast(0)
         barHPx - footerHPx - pillHPx - stepsAboveDivider * (pillHPx + rowGapPx)
     }
+    return baseTop + scrollPx
 }

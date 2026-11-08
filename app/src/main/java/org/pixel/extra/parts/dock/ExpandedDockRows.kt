@@ -21,6 +21,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -119,6 +120,21 @@ internal fun ExpandedOverflowRows(
                         settleExtraYPx = settleAnim.value
                     }
 
+                    // The held row lives in screen space: it follows the finger and
+                    // is clamped to the visible viewport so it never disappears under
+                    // the bar clip. The list scrolls underneath it via auto-scroll.
+                    val draggedTopY = (drag.dragStartTopPx + drag.dragOffsetYPx)
+                        .coerceIn(
+                            chrome.expandedPadTopPx,
+                            (chrome.expandedBarHPx - chrome.footerHPx - pillHPx)
+                                .coerceAtLeast(chrome.expandedPadTopPx),
+                        )
+                    val rowTopNow = when {
+                        isDragged -> draggedTopY
+                        isSettling -> drag.settleBaseTopPx
+                        else -> glideTopY + slideUpOffsetPx + chrome.editorScrollPx
+                    }
+
                     OverflowEntryRow(
                         entry = item,
                         motion = motion,
@@ -130,8 +146,7 @@ internal fun ExpandedOverflowRows(
                         jigglePhase = jigglePhase + slot * 1.15f,
                         wobbleStrength = wobbleStrength,
                         shiftTargetPx = shiftTarget,
-                        followOffsetYPx = if (isDragged) drag.dragOffsetYPx
-                        else if (isSettling) settleExtraYPx else null,
+                        followOffsetYPx = if (isSettling) settleExtraYPx else null,
                         onPick = {
                             haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onPickEntry(item.key)
@@ -141,9 +156,20 @@ internal fun ExpandedOverflowRows(
                             .offset {
                                 IntOffset(
                                     x = chrome.expandedPadHPx.roundToInt(),
-                                    y = ((if (isDragged) drag.dragStartTopPx else if (isSettling) drag.settleBaseTopPx else glideTopY) + slideUpOffsetPx).roundToInt(),
+                                    y = rowTopNow.roundToInt(),
                                 )
                             }
+                            .then(
+                                if (editorMode && !isDragged && !isSettling) {
+                                    Modifier.clipToVerticalBand(
+                                        topPx = chrome.expandedPadTopPx,
+                                        bottomPx = chrome.expandedBarHPx - chrome.footerHPx,
+                                        itemTopPx = rowTopNow,
+                                    )
+                                } else {
+                                    Modifier
+                                },
+                            )
                             .width(rowWidthPx.toDp())
                             .height(PillH)
                             .onPlaced { coords ->
@@ -278,6 +304,19 @@ internal fun PinnedFlightRows(
                     settleExtraYPx = settleAnim.value
                 }
                 val settledTopY = if (p > 0.999f) glidePinnedY else curTopY
+                // Same screen-space rule as overflow rows: the held row follows the
+                // finger and stays clamped inside the visible viewport.
+                val draggedTopY = (drag.dragStartTopPx + drag.dragOffsetYPx)
+                    .coerceIn(
+                        chrome.expandedPadTopPx,
+                        (chrome.expandedBarHPx - chrome.footerHPx - pillHPx)
+                            .coerceAtLeast(chrome.expandedPadTopPx),
+                    )
+                val rowTopNow = when {
+                    isDragged -> draggedTopY
+                    isSettling -> drag.settleBaseTopPx
+                    else -> settledTopY + chrome.editorScrollPx
+                }
 
                 UnifiedDockTabItem(
                     entry = tab,
@@ -294,8 +333,7 @@ internal fun PinnedFlightRows(
                     jigglePhase = jigglePhase + slot * 1.15f,
                     wobbleStrength = wobbleStrength,
                     shiftTargetPx = shiftTarget,
-                    followOffsetYPx = if (isDragged) drag.dragOffsetYPx
-                    else if (isSettling) settleExtraYPx else null,
+                    followOffsetYPx = if (isSettling) settleExtraYPx else null,
                     onExpandedClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onPickEntry(tab.key)
@@ -305,9 +343,20 @@ internal fun PinnedFlightRows(
                         .offset {
                             IntOffset(
                                 x = curLocalX.roundToInt(),
-                                y = (if (isDragged) drag.dragStartTopPx else if (isSettling) drag.settleBaseTopPx else settledTopY).roundToInt(),
+                                y = rowTopNow.roundToInt(),
                             )
                         }
+                        .then(
+                            if (editorMode && !isDragged && !isSettling) {
+                                Modifier.clipToVerticalBand(
+                                    topPx = chrome.expandedPadTopPx,
+                                    bottomPx = chrome.expandedBarHPx - chrome.footerHPx,
+                                    itemTopPx = rowTopNow,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        )
                         .width(curW.toDp())
                         .widthIn(max = pillWidthCapNowPx.toDp())
                         .height(PillH)
@@ -357,7 +406,7 @@ internal fun SettledDockList(
                 }
                 .width(rowWidthPx.toDp())
                 .height(listHPx.toDp()),
-            verticalArrangement = Arrangement.spacedBy(RowGap),
+            verticalArrangement = Arrangement.spacedBy(RowGap, Alignment.Bottom),
             userScrollEnabled = true,
         ) {
             item(key = "main-header") {
@@ -460,6 +509,7 @@ internal fun MainSectionHeader(
             val reveal = sstep(chrome.barHPx, mid, revealEnd)
             if (!settledList && reveal > 0.001f) {
                 val slideUpPx = (1f - reveal) * motion.riseOffsetDp.dp.toPx()
+                val headerTopPx = glideY + slideUpPx + chrome.editorScrollPx
                 SectionHeaderDivider(
                     title = title,
                     revealProgress = reveal,
@@ -467,9 +517,14 @@ internal fun MainSectionHeader(
                         .offset {
                             IntOffset(
                                 x = chrome.expandedPadHPx.roundToInt(),
-                                y = (glideY + slideUpPx).roundToInt(),
+                                y = headerTopPx.roundToInt(),
                             )
                         }
+                        .clipToVerticalBand(
+                            topPx = chrome.expandedPadTopPx,
+                            bottomPx = chrome.expandedBarHPx - chrome.footerHPx,
+                            itemTopPx = headerTopPx,
+                        )
                         .width(rowWidthPx.toDp())
                         .height(SectionHeaderH),
                 )
@@ -507,6 +562,7 @@ internal fun FavoritesSectionHeader(
             val reveal = sstep(chrome.barHPx, mid, revealEnd)
             if (!settledList && reveal > 0.001f) {
                 val slideUpPx = (1f - reveal) * motion.riseOffsetDp.dp.toPx()
+                val headerTopPx = glideY + slideUpPx + chrome.editorScrollPx
                 SectionHeaderDivider(
                     title = title,
                     revealProgress = reveal,
@@ -514,9 +570,14 @@ internal fun FavoritesSectionHeader(
                         .offset {
                             IntOffset(
                                 x = chrome.expandedPadHPx.roundToInt(),
-                                y = (glideY + slideUpPx).roundToInt(),
+                                y = headerTopPx.roundToInt(),
                             )
                         }
+                        .clipToVerticalBand(
+                            topPx = chrome.expandedPadTopPx,
+                            bottomPx = chrome.expandedBarHPx - chrome.footerHPx,
+                            itemTopPx = headerTopPx,
+                        )
                         .width(rowWidthPx.toDp())
                         .height(SectionHeaderH),
                 )

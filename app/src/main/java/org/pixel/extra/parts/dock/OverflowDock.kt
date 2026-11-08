@@ -58,7 +58,7 @@ import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
 import kotlin.math.PI
 import kotlin.math.abs
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 import org.pixel.extra.parts.R
 import org.pixel.extra.parts.editor.DockEditor
 import org.pixel.extra.parts.motion.MotionPrefs
@@ -112,6 +112,10 @@ fun ExpressiveFloatingDockWithOverflow(
     var dragStartSlot by remember { mutableIntStateOf(-1) }
     var dragHoverSlot by remember { mutableIntStateOf(-1) }
     var dragStartTopPx by remember { mutableFloatStateOf(0f) }
+    // Editor-mode vertical list scroll. 0 is the bottom-anchored rest position;
+    // growing values slide the whole absolute-row stack down to reveal earlier
+    // rows. Reset on every editor exit/collapse.
+    var editorScrollPx by remember { mutableFloatStateOf(0f) }
     // Settle phase: after drop the released row keeps rendering on a frozen base
     // (settleBaseTopPx) plus a decaying residual (Animatable from the release
     // offset to the committed-slot delta), so off-center releases glide instead
@@ -146,12 +150,8 @@ fun ExpressiveFloatingDockWithOverflow(
     LaunchedEffect(editorMode, expanded) {
         if (!editorMode || !expanded) {
             resetDrag()
+            editorScrollPx = 0f
         }
-    }
-
-    // Reopen the settled scroll list at the top on every expand.
-    LaunchedEffect(expanded) {
-        if (expanded) overflowListState.scrollToItem(0)
     }
 
     fun commitDrop(key: String, hover: Int): DockEditor.DropResult? {
@@ -172,16 +172,10 @@ fun ExpressiveFloatingDockWithOverflow(
         return res
     }
 
-    // Single source of truth for arrangement: while an editor drag is active the
-    // preview lists are exactly DockEditor.applyDrop(pinnedKeys, overflowKeys,
-    // dragKey, dragHoverSlot) — the same pure call commitDrop uses. Rendering
-    // (order, counts, geometry) derives from these preview lists, so on drop the
-    // commit swaps in identical lists and only clears drag state: neighbors do not
-    // move and the held row simply settles into the already-vacated slot. Invalid
-    // hovers (applyDrop returns null, e.g. demoting the last favorite) preview no
-    // change and are rejected with haptics in commitDrop. Free-slot promotion
-    // inserts live (the grid expands during hover); at MAX_PINNED the evicted
-    // first favorite is shown live in the dragged item's origin slot.
+    // Single arrangement source: during an editor drag the preview lists are
+    // exactly DockEditor.applyDrop(pinnedKeys, overflowKeys, dragKey,
+    // dragHoverSlot), the same pure call commitDrop uses. Rendering derives
+    // from them, so on drop only drag state clears and neighbors do not move.
     val previewDrop = remember(pinnedKeys, overflowKeys, dragKey, dragHoverSlot, editorMode, expanded) {
         val key = dragKey
         if (!editorMode || !expanded || key == null || dragHoverSlot < 0) null
@@ -213,6 +207,17 @@ fun ExpressiveFloatingDockWithOverflow(
         val overflowSet = previewOverflowKeys.toSet()
         val ordered = previewOverflowKeys.filterNot { it in pinnedSet }.mapNotNull { byKey[it] }
         ordered + (tabs + overflowItems).filter { it.key !in pinnedSet && it.key !in overflowSet }
+    }
+
+    // The expanded list is anchored to the bottom: on every expand, request the
+    // last item before the settled list first measures. requestScrollToItem is
+    // synchronous (unlike scrollToItem, which waits for the first layout), so
+    // the first composed frame is already the bottom slice, no top flash.
+    val settledItemCount = 2 + effOverflow.size + effTabs.size
+    LaunchedEffect(expanded, settledItemCount) {
+        if (expanded && settledItemCount > 0) {
+            overflowListState.requestScrollToItem(settledItemCount - 1)
+        }
     }
 
     // Continuous jiggle phase for editor mode.
@@ -438,6 +443,20 @@ fun ExpressiveFloatingDockWithOverflow(
                     .coerceAtMost(maxAllowedBarH.toPx())
                 val maxAllowedBarHPx = maxAllowedBarH.toPx()
 
+                // Editor scroll viewport: rows live between the top padding and
+                // the fixed footer. The content height comes from the same
+                // bottom-up slot geometry, so maxScroll is exact for both the
+                // fully-fitted and the capped (landscape) bar.
+                val editorViewportTopPx = expandedPadTopPx
+                val editorViewportBottomPx = expandedBarHPx - footerHPx
+                val editorContentTopPx = expandedBarHPx - mainHeaderTopFromBottomPx
+                val editorViewportHPx =
+                    (editorViewportBottomPx - editorViewportTopPx).coerceAtLeast(0f)
+                val editorContentHPx =
+                    (editorViewportBottomPx - editorContentTopPx).coerceAtLeast(0f)
+                val maxEditorScrollPx =
+                    (editorContentHPx - editorViewportHPx).coerceAtLeast(0f)
+
                 val curBarWPx = lerp(collapsedBarWPx, wFullPx, pw)
                 val curBarHPx = lerp(collapsedBarHPx, expandedBarHPx, ph)
 
@@ -464,6 +483,7 @@ fun ExpressiveFloatingDockWithOverflow(
                     progress = p,
                     widthPhase = pw,
                     heightPhase = ph,
+                    editorScrollPx = editorScrollPx,
                 )
                 val dragSnapshot = DockDragSnapshot(
                     dragKey = dragKey,
@@ -476,21 +496,40 @@ fun ExpressiveFloatingDockWithOverflow(
                     settleTargetDeltaPx = settleTargetDeltaPx,
                 )
 
+                // Keep the editor scroll inside the computed range when the
+                // arrangement (row counts / bar cap) changes.
+                LaunchedEffect(maxEditorScrollPx) {
+                    editorScrollPx = editorScrollPx.coerceIn(0f, maxEditorScrollPx)
+                }
+
+                val edgeZonePx = 40.dp.toPx()
+                val autoScrollStepPx = 6.dp.toPx()
+
+                fun clampedDragTop(originTop: Float, offsetY: Float): Float {
+                    val minTop = editorViewportTopPx
+                    val maxTop = (editorViewportBottomPx - pillHPx).coerceAtLeast(minTop)
+                    return (originTop + offsetY).coerceIn(minTop, maxTop)
+                }
+
+                fun editorSlotTop(slot: Int): Float =
+                    chrome.slotTopY(slot, overCount, tabCount) + editorScrollPx
+
                 // Preview neighbors need no extra shift: the eff lists above already
                 // equal the commit arrangement (see previewDrop).
                 fun computeHoverSlot(startSlot: Int, offsetY: Float, isFromPinned: Boolean): Int {
                     // True finger Y: origin top captured at pick-up plus finger travel.
                     // Candidates are the current preview slots; the resulting hover int
                     // feeds the same applyDrop call for preview and for commit, so both
-                    // arrangements stay identical.
-                    val originTop = if (dragStartTopPx > 0f) dragStartTopPx else chrome.slotTopY(startSlot, overCount, tabCount)
-                    val draggedTopY = originTop + offsetY
+                    // arrangements stay identical. The held row is clamped to the
+                    // viewport because that is where it is actually drawn.
+                    val originTop = if (dragStartTopPx > 0f) dragStartTopPx else editorSlotTop(startSlot)
+                    val draggedTopY = clampedDragTop(originTop, offsetY)
                     // Full 0..totalRows-1 range on purpose: invalid targets (e.g. demoting
                     // the last favorite) stay previewable and are rejected in commitDrop
                     // with a Reject haptic and no state change.
                     val maxAllowedSlot = (totalRows - 1).coerceAtLeast(0)
                     val nearest = (0..maxAllowedSlot).minByOrNull { candidate ->
-                        abs(draggedTopY - chrome.slotTopY(candidate, overCount, tabCount))
+                        abs(draggedTopY - editorSlotTop(candidate))
                     } ?: startSlot
                     // Hysteresis at slot boundaries: keep the current hover until the
                     // finger is clearly closer to the new slot, so 1-2px jitter exactly
@@ -498,8 +537,8 @@ fun ExpressiveFloatingDockWithOverflow(
                     // forth while the finger is steady.
                     val current = dragHoverSlot
                     if (nearest != current && current in 0..maxAllowedSlot) {
-                        val dNew = abs(draggedTopY - chrome.slotTopY(nearest, overCount, tabCount))
-                        val dCur = abs(draggedTopY - chrome.slotTopY(current, overCount, tabCount))
+                        val dNew = abs(draggedTopY - editorSlotTop(nearest))
+                        val dCur = abs(draggedTopY - editorSlotTop(current))
                         if (dNew + touchSlopPx * 0.35f >= dCur) return current
                     }
                     return nearest
@@ -530,7 +569,13 @@ fun ExpressiveFloatingDockWithOverflow(
                     // next placement pass and poison the very hit-test below.
                     val finalSlot = (overflowKeys + pinnedKeys).indexOf(key)
                     if (finalSlot >= 0) {
-                        val finalTop = chrome.committedSlotTopY(finalSlot, overflowKeys.size, pinnedKeys.size, maxAllowedBarHPx)
+                        val finalTop = chrome.committedSlotTopY(
+                            finalSlot,
+                            overflowKeys.size,
+                            pinnedKeys.size,
+                            maxAllowedBarHPx,
+                            editorScrollPx,
+                        )
                         val cur = rowBoundsPx[key]
                         if (cur != null) {
                             val h = cur.bottom - cur.top
@@ -571,10 +616,20 @@ fun ExpressiveFloatingDockWithOverflow(
                         return null
                     }
                     for (slot in 0 until totalRows) {
-                        val top = chrome.slotTopY(slot, overCount, tabCount)
+                        val top = editorSlotTop(slot)
                         if (y >= top && y <= top + pillHPx) return slot
                     }
                     return null
+                }
+
+                fun rowRightAtSlot(slot: Int): Float? {
+                    val key = if (slot < overCount) {
+                        effOverflow.getOrNull(slot)?.key
+                    } else {
+                        effTabs.getOrNull(slot - overCount)?.key
+                    } ?: return null
+                    return rowBoundsPx[key]?.right
+                        ?: (chrome.expandedPadHPx + chrome.expandedRowWPx)
                 }
 
                 fun pickUpAt(slot: Int) {
@@ -599,9 +654,9 @@ fun ExpressiveFloatingDockWithOverflow(
                     // committed geometry — its measured rect still sits at the stale
                     // release origin until the next placement refreshes it.
                     dragStartTopPx = if (keyAtSlot == wasSettling) {
-                        chrome.slotTopY(slot, overCount, tabCount)
+                        editorSlotTop(slot)
                     } else {
-                        rowBoundsPx[keyAtSlot]?.top ?: chrome.slotTopY(slot, overCount, tabCount)
+                        rowBoundsPx[keyAtSlot]?.top ?: editorSlotTop(slot)
                     }
                 }
 
@@ -618,15 +673,54 @@ fun ExpressiveFloatingDockWithOverflow(
                     }
                 }
 
+                // Scroll the editor list by finger delta (positive = content moves
+                // down / earlier rows appear). While a row is held, the list slides
+                // under a stationary finger, so hover slots must be re-resolved.
+                fun scrollEditorBy(delta: Float) {
+                    val next = (editorScrollPx + delta).coerceIn(0f, maxEditorScrollPx)
+                    if (next == editorScrollPx) return
+                    editorScrollPx = next
+                    if (dragKey != null && dragStartSlot >= 0) {
+                        val hover = computeHoverSlot(
+                            startSlot = dragStartSlot,
+                            offsetY = dragOffsetY,
+                            isFromPinned = false,
+                        )
+                        if (hover != dragHoverSlot) {
+                            dragHoverSlot = hover
+                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        }
+                    }
+                }
+
+                // Auto-scroll driver, ticked from a LaunchedEffect while a drag is
+                // active. Speed ramps with how deep the held row is inside the
+                // 40.dp edge zone, so a stationary finger still pulls the list.
+                fun autoScrollTick() {
+                    if (dragKey == null) return
+                    val heldTop = clampedDragTop(dragStartTopPx, dragOffsetY)
+                    val topDepth = ((editorViewportTopPx + edgeZonePx) - heldTop)
+                        .coerceIn(0f, edgeZonePx)
+                    val bottomDepth = ((heldTop + pillHPx) - (editorViewportBottomPx - edgeZonePx))
+                        .coerceIn(0f, edgeZonePx)
+                    val step = when {
+                        topDepth > 0f -> autoScrollStepPx * (topDepth / edgeZonePx)
+                        bottomDepth > 0f -> -autoScrollStepPx * (bottomDepth / edgeZonePx)
+                        else -> 0f
+                    }
+                    if (step != 0f) scrollEditorBy(step)
+                }
+
                 fun dropNow() {
                     val key = dragKey
                     if (key == null) {
                         resetDrag()
                         return
                     }
-                    // Snapshot the visual release point before commit clears drag state.
-                    val releaseBaseTopPx = dragStartTopPx
-                    val releaseOffsetPx = dragOffsetY
+                    // Snapshot the clamped visual release point before commit clears
+                    // drag state: the settle animation must start exactly where the
+                    // held row is drawn, even when the finger pushed past the viewport.
+                    val releaseTopPx = clampedDragTop(dragStartTopPx, dragOffsetY)
                     val hover = dragHoverSlot
                     // Single source of truth: commit with the live hover, then resolve
                     // the settle target from the arrangement commitDrop swapped in
@@ -639,16 +733,21 @@ fun ExpressiveFloatingDockWithOverflow(
                     val res = commitDrop(key, hover)
                     resetDrag()
                     // Settle phase: glide the residual delta to the committed slot instead
-                    // of snapping. Base + start == release point (continuous), base + target
-                    // == committed slot top. Invalid drops spring back to origin the same way.
+                    // of snapping. Invalid drops spring back to origin the same way.
                     val postPinned = res?.pinned ?: pinnedKeys
                     val postOverflow = res?.overflow ?: overflowKeys
                     val finalSlot = (postOverflow + postPinned).indexOf(key)
                     if (finalSlot < 0) return
-                    val finalTopPx = chrome.committedSlotTopY(finalSlot, postOverflow.size, postPinned.size, maxAllowedBarHPx)
-                    settleBaseTopPx = releaseBaseTopPx
-                    settleStartDeltaPx = releaseOffsetPx
-                    settleTargetDeltaPx = finalTopPx - releaseBaseTopPx
+                    val finalTopPx = chrome.committedSlotTopY(
+                        finalSlot,
+                        postOverflow.size,
+                        postPinned.size,
+                        maxAllowedBarHPx,
+                        editorScrollPx,
+                    )
+                    settleBaseTopPx = releaseTopPx
+                    settleStartDeltaPx = 0f
+                    settleTargetDeltaPx = finalTopPx - releaseTopPx
                     settleToken++
                     settleKey = key
                 }
@@ -667,83 +766,45 @@ fun ExpressiveFloatingDockWithOverflow(
                     latestToggleExpand(false)
                 }
 
+                val latestAutoScrollTick by rememberUpdatedState(::autoScrollTick)
+                // Stationary-finger auto-scroll: ticks every frame while a row is
+                // held, and stops as soon as the drag session ends.
+                LaunchedEffect(dragKey) {
+                    if (dragKey == null) return@LaunchedEffect
+                    while (true) {
+                        delay(16L)
+                        latestAutoScrollTick()
+                    }
+                }
+
                 val latestSlotAtDown by rememberUpdatedState(::slotAtDown)
+                val latestRowRightAtSlot by rememberUpdatedState(::rowRightAtSlot)
                 val latestParkSettleForPickup by rememberUpdatedState(::parkSettleForPickup)
                 val latestPickUpAt by rememberUpdatedState(::pickUpAt)
                 val latestDragBy by rememberUpdatedState(::dragBy)
                 val latestDropNow by rememberUpdatedState(::dropNow)
                 val latestCancelNow by rememberUpdatedState(::cancelNow)
+                val latestScrollEditorBy by rememberUpdatedState(::scrollEditorBy)
                 val latestEditorActive by rememberUpdatedState(editorMode)
                 val latestExpandedState by rememberUpdatedState(expanded)
-                val latestTouchSlop by rememberUpdatedState(touchSlopPx)
                 val latestHaptics by rememberUpdatedState(haptics)
 
                 BottomBlurBar(
                     modifier = Modifier
                         .width(curBarWPx.toDp())
                         .height(curBarHPx.toDp())
-                        .pointerInput(expanded) {
-                            if (expanded) return@pointerInput
-                            awaitEachGesture {
-                                val down = awaitFirstDown(requireUnconsumed = false)
-                                if (latestExpanded) return@awaitEachGesture
-
-                                isDockPressed = true
-                                val initialHit = resolveKeyAtCollapsedX(down.position.x)
-                                pressedKey = initialHit
-
-                                if (initialHit == BurgerKey) {
-                                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    latestToggleExpand(true)
-                                    try {
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            if (event.changes.none { it.pressed }) break
-                                            event.changes.forEach { it.consume() }
-                                        }
-                                    } finally {
-                                        isDockPressed = false
-                                        pressedKey = null
-                                    }
-                                    return@awaitEachGesture
-                                } else if (initialHit != null) {
-                                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    if (initialHit != latestSelected) {
-                                        latestSelect(initialHit)
-                                    }
-                                }
-
-                                var anchorX = down.position.x
-                                try {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        val change = event.changes.firstOrNull { it.id == down.id }
-                                            ?: event.changes.firstOrNull()
-                                        if (change == null || !change.pressed) break
-
-                                        val x = change.position.x
-                                        val fingerMoved = abs(x - anchorX) > 0.5f
-                                        val hit = resolveKeyAtCollapsedX(x)
-                                        if (hit == BurgerKey) {
-                                            if (fingerMoved) {
-                                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                latestToggleExpand(true)
-                                                break
-                                            }
-                                        } else if (hit != null && hit != latestSelected && fingerMoved) {
-                                            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                            latestSelect(hit)
-                                            anchorX = x
-                                        }
-                                        pressedKey = hit
-                                        change.consume()
-                                    }
-                                } finally {
-                                    isDockPressed = false
-                                    pressedKey = null
-                                }
-                            }
-                        },
+                        .collapsedDockGesture(
+                            enabled = !expanded,
+                            resolveKeyAtX = ::resolveKeyAtCollapsedX,
+                            selectedKey = { latestSelected },
+                            onBurger = { latestToggleExpand(true) },
+                            onSelect = { latestSelect(it) },
+                            onPressChange = { isDockPressed = it },
+                            onPressedKeyChange = { pressedKey = it },
+                            onHaptic = {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            },
+                        ),
                     blurState = blurState,
                     blurRadius = blurRadius,
                     scale = barScale,
@@ -754,78 +815,29 @@ fun ExpressiveFloatingDockWithOverflow(
                             .fillMaxSize()
                             .wrapContentHeight(align = Alignment.Bottom, unbounded = true)
                             .height(expandedBarHPx.toDp())
-                            .pointerInput(editorMode) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown(requireUnconsumed = false)
-                                    if (!latestEditorActive || !latestExpandedState) {
-                                        return@awaitEachGesture
-                                    }
-                                    // Isolate gestures: park a previous settle before
-                                    // hit-testing so DOWN resolves against committed
-                                    // geometry, never the old row's stale origin rect.
-                                    latestParkSettleForPickup()
-                                    val startSlot = latestSlotAtDown(
-                                        down.position.y,
-                                        down.position.x,
-                                    ) ?: return@awaitEachGesture
-                                    var releasedBeforeActivation = false
-                                    var suppressTap = false
-                                    var initialDragDy = 0f
-                                    withTimeoutOrNull(200L) {
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            val change = event.changes.firstOrNull { it.id == down.id }
-                                                ?: event.changes.firstOrNull()
-                                            if (change == null || !change.pressed) {
-                                                // Quick release: leave unconsumed so the row's
-                                                // normal tap click lands; a preceding scrub has
-                                                // already consumed its moves (see below).
-                                                if (suppressTap) change?.consume()
-                                                releasedBeforeActivation = true
-                                                break
-                                            }
-                                            val delta = change.position - down.position
-                                            if (abs(delta.y) > latestTouchSlop * 0.6f &&
-                                                abs(delta.y) >= abs(delta.x)
-                                            ) {
-                                                initialDragDy =
-                                                    change.position.y - change.previousPosition.y
-                                                change.consume()
-                                                break
-                                            } else if (delta.getDistance() > latestTouchSlop * 2f) {
-                                                // Horizontal scrub in editor: swallow so it neither
-                                                // picks the row up early nor fires its tap; keep
-                                                // waiting for release (suppressed tap) or timeout
-                                                // (long-press pickup).
-                                                suppressTap = true
-                                                change.consume()
-                                            }
-                                        }
-                                    }
-                                    if (releasedBeforeActivation) return@awaitEachGesture
-                                    latestHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    latestPickUpAt(startSlot)
-                                    if (initialDragDy != 0f) latestDragBy(initialDragDy)
-                                    try {
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            val change = event.changes.firstOrNull { it.id == down.id }
-                                                ?: event.changes.firstOrNull()
-                                                ?: break
-                                            if (!change.pressed) {
-                                                change.consume()
-                                                break
-                                            }
-                                            val dy = change.position.y - change.previousPosition.y
-                                            if (dy != 0f) latestDragBy(dy)
-                                            change.consume()
-                                        }
-                                        latestDropNow()
-                                    } catch (e: Exception) {
-                                        latestCancelNow()
-                                    }
-                                }
-                            },
+                            .editorDockGestures(
+                                EditorGestureSpec(
+                                    isActive = { latestEditorActive && latestExpandedState },
+                                    touchSlopPx = touchSlopPx,
+                                    gripZonePx = 48.dp.toPx(),
+                                    longPressMs = 220L,
+                                    viewportTopPx = editorViewportTopPx,
+                                    viewportBottomPx = editorViewportBottomPx,
+                                    slotAtDown = { y, x -> latestSlotAtDown(y, x) },
+                                    rowRightAt = { slot -> latestRowRightAtSlot(slot) },
+                                    parkSettle = { latestParkSettleForPickup() },
+                                    pickUp = { slot -> latestPickUpAt(slot) },
+                                    dragBy = { dy -> latestDragBy(dy) },
+                                    drop = { latestDropNow() },
+                                    cancel = { latestCancelNow() },
+                                    scrollBy = { dy -> latestScrollEditorBy(dy) },
+                                    onPickupHaptic = {
+                                        latestHaptics.performHapticFeedback(
+                                            HapticFeedbackType.LongPress,
+                                        )
+                                    },
+                                ),
+                            ),
                     ) {
                         // Settled open state (fully expanded, not editing): one scroll
                         // region above the fixed footer holding the main header, all
@@ -919,7 +931,9 @@ fun ExpressiveFloatingDockWithOverflow(
                         // --- 2. "FAVORITES" SECTION (pinned tabs) ---
                         // Absolute flight rows for the expand animation and editor mode;
                         // the settled open state uses the unified scroll list above.
-                        if (p > 0.01f && !settledList) {
+                        // Collapsed state renders these too: at p == 0 the flight bezier
+                        // is exactly the collapsed slot geometry, so the tabs stay visible.
+                        if (!settledList) {
                             PinnedFlightRows(
                                 chrome = chrome,
                                 density = scaledDensity,
@@ -949,29 +963,30 @@ fun ExpressiveFloatingDockWithOverflow(
                         }
 
                         // --- 3. FOOTER BUTTONS (edit / collapse / settings) ---
-                        if (p > 0.01f) {
-                            DockFooter(
-                                chrome = chrome,
-                                density = scaledDensity,
-                                motion = mt,
-                                editorMode = editorMode,
-                                collapseLabel = collapseLabel,
-                                collapseTextWidthPx = collapseTextWidthPx,
-                                settingsLabel = settingsLabel,
-                                settingsTextWidthPx = settingsTextWidthPx,
-                                editLabel = editLabel,
-                                editTextWidthPx = editTextWidthPx,
-                                exitEditorLabel = exitEditorLabel,
-                                exitTextWidthPx = exitTextWidthPx,
-                                pressedKey = pressedKey,
-                                isDockPressed = isDockPressed,
-                                expanded = expanded,
-                                burgerCollapsedWPx = burgerCollapsedWPx,
-                                onCollapse = { latestToggleExpand(false) },
-                                onToggleEditor = { onEditorModeChange(!editorMode) },
-                                onOpenTuning = onOpenTuning,
-                            )
-                        }
+                        // Always composed: at p == 0 all expanded pieces have zero
+                        // alpha and only the burger stays visible, so the collapsed
+                        // bar still has its overflow entry point.
+                        DockFooter(
+                            chrome = chrome,
+                            density = scaledDensity,
+                            motion = mt,
+                            editorMode = editorMode,
+                            collapseLabel = collapseLabel,
+                            collapseTextWidthPx = collapseTextWidthPx,
+                            settingsLabel = settingsLabel,
+                            settingsTextWidthPx = settingsTextWidthPx,
+                            editLabel = editLabel,
+                            editTextWidthPx = editTextWidthPx,
+                            exitEditorLabel = exitEditorLabel,
+                            exitTextWidthPx = exitTextWidthPx,
+                            pressedKey = pressedKey,
+                            isDockPressed = isDockPressed,
+                            expanded = expanded,
+                            burgerCollapsedWPx = burgerCollapsedWPx,
+                            onCollapse = { latestToggleExpand(false) },
+                            onToggleEditor = { onEditorModeChange(!editorMode) },
+                            onOpenTuning = onOpenTuning,
+                        )
                     }
                 }
             }

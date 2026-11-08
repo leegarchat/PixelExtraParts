@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -142,12 +143,15 @@ fun MotionTuningSheet(
     ) {
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val sheetMaxH = (maxHeight - statusTop - 64.dp - 16.dp).coerceAtLeast(240.dp)
+        val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        val sheetColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        val scrimColor = MaterialTheme.colorScheme.scrim
 
         // Scrim: eats taps (blocks the content behind) but never dismisses.
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = scrimAlpha.value))
+                .background(scrimColor.copy(alpha = scrimAlpha.value))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -161,8 +165,9 @@ fun MotionTuningSheet(
                 .heightIn(max = sheetMaxH)
                 .onPlaced { sheetHpx = it.size.height }
                 .graphicsLayer { translationY = slidePx.value + dragPx.value }
-                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                .clip(sheetShape)
+                .background(sheetColor)
+                .border(1.dp, sheetColor.edgeOutline(), sheetShape),
         ) {
             Column(
                 modifier = Modifier
@@ -211,7 +216,7 @@ fun MotionTuningSheet(
                         .fillMaxWidth()
                         .weight(1f, fill = false),
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 64.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     tuningGroup(R.string.g_timing) {
                         tuningSlider(
@@ -298,12 +303,10 @@ fun MotionTuningSheet(
                             label = { v -> stringResource(R.string.fmt_px, v.toInt()) },
                             onChange = { onUpdate(motion.copy(blurRadiusPx = it)) },
                         )
-                        item(key = "switch_tap_eater") {
-                            TapEaterSwitchRow(
-                                checked = motion.stripTapEater,
-                                onCheckedChange = { onUpdate(motion.copy(stripTapEater = it)) },
-                            )
-                        }
+                        TapEaterSwitchRow(
+                            checked = motion.stripTapEater,
+                            onCheckedChange = { onUpdate(motion.copy(stripTapEater = it)) },
+                        )
                     }
 
                     tuningGroup(R.string.g_flight) {
@@ -312,23 +315,21 @@ fun MotionTuningSheet(
                             val gap = motion.flightGaps.getOrElse(k) {
                                 motion.flightGaps.lastOrNull() ?: 0.14f
                             }
-                            item(key = "flight_gap_$k") {
-                                SettingSlider(
-                                    title = stringResource(R.string.fmt_gap, stringResource(tab.labelRes)),
-                                    value = gap * 100f,
-                                    onValueChange = { v ->
-                                        val updated = motion.flightGaps.toMutableList()
-                                        while (updated.size <= k) updated.add(updated.lastOrNull() ?: 0.14f)
-                                        updated[k] = v / 100f
-                                        onUpdate(motion.copy(flightGaps = updated))
-                                    },
-                                    valueRange = 0f..100f,
-                                    step = 1f,
-                                    defaultValue = 14f,
-                                    resetLabel = stringResource(R.string.motion_reset),
-                                    valueLabel = { v -> stringResource(R.string.fmt_pct, v.toInt()) },
-                                )
-                            }
+                            SettingSlider(
+                                title = stringResource(R.string.fmt_gap, stringResource(tab.labelRes)),
+                                value = gap * 100f,
+                                onValueChange = { v ->
+                                    val updated = motion.flightGaps.toMutableList()
+                                    while (updated.size <= k) updated.add(updated.lastOrNull() ?: 0.14f)
+                                    updated[k] = v / 100f
+                                    onUpdate(motion.copy(flightGaps = updated))
+                                },
+                                valueRange = 0f..100f,
+                                step = 1f,
+                                defaultValue = 14f,
+                                resetLabel = stringResource(R.string.motion_reset),
+                                valueLabel = { v -> stringResource(R.string.fmt_pct, v.toInt()) },
+                            )
                         }
                         tuningSlider(
                             titleRes = R.string.s_span,
@@ -557,22 +558,32 @@ private fun SheetHeader(
 }
 
 // Simple M3 Switch row for the strip tap-catcher toggle, with haptic on flip.
+// Rendered on a level-2 nested card so the control reads as its own surface
+// inside the group card.
 @Composable
 private fun TapEaterSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
+    val shape = RoundedCornerShape(16.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.surfaceContainer.edgeOutline(),
+                shape = shape,
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = stringResource(R.string.s_tap_eater),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.weight(1f),
         )
@@ -586,23 +597,40 @@ private fun TapEaterSwitchRow(
     }
 }
 
+// One group = one level-1 card: rounded container, adaptive 1.dp outline,
+// internal 14.dp padding, 12.dp between controls and a primary group title.
 private fun LazyListScope.tuningGroup(
     @StringRes titleRes: Int,
-    content: LazyListScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    item(key = "header_$titleRes") {
-        Text(
-            text = stringResource(titleRes),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
-        )
+    item(key = "group_$titleRes") {
+        val shape = RoundedCornerShape(20.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow.edgeOutline(),
+                    shape = shape,
+                )
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            content()
+        }
     }
-    content()
 }
 
-private fun LazyListScope.tuningSlider(
+@Composable
+private fun tuningSlider(
     @StringRes titleRes: Int,
     value: Float,
     range: ClosedFloatingPointRange<Float>,
@@ -611,16 +639,14 @@ private fun LazyListScope.tuningSlider(
     label: @Composable (Float) -> String,
     onChange: (Float) -> Unit,
 ) {
-    item(key = "slider_$titleRes") {
-        SettingSlider(
-            title = stringResource(titleRes),
-            value = value,
-            onValueChange = onChange,
-            valueRange = range,
-            step = step,
-            defaultValue = default,
-            resetLabel = stringResource(R.string.motion_reset),
-            valueLabel = label,
-        )
-    }
+    SettingSlider(
+        title = stringResource(titleRes),
+        value = value,
+        onValueChange = onChange,
+        valueRange = range,
+        step = step,
+        defaultValue = default,
+        resetLabel = stringResource(R.string.motion_reset),
+        valueLabel = label,
+    )
 }

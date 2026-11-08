@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -196,7 +197,7 @@ internal fun UnifiedDockTabItem(
                 scaleY = itemScale * dragScale
                 rotationZ = wobbleRotZ
                 translationX = wobbleTxDp.dp.toPx()
-                translationY = wobbleTyDp.dp.toPx()
+                translationY = wobbleTyDp.dp.toPx() + rowExtraYPx
             }
             .clip(shape)
             .background(pillBg)
@@ -321,7 +322,7 @@ internal fun OverflowEntryRow(
                 scaleY = dragScale
                 rotationZ = wobbleRotZ
                 translationX = wobbleTxDp.dp.toPx()
-                translationY = wobbleTyDp.dp.toPx()
+                translationY = wobbleTyDp.dp.toPx() + rowExtraYPx
                 compositingStrategy = CompositingStrategy.Offscreen
             }
             .drawWithContent {
@@ -409,5 +410,23 @@ internal fun DragHandleGrip(
             strokeWidth = strokeW,
             cap = StrokeCap.Round,
         )
+    }
+}
+
+// Clips an absolutely positioned dock row/header to the editor viewport band.
+// itemTopPx is the layout top of this item in the content-box coordinate space;
+// the band is expressed in the same space, so partial rows fade out exactly at
+// the list viewport edges while the dock capsule keeps its own clip.
+internal fun Modifier.clipToVerticalBand(
+    topPx: Float,
+    bottomPx: Float,
+    itemTopPx: Float,
+): Modifier = drawWithContent {
+    val localTop = (topPx - itemTopPx).coerceIn(0f, size.height)
+    val localBottom = (bottomPx - itemTopPx).coerceIn(0f, size.height)
+    if (localBottom > localTop) {
+        clipRect(top = localTop, bottom = localBottom) {
+            this@drawWithContent.drawContent()
+        }
     }
 }
