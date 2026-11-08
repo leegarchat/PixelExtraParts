@@ -9,6 +9,7 @@ import android.text.TextUtils;
 
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.util.Locale;
@@ -38,6 +39,8 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
     private static final String KEY_CUSTOM_SYMBOL_BASE = "pixelparts_battery_info_custom_symbol";
     private static final String KEY_REFRESH_INTERVAL_MS_BASE = "pixelparts_battery_info_refresh_interval_ms";
     private static final String KEY_AVERAGE_MODE_BASE = "pixelparts_battery_info_average_mode";
+
+    private static final String TAG_PATH = "PepBatteryPath";
 
     private static final long DEFAULT_REFRESH_INTERVAL_MS = 1000L;
     private static final long MIN_REFRESH_INTERVAL_MS = 100L;
@@ -415,6 +418,10 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
         final boolean needTemp = mShowTemp;
 
         // Try BatteryManager API first
+        // TEMP DEBUG (PepBatteryPath): which source feeds each field. Remove after verification.
+        boolean srcCurrentBm = false;
+        boolean srcVoltageIntent = false;
+        boolean srcTempIntent = false;
         if (context != null && (needCurrent || needVoltage || needTemp)) {
             try {
                 BatteryManager bm = (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
@@ -423,6 +430,7 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
                     
                     if (currentBm != Long.MIN_VALUE && currentBm != Integer.MIN_VALUE) { 
                         currentRaw = currentBm;
+                        srcCurrentBm = true;
                         // log("KeyguardBatteryPowerHook: Read current from BatteryManager property: " + currentBm);
                     }
                 }
@@ -435,12 +443,14 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
                             int voltageMv = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
                             if (voltageMv > 0) {
                                 voltageRaw = (long) voltageMv * 1000L; // Convert mV to uV common base
+                                srcVoltageIntent = true;
                             }
                         }
                         if (needTemp) {
                             int tempInt = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
                             if (tempInt > 0) {
                                 temperatureCelsius = tempInt / 10.0f;
+                                srcTempIntent = true;
                             }
                         }
                     }
@@ -450,6 +460,10 @@ public class KeyguardBatteryPowerHook extends BaseSystemUIHook {
             }
         }
 
+        Log.d(TAG_PATH, "path current=" + (srcCurrentBm ? "API-BM" : (currentRaw != null ? "UNKNOWN" : "MISSING"))
+                + " voltage=" + (srcVoltageIntent ? "API-intent" : (voltageRaw != null ? "UNKNOWN" : "MISSING"))
+                + " temp=" + (srcTempIntent ? "API-intent" : (temperatureCelsius > 0.1f ? "UNKNOWN" : "MISSING"))
+                + " (sysfs fallback removed; MISSING means the widget shows nothing)");
         if ((needCurrent && currentRaw == null) || (needVoltage && voltageRaw == null)) {
             return null;
         }
