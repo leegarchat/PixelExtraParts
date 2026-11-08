@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pixel Extra Parts</string>
     <string name="tab_home">Главная</string>
@@ -7,4 +7,26 @@
     <string name="home_subtitle">Проверка UI-кита — блюр, док, тактильность</string>
     <string name="settings_title">Настройки</string>
     <string name="settings_subtitle">Заглушка — разделы появятся здесь</string>
+    <string name="topbar_title">Демо Флоат Бар</string>
+    <string name="tab_favorites">Избранное</string>
+    <string name="dock_more">Ещё</string>
+    <string name="dock_more_expanded">Свернуть</string>
+    <string name="overflow_title">Все разделы</string>
+    <string name="overflow_item_archive">Архив</string>
+    <string name="overflow_item_downloads">Загрузки</string>
+    <string name="overflow_item_shared">Общие</string>
+    <string name="overflow_item_trash">Корзина</string>
+    <string name="overflow_item_about">О приложении</string>
+    <string name="overflow_extra_title">Раздел %1$d</string>
+    <string name="demo_card_title">Элемент %1$d</string>
+    <string name="demo_card_subtitle">Строка-заглушка %1$d в «%2$s»</string>
+    <plurals name="demo_items_count">
+        <item quantity="one">%1$d элемент</item>
+        <item quantity="other">%1$d элементов</item>
+    </plurals>
+    <string name="tab_search">Поиск</string>
+    <string name="tab_music">Музыка</string>
+    <string name="dock_edit_behavior">Изменить</string>
+    <string name="dock_settings_short">Настройки</string>
+    <string name="dock_exit_editor">Выйти из редактора</string>
 </resources>

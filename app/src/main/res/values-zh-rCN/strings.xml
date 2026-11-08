@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pixel Extra Parts</string>
     <string name="tab_home">首页</string>
@@ -7,4 +7,26 @@
     <string name="home_subtitle">UI 套件检查 — 模糊、程序坞、触感</string>
     <string name="settings_title">设置</string>
     <string name="settings_subtitle">占位符 — 部分将显示在这里</string>
+    <string name="topbar_title">浮动栏演示</string>
+    <string name="tab_favorites">收藏</string>
+    <string name="dock_more">更多</string>
+    <string name="dock_more_expanded">收起</string>
+    <string name="overflow_title">全部版块</string>
+    <string name="overflow_item_archive">归档</string>
+    <string name="overflow_item_downloads">下载</string>
+    <string name="overflow_item_shared">共享</string>
+    <string name="overflow_item_trash">回收站</string>
+    <string name="overflow_item_about">关于</string>
+    <string name="overflow_extra_title">版块 %1$d</string>
+    <string name="demo_card_title">条目 %1$d</string>
+    <string name="demo_card_subtitle">“%2$s”中的占位行 %1$d</string>
+    <plurals name="demo_items_count">
+        <item quantity="one">%1$d 项</item>
+        <item quantity="other">%1$d 项</item>
+    </plurals>
+    <string name="tab_search">搜索</string>
+    <string name="tab_music">音乐</string>
+    <string name="dock_edit_behavior">编辑</string>
+    <string name="dock_settings_short">设置</string>
+    <string name="dock_exit_editor">退出编辑器</string>
 </resources>

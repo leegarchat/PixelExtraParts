@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="motion_title">Настройка анимации</string>
+    <string name="motion_reset_all">Сбросить всё</string>
+    <string name="motion_reset">Сброс</string>
+    <string name="motion_open_desc">Открыть настройки анимации</string>
+    <string name="g_timing">Тайминги</string>
+    <string name="g_capsule">Капсула</string>
+    <string name="g_flight">Полёт</string>
+    <string name="g_toggle">Бургер → Свернуть</string>
+    <string name="g_reveal">Появление списка</string>
+    <string name="s_expand_ms">Раскрытие, мс</string>
+    <string name="s_collapse_ms">Скрытие, мс</string>
+    <string name="s_width_end">Конец фазы ширины, %</string>
+    <string name="s_height_start">Начало фазы высоты, %</string>
+    <string name="s_pulse">Импульс расширения, %</string>
+    <string name="s_press">Масштаб нажатия, %</string>
+    <string name="s_bottom_lift">Подъём снизу, dp</string>
+    <string name="s_blur">Радиус размытия, px</string>
+    <string name="s_tap_eater">Перехват тапов</string>
+    <string name="s_compact_scale">Компактный масштаб, %</string>
+    <string name="s_span">Длина полёта, %</string>
+    <string name="s_bulge_base">Выгиб дуги, dp</string>
+    <string name="s_bulge_step">Выгиб на строку, dp</string>
+    <string name="s_width_start">Начало морфинга ширины, %</string>
+    <string name="s_label_start">Начало появления подписи, %</string>
+    <string name="s_label_end">Конец появления подписи, %</string>
+    <string name="s_row_corner">Радиус строки, dp</string>
+    <string name="s_text_start">Начало текста «Свернуть», %</string>
+    <string name="s_text_end">Конец текста «Свернуть», %</string>
+    <string name="s_cap_start">Начало проявления капсулы, %</string>
+    <string name="s_cap_end">Конец проявления капсулы, %</string>
+    <string name="s_morph_start">Начало морфинга иконки, %</string>
+    <string name="s_morph_end">Конец морфинга иконки, %</string>
+    <string name="s_overshoot">Перелёт проявления</string>
+    <string name="s_slide">Подъём строки, dp</string>
+    <string name="s_div_start">Начало проявления разделителя, %</string>
+    <string name="s_div_end">Конец проявления разделителя, %</string>
+    <string name="fmt_ms">%1$d мс</string>
+    <string name="fmt_gap">Задержка: %1$s</string>
+    <string name="fmt_pct">%1$d%%</string>
+    <string name="fmt_dp">%1$d dp</string>
+    <string name="fmt_pct2">%1$.2f%%</string>
+    <string name="fmt_coef">%1$.2f</string>
+    <string name="fmt_px">%1$d px</string>
+</resources>

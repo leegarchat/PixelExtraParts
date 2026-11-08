@@ -27,7 +27,7 @@ test_rework_*
 /weave_gen/
 
 # Gradle (app/ standalone UI work)
-/.gradle/
-/app/build/
-/build/
+/.gradle
+/app/build
+/build
 /.kotlin

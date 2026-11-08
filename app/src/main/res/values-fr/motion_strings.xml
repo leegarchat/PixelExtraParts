@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="motion_title">Réglage d’animation</string>
+    <string name="motion_reset_all">Tout réinitialiser</string>
+    <string name="motion_reset">Réinitialiser</string>
+    <string name="motion_open_desc">Ouvrir les réglages d’animation</string>
+    <string name="g_timing">Minutage</string>
+    <string name="g_capsule">Capsule</string>
+    <string name="g_flight">Vol</string>
+    <string name="g_toggle">Burger → Réduire</string>
+    <string name="g_reveal">Apparition de liste</string>
+    <string name="s_expand_ms">Ouverture, ms</string>
+    <string name="s_collapse_ms">Fermeture, ms</string>
+    <string name="s_width_end">Fin de phase largeur, %</string>
+    <string name="s_height_start">Début de phase hauteur, %</string>
+    <string name="s_pulse">Impulsion d’expansion, %</string>
+    <string name="s_press">Échelle d’appui, %</string>
+    <string name="s_bottom_lift">Surélévation basse, dp</string>
+    <string name="s_blur">Rayon de flou, px</string>
+    <string name="s_tap_eater">Capture des taps</string>
+    <string name="s_compact_scale">Échelle compacte, %</string>
+    <string name="s_span">Portée du vol, %</string>
+    <string name="s_bulge_base">Courbure d’arc, dp</string>
+    <string name="s_bulge_step">Courbure par ligne, dp</string>
+    <string name="s_width_start">Début du morph largeur, %</string>
+    <string name="s_label_start">Début du libellé, %</string>
+    <string name="s_label_end">Fin du libellé, %</string>
+    <string name="s_row_corner">Rayon de ligne, dp</string>
+    <string name="s_text_start">Début du texte de réduction, %</string>
+    <string name="s_text_end">Fin du texte de réduction, %</string>
+    <string name="s_cap_start">Début du fondu capsule, %</string>
+    <string name="s_cap_end">Fin du fondu capsule, %</string>
+    <string name="s_morph_start">Début du morph d’icône, %</string>
+    <string name="s_morph_end">Fin du morph d’icône, %</string>
+    <string name="s_overshoot">Dépassement d’apparition</string>
+    <string name="s_slide">Montée de ligne, dp</string>
+    <string name="s_div_start">Début du fondu séparateur, %</string>
+    <string name="s_div_end">Fin du fondu séparateur, %</string>
+    <string name="fmt_ms">%1$d ms</string>
+    <string name="fmt_gap">Retard : %1$s</string>
+    <string name="fmt_pct">%1$d%%</string>
+    <string name="fmt_dp">%1$d dp</string>
+    <string name="fmt_pct2">%1$.2f%%</string>
+    <string name="fmt_coef">%1$.2f</string>
+    <string name="fmt_px">%1$d px</string>
+</resources>

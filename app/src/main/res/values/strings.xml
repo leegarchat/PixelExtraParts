@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pixel Extra Parts</string>
     <string name="tab_home">Home</string>
@@ -7,4 +7,26 @@
     <string name="home_subtitle">UI kit check — blur, dock, haptics</string>
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Placeholder — sections land here</string>
+    <string name="topbar_title">Demo Float Bar</string>
+    <string name="tab_favorites">Favorites</string>
+    <string name="dock_more">More</string>
+    <string name="dock_more_expanded">Collapse</string>
+    <string name="overflow_title">All sections</string>
+    <string name="overflow_item_archive">Archive</string>
+    <string name="overflow_item_downloads">Downloads</string>
+    <string name="overflow_item_shared">Shared</string>
+    <string name="overflow_item_trash">Trash</string>
+    <string name="overflow_item_about">About</string>
+    <string name="overflow_extra_title">Section %1$d</string>
+    <string name="demo_card_title">Item %1$d</string>
+    <string name="demo_card_subtitle">Placeholder row %1$d in %2$s</string>
+    <plurals name="demo_items_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="tab_search">Search</string>
+    <string name="tab_music">Music</string>
+    <string name="dock_edit_behavior">Edit</string>
+    <string name="dock_settings_short">Settings</string>
+    <string name="dock_exit_editor">Exit editor</string>
 </resources>

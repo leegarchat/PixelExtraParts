@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pixel Extra Parts</string>
     <string name="tab_home">Início</string>
@@ -7,4 +7,26 @@
     <string name="home_subtitle">Verificação do kit — blur, dock, háptica</string>
     <string name="settings_title">Definições</string>
     <string name="settings_subtitle">Espaço reservado — as secções vêm aqui</string>
+    <string name="topbar_title">Demo Float Bar</string>
+    <string name="tab_favorites">Favoritos</string>
+    <string name="dock_more">Mais</string>
+    <string name="dock_more_expanded">Recolher</string>
+    <string name="overflow_title">Todas as seções</string>
+    <string name="overflow_item_archive">Arquivo</string>
+    <string name="overflow_item_downloads">Downloads</string>
+    <string name="overflow_item_shared">Compartilhados</string>
+    <string name="overflow_item_trash">Lixeira</string>
+    <string name="overflow_item_about">Sobre</string>
+    <string name="overflow_extra_title">Seção %1$d</string>
+    <string name="demo_card_title">Item %1$d</string>
+    <string name="demo_card_subtitle">Linha de exemplo %1$d em %2$s</string>
+    <plurals name="demo_items_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d itens</item>
+    </plurals>
+    <string name="tab_search">Buscar</string>
+    <string name="tab_music">Música</string>
+    <string name="dock_edit_behavior">Editar</string>
+    <string name="dock_settings_short">Configurações</string>
+    <string name="dock_exit_editor">Sair do editor</string>
 </resources>

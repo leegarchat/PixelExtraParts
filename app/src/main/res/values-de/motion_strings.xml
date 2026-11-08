@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="motion_title">Animationsabstimmung</string>
+    <string name="motion_reset_all">Alle zurücksetzen</string>
+    <string name="motion_reset">Zurücksetzen</string>
+    <string name="motion_open_desc">Animationseinstellungen öffnen</string>
+    <string name="g_timing">Zeitsteuerung</string>
+    <string name="g_capsule">Kapsel</string>
+    <string name="g_flight">Flug</string>
+    <string name="g_toggle">Burger → Einklappen</string>
+    <string name="g_reveal">Listen-Einblendung</string>
+    <string name="s_expand_ms">Öffnen, ms</string>
+    <string name="s_collapse_ms">Schließen, ms</string>
+    <string name="s_width_end">Breitenphase Ende, %</string>
+    <string name="s_height_start">Höhenphase Start, %</string>
+    <string name="s_pulse">Expansionspuls, %</string>
+    <string name="s_press">Drückskalierung, %</string>
+    <string name="s_bottom_lift">Anhebung unten, dp</string>
+    <string name="s_blur">Unschärferadius, px</string>
+    <string name="s_tap_eater">Tap-Abfang</string>
+    <string name="s_compact_scale">Kompaktskalierung, %</string>
+    <string name="s_span">Flugspanne, %</string>
+    <string name="s_bulge_base">Bogenausbuchtung, dp</string>
+    <string name="s_bulge_step">Ausbuchtung pro Zeile, dp</string>
+    <string name="s_width_start">Breitenmorph Start, %</string>
+    <string name="s_label_start">Label-Einblendung Start, %</string>
+    <string name="s_label_end">Label-Einblendung Ende, %</string>
+    <string name="s_row_corner">Zeilenradius, dp</string>
+    <string name="s_text_start">Einklapptext Start, %</string>
+    <string name="s_text_end">Einklapptext Ende, %</string>
+    <string name="s_cap_start">Kapsel-Einblendung Start, %</string>
+    <string name="s_cap_end">Kapsel-Einblendung Ende, %</string>
+    <string name="s_morph_start">Icon-Morph Start, %</string>
+    <string name="s_morph_end">Icon-Morph Ende, %</string>
+    <string name="s_overshoot">Einblendungsüberschuss</string>
+    <string name="s_slide">Zeilenanstieg, dp</string>
+    <string name="s_div_start">Trenner-Einblendung Start, %</string>
+    <string name="s_div_end">Trenner-Einblendung Ende, %</string>
+    <string name="fmt_ms">%1$d ms</string>
+    <string name="fmt_gap">Verzögerung: %1$s</string>
+    <string name="fmt_pct">%1$d%%</string>
+    <string name="fmt_dp">%1$d dp</string>
+    <string name="fmt_pct2">%1$.2f%%</string>
+    <string name="fmt_coef">%1$.2f</string>
+    <string name="fmt_px">%1$d px</string>
+</resources>

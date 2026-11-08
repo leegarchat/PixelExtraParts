@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">Pixel Extra Parts</string>
     <string name="tab_home">Start</string>
@@ -7,4 +7,26 @@
     <string name="home_subtitle">UI-Kit-Prüfung — Blur, Dock, Haptik</string>
     <string name="settings_title">Einstellungen</string>
     <string name="settings_subtitle">Platzhalter — Bereiche folgen hier</string>
+    <string name="topbar_title">Demo Float Bar</string>
+    <string name="tab_favorites">Favoriten</string>
+    <string name="dock_more">Mehr</string>
+    <string name="dock_more_expanded">Einklappen</string>
+    <string name="overflow_title">Alle Bereiche</string>
+    <string name="overflow_item_archive">Archiv</string>
+    <string name="overflow_item_downloads">Downloads</string>
+    <string name="overflow_item_shared">Geteilt</string>
+    <string name="overflow_item_trash">Papierkorb</string>
+    <string name="overflow_item_about">Über</string>
+    <string name="overflow_extra_title">Abschnitt %1$d</string>
+    <string name="demo_card_title">Eintrag %1$d</string>
+    <string name="demo_card_subtitle">Platzhalterzeile %1$d in %2$s</string>
+    <plurals name="demo_items_count">
+        <item quantity="one">%1$d Eintrag</item>
+        <item quantity="other">%1$d Einträge</item>
+    </plurals>
+    <string name="tab_search">Suche</string>
+    <string name="tab_music">Musik</string>
+    <string name="dock_edit_behavior">Bearbeiten</string>
+    <string name="dock_settings_short">Einstellungen</string>
+    <string name="dock_exit_editor">Editor verlassen</string>
 </resources>

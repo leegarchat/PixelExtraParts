@@ -1,26 +1,20 @@
 package org.pixel.extra.parts.home
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.pixel.extra.parts.R
-import org.pixel.extra.parts.ui.PlaceholderCard
 
+// Home tab content: the donor demo list for the currently selected section.
+// The root provides top/bottom clearance, so only a small bottom inset stays.
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        PlaceholderCard(
-            icon = painterResource(R.drawable.ic_home),
-            title = stringResource(R.string.home_title),
-            subtitle = stringResource(R.string.home_subtitle),
-        )
-    }
+fun HomeScreen(
+    sectionLabel: String,
+    @DrawableRes iconRes: Int,
+) {
+    DemoSectionScreen(
+        sectionLabel = sectionLabel,
+        iconRes = iconRes,
+        contentPadding = PaddingValues(bottom = 12.dp),
+    )
 }

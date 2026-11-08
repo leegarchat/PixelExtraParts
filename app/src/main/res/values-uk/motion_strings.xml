@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="motion_title">Налаштування анімації</string>
+    <string name="motion_reset_all">Скинути все</string>
+    <string name="motion_reset">Скинути</string>
+    <string name="motion_open_desc">Відкрити налаштування анімації</string>
+    <string name="g_timing">Таймінги</string>
+    <string name="g_capsule">Капсула</string>
+    <string name="g_flight">Політ</string>
+    <string name="g_toggle">Бургер → Згорнути</string>
+    <string name="g_reveal">Поява списку</string>
+    <string name="s_expand_ms">Розкриття, мс</string>
+    <string name="s_collapse_ms">Приховування, мс</string>
+    <string name="s_width_end">Кінець фази ширини, %</string>
+    <string name="s_height_start">Початок фази висоти, %</string>
+    <string name="s_pulse">Імпульс розширення, %</string>
+    <string name="s_press">Масштаб натискання, %</string>
+    <string name="s_bottom_lift">Підйом знизу, dp</string>
+    <string name="s_blur">Радіус розмиття, px</string>
+    <string name="s_tap_eater">Перехоплення тапів</string>
+    <string name="s_compact_scale">Компактний масштаб, %</string>
+    <string name="s_span">Довжина польоту, %</string>
+    <string name="s_bulge_base">Вигин дуги, dp</string>
+    <string name="s_bulge_step">Вигин на рядок, dp</string>
+    <string name="s_width_start">Початок морфингу ширини, %</string>
+    <string name="s_label_start">Початок появи підпису, %</string>
+    <string name="s_label_end">Кінець появи підпису, %</string>
+    <string name="s_row_corner">Радіус рядка, dp</string>
+    <string name="s_text_start">Початок тексту «Згорнути», %</string>
+    <string name="s_text_end">Кінець тексту «Згорнути», %</string>
+    <string name="s_cap_start">Початок прояви капсули, %</string>
+    <string name="s_cap_end">Кінець прояви капсули, %</string>
+    <string name="s_morph_start">Початок морфингу іконки, %</string>
+    <string name="s_morph_end">Кінець морфингу іконки, %</string>
+    <string name="s_overshoot">Переліт появи</string>
+    <string name="s_slide">Підйом рядка, dp</string>
+    <string name="s_div_start">Початок прояви роздільника, %</string>
+    <string name="s_div_end">Кінець прояви роздільника, %</string>
+    <string name="fmt_ms">%1$d мс</string>
+    <string name="fmt_gap">Затримка: %1$s</string>
+    <string name="fmt_pct">%1$d%%</string>
+    <string name="fmt_dp">%1$d dp</string>
+    <string name="fmt_pct2">%1$.2f%%</string>
+    <string name="fmt_coef">%1$.2f</string>
+    <string name="fmt_px">%1$d px</string>
+</resources>

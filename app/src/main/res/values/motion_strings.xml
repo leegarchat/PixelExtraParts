@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="motion_title">Animation tuning</string>
+    <string name="motion_reset_all">Reset all</string>
+    <string name="motion_reset">Reset</string>
+    <string name="motion_open_desc">Open animation settings</string>
+    <string name="g_timing">Timing</string>
+    <string name="g_capsule">Capsule</string>
+    <string name="g_flight">Flight</string>
+    <string name="g_toggle">Burger → Collapse</string>
+    <string name="g_reveal">List reveal</string>
+    <string name="s_expand_ms">Expand, ms</string>
+    <string name="s_collapse_ms">Collapse, ms</string>
+    <string name="s_width_end">Width phase end, %</string>
+    <string name="s_height_start">Height phase start, %</string>
+    <string name="s_pulse">Expansion pulse, %</string>
+    <string name="s_press">Press scale, %</string>
+    <string name="s_bottom_lift">Bottom lift, dp</string>
+    <string name="s_blur">Blur radius, px</string>
+    <string name="s_tap_eater">Tap catcher</string>
+    <string name="s_compact_scale">Compact scale, %</string>
+    <string name="s_span">Flight span, %</string>
+    <string name="s_bulge_base">Arc bulge, dp</string>
+    <string name="s_bulge_step">Arc bulge per row, dp</string>
+    <string name="s_width_start">Width morph start, %</string>
+    <string name="s_label_start">Label reveal start, %</string>
+    <string name="s_label_end">Label reveal end, %</string>
+    <string name="s_row_corner">Row corner, dp</string>
+    <string name="s_text_start">Collapse text start, %</string>
+    <string name="s_text_end">Collapse text end, %</string>
+    <string name="s_cap_start">Capsule fade start, %</string>
+    <string name="s_cap_end">Capsule fade end, %</string>
+    <string name="s_morph_start">Icon morph start, %</string>
+    <string name="s_morph_end">Icon morph end, %</string>
+    <string name="s_overshoot">Reveal overshoot</string>
+    <string name="s_slide">Row rise, dp</string>
+    <string name="s_div_start">Divider fade start, %</string>
+    <string name="s_div_end">Divider fade end, %</string>
+    <string name="fmt_ms">%1$d ms</string>
+    <string name="fmt_gap">Delay: %1$s</string>
+    <string name="fmt_pct">%1$d%%</string>
+    <string name="fmt_dp">%1$d dp</string>
+    <string name="fmt_pct2">%1$.2f%%</string>
+    <string name="fmt_coef">%1$.2f</string>
+    <string name="fmt_px">%1$d px</string>
+</resources>
