@@ -31,3 +31,5 @@ test_rework_*
 /app/build
 /build
 /.kotlin
+
+/app_test/
