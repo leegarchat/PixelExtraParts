@@ -119,10 +119,16 @@ public final class PixelPartsCallState {
         if (context == null) {
             return;
         }
+        // Hooks run on the caller's Binder thread (radio uid for TelephonyRegistry,
+        // arbitrary app uid for NotificationManagerService). Attribute the write to
+        // system_server itself, which holds WRITE_SECURE_SETTINGS.
+        final long token = android.os.Binder.clearCallingIdentity();
         try {
             Settings.Global.putInt(context.getContentResolver(), KEY_CALL_STATE, state);
         } catch (Throwable t) {
             Slog.w(TAG, "publish failed: " + t);
+        } finally {
+            android.os.Binder.restoreCallingIdentity(token);
         }
     }
 }
