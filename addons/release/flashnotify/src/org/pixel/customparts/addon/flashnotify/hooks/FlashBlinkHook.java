@@ -57,6 +57,11 @@ public final class FlashBlinkHook {
     /** Fired by the "Test blink" addon button (am broadcast). */
     public static final String ACTION_TEST =
             "org.pixel.customparts.addon.flashnotify.TEST";
+    /** Test-only: start a SIM-pattern burst for N seconds, then stop. */
+    public static final String ACTION_TEST_CALL =
+            "org.pixel.customparts.addon.flashnotify.TEST_CALL";
+    public static final String EXTRA_TEST_SECONDS = "seconds";
+    private static int sTestGen;
 
     private FlashBlinkHook() {}
 
@@ -170,7 +175,7 @@ public final class FlashBlinkHook {
             stopIfAllIdle();
             return;
         }
-        int strength = clamp(Settings.getStrength(context), 1, 45);
+        int strength = clamp(Settings.getSimBrightness(context), 1, 45);
         if (simOn && (state == ROM_RINGING || !voipOn)) {
             int count = clamp(Settings.getSimCount(context), 1, 50);
             int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
@@ -271,7 +276,7 @@ public final class FlashBlinkHook {
         int count = clamp(Settings.getVoipCount(context), 1, 50);
         int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
         int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
-        int strength = clamp(Settings.getStrength(context), 1, 45);
+        int strength = clamp(Settings.getVoipBrightness(context), 1, 45);
         Log.i(TAG, "audio ring: self-managed go blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength);
         sAudioBlink = true;
@@ -305,7 +310,7 @@ public final class FlashBlinkHook {
                 int count = clamp(Settings.getSimCount(mContext), 1, 50);
                 int blink = clamp(Settings.getSimBlinkMs(mContext), 50, 2000);
                 int pause = clamp(Settings.getSimPauseMs(mContext), 0, 10000);
-                int strength = clamp(Settings.getStrength(mContext), 1, 45);
+                int strength = clamp(Settings.getSimBrightness(mContext), 1, 45);
                 Log.i(TAG, "call: go blink=" + blink + " count=" + count
                         + " pause=" + pause + " strength=" + strength);
                 sCallBlink = true;
@@ -358,7 +363,7 @@ public final class FlashBlinkHook {
                             int count = clamp(Settings.getSimCount(context), 1, 50);
                             int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
                             int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
-                            int strength = clamp(Settings.getStrength(context), 1, 45);
+                            int strength = clamp(Settings.getSimBrightness(context), 1, 45);
                             Log.i(TAG, "call[legacy]: go blink=" + blink + " count=" + count
                                     + " pause=" + pause + " strength=" + strength);
                             sCallBlink = true;
@@ -401,9 +406,15 @@ public final class FlashBlinkHook {
             // (RECEIVER_EXPORTED/NOT_EXPORTED required). Exported: the test
             // blink is harmless and must be reachable from shell/am.
             IntentFilter filter = new IntentFilter(ACTION_TEST);
+            filter.addAction(ACTION_TEST_CALL);
             context.registerReceiver(new BroadcastReceiver() {
                 @Override public void onReceive(Context c, Intent intent) {
-                    if (!ACTION_TEST.equals(intent.getAction())) return;
+                    String action = intent != null ? intent.getAction() : null;
+                    if (ACTION_TEST_CALL.equals(action)) {
+                        onTestCall(c != null ? c : context, intent);
+                        return;
+                    }
+                    if (!ACTION_TEST.equals(action)) return;
                     Context app = c != null ? c : context;
                     Log.i(TAG, "test blink requested");
                     int count = clamp(Settings.getCount(app), 1, 50);
@@ -416,6 +427,54 @@ public final class FlashBlinkHook {
         } catch (Throwable t) {
             Log.e(TAG, "test receiver failed", t);
         }
+    }
+
+    /**
+     * Test-only simulated call: SIM-pattern burst for N seconds, then stop.
+     * Trigger: am broadcast -a ...TEST_CALL --ei seconds N.
+     * Skipped while a real call owns the blink (SIM/VoIP/ROM/audio).
+     */
+    private static void onTestCall(Context context, Intent intent) {
+        int seconds = 0;
+        try {
+            seconds = intent.getIntExtra(EXTRA_TEST_SECONDS, 0);
+        } catch (Throwable ignored) {}
+        if (seconds <= 0 || seconds > 30) seconds = 5;
+        final Context app;
+        {
+            Context c = context != null ? context.getApplicationContext() : null;
+            app = c != null ? c : context;
+        }
+        if (app == null) {
+            Log.w(TAG, "test call: null context, skip");
+            return;
+        }
+        synchronized (LOCK) {
+            if (sCallBlink || sAudioBlink || sRomCall != ROM_IDLE || sVoipKey != null) {
+                Log.i(TAG, "test call: real call owns blink, skip");
+                return;
+            }
+            sTestGen++;
+        }
+        final int gen = sTestGen;
+        int count = clamp(Settings.getSimCount(app), 1, 50);
+        int blink = clamp(Settings.getSimBlinkMs(app), 50, 2000);
+        int pause = clamp(Settings.getSimPauseMs(app), 0, 10000);
+        int strength = clamp(Settings.getSimBrightness(app), 1, 45);
+        Log.i(TAG, "test call: go seconds=" + seconds
+                + " blink=" + blink + " count=" + count
+                + " pause=" + pause + " strength=" + strength);
+        startBurst(app, blink, count, pause, strength);
+        final Context appRef = app;
+        new android.os.Handler(app.getMainLooper()).postDelayed(new Runnable() {
+            @Override public void run() {
+                synchronized (LOCK) {
+                    if (gen != sTestGen) return;
+                }
+                Log.i(TAG, "test call: timeout, stop");
+                stopIfAllIdle();
+            }
+        }, seconds * 1000L);
     }
 
     private static void onPosted(Context context, ClassLoader cl,
@@ -512,7 +571,7 @@ public final class FlashBlinkHook {
         int count = clamp(Settings.getVoipCount(context), 1, 50);
         int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
         int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
-        int strength = clamp(Settings.getStrength(context), 1, 45);
+        int strength = clamp(Settings.getVoipBrightness(context), 1, 45);
         String sig = blink + "/" + count + "/" + pause + "/" + strength;
         synchronized (LOCK) {
             // Ongoing call notifications repost often (timer/state updates).

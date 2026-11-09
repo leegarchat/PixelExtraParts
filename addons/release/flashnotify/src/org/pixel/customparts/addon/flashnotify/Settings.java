@@ -16,6 +16,8 @@ public final class Settings {
     public static final String KEY_VOIP_BLINK_MS = "flashnotify_voip_blink_ms";
     public static final String KEY_VOIP_COUNT = "flashnotify_voip_count";
     public static final String KEY_VOIP_PAUSE_MS = "flashnotify_voip_pause_ms";
+    public static final String KEY_SIM_BRIGHTNESS = "flashnotify_sim_brightness";
+    public static final String KEY_VOIP_BRIGHTNESS = "flashnotify_voip_brightness";
 
     /**
      * Canonical ROM-published unified call state (no suffix).
@@ -65,6 +67,14 @@ public final class Settings {
 
     public static int getVoipPauseMs(Context c) {
         return getInt(c, KEY_VOIP_PAUSE_MS, 1000);
+    }
+
+    public static int getSimBrightness(Context c) {
+        return getInt(c, KEY_SIM_BRIGHTNESS, DEFAULT_STRENGTH);
+    }
+
+    public static int getVoipBrightness(Context c) {
+        return getInt(c, KEY_VOIP_BRIGHTNESS, DEFAULT_STRENGTH);
     }
 
     /** ROM-published unified call state, 0 when the ROM has no publisher. */

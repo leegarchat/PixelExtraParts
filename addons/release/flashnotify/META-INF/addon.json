@@ -125,6 +125,18 @@
                     "category": "flashnotify_calls"
                 },
                 {
+                    "key": "flashnotify_sim_brightness",
+                    "title": "SIM flash brightness",
+                    "description": "Torch strength for SIM bursts.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 45,
+                    "min": 1,
+                    "max": 45,
+                    "step": 1,
+                    "category": "flashnotify_calls"
+                },
+                {
                     "key": "flashnotify_voip_enabled",
                     "title": "Blink on messenger calls",
                     "description": "Repeat bursts while a messenger (VoIP) call is active — tracked by its call-style notification. Stops when the call notification goes away.",
@@ -174,6 +186,18 @@
                     "category": "flashnotify_voip"
                 },
                 {
+                    "key": "flashnotify_voip_brightness",
+                    "title": "VoIP flash brightness",
+                    "description": "Torch strength for messenger bursts.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 45,
+                    "min": 1,
+                    "max": 45,
+                    "step": 1,
+                    "category": "flashnotify_voip"
+                },
+                {
                     "key": "flashnotify_total_ms",
                     "title": "Total blink time",
                     "description": "Overall time the blinking lasts. Split evenly into on/off phases.",
@@ -192,6 +216,30 @@
                     "description": "Fires one blink with current count and time, no notification needed.",
                     "type": "button",
                     "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST",
+                    "showOutput": true
+                },
+                {
+                    "key": "flashnotify_test_call_2s",
+                    "title": "Test call 2s",
+                    "description": "Simulate a SIM-pattern call burst for 2 seconds, no real call needed.",
+                    "type": "button",
+                    "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 2",
+                    "showOutput": true
+                },
+                {
+                    "key": "flashnotify_test_call_5s",
+                    "title": "Test call 5s",
+                    "description": "Simulate a SIM-pattern call burst for 5 seconds, no real call needed.",
+                    "type": "button",
+                    "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 5",
+                    "showOutput": true
+                },
+                {
+                    "key": "flashnotify_test_call_10s",
+                    "title": "Test call 10s",
+                    "description": "Simulate a SIM-pattern call burst for 10 seconds, no real call needed.",
+                    "type": "button",
+                    "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 10",
                     "showOutput": true
                 }
             ]
@@ -247,6 +295,18 @@
                             "description": "Тишина между сериями."
                         },
                         {
+                            "key": "flashnotify_sim_brightness",
+                            "title": "Яркость SIM",
+                            "description": "Яркость фонарика для SIM-серий.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 45,
+                            "min": 1,
+                            "max": 45,
+                            "step": 1,
+                            "category": "flashnotify_calls"
+                        },
+                        {
                             "key": "flashnotify_voip_enabled",
                             "title": "Мигать на звонки мессенджеров",
                             "description": "Повторять серии пока активен VoIP-звонок (следит за уведомлением о звонке). Останавливается когда уведомление уходит."
@@ -267,6 +327,18 @@
                             "description": "Тишина между сериями."
                         },
                         {
+                            "key": "flashnotify_voip_brightness",
+                            "title": "Яркость VoIP",
+                            "description": "Яркость фонарика для серий мессенджеров.",
+                            "type": "int",
+                            "provider": "global",
+                            "default": 45,
+                            "min": 1,
+                            "max": 45,
+                            "step": 1,
+                            "category": "flashnotify_voip"
+                        },
+                        {
                             "key": "flashnotify_total_ms",
                             "title": "Общее время",
                             "description": "Сколько всего длится мигание. Делится поровну на вкл/выкл фазы."
@@ -275,6 +347,30 @@
                             "key": "flashnotify_test",
                             "title": "Проверка",
                             "description": "Один проход мигания с текущими настройками, без уведомлений."
+                        },
+                        {
+                            "key": "flashnotify_test_call_2s",
+                            "title": "Тест звонка 2с",
+                            "description": "Имитация SIM-серии 2 секунды, реальный звонок не нужен.",
+                            "type": "button",
+                            "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 2",
+                            "showOutput": true
+                        },
+                        {
+                            "key": "flashnotify_test_call_5s",
+                            "title": "Тест звонка 5с",
+                            "description": "Имитация SIM-серии 5 секунд, реальный звонок не нужен.",
+                            "type": "button",
+                            "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 5",
+                            "showOutput": true
+                        },
+                        {
+                            "key": "flashnotify_test_call_10s",
+                            "title": "Тест звонка 10с",
+                            "description": "Имитация SIM-серии 10 секунд, реальный звонок не нужен.",
+                            "type": "button",
+                            "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_CALL --ei seconds 10",
+                            "showOutput": true
                         }
                     ]
                 }
