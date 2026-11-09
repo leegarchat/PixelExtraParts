@@ -54,7 +54,7 @@ simple_settings/
 ## Build
 
 ```bash
-./build_addon.sh simple_settings
+./build.sh simple_settings
 ```
 
 The output JAR contains `META-INF/addon.json` and does not contain `classes.dex`.

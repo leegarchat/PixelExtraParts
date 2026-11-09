@@ -58,15 +58,16 @@ Use monotonically increasing semantic-like versions (`1.2.0`, `1.2.1`, `2.0`) fo
 ## Build Script
 
 ```bash
-./build_addon.sh my_addon
+./build.sh my_addon
 ```
 
-The first argument is the output addon name. If a directory with the same name exists next to the script, it is used as the project root.
+The first argument is the output addon name. Run from the `addons/`
+directory: the script looks the project up in `release/`, then `tests/`.
 
 You can also pass an explicit project path:
 
 ```bash
-./build_addon.sh my_output_name ./path/to/project
+./build.sh my_output_name ./path/to/project
 ```
 
 ## What The Script Does
@@ -88,7 +89,7 @@ For settings-only addons:
 ## Optional Environment Overrides
 
 ```bash
-ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build_addon.sh my_addon
+ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build.sh my_addon
 ```
 
 The script prefers local prebuilds:
@@ -110,7 +111,7 @@ python3 -m json.tool my_addon/META-INF/addon.json >/dev/null
 ## Recommended Build Checks
 
 ```bash
-./build_addon.sh my_addon
+./build.sh my_addon
 jar tf my_addon/out/my_addon.jar
 unzip -p my_addon/out/my_addon.jar META-INF/addon.json | python3 -m json.tool >/dev/null
 ```

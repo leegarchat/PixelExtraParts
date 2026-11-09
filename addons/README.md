@@ -2,7 +2,7 @@
 
 This directory is the complete addon development kit for Pixel Extra Parts. An addon is a DEX JAR with a `META-INF/addon.json` descriptor and, optionally, Java hook code. The same package can provide LSPlant/Xposed-compatible runtime hooks, generated settings UI, generated activity pages, dynamic Quick Settings tiles, target-activity page injection, Settings-homepage injection, update metadata, import/export support, localized text, or any combination of those pieces.
 
-The old mixed guide was kept as `README_old.md` for reference. This README is the main entry point; focused deep dives live in smaller files under `docs/`.
+This README is the main entry point; focused deep dives live in smaller files under `docs/`.
 
 ## Addon Building Blocks
 
@@ -21,25 +21,22 @@ The old mixed guide was kept as `README_old.md` for reference. This README is th
 ## Directory Layout
 
 ```text
-example.addon.hook/
+addons/
 +-- README.md
-+-- README_old.md
-+-- build_addon.sh
-+-- build_addon.ps1
-+-- build_addon.bat
++-- build.sh
++-- build.bat / build.ps1
 +-- prebuild/
 |   +-- IAddonHook.java
 |   +-- android.jar
 |   +-- lsplant/
 |   +-- sdk/
 |   +-- xposed/
-+-- ambient_extend_hook/
-+-- gcam_photo_torch/
-+-- icon_manager_settings/
-+-- ims_carrier_config/
-+-- launcher_hooks/
-+-- settings_homepage_item/
-+-- systemui_hooks/
++-- release/              # prod addons (out/*.jar checked in)
+|   +-- ambient_extend_hook/
+|   +-- launcher_hooks/
+|   +-- systemui_hooks/
+|   +-- ... (11 total)
++-- tests/                # experimental addons, not shipped
 +-- docs/
 ```
 
@@ -106,10 +103,11 @@ public final class MyAddonHook implements IAddonHook {
 }
 ```
 
-4. Build it.
+4. Build it (from this `addons/` directory; the script finds the
+   project in `release/`, then `tests/`).
 
 ```bash
-./build_addon.sh my_addon
+./build.sh my_addon
 ```
 
 The output is `my_addon/out/my_addon.jar`.
@@ -380,15 +378,21 @@ Example-focused documents:
 - [Dynamic Tile Examples](docs/examples/dynamic-tile-examples.md)
 - [Java Hook Recipes](docs/examples/java-hook-recipes.md)
 
-## Current Example Addons
+## Current Addons
+
+`release/` (prod, `out/*.jar` checked in and shipped via `Android.bp`/`device.mk`):
 
 - `ambient_extend_hook`: SystemUI hook for AOD blackout, Smart Pixels and extra ambient dimming.
 - `gcam_photo_torch`: Google Camera hook that adds persistent Torch behavior to the photo flash menu.
 - `settings_homepage_item`: Settings hook that inserts Pixel Extra Parts into the Android Settings homepage.
+- `settings_icon_style_override`: Settings hook that overrides icon styles.
 - `icon_manager_settings`: settings-only generated UI injected into the Icon Manager screen.
 - `ims_carrier_config`: settings-only IMS controls that combine Settings.Secure writes with `CarrierConfigManager.overrideConfig` actions.
 - `launcher_hooks`: Pixel Launcher addon for home screen, dock/search, app drawer, recents, gesture bar and dynamic launcher tiles.
 - `systemui_hooks`: SystemUI addon for lock screen, charging info, shade/media/scrim and notification icon controls.
+- `ram_purge`, `yandexmaps_fast`, `flashnotify`: additional prod addons.
+
+`tests/` (experimental, not shipped): `diag_battery_path`, `yandexmaps_fast_wip`.
 
 ## Practical Rules
 

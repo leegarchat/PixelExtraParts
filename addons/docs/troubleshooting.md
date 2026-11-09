@@ -73,7 +73,7 @@ Check:
 Either keep the bundled prebuilds or pass explicit paths:
 
 ```bash
-ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build_addon.sh my_addon
+ANDROID_JAR=/path/to/android.jar D8_JAR=/path/to/d8.jar ./build.sh my_addon
 ```
 
 ## Java Compilation Fails

@@ -29,14 +29,16 @@
 - `soong/weave/` — спеки: `specs/*.patch` (диффы ваниль→мод),
   `manifest.json` (`rel` = живой файл, `spec` = дифф, `out` = `weave_gen/`),
   `weave_apply.py` (строгий аппликатор, дрейф = `PEP_WEAVE_ERROR`).
-  `soong/weave_gen/` — generated, в git нет (37 записей манифеста +
+  `soong/weave_gen/` — generated, в git нет (39 записей манифеста +
   `include_dirs` thermal указывают сюда).
 - `soong/platform/framework_helpers/` — Java-хелперы framework
   (`CustomTransitionHelper`, `PixelPartsIconHelper`), компилируются В СОСТАВЕ
   `framework-minus-apex` через `:pixelparts_framework_helpers`.
 - `soong/platform/services_helpers/` — хелперы сервисов (`DtwSystemService`,
-  `PixelPartsHardwareInput`, `PixelPartsKeepScreenOn`), компилируются В СОСТАВЕ
-  `services.core.unboosted` через `:pixelparts_services_helpers`.
+  `PixelPartsHardwareInput`, `PixelPartsKeepScreenOn`, `PixelPartsCallState`),
+  компилируются В СОСТАВЕ `services.core.unboosted` через
+  `:pixelparts_services_helpers` (плюс woven `services.impl`-файлы через
+  `:pixelparts_weave_services_impl`).
 - `lsplant_engine/` — рантайм инжектора отдельно от всего: `src/`
   (исходники `LsplantInject`), `libs/` (пребилты
   `liblsplant/dobby/c++_shared/lspbridge.so`), `lsplant-native/`
@@ -52,12 +54,13 @@
   `generate_thermal_configs.py` (дерево НЕ трогает) + `configs/` +
   `ThermalConfigCopyRules.mk` (generated, в git нет) + `gen/` (thermal-блок
   `init.thermal-switch.rc`, generated, в git нет; решает enabled/disabled).
-- `init.pixelextraparts.rc` — СТАТИЧЕСКИЙ шаблон init-скрипта всего модуля
+- `init.pixelextraparts.rc.in` — СТАТИЧЕСКИЙ шаблон init-скрипта всего модуля
   (app-директории, brightness; модуль `prebuilt_etc` берёт его НЕ напрямую,
   а через `genrule pep_init_rc`: `cat` шаблона + thermal-фрагмента).
   Дерево при сборке НЕ мутирует — замена прописана `cmd` в `Android.bp`.
 - `policy/sepolicy/` — весь sepolicy PEP (`system_ext/private`,
-  `system_ext/public`, `vendor/`). Подключен тремя `*_SEPOLICY_DIRS`
+  `vendor/`; каталога `system_ext/public/` в проекте нет — public-директория
+  из `device.mk` на этой базе резолвится пустой). Подключен `*_SEPOLICY_DIRS`
   в `device.mk`. `domain.te`-исключение живёт в апстриме отдельно (ручной патч).
 - `app/` — стоковая аппка единой цепочкой (как в проде, без изменений):
   `AndroidManifest.xml`, `src/`, `res/`, `lib/`, `lang/`, `proguard.flags`,
