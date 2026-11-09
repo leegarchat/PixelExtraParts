@@ -574,12 +574,16 @@ public final class FlashBlinkHook {
     /** Call/VoIP burst loop: N blinks, pause, repeat until interrupted. */
     private static void runBurst(Context context, int blinkMs, int count,
             int pauseMs, int strength) {
-        int phase = clamp(blinkMs, 50, 2000);
+        // Burst-window semantics (same as notifications): blinkMs is the TOTAL
+        // burst length, flashes share it evenly (unit = window / (2 * count)).
+        // Floored at MIN_PHASE_MS: hardware cannot toggle faster anyway.
         int n = clamp(count, 1, 50);
+        int phase = blinkMs / (2 * Math.max(n, 1));
+        if (phase < MIN_PHASE_MS) phase = MIN_PHASE_MS;
         int pause = clamp(pauseMs, 0, 10000);
         int level = clamp(strength, 1, 45);
-        Log.i(TAG, "burst: blink=" + phase + " count=" + n + " pause=" + pause
-                + " strength=" + level);
+        Log.i(TAG, "burst: window=" + blinkMs + "ms unit=" + phase + "ms count=" + n
+                + " pause=" + pause + " strength=" + level);
         String cameraId = resolveCameraId(context);
         if (cameraId == null) {
             Log.w(TAG, "no flash camera, skip burst");

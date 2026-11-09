@@ -88,8 +88,8 @@
                 },
                 {
                     "key": "flashnotify_sim_blink_ms",
-                    "title": "SIM blink phase",
-                    "description": "On/off phase inside a burst.",
+                    "title": "SIM burst window",
+                    "description": "Total burst length in ms; the count flashes share it evenly, then pause.",
                     "type": "int",
                     "provider": "global",
                     "default": 300,
@@ -137,8 +137,8 @@
                 },
                 {
                     "key": "flashnotify_voip_blink_ms",
-                    "title": "VoIP blink phase",
-                    "description": "On/off phase inside a burst.",
+                    "title": "VoIP burst window",
+                    "description": "Total burst length in ms; the count flashes share it evenly, then pause.",
                     "type": "int",
                     "provider": "global",
                     "default": 300,
@@ -233,8 +233,8 @@
                         },
                         {
                             "key": "flashnotify_sim_blink_ms",
-                            "title": "SIM фаза",
-                            "description": "Фаза вкл/выкл внутри серии."
+                            "title": "SIM окно серии",
+                            "description": "Общая длина серии в мс; число вспышек делит её поровну, затем пауза."
                         },
                         {
                             "key": "flashnotify_sim_count",
@@ -253,8 +253,8 @@
                         },
                         {
                             "key": "flashnotify_voip_blink_ms",
-                            "title": "VoIP фаза",
-                            "description": "Фаза вкл/выкл внутри серии."
+                            "title": "VoIP окно серии",
+                            "description": "Общая длина серии в мс; число вспышек делит её поровну, затем пауза."
                         },
                         {
                             "key": "flashnotify_voip_count",
