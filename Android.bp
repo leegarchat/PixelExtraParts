@@ -10,7 +10,7 @@ filegroup {
 genrule {
     name: "pep_init_rc",
     srcs: [
-        "init.pixelextraparts.rc",
+        "init.pixelextraparts.rc.in",
         ":pep_thermal_switch_frag",
     ],
     out: ["init.pixelextraparts.rc"],
