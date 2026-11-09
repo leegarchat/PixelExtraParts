@@ -689,6 +689,11 @@ public final class FlashBlinkHook {
             Log.i(TAG, "posted: silent, skip");
             return;
         }
+        // Per-category push toggles (call never reaches here: call branch).
+        if (!Settings.isCategoryAllowed(context, n.category)) {
+            Log.i(TAG, "posted: category " + n.category + " off, skip");
+            return;
+        }
 
         int count = clamp(Settings.getCount(context), 1, 50);
         int total = clamp(Settings.getTotalMs(context), 100, 10000);

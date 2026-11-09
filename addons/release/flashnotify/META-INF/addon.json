@@ -258,6 +258,170 @@
                     "showOutput": true
                 },
                 {
+                    "key": "flashnotify_cat_msg",
+                    "title": "Messages",
+                    "description": "Blink on message notifications (SMS, messengers).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats",
+                    "categoryTitle": "Push categories",
+                    "categoryDescription": "Which notification categories trigger the flash. Calls are always handled by the call branch."
+                },
+                {
+                    "key": "flashnotify_cat_email",
+                    "title": "Email",
+                    "description": "Blink on email notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_alarm",
+                    "title": "Alarms",
+                    "description": "Blink on alarm and timer notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_reminder",
+                    "title": "Reminders",
+                    "description": "Blink on reminder notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_event",
+                    "title": "Calendar events",
+                    "description": "Blink on calendar event notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_promo",
+                    "title": "Promotions",
+                    "description": "Blink on promo and ad notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_social",
+                    "title": "Social",
+                    "description": "Blink on social network notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_progress",
+                    "title": "Progress",
+                    "description": "Blink on progress notifications (downloads).",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_transport",
+                    "title": "Media",
+                    "description": "Blink on media player notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_navigation",
+                    "title": "Navigation",
+                    "description": "Blink on navigation notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_service",
+                    "title": "Services",
+                    "description": "Blink on background service notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_system",
+                    "title": "System",
+                    "description": "Blink on system notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_status",
+                    "title": "Status",
+                    "description": "Blink on status notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_error",
+                    "title": "Errors",
+                    "description": "Blink on error notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_recommendation",
+                    "title": "Recommendations",
+                    "description": "Blink on recommendation notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_workout",
+                    "title": "Workout",
+                    "description": "Blink on workout notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_location",
+                    "title": "Location sharing",
+                    "description": "Blink on location sharing notifications.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
+                    "key": "flashnotify_cat_none",
+                    "title": "Uncategorized",
+                    "description": "Blink on notifications without a category.",
+                    "type": "switch",
+                    "provider": "global",
+                    "default": true,
+                    "category": "flashnotify_cats"
+                },
+                {
                     "key": "flashnotify_total_ms",
                     "title": "Total blink time",
                     "description": "Overall time the blinking lasts. Split evenly into on/off phases.",
@@ -433,6 +597,96 @@
                             "type": "button",
                             "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST_VOIP --ei seconds 10",
                             "showOutput": true
+                        },
+                        {
+                            "key": "flashnotify_cat_msg",
+                            "title": "Сообщения",
+                            "description": "Мигать на сообщения (SMS, мессенджеры)."
+                        },
+                        {
+                            "key": "flashnotify_cat_email",
+                            "title": "Почта",
+                            "description": "Мигать на почту."
+                        },
+                        {
+                            "key": "flashnotify_cat_alarm",
+                            "title": "Будильники",
+                            "description": "Мигать на будильники и таймеры."
+                        },
+                        {
+                            "key": "flashnotify_cat_reminder",
+                            "title": "Напоминания",
+                            "description": "Мигать на напоминания."
+                        },
+                        {
+                            "key": "flashnotify_cat_event",
+                            "title": "События календаря",
+                            "description": "Мигать на события календаря."
+                        },
+                        {
+                            "key": "flashnotify_cat_promo",
+                            "title": "Промо",
+                            "description": "Мигать на промо и рекламу."
+                        },
+                        {
+                            "key": "flashnotify_cat_social",
+                            "title": "Соцсети",
+                            "description": "Мигать на соцсети."
+                        },
+                        {
+                            "key": "flashnotify_cat_progress",
+                            "title": "Прогресс",
+                            "description": "Мигать на прогресс (загрузки)."
+                        },
+                        {
+                            "key": "flashnotify_cat_transport",
+                            "title": "Медиа",
+                            "description": "Мигать на медиаплееры."
+                        },
+                        {
+                            "key": "flashnotify_cat_navigation",
+                            "title": "Навигация",
+                            "description": "Мигать на навигацию."
+                        },
+                        {
+                            "key": "flashnotify_cat_service",
+                            "title": "Сервисы",
+                            "description": "Мигать на фоновые сервисы."
+                        },
+                        {
+                            "key": "flashnotify_cat_system",
+                            "title": "Системные",
+                            "description": "Мигать на системные."
+                        },
+                        {
+                            "key": "flashnotify_cat_status",
+                            "title": "Статус",
+                            "description": "Мигать на статус-уведомления."
+                        },
+                        {
+                            "key": "flashnotify_cat_error",
+                            "title": "Ошибки",
+                            "description": "Мигать на ошибки."
+                        },
+                        {
+                            "key": "flashnotify_cat_recommendation",
+                            "title": "Рекомендации",
+                            "description": "Мигать на рекомендации."
+                        },
+                        {
+                            "key": "flashnotify_cat_workout",
+                            "title": "Тренировки",
+                            "description": "Мигать на тренировки."
+                        },
+                        {
+                            "key": "flashnotify_cat_location",
+                            "title": "Геопозиция",
+                            "description": "Мигать на шаринг геопозиции."
+                        },
+                        {
+                            "key": "flashnotify_cat_none",
+                            "title": "Без категории",
+                            "description": "Мигать на уведомления без категории."
                         },
                         {
                             "key": "flashnotify_total_ms",

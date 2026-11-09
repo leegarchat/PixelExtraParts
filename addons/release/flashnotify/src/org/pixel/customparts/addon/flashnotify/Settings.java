@@ -19,6 +19,26 @@ public final class Settings {
     public static final String KEY_SIM_BRIGHTNESS = "flashnotify_sim_brightness";
     public static final String KEY_VOIP_BRIGHTNESS = "flashnotify_voip_brightness";
 
+    /** Per-category push toggles (call is excluded: always on the call branch). */
+    public static final String KEY_CAT_NONE = "flashnotify_cat_none";
+    public static final String KEY_CAT_MSG = "flashnotify_cat_msg";
+    public static final String KEY_CAT_EMAIL = "flashnotify_cat_email";
+    public static final String KEY_CAT_ALARM = "flashnotify_cat_alarm";
+    public static final String KEY_CAT_REMINDER = "flashnotify_cat_reminder";
+    public static final String KEY_CAT_EVENT = "flashnotify_cat_event";
+    public static final String KEY_CAT_PROMO = "flashnotify_cat_promo";
+    public static final String KEY_CAT_SOCIAL = "flashnotify_cat_social";
+    public static final String KEY_CAT_PROGRESS = "flashnotify_cat_progress";
+    public static final String KEY_CAT_TRANSPORT = "flashnotify_cat_transport";
+    public static final String KEY_CAT_NAVIGATION = "flashnotify_cat_navigation";
+    public static final String KEY_CAT_SERVICE = "flashnotify_cat_service";
+    public static final String KEY_CAT_SYSTEM = "flashnotify_cat_system";
+    public static final String KEY_CAT_STATUS = "flashnotify_cat_status";
+    public static final String KEY_CAT_ERROR = "flashnotify_cat_error";
+    public static final String KEY_CAT_RECOMMENDATION = "flashnotify_cat_recommendation";
+    public static final String KEY_CAT_WORKOUT = "flashnotify_cat_workout";
+    public static final String KEY_CAT_LOCATION = "flashnotify_cat_location";
+
     /**
      * Canonical ROM-published unified call state (no suffix).
      * Written by PixelPartsCallState in system_server:
@@ -67,6 +87,32 @@ public final class Settings {
 
     public static int getVoipPauseMs(Context c) {
         return getInt(c, KEY_VOIP_PAUSE_MS, 1000);
+    }
+
+    /** Whether a plain (non-call) notification of this category may blink.
+     * Unknown/future categories fail open (true = current behavior). */
+    public static boolean isCategoryAllowed(Context c, String category) {
+        if (category == null) return getBoolean(c, KEY_CAT_NONE, true);
+        switch (category) {
+            case "msg": return getBoolean(c, KEY_CAT_MSG, true);
+            case "email": return getBoolean(c, KEY_CAT_EMAIL, true);
+            case "alarm": return getBoolean(c, KEY_CAT_ALARM, true);
+            case "reminder": return getBoolean(c, KEY_CAT_REMINDER, true);
+            case "event": return getBoolean(c, KEY_CAT_EVENT, true);
+            case "promo": return getBoolean(c, KEY_CAT_PROMO, true);
+            case "social": return getBoolean(c, KEY_CAT_SOCIAL, true);
+            case "progress": return getBoolean(c, KEY_CAT_PROGRESS, true);
+            case "transport": return getBoolean(c, KEY_CAT_TRANSPORT, true);
+            case "navigation": return getBoolean(c, KEY_CAT_NAVIGATION, true);
+            case "service": return getBoolean(c, KEY_CAT_SERVICE, true);
+            case "system": return getBoolean(c, KEY_CAT_SYSTEM, true);
+            case "status": return getBoolean(c, KEY_CAT_STATUS, true);
+            case "err": return getBoolean(c, KEY_CAT_ERROR, true);
+            case "recommendation": return getBoolean(c, KEY_CAT_RECOMMENDATION, true);
+            case "workout": return getBoolean(c, KEY_CAT_WORKOUT, true);
+            case "location_sharing": return getBoolean(c, KEY_CAT_LOCATION, true);
+            default: return true;
+        }
     }
 
     public static int getSimBrightness(Context c) {
