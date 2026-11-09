@@ -644,6 +644,31 @@ public final class FlashBlinkHook {
             Log.w(TAG, "posted: null notification, skip");
             return;
         }
+        // Diagnostic shape dump (first post per key): characterizes even
+        // plain notifications (a messenger call may hide among them).
+        synchronized (LOCK) {
+            if (!key.equals(sLastShapeKey)) {
+                sLastShapeKey = key;
+                boolean fsi = false;
+                try {
+                    fsi = n.fullScreenIntent != null;
+                } catch (Throwable ignored) {}
+                String sound = "?";
+                int usage = -1;
+                try {
+                    sound = String.valueOf(n.sound);
+                    if (n.audioAttributes != null) {
+                        usage = n.audioAttributes.getUsage();
+                    }
+                } catch (Throwable ignored) {}
+                Log.i(TAG, "posted: shape key=" + key
+                        + " cat=" + n.category
+                        + " flags=" + n.flags
+                        + " sound=" + sound
+                        + " usage=" + usage
+                        + " fsi=" + fsi);
+            }
+        }
         // Ongoing (player, download, call) never flashes — except VoIP
         // calls, tracked separately by their call-style notification.
         if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) {
@@ -667,6 +692,8 @@ public final class FlashBlinkHook {
     }
 
     private static String sVoipBurstSig;
+    /** Last key already shape-dumped (reposts are frequent). Guarded by LOCK. */
+    private static String sLastShapeKey;
     /** SIM hold generation: any ROM state move or new VoIP key bumps it,
      * cancelling a pending SIM hold. Guarded by LOCK. */
     private static int sRomGen;
