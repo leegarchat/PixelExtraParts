@@ -492,13 +492,7 @@ object AutoHbmController {
             .onFailure { Log.w(TAG, "Unable to read $SOC_THERMAL_NAME thermal zone", it) }
             .getOrNull()
 
-        // TEMP DEBUG (PepBatteryPath): sysfs battery-temp fallback removed.
-        if (socTemperature != null) {
-            Log.d("PepBatteryPath", "temp=soc_therm value=" + socTemperature)
-            return socTemperature
-        }
-        Log.d("PepBatteryPath", "temp=MISSING (soc_therm absent, sysfs fallback removed)")
-        return null
+        return socTemperature
     }
 
     private fun readIntFile(path: String): Int? {

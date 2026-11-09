@@ -1,0 +1,15 @@
+{
+    "id": "diag_battery_path",
+    "entryClass": "org.pixel.customparts.addon.diag.DiagBatteryPathHook",
+    "name": "Diag Battery Path",
+    "author": "PixelExtraParts",
+    "description": "Diagnostic only: logs whether battery values come from BatteryManager API or sysfs fallback. Tag: PepDiagBatt.",
+    "version": "1.0.0",
+    "targetPackages": [
+        "com.android.systemui",
+        "org.pixel.customparts"
+    ],
+    "enabled": true,
+    "settings": [],
+    "main": []
+}
