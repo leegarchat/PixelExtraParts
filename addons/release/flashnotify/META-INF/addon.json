@@ -89,7 +89,7 @@
                 {
                     "key": "flashnotify_sim_blink_ms",
                     "title": "SIM burst window",
-                    "description": "Total burst length in ms; the count flashes share it evenly, then pause.",
+                    "description": "Total burst length in ms; flashes share it evenly, then pause. Window wins over count.",
                     "type": "int",
                     "provider": "global",
                     "default": 300,
@@ -138,7 +138,7 @@
                 {
                     "key": "flashnotify_voip_blink_ms",
                     "title": "VoIP burst window",
-                    "description": "Total burst length in ms; the count flashes share it evenly, then pause.",
+                    "description": "Total burst length in ms; flashes share it evenly, then pause. Window wins over count.",
                     "type": "int",
                     "provider": "global",
                     "default": 300,
@@ -234,7 +234,7 @@
                         {
                             "key": "flashnotify_sim_blink_ms",
                             "title": "SIM окно серии",
-                            "description": "Общая длина серии в мс; число вспышек делит её поровну, затем пауза."
+                            "description": "Общая длина серии в мс; вспышки делят её поровну, затем пауза. Окно важнее числа вспышек."
                         },
                         {
                             "key": "flashnotify_sim_count",
@@ -254,7 +254,7 @@
                         {
                             "key": "flashnotify_voip_blink_ms",
                             "title": "VoIP окно серии",
-                            "description": "Общая длина серии в мс; число вспышек делит её поровну, затем пауза."
+                            "description": "Общая длина серии в мс; вспышки делят её поровну, затем пауза. Окно важнее числа вспышек."
                         },
                         {
                             "key": "flashnotify_voip_count",

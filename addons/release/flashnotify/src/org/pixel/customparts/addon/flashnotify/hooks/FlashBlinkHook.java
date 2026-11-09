@@ -577,8 +577,11 @@ public final class FlashBlinkHook {
         // Burst-window semantics (same as notifications): blinkMs is the TOTAL
         // burst length, flashes share it evenly (unit = window / (2 * count)).
         // Floored at MIN_PHASE_MS: hardware cannot toggle faster anyway.
+        // The window is a hard budget: a blink that would overrun it is
+        // skipped, even if the count is not reached.
         int n = clamp(count, 1, 50);
-        int phase = blinkMs / (2 * Math.max(n, 1));
+        int budget = clamp(blinkMs, 100, 10000);
+        int phase = budget / (2 * Math.max(n, 1));
         if (phase < MIN_PHASE_MS) phase = MIN_PHASE_MS;
         int pause = clamp(pauseMs, 0, 10000);
         int level = clamp(strength, 1, 45);
@@ -601,7 +604,15 @@ public final class FlashBlinkHook {
             int cycle = 0;
             while (true) {
                 cycle++;
+                // Time budget wins over count (same as notifications):
+                // never start a blink that would overrun the window.
+                // Reset per cycle since calls repeat until interrupted.
+                final long start = android.os.SystemClock.elapsedRealtime();
                 for (int i = 0; i < n; i++) {
+                    if (android.os.SystemClock.elapsedRealtime() - start + phase > budget) {
+                        Log.i(TAG, "budget hit at " + (i + 1) + "/" + n);
+                        break;
+                    }
                     torchOn(cm, cameraId, level);
                     Thread.sleep(phase);
                     setTorchQuiet(cm, cameraId, false);
