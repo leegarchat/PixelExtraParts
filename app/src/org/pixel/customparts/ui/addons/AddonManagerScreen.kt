@@ -811,8 +811,6 @@ private fun AddonCardHeader(
                     addon.description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .alpha(contentAlpha)

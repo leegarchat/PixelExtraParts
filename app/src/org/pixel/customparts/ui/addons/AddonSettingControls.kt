@@ -783,8 +783,8 @@ internal fun SettingDescriptionText(
     setting: AddonSettingDef,
     style: TextStyle = MaterialTheme.typography.bodySmall,
     color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    maxLines: Int = 2,
-    overflow: TextOverflow = TextOverflow.Ellipsis,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip,
     modifier: Modifier = Modifier
 ) {
     Text(

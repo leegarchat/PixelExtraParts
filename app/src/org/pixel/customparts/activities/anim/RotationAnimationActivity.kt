@@ -1354,8 +1354,7 @@ internal fun AnimationCompileDialog(
                     Text(
                         state.detail,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Spacer(Modifier.size(20.dp))

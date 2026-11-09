@@ -930,8 +930,7 @@ private fun DashboardSearchResultRow(
                 Text(
                     text = highlightedSearchText(secondaryLine, tokens),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

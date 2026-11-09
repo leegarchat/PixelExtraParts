@@ -191,9 +191,7 @@ internal fun AppIconCurrentIconCard(app: InstalledIconApp, appliedBitmap: Bitmap
                         stringResource(R.string.app_icons_applied_from_format, it)
                     } ?: stringResource(R.string.app_icons_not_applied_to_app),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -712,9 +710,7 @@ private fun AppIconDialog(
                             stringResource(R.string.app_icons_applied_from_format, it)
                         } ?: stringResource(R.string.app_icons_not_applied_to_app),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

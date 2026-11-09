@@ -533,9 +533,7 @@ fun AddonMainEntryRow(
                 Text(
                     text = entry.subtitle,
                     style = MaterialTheme.typography.bodyMedium.withAddonTextSize(entry.descriptionSizeSp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

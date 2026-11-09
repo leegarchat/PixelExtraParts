@@ -449,8 +449,6 @@ internal fun AppIconsSwitchRow(
                 text = summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
@@ -500,8 +498,6 @@ private fun AppIconsNavigationRow(
                 text = summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
@@ -540,8 +536,6 @@ private fun AppIconsTintControlRow(
                     text = summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -640,8 +634,6 @@ internal fun AppIconsScaleSliderRow(
         text = stringResource(R.string.app_icons_shape_scale_summary),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
         modifier = Modifier.padding(horizontal = 20.dp)
     )
 }
@@ -698,9 +690,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
                     progress.failed
                 ),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
