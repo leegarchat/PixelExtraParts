@@ -605,6 +605,35 @@ public final class FlashBlinkHook {
     private static String sVoipBurstSig;
     private static volatile boolean sLegacyRinging;
 
+    /** Packages that render the *SIM* call UI — their call notifications are
+     * never VoIP, even with CATEGORY_CALL/fullScreenIntent. Resolved against
+     * the system default dialer first, hardcoded list as fallback. */
+    private static final String[] KNOWN_DIALER_PACKAGES = {
+            "com.google.android.dialer",
+            "com.android.dialer",
+            "com.android.server.telecom",
+            "com.android.phone",
+            "com.android.incallui",
+            "com.samsung.android.dialer",
+            "com.samsung.android.incallui",
+    };
+
+    private static boolean isDialerPackage(Context context, String pkg) {
+        if (pkg == null) return false;
+        try {
+            android.telecom.TelecomManager tm = (android.telecom.TelecomManager)
+                    context.getSystemService(Context.TELECOM_SERVICE);
+            if (tm != null) {
+                String def = tm.getDefaultDialerPackage();
+                if (pkg.equals(def)) return true;
+            }
+        } catch (Throwable ignored) {}
+        for (String known : KNOWN_DIALER_PACKAGES) {
+            if (pkg.equals(known)) return true;
+        }
+        return false;
+    }
+
     /** Messenger (VoIP) calls: repeat while the call-style notification lives. */
     private static void onOngoing(Context context, StatusBarNotification sbn, Notification n) {
         if (!Notification.CATEGORY_CALL.equals(n.category)) {
@@ -619,6 +648,18 @@ public final class FlashBlinkHook {
         try {
             key = sbn.getKey();
         } catch (Throwable t) {
+            return;
+        }
+        String pkg;
+        try {
+            pkg = sbn.getPackageName();
+        } catch (Throwable t) {
+            pkg = null;
+        }
+        // The stock dialer posts a call notification *for SIM calls*.
+        // It is never a VoIP call — SIM ringing is owned by the SIM/ROM path.
+        if (isDialerPackage(context, pkg)) {
+            Log.i(TAG, "posted: voip call from dialer " + pkg + ", skip (SIM UI)");
             return;
         }
         // Diagnostic shape dump (first post per key): proves what the
