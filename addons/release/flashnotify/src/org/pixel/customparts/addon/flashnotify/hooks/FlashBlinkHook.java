@@ -167,37 +167,37 @@ public final class FlashBlinkHook {
             sRomCall = ROM_IDLE;
             return;
         }
-        if (state == ROM_ACTIVE && !voipOn) {
-            // Answered SIM call with no messenger interest: same as the
-            // TelephonyCallback path, blinking stops once answered.
+        if (state == ROM_IDLE) {
             sRomCall = ROM_IDLE;
             stopIfAllIdle();
             return;
         }
-        sRomCall = state;
-        if (state == ROM_IDLE) {
+        if (state == ROM_ACTIVE) {
+            // Answered: blinking always stops (same as the TelephonyCallback
+            // path). VoIP calls keep blinking via their ongoing notification.
+            sRomCall = ROM_IDLE;
             stopIfAllIdle();
             return;
         }
-        int strength = clamp(Settings.getSimBrightness(context), 1, 45);
-        if (simOn && (state == ROM_RINGING || !voipOn)) {
-            int count = clamp(Settings.getSimCount(context), 1, 50);
-            int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
-            int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
-            Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
-                    + " pause=" + pause + " strength=" + strength);
-            sAudioBlink = false;
-            cancelTestBurst("rom-sim");
-            startBurst(context, blink, count, pause, strength);
-        } else if (voipOn) {
-            int count = clamp(Settings.getVoipCount(context), 1, 50);
-            int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
-            int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
-            Log.i(TAG, "rom voip: go blink=" + blink + " count=" + count
-                    + " pause=" + pause + " strength=" + strength);
-            cancelTestBurst("rom-voip");
-            startBurst(context, blink, count, pause, strength);
+        // state == ROM_RINGING from here on.
+        if (!simOn) {
+            // SIM blinks off: a ringing state alone is not VoIP evidence.
+            // VoIP blinking requires its own trigger (call notification or
+            // self-managed audio detection), so do not fall through to it.
+            Log.i(TAG, "rom ring: SIM off, no blink (waiting for VoIP evidence)");
+            sRomCall = ROM_IDLE;
+            return;
         }
+        sRomCall = state;
+        int strength = clamp(Settings.getSimBrightness(context), 1, 45);
+        int count = clamp(Settings.getSimCount(context), 1, 50);
+        int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
+        int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
+        Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
+                + " pause=" + pause + " strength=" + strength);
+        sAudioBlink = false;
+        cancelTestBurst("rom-sim");
+        startBurst(context, blink, count, pause, strength);
     }
 
     /** Halts the blink thread only when no source claims a live call. */
@@ -274,6 +274,19 @@ public final class FlashBlinkHook {
         if (!telecomRinging(context)) {
             Log.i(TAG, "audio ring: telecom idle, skip");
             return;
+        }
+        // Distinguish managed SIM ringing from self-managed VoIP: a ringing
+        // radio means Telecom's ringing call is the SIM one, so the audio
+        // path must stay out (SIM path owns it, or SIM is off entirely).
+        try {
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager)
+                    context.getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm != null && tm.getCallState() != android.telephony.TelephonyManager.CALL_STATE_IDLE) {
+                Log.i(TAG, "audio ring: radio busy (managed call), skip");
+                return;
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "audio ring: radio check failed, assume VoIP: " + t);
         }
         if (!Settings.getVoipEnabled(context)) {
             Log.i(TAG, "audio ring: voip toggle off, skip");
