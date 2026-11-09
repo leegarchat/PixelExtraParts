@@ -179,64 +179,35 @@ public final class FlashBlinkHook {
             stopIfAllIdle();
             return;
         }
-        // state == ROM_RINGING from here on. The ROM publisher merges both
-        // funnels into one state, so disambiguate by radio: a busy radio
-        // means the SIM call is really ringing; an idle radio means the
-        // ringing state came from the messenger (notification) funnel.
-        boolean radioBusy = true;
-        try {
-            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager)
-                    context.getSystemService(Context.TELEPHONY_SERVICE);
-            radioBusy = tm != null
-                    && tm.getCallState() != android.telephony.TelephonyManager.CALL_STATE_IDLE;
-        } catch (Throwable t) {
-            Log.w(TAG, "rom ring: radio check failed, assume SIM: " + t);
-        }
-        if (radioBusy) {
-            if (!simOn) {
-                Log.i(TAG, "rom ring: SIM off, no blink");
-                sRomCall = ROM_IDLE;
-                return;
-            }
-            sRomCall = state;
-            int strength = clamp(Settings.getSimBrightness(context), 1, 45);
-            int count = clamp(Settings.getSimCount(context), 1, 50);
-            int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
-            int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
-            Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
-                    + " pause=" + pause + " strength=" + strength);
-            sAudioBlink = false;
-            cancelTestBurst("rom-sim");
-            startBurst(context, blink, count, pause, strength);
-            return;
-        }
-        // Radio idle: messenger call via the notification funnel. Blink only
-        // on VoIP evidence with the toggle on; otherwise stay silent.
-        if (!voipOn) {
-            Log.i(TAG, "rom ring: voip off, no blink");
+        // state == ROM_RINGING from here on.
+        if (!simOn) {
+            // SIM blinks off: a ringing state alone is not VoIP evidence.
+            // VoIP blinking requires its own trigger (call notification or
+            // self-managed audio detection), so do not fall through to it.
+            Log.i(TAG, "rom ring: SIM off, no blink (waiting for VoIP evidence)");
             sRomCall = ROM_IDLE;
             return;
         }
-        sRomCall = state;
-        int vcount = clamp(Settings.getVoipCount(context), 1, 50);
-        int vblink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
-        int vpause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
-        int vstrength = clamp(Settings.getVoipBrightness(context), 1, 45);
-        String vsig = vblink + "/" + vcount + "/" + vpause + "/" + vstrength;
+        // A live VoIP call notification proves a messenger call: the SIM
+        // branch must not claim it (prevents SIM blink on Max/Telegram
+        // while SIM is on).
         synchronized (LOCK) {
-            // Whoever saw the VoIP call first (notification, audio, ROM)
-            // owns the burst; the rest merge instead of restarting it.
-            Thread t = sBlinkThread;
-            if (vsig.equals(sVoipBurstSig) && t != null && t.isAlive()) {
-                Log.i(TAG, "rom voip: dup, keep running");
+            if (sVoipKey != null) {
+                Log.i(TAG, "rom ring: voip notification live, SIM stays out");
+                sRomCall = ROM_IDLE;
                 return;
             }
-            sVoipBurstSig = vsig;
         }
-        Log.i(TAG, "rom voip: go blink=" + vblink + " count=" + vcount
-                + " pause=" + vpause + " strength=" + vstrength);
-        cancelTestBurst("rom-voip");
-        startBurst(context, vblink, vcount, vpause, vstrength);
+        sRomCall = state;
+        int strength = clamp(Settings.getSimBrightness(context), 1, 45);
+        int count = clamp(Settings.getSimCount(context), 1, 50);
+        int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
+        int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
+        Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
+                + " pause=" + pause + " strength=" + strength);
+        sAudioBlink = false;
+        cancelTestBurst("rom-sim");
+        startBurst(context, blink, count, pause, strength);
     }
 
     /** Halts the blink thread only when no source claims a live call. */
@@ -338,11 +309,6 @@ public final class FlashBlinkHook {
         Log.i(TAG, "audio ring: self-managed go blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength);
         sAudioBlink = true;
-        synchronized (LOCK) {
-            // Same VoIP sig family: lets a later ROM/notification trigger
-            // merge instead of restarting this burst.
-            sVoipBurstSig = blink + "/" + count + "/" + pause + "/" + strength;
-        }
         cancelTestBurst("audio");
         startBurst(context, blink, count, pause, strength);
     }
@@ -605,20 +571,13 @@ public final class FlashBlinkHook {
         } catch (Throwable t) {
             key = "?";
         }
-        boolean newKey;
-        synchronized (LOCK) {
-            newKey = !key.equals(sLastPostedLogKey);
-            if (newKey) {
-                sLastPostedLogKey = key;
-                Log.i(TAG, "posted: key=" + key);
-            }
-        }
+        Log.i(TAG, "posted: key=" + key);
         if (context == null) {
             Log.w(TAG, "posted: null context, skip");
             return;
         }
         boolean enabled = Settings.getEnabled(context);
-        if (newKey) Log.i(TAG, "posted: enabled=" + enabled);
+        Log.i(TAG, "posted: enabled=" + enabled);
         if (!enabled) return;
         Notification n;
         try {
@@ -654,9 +613,6 @@ public final class FlashBlinkHook {
     }
 
     private static String sVoipBurstSig;
-    /** Last keys already logged: reposts are frequent, log once per key. */
-    private static String sLastPostedLogKey;
-    private static String sLastOngoingSkipKey;
     private static volatile boolean sLegacyRinging;
 
     /** Packages that render the *SIM* call UI — their call notifications are
@@ -690,23 +646,14 @@ public final class FlashBlinkHook {
 
     /** Messenger (VoIP) calls: repeat while the call-style notification lives. */
     private static void onOngoing(Context context, StatusBarNotification sbn, Notification n) {
+        if (!Notification.CATEGORY_CALL.equals(n.category)) {
+            Log.i(TAG, "posted: ongoing, skip");
+            return;
+        }
         String key;
         try {
             key = sbn.getKey();
         } catch (Throwable t) {
-            return;
-        }
-        if (!Notification.CATEGORY_CALL.equals(n.category)) {
-            synchronized (LOCK) {
-                if (!key.equals(sLastOngoingSkipKey)) {
-                    sLastOngoingSkipKey = key;
-                    Log.i(TAG, "posted: ongoing, skip key=" + key);
-                }
-            }
-            return;
-        }
-        if (!Settings.getVoipEnabled(context)) {
-            Log.i(TAG, "posted: voip call, toggle off, skip");
             return;
         }
         String pkg;
@@ -721,10 +668,13 @@ public final class FlashBlinkHook {
             Log.i(TAG, "posted: voip call from dialer " + pkg + ", skip (SIM UI)");
             return;
         }
-        // Diagnostic shape dump (first post per key): proves what the
-        // messenger actually posts (category/FSI/style/flags).
+        // Record the live VoIP key BEFORE the toggle check: the SIM branch
+        // yields to a live key, so the key must exist even with VoIP off.
+        // Only the blinking itself respects the toggle.
         synchronized (LOCK) {
             if (!key.equals(sVoipKey)) {
+                sVoipKey = key;
+                sVoipBurstSig = null;
                 boolean fsi = false;
                 try {
                     fsi = n.fullScreenIntent != null;
@@ -744,6 +694,10 @@ public final class FlashBlinkHook {
                         + " flags=" + n.flags);
             }
         }
+        if (!Settings.getVoipEnabled(context)) {
+            Log.i(TAG, "posted: voip call, toggle off, skip (key held for SIM yield)");
+            return;
+        }
         int count = clamp(Settings.getVoipCount(context), 1, 50);
         int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
         int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
@@ -753,16 +707,10 @@ public final class FlashBlinkHook {
             // Ongoing call notifications repost often (timer/state updates).
             // Restarting the burst on every repost would trap it in phase 1
             // forever, so keep the running burst when nothing changed.
-            // Whoever saw the VoIP call first (ROM/audio/notification) owns
-            // it: adopt a new key without restarting the same burst.
             Thread t = sBlinkThread;
-            if (sig.equals(sVoipBurstSig) && t != null && t.isAlive()) {
-                if (!key.equals(sVoipKey)) {
-                    sVoipKey = key;
-                    Log.i(TAG, "posted: voip key adopted, keep running key=" + key);
-                } else {
-                    Log.i(TAG, "posted: voip dup post, keep running key=" + key);
-                }
+            if (key.equals(sVoipKey) && sig.equals(sVoipBurstSig)
+                    && t != null && t.isAlive()) {
+                Log.i(TAG, "posted: voip dup post, keep running key=" + key);
                 return;
             }
             sVoipKey = key;
