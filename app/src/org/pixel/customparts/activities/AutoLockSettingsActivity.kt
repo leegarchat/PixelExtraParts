@@ -228,7 +228,6 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                             enabled = enabled,
                             valueText = AutoLockController.formatTimeout(context, timeoutSeconds),
                             defaultValue = AutoLockController.DEFAULT_TIMEOUT_SECONDS,
-                            showValueBelow = true,
                             onValueChange = {
                                 timeoutSeconds = it
                                 AutoLockController.setTimeoutSeconds(context, timeoutSeconds)

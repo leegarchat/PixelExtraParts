@@ -201,6 +201,8 @@ fun SliderSetting(
     showDefaultButton: Boolean = true,
     inputRange: IntRange? = null,
     defaultValue: Int? = null,
+    // Kept for source compatibility; the layout is now unified (value readout
+    // is always below-right), so this flag no longer changes anything.
     showValueBelow: Boolean = false
 ) {
     SliderSettingFloat(
@@ -244,6 +246,8 @@ fun SliderSettingFloat(
     inputRange: ClosedFloatingPointRange<Float>? = null,
     stepSize: Float = if (isInteger) 1f else 0.01f,
     defaultValue: Float? = null,
+    // Kept for source compatibility; the layout is now unified (value readout
+    // is always below-right), so this flag no longer changes anything.
     showValueBelow: Boolean = false
 ) {
     var showManualInput by remember { mutableStateOf(false) }
@@ -270,74 +274,16 @@ fun SliderSettingFloat(
             .clickable(enabled = enabled) { showManualInput = true }
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        if (showValueBelow) {
-            // Title only at top
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
-            )
-        } else {
-            // Title + reset badge + value capsule (DESIGN_GUIDELINES §6.5)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-
-                if (showResetBadge) {
-                    Box(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f))
-                            .clickable(enabled = enabled) {
-                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onDefault()
-                                onValueChangeFinished?.invoke()
-                            }
-                    ) {
-                        Text(
-                            text = dynamicStringResource(R.string.btn_default),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                        )
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                ) {
-                    Text(
-                        text = formattedValue,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                    )
-                }
-            }
-        }
+        // Row 1: title only — single line, shrink-to-fit, never above base size
+        // (DESIGN_GUIDELINES §6.5).
+        SliderTitleText(
+            title = title,
+            modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
+        )
 
         Spacer(Modifier.height(8.dp))
 
-        // Slider row: [−] [slider] [+] [info]
+        // Row 2: slider with step buttons: [−] [slider] [+]
         Row(verticalAlignment = Alignment.CenterVertically) {
             ExpressiveStepButton(
                 symbol = "−",
@@ -398,9 +344,18 @@ fun SliderSettingFloat(
                 },
                 modifier = Modifier.alpha(contentAlpha)
             )
+        }
 
+        Spacer(Modifier.height(8.dp))
+
+        // Row 3: (i) [reset] <spacer> <value> (DESIGN_GUIDELINES §6.5).
+        // The value readout keeps the exact formatted string, rendered as plain text.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
+        ) {
             if (onInfoClick != null && infoText != null) {
-                Spacer(Modifier.width(4.dp))
                 IconButton(
                     onClick = { onInfoClick(title, infoText, videoResName) },
                     modifier = Modifier.size(32.dp)
@@ -413,18 +368,36 @@ fun SliderSettingFloat(
                     )
                 }
             }
-        }
 
-        // Value below slider (when showValueBelow is true)
-        if (showValueBelow) {
+            if (showResetBadge) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f))
+                        .clickable(enabled = enabled) {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onDefault()
+                            onValueChangeFinished?.invoke()
+                        }
+                ) {
+                    Text(
+                        text = dynamicStringResource(R.string.btn_default),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
             Text(
                 text = formattedValue,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
-                modifier = Modifier.fillMaxWidth().alpha(contentAlpha).padding(top = 4.dp),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.End
             )
         }
     }
@@ -450,6 +423,40 @@ fun SliderSettingFloat(
             }
         )
     }
+}
+
+/**
+ * Single-line slider title with shrink-to-fit (DESIGN_GUIDELINES §6.5).
+ * Manual onTextLayout shrink loop on purpose: the firmware Soong build links
+ * platform Compose libs that predate the TextAutoSize API, so this works on
+ * every Compose version. The base titleMedium size is the ceiling — the text
+ * only shrinks (0.5sp per overflow pass, floor 70% of base, min 10sp) and
+ * short titles stay exactly at base size. Never ellipsized, maxLines = 1.
+ */
+@Composable
+private fun SliderTitleText(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    val baseStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+    val baseSizeSp = baseStyle.fontSize.value
+    val minSizeSp = (baseSizeSp * 0.7f).coerceAtLeast(10f)
+    var style by remember(title) { mutableStateOf(baseStyle) }
+    Text(
+        text = title,
+        style = style,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Clip,
+        onTextLayout = { result ->
+            val currentSp = style.fontSize.value
+            if (result.hasVisualOverflow && currentSp > minSizeSp) {
+                style = style.copy(fontSize = (currentSp - 0.5f).coerceAtLeast(minSizeSp).sp)
+            }
+        },
+        modifier = modifier
+    )
 }
 
 @Composable
