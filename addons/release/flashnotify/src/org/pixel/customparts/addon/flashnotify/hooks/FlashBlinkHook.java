@@ -669,10 +669,17 @@ public final class FlashBlinkHook {
                         + " fsi=" + fsi);
             }
         }
-        // Ongoing (player, download, call) never flashes — except VoIP
-        // calls, tracked separately by their call-style notification.
+        // Call-style notifications (messenger calls AND the stock dialer for
+        // SIM) route by category, not by the ongoing flag: Max posts an
+        // ongoing call notification, Telegram an FSI heads-up with
+        // CATEGORY_CALL but no ongoing flag (flags=128 is just clickable).
+        if (Notification.CATEGORY_CALL.equals(n.category)) {
+            onCallNotification(context, sbn, n);
+            return;
+        }
+        // Other ongoing (player, download) never flashes.
         if ((n.flags & Notification.FLAG_ONGOING_EVENT) != 0) {
-            onOngoing(context, sbn, n);
+            onOngoingSkip(context, sbn, n);
             return;
         }
         // Silent (below DEFAULT importance) never flashes either. Fail-open:
@@ -729,12 +736,15 @@ public final class FlashBlinkHook {
         return false;
     }
 
-    /** Messenger (VoIP) calls: repeat while the call-style notification lives. */
-    private static void onOngoing(Context context, StatusBarNotification sbn, Notification n) {
-        if (!Notification.CATEGORY_CALL.equals(n.category)) {
-            Log.i(TAG, "posted: ongoing, skip");
-            return;
-        }
+    /** Other ongoing notifications (player, download): never flash. */
+    private static void onOngoingSkip(Context context, StatusBarNotification sbn, Notification n) {
+        Log.i(TAG, "posted: ongoing, skip");
+    }
+
+    /** Messenger (VoIP) calls: repeat while the call-style notification lives.
+     * Routed by CATEGORY_CALL (caller guarantees it); the ongoing flag is
+     * irrelevant (Max sets it, Telegram's FSI heads-up does not). */
+    private static void onCallNotification(Context context, StatusBarNotification sbn, Notification n) {
         String key;
         try {
             key = sbn.getKey();
