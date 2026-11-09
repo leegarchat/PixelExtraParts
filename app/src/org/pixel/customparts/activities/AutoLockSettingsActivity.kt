@@ -57,7 +57,6 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -157,11 +156,6 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                 item {
                     SettingsGroupCard(
                         title = dynamicStringResource(R.string.auto_lock_title),
-                        modifier = Modifier.border(
-                            1.dp,
-                            MaterialTheme.colorScheme.surface.edgeOutline(),
-                            RoundedCornerShape(24.dp)
-                        )
                     ) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_lock_enable_title),
@@ -214,11 +208,6 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                     SettingsGroupCard(
                         title = dynamicStringResource(R.string.auto_lock_timer_section),
                         enabled = enabled,
-                        modifier = Modifier.border(
-                            1.dp,
-                            MaterialTheme.colorScheme.surface.edgeOutline(),
-                            RoundedCornerShape(24.dp)
-                        )
                     ) {
                         SliderSetting(
                             title = dynamicStringResource(R.string.auto_lock_timeout_title),

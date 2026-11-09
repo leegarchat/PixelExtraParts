@@ -181,11 +181,6 @@ private fun MagnifierSection() {
 
     SettingsGroupCard(
         title = dynamicStringResource(R.string.magnifier_section_title),
-        modifier = Modifier.border(
-            1.dp,
-            MaterialTheme.colorScheme.surface.edgeOutline(),
-            RoundedCornerShape(24.dp)
-        )
     ) {
         GenericSwitchRow(
             title = dynamicStringResource(R.string.magnifier_enable_title),

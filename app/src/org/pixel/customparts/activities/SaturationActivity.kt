@@ -175,11 +175,6 @@ private fun SaturationScreen(onBack: () -> Unit) {
                 item {
                     SettingsGroupCard(
                         title = dynamicStringResource(R.string.saturation_title),
-                        modifier = Modifier.border(
-                            1.dp,
-                            MaterialTheme.colorScheme.surface.edgeOutline(),
-                            RoundedCornerShape(24.dp)
-                        )
                     ) {
                         SaturationControls(
                             enabled = enabled,

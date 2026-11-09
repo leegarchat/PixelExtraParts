@@ -260,11 +260,6 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                     SettingsGroupCard(
                         title = dynamicStringResource(R.string.auto_hbm_title),
                         enabled = supported,
-                        modifier = Modifier.border(
-                            1.dp,
-                            MaterialTheme.colorScheme.surface.edgeOutline(),
-                            RoundedCornerShape(24.dp)
-                        )
                     ) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_hbm_enable_title),

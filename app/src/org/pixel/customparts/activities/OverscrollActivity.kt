@@ -190,8 +190,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 contentPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding() + 16.dp,
                     bottom = innerPadding.calculateBottomPadding() + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING,
-                    start = 16.dp,
-                    end = 16.dp
+                    start = 0.dp,
+                    end = 0.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -200,6 +200,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 val descStr = dynamicStringResource(R.string.os_desc_master_native)
 
 
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 MasterSwitchCard(
                     title = titleStr,
                     isChecked = isMasterEnabled,
@@ -215,10 +216,12 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         infoDialogVideo = "overscroll_master"
                     }
                 )
+                }
             }
 
 
             item(key = "playground", contentType = "horizontal_list") {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Text(
                     dynamicStringResource(R.string.os_title_playground),
                     style = MaterialTheme.typography.labelMedium,
@@ -233,11 +236,12 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         Box(Modifier.width(160.dp)) { StaticTestCard("Card ${index + 1}") }
                     }
                 }
+                }
             }
 
 
             item(key = "profiles_section", contentType = "complex_section") {
-                Box(modifier = Modifier.alpha(if (isMasterEnabled) 1f else 0.5f)) {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).alpha(if (isMasterEnabled) 1f else 0.5f)) {
                     ProfilesSection(
                         context = context,
                         scope = scope,
@@ -565,6 +569,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         ),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
+                            .padding(horizontal = 16.dp)
                             .fillMaxWidth()
                             .border(
                                 1.dp,
@@ -795,6 +800,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
             }
 
             item(key = "reset_button", contentType = "button") {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                 Button(
                     onClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -818,6 +824,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         .alpha(if (isMasterEnabled) 1f else 0.5f)
                 ) {
                     Text(dynamicStringResource(R.string.os_btn_reset))
+                }
                 }
             }
         }
@@ -880,6 +887,21 @@ private fun ExpandableSettingsGroupCard(
     )
     val resolvedContainer = if (enabled) containerColor else containerColor.copy(alpha = 0.6f)
 
+    // Edge-to-edge expansion on reveal: the list itself carries no
+    // horizontal gutters — every item owns its own. Collapsed keeps 16.dp,
+    // expanded shrinks to 2.dp per side for wider content. No overflow, so
+    // no parent clipping/pinning games: symmetric by construction.
+    // Gutter and nothing else animates here; height reveal below is untouched.
+    val gutter by animateDpAsState(
+        targetValue = if (expanded) 2.dp else 16.dp,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "overscroll_card_gutter"
+    )
+
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = gutter)) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = resolvedContainer
@@ -940,8 +962,9 @@ private fun ExpandableSettingsGroupCard(
                     content()
                 }
             }
-        }
-    }
+        } // content Column
+    } // Card content
+    } // gutter Box
 }
 
 @Composable

@@ -54,7 +54,6 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -129,11 +128,6 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                 item {
                         SettingsGroupCard(
                             title = dynamicStringResource(R.string.display_section_screen),
-                            modifier = Modifier.border(
-                                1.dp,
-                                MaterialTheme.colorScheme.surface.edgeOutline(),
-                                RoundedCornerShape(24.dp)
-                            )
                         ) {
                             MainMenuNavigationRow(
                                 title = dynamicStringResource(R.string.saturation_title),

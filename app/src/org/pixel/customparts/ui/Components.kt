@@ -4,6 +4,7 @@ import android.net.Uri
 import android.widget.VideoView
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -615,6 +616,7 @@ fun SettingsGroupCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline()),
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {

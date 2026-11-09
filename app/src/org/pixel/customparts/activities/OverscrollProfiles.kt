@@ -34,7 +34,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.ui.SettingsGroupCard
-import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.dynamicStringResource
 
 
@@ -64,11 +63,6 @@ fun ProfilesSection(
 
     SettingsGroupCard(
         title = dynamicStringResource(R.string.os_group_profiles),
-        modifier = Modifier.border(
-            1.dp,
-            MaterialTheme.colorScheme.surface.edgeOutline(),
-            RoundedCornerShape(24.dp)
-        )
     ) {
         Column(
             modifier = Modifier
