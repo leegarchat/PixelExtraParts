@@ -336,9 +336,53 @@ public final class FlashBlinkHook {
             }
             tm.registerTelephonyCallback(context.getMainExecutor(),
                     new CallListener(context));
-            Log.i(TAG, "call listener registered");
+            Log.i(TAG, "call listener registered (TelephonyCallback)");
         } catch (Throwable t) {
-            Log.e(TAG, "call listener failed", t);
+            Log.e(TAG, "call listener failed (TelephonyCallback)", t);
+        }
+        // Legacy fallback: if the modern callback never delivers (seen on
+        // this ROM: zero onCallStateChanged), the deprecated listener still
+        // fires on the same radio events. Distinct tag prefix for diagnosis.
+        try {
+            TelephonyManager tm =
+                    (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm == null) return;
+            tm.listen(new android.telephony.PhoneStateListener() {
+                @Override public void onCallStateChanged(int state, String phoneNumber) {
+                    Log.i(TAG, "call[legacy] state=" + state);
+                    if (state == TelephonyManager.CALL_STATE_RINGING) {
+                        sRadioRinging = true;
+                        // Mirror of CallListener: drives the SIM burst only if
+                        // the modern callback did not already claim it.
+                        if (!sCallBlink && Settings.getCallsEnabled(context)) {
+                            int count = clamp(Settings.getSimCount(context), 1, 50);
+                            int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
+                            int pause = clamp(Settings.getSimPauseMs(context), 0, 10000);
+                            int strength = clamp(Settings.getStrength(context), 1, 45);
+                            Log.i(TAG, "call[legacy]: go blink=" + blink + " count=" + count
+                                    + " pause=" + pause + " strength=" + strength);
+                            sCallBlink = true;
+                            sAudioBlink = false;
+                            synchronized (LOCK) {
+                                sVoipKey = null;
+                            }
+                            startBurst(context, blink, count, pause, strength);
+                        } else if (!Settings.getCallsEnabled(context)) {
+                            Log.i(TAG, "call[legacy] blink disabled, skip");
+                        }
+                    } else {
+                        sRadioRinging = false;
+                        if (sCallBlink) {
+                            Log.i(TAG, "call[legacy] ended, stop blink");
+                            sCallBlink = false;
+                            stopIfAllIdle();
+                        }
+                    }
+                }
+            }, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+            Log.i(TAG, "call listener registered (legacy PhoneStateListener)");
+        } catch (Throwable t) {
+            Log.e(TAG, "call listener failed (legacy)", t);
         }
     }
 
@@ -423,6 +467,9 @@ public final class FlashBlinkHook {
         startBlink(context, count, total, strength, false);
     }
 
+    private static String sVoipBurstSig;
+    private static volatile boolean sLegacyRinging;
+
     /** Messenger (VoIP) calls: repeat while the call-style notification lives. */
     private static void onOngoing(Context context, StatusBarNotification sbn, Notification n) {
         if (!Notification.CATEGORY_CALL.equals(n.category)) {
@@ -439,15 +486,49 @@ public final class FlashBlinkHook {
         } catch (Throwable t) {
             return;
         }
+        // Diagnostic shape dump (first post per key): proves what the
+        // messenger actually posts (category/FSI/style/flags).
+        synchronized (LOCK) {
+            if (!key.equals(sVoipKey)) {
+                boolean fsi = false;
+                try {
+                    fsi = n.fullScreenIntent != null;
+                } catch (Throwable ignored) {}
+                boolean callStyle = false;
+                try {
+                    // isCallStyle() exists only on new platforms; resolve
+                    // via reflection so the addon still compiles against
+                    // the old android.jar from prebuild/.
+                    Object r = n.getClass().getMethod("isCallStyle").invoke(n);
+                    callStyle = Boolean.TRUE.equals(r);
+                } catch (Throwable ignored) {}
+                Log.i(TAG, "posted: voip NEW key=" + key
+                        + " category=" + n.category
+                        + " fsi=" + fsi
+                        + " callStyle=" + callStyle
+                        + " flags=" + n.flags);
+            }
+        }
         int count = clamp(Settings.getVoipCount(context), 1, 50);
         int blink = clamp(Settings.getVoipBlinkMs(context), 50, 2000);
         int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
         int strength = clamp(Settings.getStrength(context), 1, 45);
+        String sig = blink + "/" + count + "/" + pause + "/" + strength;
+        synchronized (LOCK) {
+            // Ongoing call notifications repost often (timer/state updates).
+            // Restarting the burst on every repost would trap it in phase 1
+            // forever, so keep the running burst when nothing changed.
+            Thread t = sBlinkThread;
+            if (key.equals(sVoipKey) && sig.equals(sVoipBurstSig)
+                    && t != null && t.isAlive()) {
+                Log.i(TAG, "posted: voip dup post, keep running key=" + key);
+                return;
+            }
+            sVoipKey = key;
+            sVoipBurstSig = sig;
+        }
         Log.i(TAG, "posted: voip call go blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength + " key=" + key);
-        synchronized (LOCK) {
-            sVoipKey = key;
-        }
         startBurst(context, blink, count, pause, strength);
     }
 
@@ -462,6 +543,7 @@ public final class FlashBlinkHook {
         synchronized (LOCK) {
             if (key == null || !key.equals(sVoipKey)) return;
             sVoipKey = null;
+            sVoipBurstSig = null;
             Log.i(TAG, "voip call gone");
         }
         stopIfAllIdle();

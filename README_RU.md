@@ -26,7 +26,8 @@
 
 ## Подключение к прошивке
 
-В device/product makefile, **до** `inherit-product`:
+В device/product makefile — plain `-include` (НЕ `inherit-product`),
+инлайном в глобальном скоупе сразу после стоковых записей:
 
 ```makefile
 DEVICE_CODENAME := shiba
@@ -34,7 +35,11 @@ VENDOR_PATH := vendor/google/shiba
 # опционально, если thermal_info_config.json не находится сам:
 # THERMAL_CUSTOM_JSON_PATH := vendor/.../thermal_info_config.json
 
-$(call inherit-product, packages/apps/PixelExtraParts/device.mk)
+# Plain include, NOT inherit-product: файл должен выполниться немедленно
+# в глобальном скоупе ПОСЛЕ стоковых записей выше, чтобы thermal filter-out
+# в его конце реально их увидел. inherit-product откладывает его в
+# node-local scope, где PRODUCT_PACKAGES пуст (filter-out — no-op).
+-include packages/apps/PixelExtraParts/device.mk
 ```
 
 | Переменная | Обязательна | Зачем |

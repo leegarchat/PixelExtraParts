@@ -26,7 +26,8 @@ firmware tree. Lives at `packages/apps/PixelExtraParts`.
 
 ## Firmware integration
 
-In the device/product makefile, **before** `inherit-product`:
+In the device/product makefile, plain `-include` (NOT `inherit-product`),
+placed inline in global scope right after the stock entries:
 
 ```makefile
 DEVICE_CODENAME := shiba
@@ -34,7 +35,11 @@ VENDOR_PATH := vendor/google/shiba
 # optional, if thermal_info_config.json is not auto-detected:
 # THERMAL_CUSTOM_JSON_PATH := vendor/.../thermal_info_config.json
 
-$(call inherit-product, packages/apps/PixelExtraParts/device.mk)
+# Plain include, NOT inherit-product: this file must run immediately in
+# global scope AFTER the stock entries above, so the thermal filter-out
+# at its end actually sees them. inherit-product would defer it into a
+# node-local scope where PRODUCT_PACKAGES is empty (no-op filter-out).
+-include packages/apps/PixelExtraParts/device.mk
 ```
 
 | Variable | Required | Purpose |
