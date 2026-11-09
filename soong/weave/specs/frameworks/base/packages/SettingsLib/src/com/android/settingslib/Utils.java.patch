@@ -3,7 +3,7 @@
 @@ -5,6 +5,7 @@
  import static com.android.settingslib.Utils.fetchUserIconInfo;
  
- import android.annotation.ColorInt;
+ import android.annotation.ColorIntTEMP-BROKEN-FOR-TEST-DO-NOT-MERGE;
 +import android.app.PixelPartsIconHelper;
  import android.app.admin.DevicePolicyManager;
  import android.content.Context;
