@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -75,6 +76,8 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -148,7 +151,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -159,7 +162,15 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.dtw_title), enabled = supported) {
+                    SettingsGroupCard(
+                        title = dynamicStringResource(R.string.dtw_title),
+                        enabled = supported,
+                        modifier = Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.surface.edgeOutline(),
+                            RoundedCornerShape(24.dp)
+                        )
+                    ) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.dtw_enable_title),
                             summary = dynamicStringResource(R.string.dtw_summary),
@@ -178,6 +189,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                             unit = "",
                             enabled = enabled && supported,
                             valueText = tapCount.toString(),
+                            defaultValue = 2,
                             onValueChange = {
                                 tapCount = it
                                 SettingsCompat.putInt(context, SettingsKeys.DTW_TAP_COUNT, it)
@@ -195,6 +207,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                             unit = "ms",
                             enabled = enabled && supported,
                             valueText = "$timeoutMs ms",
+                            defaultValue = 300,
                             onValueChange = {
                                 timeoutMs = it
                                 SettingsCompat.putInt(context, SettingsKeys.DTW_TAP_TIMEOUT_MS, it)
@@ -228,6 +241,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                                 unit = "dp",
                                 enabled = enabled && supported,
                                 valueText = "$maxDistance dp",
+                                defaultValue = 50,
                                 onValueChange = {
                                     isMaxDistanceAdjusting = true
                                     maxDistance = it
@@ -248,8 +262,12 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = listState.canScrollBackward
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
 
             if (isMaxDistanceAdjusting) {
@@ -280,6 +298,11 @@ private fun DtwCoordinatePreview(maxDistance: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surfaceContainerHighest.edgeOutline(),
+                RoundedCornerShape(20.dp)
+            )
             .padding(horizontal = 20.dp, vertical = 8.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(

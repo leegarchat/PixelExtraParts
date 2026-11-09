@@ -6,6 +6,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,6 +34,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.ui.SettingsGroupCard
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.dynamicStringResource
 
 
@@ -60,7 +62,14 @@ fun ProfilesSection(
         }
     }
 
-    SettingsGroupCard(title = dynamicStringResource(R.string.os_group_profiles)) {
+    SettingsGroupCard(
+        title = dynamicStringResource(R.string.os_group_profiles),
+        modifier = Modifier.border(
+            1.dp,
+            MaterialTheme.colorScheme.surface.edgeOutline(),
+            RoundedCornerShape(24.dp)
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

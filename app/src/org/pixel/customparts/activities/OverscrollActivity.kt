@@ -12,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,6 +46,7 @@ import kotlinx.coroutines.launch
 import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.RadioSelectionGroup
 import org.pixel.customparts.ui.SliderSettingFloat
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
@@ -50,6 +55,7 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.TileUtils
@@ -84,6 +90,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     )
 
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     var infoDialogTitle by remember { mutableStateOf<String?>(null) }
     var infoDialogText by remember { mutableStateOf<String?>(null) }
@@ -133,7 +140,6 @@ private fun OverscrollScreen(onBack: () -> Unit) {
 
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -146,6 +152,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                             TileUtils.requestAddTileService(
                                 context,
                                 OverscrollTileService::class.java,
@@ -178,7 +185,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     top = innerPadding.calculateTopPadding() + 16.dp,
@@ -197,6 +204,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     title = titleStr,
                     isChecked = isMasterEnabled,
                     onCheckedChange = { checked ->
+                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         isMasterEnabled = checked
                         scope.launch { OverscrollManager.setMasterEnabled(context, checked) }
                         onSettingChanged()
@@ -522,6 +530,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         Switch(
                             checked = invert,
                             onCheckedChange = {
+                                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                                 invert = it
                                 scope.launch(Dispatchers.IO) {
                                     Settings.Global.putInt(context.contentResolver, invertKey, if (it) 1 else 0)
@@ -548,13 +557,20 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     var normEnabled by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, normEnabledKey, 1) == 1) }
                     val normEnabledTitle = dynamicStringResource(R.string.os_lbl_norm_enabled)
                     val normEnabledDesc = dynamicStringResource(R.string.os_desc_norm_enabled)
+                    val normCardColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
 
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
+                            containerColor = normCardColor
                         ),
                         shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                1.dp,
+                                normCardColor.edgeOutline(),
+                                RoundedCornerShape(16.dp)
+                            )
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -583,6 +599,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                             Switch(
                                 checked = normEnabled,
                                 onCheckedChange = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                                     normEnabled = it
                                     scope.launch(Dispatchers.IO) {
                                         Settings.Global.putInt(context.contentResolver, normEnabledKey, if (it) 1 else 0)
@@ -713,9 +730,16 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Button(
-                            onClick = { showAddAppDialog = true },
+                            onClick = {
+                                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                showAddAppDialog = true
+                            },
                             enabled = isMasterEnabled,
                             modifier = Modifier.weight(1f),
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.surface.edgeOutline()
+                            ),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surface,
                                 contentColor = MaterialTheme.colorScheme.primary
@@ -773,6 +797,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
             item(key = "reset_button", contentType = "button") {
                 Button(
                     onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         scope.launch {
                             OverscrollManager.resetAll(context)
                             isMasterEnabled = true
@@ -783,6 +808,10 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         }
                     },
                     enabled = isMasterEnabled,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.error.edgeOutline()
+                    ),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -798,8 +827,12 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
             topBarHeight = innerPadding.calculateTopPadding(),
-            blurState = blurState,
-            isScrolled = isScrolled
+            blurState = blurState
+        )
+        TopStatusVeil(
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+            modifier = Modifier.fillMaxWidth()
         )
     }
     }
@@ -839,19 +872,26 @@ private fun ExpandableSettingsGroupCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "arrow_rotation",
         animationSpec = tween(300)
     )
+    val resolvedContainer = if (enabled) containerColor else containerColor.copy(alpha = 0.6f)
 
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (enabled) containerColor else containerColor.copy(alpha = 0.6f)
+            containerColor = resolvedContainer
         ),
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier
             .fillMaxWidth()
+            .border(
+                1.dp,
+                resolvedContainer.edgeOutline(),
+                RoundedCornerShape(24.dp)
+            )
             .animateContentSize(
                 animationSpec = spring(
                     dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -863,7 +903,10 @@ private fun ExpandableSettingsGroupCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onExpandChange(!expanded) }
+                    .clickable {
+                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onExpandChange(!expanded)
+                    }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -908,10 +951,18 @@ private fun MasterSwitchCard(
     onCheckedChange: (Boolean) -> Unit,
     onInfoClick: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
+    val containerColor = MaterialTheme.colorScheme.secondaryContainer
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                containerColor.edgeOutline(),
+                RoundedCornerShape(24.dp)
+            )
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
@@ -924,7 +975,13 @@ private fun MasterSwitchCard(
             IconButton(onClick = onInfoClick, modifier = Modifier.padding(start = 8.dp)) {
                 Icon(Icons.Outlined.Info, "Info", tint = MaterialTheme.colorScheme.onSecondaryContainer)
             }
-            Switch(checked = isChecked, onCheckedChange = onCheckedChange)
+            Switch(
+                checked = isChecked,
+                onCheckedChange = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onCheckedChange(it)
+                }
+            )
 
         }
     }
@@ -932,10 +989,17 @@ private fun MasterSwitchCard(
 
 @Composable
 private fun StaticTestCard(label: String) {
+    val containerColor = MaterialTheme.colorScheme.surface
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.height(140.dp)
+        modifier = Modifier
+            .height(140.dp)
+            .border(
+                1.dp,
+                containerColor.edgeOutline(),
+                RoundedCornerShape(24.dp)
+            )
     ) {
         Column(
             modifier = Modifier.padding(16.dp).fillMaxSize(),
@@ -1002,6 +1066,7 @@ private fun OverscrollFloatSlider(
                 launch(Dispatchers.Main) { onChange() }
             }
         },
+        defaultValue = defVal,
         infoText = infoText,
         videoResName = video,
         onInfoClick = onInfo

@@ -13,7 +13,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +54,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,7 +63,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -77,6 +80,8 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoHbmController
@@ -113,9 +118,9 @@ class AutoHbmActivity : ComponentActivity() {
 @Composable
 private fun AutoHbmScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var enabled by remember { mutableStateOf(AutoHbmController.isEnabled(context)) }
     var hbmMode by remember { mutableIntStateOf(AutoHbmController.getHbmMode(context)) }
@@ -210,7 +215,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -252,7 +257,15 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.auto_hbm_title), enabled = supported) {
+                    SettingsGroupCard(
+                        title = dynamicStringResource(R.string.auto_hbm_title),
+                        enabled = supported,
+                        modifier = Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.surface.edgeOutline(),
+                            RoundedCornerShape(24.dp)
+                        )
+                    ) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_hbm_enable_title),
                             summary = dynamicStringResource(R.string.auto_hbm_summary),
@@ -313,6 +326,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "lx",
                             enabled = autoSettingsEnabled,
                             valueText = "$threshold lx",
+                            defaultValue = AutoHbmController.DEFAULT_THRESHOLD_LUX,
                             onValueChange = {
                                 threshold = it
                                 AutoHbmController.setThreshold(context, it)
@@ -330,6 +344,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "s",
                             enabled = autoSettingsEnabled,
                             valueText = "$enableTime s",
+                            defaultValue = AutoHbmController.DEFAULT_ENABLE_TIME_SECONDS,
                             onValueChange = {
                                 enableTime = it
                                 AutoHbmController.setEnableTime(context, it)
@@ -347,6 +362,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "s",
                             enabled = autoSettingsEnabled,
                             valueText = "$disableTime s",
+                            defaultValue = AutoHbmController.DEFAULT_DISABLE_TIME_SECONDS,
                             onValueChange = {
                                 disableTime = it
                                 AutoHbmController.setDisableTime(context, it)
@@ -376,6 +392,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 unit = "ms",
                                 enabled = rampSettingsEnabled,
                                 valueText = "$rampTimeMs ms",
+                                defaultValue = AutoHbmController.DEFAULT_RAMP_TIME_MS,
                                 onValueChange = {
                                     rampTimeMs = it
                                     AutoHbmController.setRampTimeMs(context, it)
@@ -394,6 +411,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "s",
                             enabled = supported,
                             valueText = "$maxActiveTime s",
+                            defaultValue = AutoHbmController.DEFAULT_MAX_ACTIVE_TIME_SECONDS,
                             onValueChange = {
                                 maxActiveTime = it
                                 AutoHbmController.setMaxActiveTime(context, it)
@@ -411,6 +429,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "s",
                             enabled = supported,
                             valueText = "$cooldownTime s",
+                            defaultValue = AutoHbmController.DEFAULT_COOLDOWN_TIME_SECONDS,
                             onValueChange = {
                                 cooldownTime = it
                                 AutoHbmController.setCooldownTime(context, it)
@@ -428,6 +447,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             unit = "°C",
                             enabled = supported,
                             valueText = "$temperatureLimit°C",
+                            defaultValue = AutoHbmController.DEFAULT_TEMPERATURE_LIMIT_C,
                             onValueChange = {
                                 temperatureLimit = it
                                 AutoHbmController.setTemperatureLimit(context, it)
@@ -443,6 +463,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 item {
                     Button(
                         onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                             TileUtils.requestAddTileService(
                                 context,
                                 AutoHbmTileService::class.java,
@@ -452,6 +473,10 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         },
                         enabled = supported,
                         modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.edgeOutline()
+                        ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -467,8 +492,12 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -492,7 +521,13 @@ private fun AutoHbmLuxCard(
     val temperatureText = currentTemperature?.let { String.format(Locale.US, "%.1f°C", it) }
         ?: dynamicStringResource(R.string.auto_hbm_temperature_unknown)
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.edgeOutline(),
+                RoundedCornerShape(24.dp)
+            ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
@@ -556,6 +591,7 @@ private fun AutoHbmLuxCard(
                 unit = "ms",
                 enabled = supported,
                 valueText = "$checkIntervalMs ms",
+                defaultValue = AutoHbmController.DEFAULT_CHECK_INTERVAL_MS,
                 onValueChange = onCheckIntervalChange,
                 onDefault = onCheckIntervalDefault
             )

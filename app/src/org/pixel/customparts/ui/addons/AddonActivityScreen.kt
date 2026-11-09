@@ -46,6 +46,7 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.dynamicStringResource
@@ -125,7 +126,6 @@ fun AddonPageScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     // Determine which entries to show at the current level
     val currentEntries: List<AddonMainEntry> = remember(current, model) {
@@ -209,8 +209,12 @@ fun AddonPageScreen(
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -238,7 +242,7 @@ private fun AddonPageContent(
         state = lazyListState,
         modifier = modifier
             .fillMaxSize()
-            .recordLayer(blurState)
+            .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
             .background(MaterialTheme.colorScheme.surfaceContainer),
         contentPadding = PaddingValues(
             start = 16.dp,

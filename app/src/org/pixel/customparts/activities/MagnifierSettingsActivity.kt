@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -52,7 +54,12 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.SliderSettingFloat
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
@@ -85,7 +92,6 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -109,7 +115,7 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -129,8 +135,12 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -169,7 +179,14 @@ private fun MagnifierSection() {
     val defaultSampleText = dynamicStringResource(R.string.magnifier_sample_text)
     var sampleText by remember { mutableStateOf(defaultSampleText) }
 
-    SettingsGroupCard(title = dynamicStringResource(R.string.magnifier_section_title)) {
+    SettingsGroupCard(
+        title = dynamicStringResource(R.string.magnifier_section_title),
+        modifier = Modifier.border(
+            1.dp,
+            MaterialTheme.colorScheme.surface.edgeOutline(),
+            RoundedCornerShape(24.dp)
+        )
+    ) {
         GenericSwitchRow(
             title = dynamicStringResource(R.string.magnifier_enable_title),
             summary = dynamicStringResource(R.string.magnifier_enable_summary),
@@ -200,6 +217,7 @@ private fun MagnifierSection() {
                 zoom = 1.25f
                 SettingsCompat.putFloat(context, SettingsKeys.MAGNIFIER_CUSTOM_ZOOM, 1.25f)
             },
+            defaultValue = 1.25f,
             valueText = String.format("%.2fx", zoom)
         )
 
@@ -219,6 +237,7 @@ private fun MagnifierSection() {
                 sizeScale = 1.0f
                 SettingsCompat.putFloat(context, SettingsKeys.MAGNIFIER_CUSTOM_SIZE, 1.0f)
             },
+            defaultValue = 1.0f,
             valueText = String.format("%.2fx", sizeScale)
         )
 
@@ -255,6 +274,7 @@ private fun MagnifierSection() {
                 offsetY = 0
                 SettingsCompat.putInt(context, SettingsKeys.MAGNIFIER_CUSTOM_OFFSET_Y, 0)
             },
+            defaultValue = 0,
             valueText = "${offsetY}dp"
         )
 
@@ -291,8 +311,22 @@ private fun MagnifierPreviewCard(
 ) {
     val previewLabel = dynamicStringResource(R.string.magnifier_preview_label)
 
-    val animatedZoom by animateFloatAsState(targetValue = zoom, label = "mag_zoom")
-    val animatedSize by animateFloatAsState(targetValue = sizeScale, label = "mag_size")
+    val animatedZoom by animateFloatAsState(
+        targetValue = zoom,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "mag_zoom"
+    )
+    val animatedSize by animateFloatAsState(
+        targetValue = sizeScale,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "mag_size"
+    )
 
     // AOSP default magnifier: 100dp × 48dp.
     // applyCustomParams scales by sizeScale, then for SQUARE/CIRCLE: side = max(w, h).
@@ -309,7 +343,14 @@ private fun MagnifierPreviewCard(
     // AOSP default vertical offset = −42dp. Custom adds offsetY dp.
     // Magnifier center relative to text cursor = (−42 + offsetY) dp.
     val lensCenterRelative = -42f + offsetY
-    val animatedLensCenter by animateFloatAsState(targetValue = lensCenterRelative, label = "mag_center")
+    val animatedLensCenter by animateFloatAsState(
+        targetValue = lensCenterRelative,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "mag_center"
+    )
 
     val textLineH = 20f  // dp – approximate Material bodyMedium visible height
     val lensHalfH = magHDp / 2f
@@ -335,7 +376,13 @@ private fun MagnifierPreviewCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surfaceVariant.edgeOutline(),
+                MaterialTheme.shapes.medium
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )

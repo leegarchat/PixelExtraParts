@@ -42,7 +42,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +65,11 @@ import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.addons.AddonMainEntry
 import org.pixel.customparts.ui.addons.AddonMainEntryRow
 import org.pixel.customparts.ui.addons.scanAddonActivityEntries
@@ -103,7 +106,6 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
     var injectedAddonEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
     var logServiceRunning by remember { mutableStateOf(PixelPartsLogController.isServiceRunning(context)) }
     var logcatEnabled by remember { mutableStateOf(PixelPartsLogController.isLogcatEnabled(context)) }
@@ -163,7 +165,7 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -275,8 +277,12 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

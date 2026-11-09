@@ -1,6 +1,7 @@
 package org.pixel.customparts.manager.lsplant;
 
 import android.content.Context;
+import org.pixel.customparts.core.ApkModulesGate;
 import org.pixel.customparts.core.IHookEnvironment;
 
 import java.util.HashSet;
@@ -35,6 +36,11 @@ public class HookEntry {
             } catch (Throwable t) {
                 environment.logError(TAG, "Addon loading failed for " + packageName, t);
             }
+        }
+        // TEMPORARY: APK-module (Xposed/LSPosed/Vector) support disabled
+        // via ApkModulesGate — dispatches bypassed, code kept.
+        if (!ApkModulesGate.ENABLED) {
+            return;
         }
         if (XposedModuleHost.SYSTEM_PACKAGE.equals(packageName)) {
             // system_server: only modern modules with system scope.

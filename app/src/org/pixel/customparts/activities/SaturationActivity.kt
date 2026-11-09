@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -47,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,8 +58,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,6 +76,8 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SaturationController
@@ -110,9 +115,9 @@ private fun SaturationAppSurface(content: @Composable () -> Unit) {
 @Composable
 private fun SaturationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var enabled by remember { mutableStateOf(SaturationController.isEnabled(context)) }
     var percent by remember { mutableIntStateOf(SaturationController.getPercent(context)) }
@@ -153,7 +158,7 @@ private fun SaturationScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -168,7 +173,14 @@ private fun SaturationScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.saturation_title)) {
+                    SettingsGroupCard(
+                        title = dynamicStringResource(R.string.saturation_title),
+                        modifier = Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.surface.edgeOutline(),
+                            RoundedCornerShape(24.dp)
+                        )
+                    ) {
                         SaturationControls(
                             enabled = enabled,
                             percent = percent,
@@ -186,6 +198,7 @@ private fun SaturationScreen(onBack: () -> Unit) {
                 item {
                     Button(
                         onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                             TileUtils.requestAddTileService(
                                 context,
                                 SaturationTileService::class.java,
@@ -194,6 +207,10 @@ private fun SaturationScreen(onBack: () -> Unit) {
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.edgeOutline()
+                        ),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
@@ -218,8 +235,12 @@ private fun SaturationScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -250,6 +271,7 @@ private fun SaturationControls(
             valueText = "$percent%",
             onValueChange = onPercentChange,
             onValueChangeFinished = onValueChangeFinished,
+            defaultValue = SaturationController.DEFAULT_PERCENT,
             onDefault = {
                 onPercentChange(SaturationController.DEFAULT_PERCENT)
                 onValueChangeFinished()
@@ -269,7 +291,13 @@ private fun SaturationPreviewCard(percent: Int) {
     val pages = images.size
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.edgeOutline(),
+                RoundedCornerShape(24.dp)
+            ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

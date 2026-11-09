@@ -144,7 +144,10 @@ android_app {
     ],
     srcs: [
         "app/src/**/*.kt",
-        "app/src/**/*.java"
+        "app/src/**/*.java",
+        // TEMPORARY: single APK-modules kill-switch, shared with LsplantInject.
+        // (LsplantInject compiles it via core/** glob; see ApkModulesGate.)
+        "lsplant_engine/src/org/pixel/customparts/core/ApkModulesGate.java",
     ],
     use_embedded_native_libs: false,
 

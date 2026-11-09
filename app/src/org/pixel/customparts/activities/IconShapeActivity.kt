@@ -26,6 +26,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -84,7 +85,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -123,7 +123,11 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
@@ -168,7 +172,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var options by remember { mutableStateOf<List<ShapeOption>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -492,7 +495,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -578,8 +581,12 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 blurState = blurState,
-                topBarHeight = innerPadding.calculateTopPadding(),
-                isScrolled = isScrolled
+                topBarHeight = innerPadding.calculateTopPadding()
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -863,7 +870,7 @@ private fun ShapeOptionCard(
         initialValue = 0f,
         targetValue = 0.3f,
         animationSpec = infiniteRepeatable(
-            animation = tween(300),
+            animation = tween(300, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "icon_shape_highlight_alpha"

@@ -30,6 +30,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -74,6 +75,7 @@ import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
@@ -150,7 +152,6 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     var currentStyle by remember {
         mutableIntStateOf(try {
@@ -423,7 +424,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -653,8 +654,12 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 blurState = blurState,
-                topBarHeight = innerPadding.calculateTopPadding(),
-                isScrolled = isScrolled
+                topBarHeight = innerPadding.calculateTopPadding()
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -765,7 +770,7 @@ private fun CustomThemeItem(
         initialValue = 0f,
         targetValue = 0.3f,
         animationSpec = infiniteRepeatable(
-            animation = tween(300),
+            animation = tween(300, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "rotation_theme_highlight_alpha"
@@ -1286,7 +1291,7 @@ internal fun AnimationCompileDialog(
         state.phase == AnimationCompilePhase.CANCELLED
     val animatedProgress by animateFloatAsState(
         targetValue = state.progress.coerceIn(0f, 1f),
-        animationSpec = tween(250),
+        animationSpec = tween(250, easing = FastOutSlowInEasing),
         label = "compile_progress"
     )
     Dialog(
@@ -1312,8 +1317,8 @@ internal fun AnimationCompileDialog(
                 AnimatedContent(
                     targetState = terminal,
                     transitionSpec = {
-                        (fadeIn(tween(220)) + scaleIn(animationSpec = tween(220))) togetherWith
-                            fadeOut(tween(140))
+                        (fadeIn(tween(220, easing = FastOutSlowInEasing)) + scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing))) togetherWith
+                            fadeOut(tween(140, easing = FastOutSlowInEasing))
                     },
                     label = "compile_status"
                 ) { isTerminal ->

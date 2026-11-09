@@ -5,6 +5,7 @@ import android.widget.VideoView
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,7 +34,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +52,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import java.net.URL
 import androidx.compose.material.icons.rounded.Refresh
 import org.pixel.customparts.utils.dynamicStringResource
@@ -68,7 +73,7 @@ fun ExpandableWarningCard(
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "rot",
-        animationSpec = tween(300)
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
     )
 
     Card(
@@ -104,8 +109,8 @@ fun ExpandableWarningCard(
 
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeIn(),
-                exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeOut()
+                enter = expandVertically(animationSpec = tween(240, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+                exit = shrinkVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
             ) {
                 Column {
                     Spacer(Modifier.height(12.dp))
@@ -195,6 +200,7 @@ fun SliderSetting(
     onValueChangeFinished: (() -> Unit)? = null,
     showDefaultButton: Boolean = true,
     inputRange: IntRange? = null,
+    defaultValue: Int? = null,
     showValueBelow: Boolean = false
 ) {
     SliderSettingFloat(
@@ -214,6 +220,7 @@ fun SliderSetting(
         showDefaultButton = showDefaultButton,
         inputRange = inputRange?.let { it.first.toFloat()..it.last.toFloat() },
         stepSize = 1f,
+        defaultValue = defaultValue?.toFloat(),
         showValueBelow = showValueBelow
     )
 }
@@ -236,16 +243,26 @@ fun SliderSettingFloat(
     showDefaultButton: Boolean = true,
     inputRange: ClosedFloatingPointRange<Float>? = null,
     stepSize: Float = if (isInteger) 1f else 0.01f,
+    defaultValue: Float? = null,
     showValueBelow: Boolean = false
 ) {
     var showManualInput by remember { mutableStateOf(false) }
-    val contentAlpha = if (enabled) 1f else 0.4f
+    val haptics = LocalHapticFeedback.current
+    // Disabled rows keep enabled colors, dim to 0.42 (DESIGN_GUIDELINES §6.5).
+    val contentAlpha = if (enabled) 1f else 0.42f
 
     val formattedValue = valueText ?: if (isInteger) {
         "${value.toInt()} $unit"
     } else {
         String.format("%.2f %s", value, unit)
     }
+
+    // Reset badge appears once the value drifts >= 2% of the range span
+    // off the default (DESIGN_GUIDELINES §6.5). Without a known default
+    // the badge keeps the historical always-visible behaviour.
+    val resetThreshold = ((range.endInclusive - range.start) * 0.02f).coerceAtLeast(1e-6f)
+    val showResetBadge = showDefaultButton &&
+        (defaultValue == null || kotlin.math.abs(value - defaultValue) >= resetThreshold)
 
     Column(
         modifier = Modifier
@@ -258,102 +275,129 @@ fun SliderSettingFloat(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
             )
         } else {
-            // Title + value in a row (default)
+            // Title + reset badge + value capsule (DESIGN_GUIDELINES §6.5)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    modifier = Modifier.weight(1f)
                 )
 
-                Text(
-                    text = formattedValue,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
-                )
+                if (showResetBadge) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f))
+                            .clickable(enabled = enabled) {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onDefault()
+                                onValueChangeFinished?.invoke()
+                            }
+                    ) {
+                        Text(
+                            text = dynamicStringResource(R.string.btn_default),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Text(
+                        text = formattedValue,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(8.dp))
 
-        // Slider row: [default] [←] [slider] [→] [info]
+        // Slider row: [−] [slider] [+] [info]
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (showDefaultButton) {
-                IconButton(
-                    onClick = onDefault,
-                    enabled = enabled,
-                    modifier = Modifier.size(32.dp).alpha(contentAlpha)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Refresh,
-                        contentDescription = "Reset to default",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(Modifier.width(4.dp))
-            }
-
-            // Left arrow
-            IconButton(
+            ExpressiveStepButton(
+                symbol = "−",
+                enabled = enabled && value > range.start,
                 onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     val newValue = (value - stepSize).coerceIn(range.start, range.endInclusive)
                     onValueChange(newValue)
                     onValueChangeFinished?.invoke()
                 },
-                enabled = enabled && value > range.start,
-                modifier = Modifier.size(32.dp).alpha(contentAlpha)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowLeft,
-                    contentDescription = "Decrease",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                modifier = Modifier.alpha(contentAlpha)
+            )
 
+            Spacer(Modifier.width(10.dp))
+
+            val sliderColors = SliderDefaults.colors(
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTickColor = Color.Transparent,
+                inactiveTickColor = Color.Transparent,
+                // Disabled state keeps enabled colors; the row dims via alpha instead.
+                disabledThumbColor = MaterialTheme.colorScheme.primary,
+                disabledActiveTrackColor = MaterialTheme.colorScheme.primary,
+                disabledInactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                disabledActiveTickColor = Color.Transparent,
+                disabledInactiveTickColor = Color.Transparent
+            )
             Slider(
                 value = value.coerceIn(range.start, range.endInclusive),
                 onValueChange = onValueChange,
                 valueRange = range,
                 enabled = enabled,
+                colors = sliderColors,
                 modifier = Modifier.weight(1f).alpha(contentAlpha),
-                onValueChangeFinished = onValueChangeFinished
+                onValueChangeFinished = onValueChangeFinished,
+                thumb = {
+                    Box(
+                        modifier = Modifier
+                            .width(8.dp)
+                            .height(28.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                }
             )
 
-            // Right arrow
-            IconButton(
+            Spacer(Modifier.width(10.dp))
+
+            ExpressiveStepButton(
+                symbol = "+",
+                enabled = enabled && value < range.endInclusive,
                 onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     val newValue = (value + stepSize).coerceIn(range.start, range.endInclusive)
                     onValueChange(newValue)
                     onValueChangeFinished?.invoke()
                 },
-                enabled = enabled && value < range.endInclusive,
-                modifier = Modifier.size(32.dp).alpha(contentAlpha)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowRight,
-                    contentDescription = "Increase",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                modifier = Modifier.alpha(contentAlpha)
+            )
 
             if (onInfoClick != null && infoText != null) {
                 Spacer(Modifier.width(4.dp))
@@ -409,6 +453,58 @@ fun SliderSettingFloat(
 }
 
 @Composable
+private fun ExpressiveStepButton(
+    symbol: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.88f else 1f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMedium,
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
+        label = "StepBtnScale"
+    )
+    val bgColor by animateColorAsState(
+        targetValue = if (isPressed) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        label = "StepBtnBg"
+    )
+
+    Box(
+        modifier = modifier
+            .size(38.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = symbol,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
 fun RadioSelectionGroup(
     title: String,
     options: List<String>,
@@ -456,7 +552,11 @@ fun RadioSelectionGroup(
         options.forEachIndexed { index, label ->
             val isSelected = index == selectedIndex
             val targetContainerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-            val backgroundColor by animateColorAsState(targetContainerColor, label = "bg")
+            val backgroundColor by animateColorAsState(
+                targetContainerColor,
+                animationSpec = tween(200, easing = FastOutSlowInEasing),
+                label = "bg"
+            )
 
             Row(
                 modifier = Modifier
@@ -483,8 +583,8 @@ fun RadioSelectionGroup(
                 
                 AnimatedVisibility(
                     visible = isSelected,
-                    enter = scaleIn() + fadeIn(),
-                    exit = scaleOut() + fadeOut()
+                    enter = scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+                    exit = scaleOut(animationSpec = tween(160, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.CheckCircle,
@@ -502,12 +602,13 @@ fun SettingsGroupCard(
     title: String,
     enabled: Boolean = true,
     titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
             Text(
@@ -873,7 +974,7 @@ fun ExpandableSettingsGroupCard(
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "arrow_rotation",
-        animationSpec = tween(300)
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
     )
 
     Card(
@@ -917,8 +1018,8 @@ fun ExpandableSettingsGroupCard(
 
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeIn(),
-                exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeOut()
+                enter = expandVertically(animationSpec = tween(240, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+                exit = shrinkVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
             ) {
                 Column(modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 16.dp)) {
                     content()

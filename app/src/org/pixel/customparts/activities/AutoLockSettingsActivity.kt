@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,7 +37,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,8 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoLockController
@@ -91,7 +94,6 @@ private fun AutoLockScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var enabled by remember { mutableStateOf(AutoLockController.isEnabled(context)) }
     var blockerOnly by remember {
@@ -142,7 +144,7 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -153,7 +155,14 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.auto_lock_title)) {
+                    SettingsGroupCard(
+                        title = dynamicStringResource(R.string.auto_lock_title),
+                        modifier = Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.surface.edgeOutline(),
+                            RoundedCornerShape(24.dp)
+                        )
+                    ) {
                         GenericSwitchRow(
                             title = dynamicStringResource(R.string.auto_lock_enable_title),
                             summary = dynamicStringResource(R.string.auto_lock_enable_summary),
@@ -204,7 +213,12 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                 item {
                     SettingsGroupCard(
                         title = dynamicStringResource(R.string.auto_lock_timer_section),
-                        enabled = enabled
+                        enabled = enabled,
+                        modifier = Modifier.border(
+                            1.dp,
+                            MaterialTheme.colorScheme.surface.edgeOutline(),
+                            RoundedCornerShape(24.dp)
+                        )
                     ) {
                         SliderSetting(
                             title = dynamicStringResource(R.string.auto_lock_timeout_title),
@@ -213,6 +227,7 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                             unit = "",
                             enabled = enabled,
                             valueText = AutoLockController.formatTimeout(context, timeoutSeconds),
+                            defaultValue = AutoLockController.DEFAULT_TIMEOUT_SECONDS,
                             showValueBelow = true,
                             onValueChange = {
                                 timeoutSeconds = it
@@ -239,8 +254,12 @@ private fun AutoLockScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

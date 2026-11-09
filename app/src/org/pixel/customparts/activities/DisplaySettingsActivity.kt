@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Palette
@@ -36,11 +38,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.pixel.customparts.MainMenuNavigationRow
@@ -51,6 +54,8 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.dynamicStringResource
@@ -83,9 +88,9 @@ class DisplaySettingsActivity : ComponentActivity() {
 @Composable
 fun DisplaySettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by androidx.compose.runtime.remember { derivedStateOf { listState.canScrollBackward } }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -111,7 +116,7 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -122,14 +127,24 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.display_section_screen)) {
+                        SettingsGroupCard(
+                            title = dynamicStringResource(R.string.display_section_screen),
+                            modifier = Modifier.border(
+                                1.dp,
+                                MaterialTheme.colorScheme.surface.edgeOutline(),
+                                RoundedCornerShape(24.dp)
+                            )
+                        ) {
                             MainMenuNavigationRow(
                                 title = dynamicStringResource(R.string.saturation_title),
                                 subtitle = dynamicStringResource(R.string.saturation_summary),
                                 icon = Icons.Rounded.Palette,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                onClick = { context.startActivity(Intent(context, SaturationActivity::class.java)) }
+                                onClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    context.startActivity(Intent(context, SaturationActivity::class.java))
+                                }
                             )
 
                             HorizontalDivider()
@@ -140,7 +155,10 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                                 icon = Icons.Rounded.WbSunny,
                                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                onClick = { context.startActivity(Intent(context, AutoHbmActivity::class.java)) }
+                                onClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    context.startActivity(Intent(context, AutoHbmActivity::class.java))
+                                }
                             )
 
                             HorizontalDivider()
@@ -151,7 +169,10 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                                 icon = Icons.Rounded.TouchApp,
                                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                                onClick = { context.startActivity(Intent(context, DtwSettingsActivity::class.java)) }
+                                onClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    context.startActivity(Intent(context, DtwSettingsActivity::class.java))
+                                }
                             )
 
                             HorizontalDivider()
@@ -162,7 +183,10 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                                 icon = Icons.Rounded.Timer,
                                 iconContainerColor = MaterialTheme.colorScheme.errorContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
-                                onClick = { context.startActivity(Intent(context, AutoLockSettingsActivity::class.java)) }
+                                onClick = {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    context.startActivity(Intent(context, AutoLockSettingsActivity::class.java))
+                                }
                             )
                         }
                     }
@@ -171,8 +195,12 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

@@ -82,6 +82,7 @@ import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
@@ -276,7 +277,6 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     // ── settings state ──
     var currentOpenMode by remember {
@@ -648,7 +648,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp, top = 16.dp + innerPadding.calculateTopPadding(),
@@ -1139,8 +1139,12 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                     .fillMaxWidth()
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

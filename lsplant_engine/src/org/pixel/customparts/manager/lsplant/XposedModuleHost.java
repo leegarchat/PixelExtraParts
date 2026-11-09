@@ -22,6 +22,8 @@ import java.util.zip.ZipFile;
 
 import android.provider.Settings;
 
+import org.pixel.customparts.core.ApkModulesGate;
+
 /**
  * Host for modern (API 101) Xposed modules (APK format).
  * Discovery: META-INF/xposed/{java_init.list,module.prop,scope.list}.
@@ -153,6 +155,9 @@ public class XposedModuleHost {
     static final String MODULE_LIST_KEY = "pixelparts_xposed_modules";
 
     public static synchronized void ensureScanned(Context context) {
+        // TEMPORARY: APK modules disabled via ApkModulesGate (code kept).
+        // Return without marking scanned so re-enabling takes effect live.
+        if (!ApkModulesGate.ENABLED) return;
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
@@ -427,6 +432,7 @@ public class XposedModuleHost {
     /** Called from HookEntry for every injected app process. */
     public static void dispatchPackage(Context context, ClassLoader appClassLoader,
             String packageName) {
+        if (!ApkModulesGate.ENABLED) return; // TEMPORARY kill-switch
         if (SYSTEM_PACKAGE.equals(packageName)) return;
         ensureScanned(context);
         for (ModuleRecord rec : modules.values()) {
@@ -470,6 +476,7 @@ public class XposedModuleHost {
 
     /** Called once in system_server when a system-scope module is installed. */
     public static void dispatchSystem(Context context, ClassLoader ssClassLoader) {
+        if (!ApkModulesGate.ENABLED) return; // TEMPORARY kill-switch
         ensureScanned(context);
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;

@@ -58,7 +58,7 @@ fun RebootBubble(
     var expanded by remember { mutableStateOf(false) }
     var confirmAction by remember { mutableStateOf<RebootAction?>(null) }
     var launcherIconAvailable by remember { mutableStateOf(false) }
-    var launcherIconEnabled by remember { mutableStateOf(false) }
+    var launcherIconEnabled by remember { mutableStateOf(true) }
 
     LaunchedEffect(context.packageName) {
         launcherIconAvailable = LauncherIconController.isAvailable(context)
@@ -127,7 +127,7 @@ fun RebootBubble(
             onClick = { if (!expanded) expanded = true },
             shape = RoundedCornerShape(cornerRadius),
             color = containerColor,
-            shadowElevation = elevation,
+            shadowElevation = elevation
         ) {
             AnimatedContent(
                 targetState = expanded,
@@ -266,7 +266,7 @@ fun RebootBubble(
                         Icon(
                             imageVector = Icons.Rounded.Build,
                             contentDescription = "Reboot menu",
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }

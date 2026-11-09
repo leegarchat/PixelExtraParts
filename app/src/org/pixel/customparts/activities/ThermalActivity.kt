@@ -9,8 +9,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -30,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +56,7 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import java.io.BufferedReader
@@ -90,7 +98,6 @@ fun ThermalScreen(onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
     var batteryProfile by remember { mutableIntStateOf(0) }
     var socProfile by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
@@ -127,7 +134,7 @@ fun ThermalScreen(onBack: () -> Unit) {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -187,8 +194,12 @@ fun ThermalScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -206,7 +217,13 @@ fun ThermalScreen(onBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 tonalElevation = 6.dp,
                 shadowElevation = 8.dp, 
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.surfaceContainerHigh.thermalEdgeOutline(),
+                        RoundedCornerShape(24.dp)
+                    )
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -288,6 +305,7 @@ fun ThermalSection(
     onModeSelect: (Int) -> Unit,
     getDescription: @Composable (Int) -> String
 ) {
+    val haptics = LocalHapticFeedback.current
     val isDangerous = currentMode >= 3 
     val targetContainerColor = if (isDangerous) {
         MaterialTheme.colorScheme.errorContainer
@@ -295,12 +313,22 @@ fun ThermalSection(
         MaterialTheme.colorScheme.surface
     }
     
-    val containerColor by animateColorAsState(targetContainerColor, label = "containerColor")
+    val containerColor by animateColorAsState(
+        targetContainerColor,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "containerColor"
+    )
 
     Card(
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().animateContentSize()
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize()
+            .border(1.dp, containerColor.thermalEdgeOutline(), RoundedCornerShape(24.dp))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -352,12 +380,19 @@ fun ThermalSection(
 
                 val rowBackgroundColor by animateColorAsState(
                     targetValue = if (isSelected) selectedColor else Color.Transparent,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMediumLow,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    ),
                     label = "rowBg"
                 )
 
                 val weightVal by animateIntAsState(
                     targetValue = if (isSelected) 700 else 400,
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    ),
                     label = "weight"
                 )
 
@@ -367,7 +402,11 @@ fun ThermalSection(
                         .padding(vertical = 2.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(rowBackgroundColor)
-                        .clickable { onModeSelect(mode.id) }
+                        .border(1.dp, rowBackgroundColor.thermalEdgeOutline(), RoundedCornerShape(12.dp))
+                        .clickable {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onModeSelect(mode.id)
+                        }
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -382,7 +421,12 @@ fun ThermalSection(
                     
                     AnimatedVisibility(
                         visible = isSelected,
-                        enter = scaleIn() + fadeIn(),
+                        enter = scaleIn(
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMedium,
+                                dampingRatio = Spring.DampingRatioMediumBouncy
+                            )
+                        ) + fadeIn(),
                         exit = scaleOut() + fadeOut()
                     ) {
                         Icon(
@@ -417,6 +461,25 @@ fun ThermalSection(
 }
 
 data class ThermalMode(val id: Int, val labelRes: Int)
+
+/**
+ * Локальная адаптивная микрообводка 1.dp по гайдлайну (раздел 3):
+ * на светлом контейнере затемняет, на тёмном — осветляет к белому.
+ * Локально для Thermal, чтобы не трогать общие компоненты.
+ */
+private fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color {
+    val luminance = 0.2126f * red + 0.7152f * green + 0.0722f * blue
+    val shifted = if (luminance > 0.55f) {
+        copy(red = red * 0.8f, green = green * 0.8f, blue = blue * 0.8f)
+    } else {
+        copy(
+            red = (red + (1f - red) * 0.22f).coerceIn(0f, 1f),
+            green = (green + (1f - green) * 0.22f).coerceIn(0f, 1f),
+            blue = (blue + (1f - blue) * 0.22f).coerceIn(0f, 1f)
+        )
+    }
+    return shifted.copy(alpha = alpha)
+}
 
 object ThermalManager {
     private const val TAG = "PixelPartsThermal"

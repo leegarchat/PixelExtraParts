@@ -23,6 +23,8 @@ import java.util.zip.ZipFile;
 
 import android.provider.Settings;
 
+import org.pixel.customparts.core.ApkModulesGate;
+
 /**
  * Host for legacy (API ≤90) Xposed modules (APK format).
  * Discovery: {@code assets/xposed_init} class list. Instances live
@@ -44,6 +46,8 @@ public class LegacyModuleHost {
     private static boolean scanned = false;
 
     public static synchronized void ensureScanned(Context context) {
+        // TEMPORARY: APK modules disabled via ApkModulesGate (code kept).
+        if (!ApkModulesGate.ENABLED) return;
         if (scanned) return;
         scanned = true;
         scanDir(new File("/system_ext/etc/pixelparts/addons"));
@@ -180,6 +184,7 @@ public class LegacyModuleHost {
     /** Called from HookEntry for every injected app process. */
     public static void dispatchPackage(Context context, ClassLoader appClassLoader,
             String packageName) {
+        if (!ApkModulesGate.ENABLED) return; // TEMPORARY kill-switch
         if (XposedModuleHost.SYSTEM_PACKAGE.equals(packageName)) return;
         ensureScanned(context);
         ApplicationInfo ai = null;

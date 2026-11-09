@@ -5,24 +5,24 @@ import android.graphics.RenderNode
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -30,201 +30,162 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.CanvasHolder
-import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.rememberGraphicsLayer
-import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import java.lang.reflect.Method
 
 /*
- * Shared Graphics Layer Blur Implementation
- * Moved from MainActivity.kt
+ * Single shared full-screen blur RenderNode: the RenderEffect is applied
+ * exactly once per frame inside recordLayer, while overlays (header, bottom bar,
+ * navigate button) draw the ready blurred node as a shifted mask.
  */
 
 @Stable
-data class GraphicsLayerRecordingState(
+class GraphicsLayerRecordingState(
     val graphicsLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    val region: MutableState<Region>,
 ) {
-    sealed class Region {
-        data class Rectangle(val rect: Rect) : Region()
-        data class Circle(val center: Offset, val size: Size) : Region()
-    }
-
-    fun setRectRegion(rect: Rect) {
-        this.region.value = Region.Rectangle(rect = rect)
-    }
-
-    fun setCircleRegion(center: Offset, size: Size) {
-        this.region.value = Region.Circle(center = center, size = size)
-    }
+    val sharedBlurNode: RenderNode? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) RenderNode("SharedFullScreenBlur") else null
+    var lastAppliedBlurRadius: Float = -1f
 }
 
 @Composable
-fun rememberGraphicsLayerRecordingState(
-    regionState: MutableState<GraphicsLayerRecordingState.Region> = rememberGraphicsLayerRecordingRegion(),
-): GraphicsLayerRecordingState {
+fun rememberGraphicsLayerRecordingState(): GraphicsLayerRecordingState {
     val graphicsLayer = rememberGraphicsLayer()
-    return remember {
-        GraphicsLayerRecordingState(graphicsLayer = graphicsLayer, region = regionState)
-    }
-}
-
-@Composable
-private fun rememberGraphicsLayerRecordingRegion(): MutableState<GraphicsLayerRecordingState.Region> {
-    return remember {
-        mutableStateOf(GraphicsLayerRecordingState.Region.Rectangle(rect = Rect.Zero))
+    return remember(graphicsLayer) {
+        GraphicsLayerRecordingState(graphicsLayer = graphicsLayer)
     }
 }
 
 fun Modifier.recordLayer(
     state: GraphicsLayerRecordingState,
-): Modifier {
-    return this.drawWithContent {
-        // We capture the content into the GraphicsLayer
-        when (val region = state.region.value) {
-            is GraphicsLayerRecordingState.Region.Rectangle -> {
-                recordRectangleLayer(graphicsLayer = state.graphicsLayer, rect = region.rect)
-            }
-            is GraphicsLayerRecordingState.Region.Circle -> {
-                recordCircleLayer(
-                    graphicsLayer = state.graphicsLayer,
-                    center = region.center,
-                    size = region.size
-                )
-            }
-        }
-        
-        // And THEN we draw the content to the screen as usual.
-        drawContent()
-    }
-}
-
-private fun ContentDrawScope.recordRectangleLayer(
-    graphicsLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    rect: Rect,
-) {
-    try {
-        graphicsLayer.record(size = IntSize(size.width.toInt(), size.height.toInt())) {
-             this@recordRectangleLayer.drawContent()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
-}
-
-private fun ContentDrawScope.recordCircleLayer(
-    graphicsLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    center: Offset,
-    size: Size,
-) {
-    val rect = Rect(offset = center, size = size)
-    val path = Path().apply { addOval(rect) }
-
-    graphicsLayer.record(size = IntSize(size.width.toInt(), size.height.toInt())) {
-        translate(left = -rect.left, top = -rect.top) {
-            clipPath(path = path, clipOp = ClipOp.Intersect) {
-                this@recordCircleLayer.drawContent()
-            }
-        }
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.S)
-private fun Modifier.renderLayer(
-    state: GraphicsLayerRecordingState,
-    renderEffect: RenderEffect,
-): Modifier {
-    return this.renderLayer(graphicsLayer = state.graphicsLayer, renderEffect = renderEffect)
-}
-
-@RequiresApi(Build.VERSION_CODES.S)
-private fun Modifier.renderLayer(
-    graphicsLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    renderEffect: RenderEffect,
+    backgroundColor: Color,
+    blurRadius: Float = 40f,
+    topEdgeFadeHeight: Dp = 28.dp,
+    bottomEdgeFadeHeight: Dp = 20.dp,
 ): Modifier = composed {
-    val renderNode = remember { RenderNode("PixelPartsBlurNode") }
     val canvasHolder = remember { CanvasHolder() }
 
-    this.drawBehind {
-        renderNode.setRenderEffect(renderEffect)
-        
-        renderNode.setPosition(0, 0, size.width.toInt(), size.height.toInt())
+    this.drawWithContent {
+        val w = size.width.toInt()
+        val h = size.height.toInt()
+        if (w > 0 && h > 0) {
+            val topFadePx = topEdgeFadeHeight.toPx().coerceAtMost(h * 0.25f)
+            val bottomFadePx = bottomEdgeFadeHeight.toPx().coerceAtMost(h * 0.25f)
 
-        drawIntoCanvas { canvas ->
-            val recordingCanvas = renderNode.beginRecording()
-            canvasHolder.drawInto(recordingCanvas) {
-                val originalCanvas = drawContext.canvas
-                drawContext.canvas = this@drawInto
-                drawLayerCompat(graphicsLayer)
-                drawContext.canvas = originalCanvas
+            try {
+                // 1. Record the content tree exactly ONCE
+                state.graphicsLayer.record(size = IntSize(w, h)) {
+                    this@drawWithContent.drawContent()
+                }
+
+                // 2. Bake the shared blur node S from the recorded layer C
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0.5f) {
+                    val blurNode = state.sharedBlurNode!!
+                    blurNode.setPosition(0, 0, w, h)
+                    if (kotlin.math.abs(state.lastAppliedBlurRadius - blurRadius) > 0.25f) {
+                        blurNode.setRenderEffect(
+                            RenderEffect.createBlurEffect(blurRadius, blurRadius, Shader.TileMode.CLAMP)
+                        )
+                        state.lastAppliedBlurRadius = blurRadius
+                    }
+                    val recCanvas = blurNode.beginRecording(w, h)
+                    canvasHolder.drawInto(recCanvas) {
+                        drawRect(color = backgroundColor)
+                        val orig = drawContext.canvas
+                        drawContext.canvas = this@drawInto
+                        this@drawWithContent.drawLayer(state.graphicsLayer)
+                        drawContext.canvas = orig
+
+                        if (topFadePx > 0f) {
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(backgroundColor, backgroundColor.copy(alpha = 0f)),
+                                    startY = 0f,
+                                    endY = topFadePx,
+                                ),
+                                topLeft = Offset.Zero,
+                                size = Size(size.width, topFadePx),
+                            )
+                        }
+                        if (bottomFadePx > 0f) {
+                            val startY = size.height - bottomFadePx
+                            drawRect(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(backgroundColor.copy(alpha = 0f), backgroundColor),
+                                    startY = startY,
+                                    endY = size.height,
+                                ),
+                                topLeft = Offset(0f, startY),
+                                size = Size(size.width, bottomFadePx),
+                            )
+                        }
+                    }
+                    blurNode.endRecording()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            renderNode.endRecording()
-            canvas.nativeCanvas.drawRenderNode(renderNode)
+            // 3. Draw the recorded layer C to the screen without a second Compose tree traversal
+            drawLayer(state.graphicsLayer)
+        } else {
+            drawContent()
         }
     }
 }
 
-private fun DrawScope.drawLayerCompat(
-    graphicsLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-) {
+/**
+ * Renders a cutout (mask) from the already prepared [state.sharedBlurNode].
+ * When [scale] != 1 the outer capsule grows while the blur texture stays 1:1 with the screen:
+ * an inverse 1/s matrix is applied around the element center.
+ * Creates no new RenderNodes and duplicates no RenderEffects!
+ */
+@RequiresApi(Build.VERSION_CODES.S)
+private fun Modifier.renderLayerAt(
+    state: GraphicsLayerRecordingState,
+    regionProvider: () -> Rect,
+    scaleProvider: () -> Float = { 1f },
+): Modifier = this.drawBehind {
+    val blurNode = state.sharedBlurNode ?: return@drawBehind
+    if (!blurNode.hasDisplayList()) return@drawBehind
+    val region = regionProvider()
+    val s = scaleProvider().coerceAtLeast(0.01f)
+
     drawIntoCanvas { canvas ->
-        invokeGraphicsLayerDrawReflectively(
-            sourceLayer = graphicsLayer,
-            destinationCanvas = canvas,
-            parentLayer = null 
-        )
+        val native = canvas.nativeCanvas
+        val saveCount = native.save()
+        if (kotlin.math.abs(s - 1f) > 0.001f) {
+            // Compensate the outer scale(s, s) around the element center:
+            // the capsule mask expands by s while the blur texture stays 1:1 with the screen!
+            val centerInRoot = region.center
+            native.translate(size.width * 0.5f, size.height * 0.5f)
+            native.scale(1f / s, 1f / s)
+            native.translate(-centerInRoot.x, -centerInRoot.y)
+        } else {
+            native.translate(-region.left, -region.top)
+        }
+        native.drawRenderNode(blurNode)
+        native.restoreToCount(saveCount)
     }
 }
 
-@Volatile
-private var cachedGraphicsLayerDrawMethod: Method? = null
-
-private fun invokeGraphicsLayerDrawReflectively(
-    sourceLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-    destinationCanvas: androidx.compose.ui.graphics.Canvas,
-    parentLayer: androidx.compose.ui.graphics.layer.GraphicsLayer?
-) {
-    val method = cachedGraphicsLayerDrawMethod ?: resolveGraphicsLayerDrawMethod(sourceLayer)
-    if (method != null) {
-        try {
-            method.invoke(sourceLayer, destinationCanvas, parentLayer)
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        }
-    }
-}
-
-private fun resolveGraphicsLayerDrawMethod(
-    sourceLayer: androidx.compose.ui.graphics.layer.GraphicsLayer,
-): Method? {
-    cachedGraphicsLayerDrawMethod?.let { return it }
-
-    return try {
-        val method = sourceLayer::class.java.declaredMethods.firstOrNull { candidate ->
-            val params = candidate.parameterTypes
-            params.size == 2 &&
-                params[0].name.startsWith("androidx.compose.ui.graphics") &&
-                params[1].name.startsWith("androidx.compose.ui.graphics.layer")
-        }
-        method?.isAccessible = true
-        cachedGraphicsLayerDrawMethod = method
-        method
-    } catch (_: Throwable) {
-        null
-    }
+/**
+ * Uniform frosted veil: keeps [minVeilAlpha] at high blur to remove blotchiness
+ * and smoothly reaches 1.0f (opaque background) as the blur radius drops to 0.
+ */
+private fun frostedVeilAlpha(blurRadius: Float, minVeilAlpha: Float): Float {
+    val t = ((20f - blurRadius) / 20f).coerceIn(0f, 1f)
+    return minVeilAlpha + (1f - minVeilAlpha) * t
 }
 
 @Composable
@@ -232,75 +193,149 @@ fun TopBarBlurOverlay(
     modifier: Modifier = Modifier,
     topBarHeight: Dp,
     blurState: GraphicsLayerRecordingState,
-    isScrolled: Boolean = false,
+    blurRadius: Float = 40f,
 ) {
-    val tintAlpha by animateFloatAsState(
-        targetValue = if (isScrolled) 1f else 0f,
-        animationSpec = tween(durationMillis = 500),
-        label = "blurTintAlpha"
-    )
-    val isDark = isSystemInDarkTheme()
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
-    val bgColor = MaterialTheme.colorScheme.surfaceContainer
+    val veilAlpha = frostedVeilAlpha(blurRadius = blurRadius, minVeilAlpha = 0.58f)
+    var region by remember { mutableStateOf(Rect.Zero) }
+
+    Box(
+        modifier = modifier.height(topBarHeight)
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0.5f) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(surfaceColor)
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        clip = true
+                    }
+                    .onGloballyPositioned { coords ->
+                        region = coords.boundsInRoot()
+                    }
+                    .renderLayerAt(
+                        state = blurState,
+                        regionProvider = { region },
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(surfaceColor.copy(alpha = veilAlpha))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(surfaceColor)
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomBlurBar(
+    modifier: Modifier = Modifier,
+    blurState: GraphicsLayerRecordingState,
+    blurRadius: Float = 40f,
+    scale: Float = 1f,
+    shape: Shape = CircleShape,
+    content: @Composable () -> Unit,
+) {
+    val bgColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val veilColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    val veilAlpha = frostedVeilAlpha(blurRadius = blurRadius, minVeilAlpha = 0.62f)
+    var region by remember { mutableStateOf(Rect.Zero) }
 
     Box(
         modifier = modifier
-            .height(topBarHeight)
-    ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val renderEffect = remember {
-                RenderEffect.createBlurEffect(80f, 80f, Shader.TileMode.CLAMP)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
             }
-
-            // Layer 0: Opaque background — fully hides the original unblurred list underneath.
-            // Uses the same surfaceContainer as the LazyColumn so there is zero visible seam.
+            .clip(shape)
+            .border(width = 1.dp, color = borderColor, shape = shape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            ),
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0.5f) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .background(bgColor)
             )
 
-            // Layer 1: Blurred captured content on top of opaque background
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .graphicsLayer {
-                        compositingStrategy = CompositingStrategy.Offscreen
                         clip = true
                     }
-                    .onGloballyPositioned { layoutCoordinates ->
-                        blurState.setRectRegion(layoutCoordinates.boundsInParent())
+                    .onPlaced { coords ->
+                        region = coords.boundsInRoot()
                     }
-                    .renderLayer(state = blurState, renderEffect = renderEffect)
-            )
-
-            // Layer 2: Surface veil — dims blurred content for frosted glass look
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(surfaceColor.copy(alpha = 0.0f))
-            )
-        }
-
-        // Layer 4: Scroll-based tint gradient — enhances frost when content is under the bar
-        if (tintAlpha > 0f) {
-            // val tintColor = if (isDark) Color.Black else Color.White
-            val tintColor = surfaceColor
-            val multiplier_top = if (isDark) 1.0f else 1.0f
-            val multiplier_down = if (isDark) 0.0f else 0.0f
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                tintColor.copy(alpha = multiplier_top * tintAlpha),
-                                tintColor.copy(alpha = multiplier_top * 0.3f * tintAlpha),
-                                tintColor.copy(alpha = multiplier_down * tintAlpha)
-                            )
-                        )
+                    .onGloballyPositioned { coords ->
+                        region = coords.boundsInRoot()
+                    }
+                    .renderLayerAt(
+                        state = blurState,
+                        regionProvider = { region },
+                        scaleProvider = { scale },
                     )
             )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(veilColor.copy(alpha = veilAlpha))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(bgColor)
+            )
         }
+
+        content()
     }
+}
+
+/**
+ * Micro-gradient veil at the top edge (status-bar zone).
+ * Hides blur softness at content edges where there is no sampling data.
+ * Alpha bottom-up: 0 → 20 → 40 → 100. Color = content background (dark/light per theme).
+ * Drawn as a recordLayer sibling, only over the header blur overlay.
+ */
+@Composable
+fun TopStatusVeil(
+    backgroundColor: Color,
+    veilHeight: Dp,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(veilHeight)
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to backgroundColor,
+                        0.55f to backgroundColor.copy(alpha = 0.4f),
+                        0.8f to backgroundColor.copy(alpha = 0.2f),
+                        1.0f to backgroundColor.copy(alpha = 0f),
+                    )
+                )
+            )
+    )
 }

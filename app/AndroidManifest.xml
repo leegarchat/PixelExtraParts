@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.pixel.customparts"
     android:sharedUserId="android.uid.system"
-    android:versionCode="103"
+    android:versionCode="104"
     android:versionName="1.0.3">
 
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
@@ -248,7 +248,7 @@
             android:targetActivity=".MainActivity"
             android:label="@string/app_name"
             android:icon="@mipmap/ic_launcher"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

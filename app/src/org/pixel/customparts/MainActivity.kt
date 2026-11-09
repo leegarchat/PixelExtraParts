@@ -43,6 +43,7 @@ import org.pixel.customparts.activities.*
 import org.pixel.customparts.services.MainActivityTileService
 import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.ui.RebootBubble
@@ -95,7 +96,6 @@ fun MainDashboard() {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
 
     // Load addon main-menu entries grouped by their "group" field
     var addonGestureEntries by remember { mutableStateOf<List<AddonMainEntry>>(emptyList()) }
@@ -363,7 +363,7 @@ fun MainDashboard() {
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     scrolledContainerColor = Color.Transparent
-                ),
+                )
             )
         }
     ) { innerPadding ->
@@ -372,7 +372,7 @@ fun MainDashboard() {
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -569,15 +569,18 @@ fun MainDashboard() {
 
             }
 
-            // Fixed at collapsed top-bar height (64dp + status bar).
-            // When scrolled the large bar is already collapsed to this size;
-            // when at top the overlay is invisible (isScrolled = false, alpha = 0).
+            // Fixed at collapsed top-bar height (64.dp + status bar).
+            // Frosted overlay stays visible with a constant veil; the list scrolls underneath.
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars
                     .asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

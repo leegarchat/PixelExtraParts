@@ -15,9 +15,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -84,7 +92,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -97,7 +104,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -119,6 +128,7 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.RemoteStringsManager
@@ -210,7 +220,6 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     val store = remember { ThermalConfigStore(context) }
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
 
     var savedConfigs by remember { mutableStateOf(emptyList<SavedThermalConfig>()) }
     var profileMap by remember { mutableStateOf(ThermalProfileMap()) }
@@ -349,7 +358,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -464,8 +473,12 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -479,7 +492,6 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
     val store = remember { ThermalConfigStore(context) }
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { listState.canScrollBackward } }
     val defaultEditorSource = dynamicStringResource(R.string.thermal_manager_source_vendor)
 
     var savedConfigs by remember { mutableStateOf(emptyList<SavedThermalConfig>()) }
@@ -782,7 +794,7 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(blurState)
+                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                     .background(MaterialTheme.colorScheme.surfaceContainer),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -918,8 +930,12 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
@@ -942,7 +958,13 @@ private fun ProfileConfigSectionCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
+                RoundedCornerShape(24.dp)
+            )
     ) {
         Row(
             modifier = Modifier
@@ -981,7 +1003,21 @@ private fun ProfileConfigSectionCard(
             }
         }
 
-        AnimatedVisibility(visible = expanded) {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
+                )
+            ) + fadeIn(),
+            exit = shrinkVertically(
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
+                )
+            ) + fadeOut()
+        ) {
             Column {
                 if (configs.isEmpty()) {
                     Column(
@@ -1126,7 +1162,13 @@ private fun GlobalProfileCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
+                RoundedCornerShape(24.dp)
+            )
     ) {
         Row(
             modifier = Modifier
@@ -1277,7 +1319,13 @@ private fun ThermalTileQueueRow(
     onRemove: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
+                RoundedCornerShape(14.dp)
+            ),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface
     ) {
@@ -1410,6 +1458,11 @@ private fun ThermalSystemAppsFilterRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
+                RoundedCornerShape(18.dp)
+            )
             .clickable { onCheckedChange(!checked) },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -1453,7 +1506,13 @@ private fun ThermalCompactSearchField(
     hint: String
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
+                RoundedCornerShape(18.dp)
+            ),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface
     ) {
@@ -1535,22 +1594,30 @@ private fun ThermalManagedAppRow(
         choiceForConfig(selectedConfig, choicesById, includeFollowGlobal = true)
     }
     val isGlobalSelection = selectedConfig.isBlank()
+    val targetContainerColor = if (selectedConfig.isNotBlank()) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+    } else if (app.isSystem) {
+        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.07f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val containerColor by animateColorAsState(
+        targetValue = targetContainerColor,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "appRowBg"
+    )
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, containerColor.thermalEdgeOutline(), RoundedCornerShape(18.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selectedConfig.isNotBlank()) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-            } else if (app.isSystem) {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.07f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Row(
             modifier = Modifier
@@ -1786,19 +1853,31 @@ private fun ProfilePickerChoiceRow(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
+    val targetContainerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+    val containerColor by animateColorAsState(
+        targetValue = targetContainerColor,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "pickerRowBg"
+    )
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
+            .border(1.dp, containerColor.thermalEdgeOutline(), RoundedCornerShape(14.dp))
+            .clickable(onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
+            }),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        )
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Row(
             modifier = Modifier
@@ -2174,7 +2253,21 @@ private fun ThermalTreeNodeRow(
             )
         }
 
-        AnimatedVisibility(visible = expanded) {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically(
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
+                )
+            ) + fadeIn(),
+            exit = shrinkVertically(
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
+                )
+            ) + fadeOut()
+        ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 node.children.forEach { child ->
                     ThermalTreeNodeRow(
@@ -2364,6 +2457,25 @@ private fun FieldBadge(param: ThermalConfigParam) {
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
         )
     }
+}
+
+/**
+ * Локальная адаптивная микрообводка 1.dp по гайдлайну (раздел 3):
+ * на светлом контейнере затемняет, на тёмном — осветляет к белому.
+ * Локально для Thermal-менеджера, чтобы не трогать общие компоненты.
+ */
+private fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color {
+    val luminance = 0.2126f * red + 0.7152f * green + 0.0722f * blue
+    val shifted = if (luminance > 0.55f) {
+        copy(red = red * 0.8f, green = green * 0.8f, blue = blue * 0.8f)
+    } else {
+        copy(
+            red = (red + (1f - red) * 0.22f).coerceIn(0f, 1f),
+            green = (green + (1f - green) * 0.22f).coerceIn(0f, 1f),
+            blue = (blue + (1f - blue) * 0.22f).coerceIn(0f, 1f)
+        )
+    }
+    return shifted.copy(alpha = alpha)
 }
 
 private class ThermalConfigStore(private val context: Context) {

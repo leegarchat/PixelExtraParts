@@ -93,6 +93,7 @@ import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.activities.AddonPageActivity
+import org.pixel.customparts.core.ApkModulesGate
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
@@ -2467,11 +2468,14 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(12.dp))
 
         // === Tabs: JAR addons / APK modules ===
+        // TEMPORARY: APK-modules tab hidden behind ApkModulesGate (code kept).
         TabRow(selectedTabIndex = modulesTab) {
             Tab(selected = modulesTab == 0, onClick = { modulesTab = 0 },
                 text = { Text(dynamicStringResource(R.string.addon_tab_jars)) })
-            Tab(selected = modulesTab == 1, onClick = { modulesTab = 1 },
-                text = { Text(dynamicStringResource(R.string.addon_tab_modules)) })
+            if (ApkModulesGate.ENABLED) {
+                Tab(selected = modulesTab == 1, onClick = { modulesTab = 1 },
+                    text = { Text(dynamicStringResource(R.string.addon_tab_modules)) })
+            }
         }
 
         Spacer(Modifier.height(12.dp))
@@ -2743,7 +2747,8 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         )
     }
     }
-    if (modulesTab == 1) {
+    // TEMPORARY: APK-modules tab content disabled behind ApkModulesGate.
+    if (modulesTab == 1 && ApkModulesGate.ENABLED) {
         // === APK modules tab ===
         XposedModulesSection(
             modules = xposedModules,
@@ -6728,6 +6733,8 @@ private fun removeModuleFromRegistry(context: Context, apkPath: String) {
  * ModuleDetection (manifest + zip-walk), without its TSV cache.
  */
 private fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
+    // TEMPORARY: APK-module support disabled via ApkModulesGate — code kept.
+    if (!ApkModulesGate.ENABLED) return emptyList()
     val pm = context.packageManager
     val out = ArrayList<XposedModuleUiModel>()
     val apps = try {

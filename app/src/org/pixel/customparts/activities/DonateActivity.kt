@@ -51,6 +51,7 @@ import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.dynamicStringResource
@@ -175,7 +176,6 @@ fun DonateScreen(onBack: () -> Unit) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val isScrolled by remember { derivedStateOf { lazyListState.canScrollBackward } }
     
     var pageData by remember { mutableStateOf<DonatePageData?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -277,7 +277,7 @@ fun DonateScreen(onBack: () -> Unit) {
                     state = lazyListState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .recordLayer(blurState)
+                        .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
                         .background(MaterialTheme.colorScheme.surfaceContainer),
                     contentPadding = PaddingValues(
                         start = 16.dp,
@@ -315,8 +315,12 @@ fun DonateScreen(onBack: () -> Unit) {
             TopBarBlurOverlay(
                 modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState,
-                isScrolled = isScrolled
+                blurState = blurState
+            )
+            TopStatusVeil(
+                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
