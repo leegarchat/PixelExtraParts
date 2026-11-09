@@ -22,9 +22,8 @@ data class AppConfigItem(val pkg: String, var filter: Boolean, var scale: Float,
 
 object OverscrollManager {
 
-    // Legacy write suffix (hooks still read "_pine" — see HookKeyCompat KDoc).
-    // Do NOT change without a data migration + hook-side audit.
-    private const val SUFFIX: String = "_pine"
+    // Framework hooks read bare keys (EdgeEffect has no suffix logic).
+    private const val SUFFIX: String = ""
 
     const val KEY_SAVED_PROFILES = "overscroll_saved_profiles"
     const val KEY_ACTIVE_PROFILE = "overscroll_active_profile_name"

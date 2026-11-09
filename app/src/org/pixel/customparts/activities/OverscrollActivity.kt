@@ -1031,8 +1031,8 @@ private fun ScaleGroup(
         onExpandChange = onExpandChange
     ) {
         val scope = rememberCoroutineScope()
-        // LSPlant runtime suffix for all overscroll keys.
-        val suffix = "_pine"
+        // Framework hooks read bare keys (no suffix).
+        val suffix = ""
 
         val modeKey = "${prefix}_mode$suffix"
         var mode by remember(refreshKey) {

@@ -73,8 +73,6 @@ object SettingsCompat {
         "launcher_padding_search",
         "launcher_padding_dots",
         "launcher_padding_dots_x",
-        "launcher_dt2s_enabled",
-        "overscroll_enabled",
         "status_bar_use_app_icons",
         "status_bar_monochrome_notification_icons",
         "aod_use_app_icons",

@@ -11,7 +11,6 @@ import org.pixel.customparts.utils.runRootCommand
 
 object LauncherManager {
     private const val KEY_NATIVE_SEARCH = SettingsKeys.PIXEL_LAUNCHER_NATIVE_SEARCH
-    private fun compatKey(base: String): String = SettingsCompat.key(base)
     val KEY_DOCK_ENABLE: String
         get() = SettingsKeys.LAUNCHER_DOCK_ENABLE
     const val KEY_HIDE_SEARCH_BASE = "launcher_hidden_search"

@@ -68,11 +68,12 @@ object SettingsKeys {
     const val ICON_SHAPE_ALL_APPS_SUGGESTIONS_THEMED_ICONS = "pixelparts_icon_shape_all_apps_suggestions_themed_icons"
 
 
-    // Suffix note: hooks still read "_pine" (see HookKeyCompat KDoc), so the
-    // legacy "_pine" write suffix stays. New addon-framework writes use
-    // "_lsplant" and both resolve via the read-through fallback; do NOT
-    // change this value without a data migration + hook-side audit.
-    internal const val suffix: String = "_pine"
+    // Suffix note: framework hooks read BARE keys (no suffix), so the keys
+    // below carry no suffix. Legacy "_pine"/"_lsplant"/"_xposed" values are
+    // still readable through the read-through fallback where used
+    // (see HookKeyCompat KDoc). Do NOT re-add a suffix without a hook-side
+    // audit: writes and hook reads must name the identical key.
+    internal const val suffix: String = ""
     
     val BATTERY_INFO_ENABLE: String
         get() = "pixelparts_battery_info_enable" + suffix
@@ -230,8 +231,7 @@ object SettingsKeys {
         get() = "launcher_padding_dots_x" + suffix
 
 
-    val LAUNCHER_DT2S_ENABLED: String
-        get() = "launcher_dt2s_enabled" + suffix
+    const val LAUNCHER_DT2S_ENABLED = "launcher_dt2s_enabled"
 
     // SystemUI / Shade
     val QS_COMPACT_PLAYER: String
@@ -343,16 +343,11 @@ object SettingsKeys {
     const val PIXEL_LAUNCHER_NATIVE_SEARCH = "pixel_launcher_native_search"
 
     // Magnifier (text loupe)
-    val MAGNIFIER_CUSTOM_ENABLED: String
-        get() = "magnifier_custom_enabled" + suffix
-    val MAGNIFIER_CUSTOM_ZOOM: String
-        get() = "magnifier_custom_zoom" + suffix
-    val MAGNIFIER_CUSTOM_SIZE: String
-        get() = "magnifier_custom_size" + suffix
-    val MAGNIFIER_CUSTOM_SHAPE: String
-        get() = "magnifier_custom_shape" + suffix
-    val MAGNIFIER_CUSTOM_OFFSET_Y: String
-        get() = "magnifier_custom_offset_y" + suffix
+    const val MAGNIFIER_CUSTOM_ENABLED = "magnifier_custom_enabled"
+    const val MAGNIFIER_CUSTOM_ZOOM = "magnifier_custom_zoom"
+    const val MAGNIFIER_CUSTOM_SIZE = "magnifier_custom_size"
+    const val MAGNIFIER_CUSTOM_SHAPE = "magnifier_custom_shape"
+    const val MAGNIFIER_CUSTOM_OFFSET_Y = "magnifier_custom_offset_y"
 
     // Two-Shade (horizontal QS paging)
     /** Enable two-shade mode: QS becomes a separate horizontal page in shade. */
@@ -361,36 +356,28 @@ object SettingsKeys {
 
     // Activity transition animations
     /** Open transition mode ID (0=disabled, -1=custom, 10-93=built-in). */
-    val ACTIVITY_OPEN_TRANSITION: String
-        get() = "activity_open_transition" + suffix
+    const val ACTIVITY_OPEN_TRANSITION = "activity_open_transition"
 
     /** Close transition mode ID (0=disabled, -1=custom, 10-93=built-in). */
-    val ACTIVITY_CLOSE_TRANSITION: String
-        get() = "activity_close_transition" + suffix
+    const val ACTIVITY_CLOSE_TRANSITION = "activity_close_transition"
 
     /** Last non-disabled open transition mode used by the QS tile. */
-    val ACTIVITY_OPEN_TRANSITION_LAST: String
-        get() = "activity_open_transition_last" + suffix
+    const val ACTIVITY_OPEN_TRANSITION_LAST = "activity_open_transition_last"
 
     /** Last non-disabled close transition mode used by the QS tile. */
-    val ACTIVITY_CLOSE_TRANSITION_LAST: String
-        get() = "activity_close_transition_last" + suffix
+    const val ACTIVITY_CLOSE_TRANSITION_LAST = "activity_close_transition_last"
 
     /** Package name of the custom animation theme APK. */
-    val ACTIVITY_TRANSITION_CUSTOM_PACKAGE: String
-        get() = "activity_transition_custom_package" + suffix
+    const val ACTIVITY_TRANSITION_CUSTOM_PACKAGE = "activity_transition_custom_package"
 
     /** Package name of the custom animation theme APK for open transitions. */
-    val ACTIVITY_OPEN_CUSTOM_PACKAGE: String
-        get() = "activity_open_custom_package" + suffix
+    const val ACTIVITY_OPEN_CUSTOM_PACKAGE = "activity_open_custom_package"
 
     /** Package name of the custom animation theme APK for close transitions. */
-    val ACTIVITY_CLOSE_CUSTOM_PACKAGE: String
-        get() = "activity_close_custom_package" + suffix
+    const val ACTIVITY_CLOSE_CUSTOM_PACKAGE = "activity_close_custom_package"
 
     /** Disable predictive back gesture animation (0 = default, 1 = disable). */
-    val DISABLE_PREDICTIVE_BACK_ANIM: String
-        get() = "disable_predictive_back_anim" + suffix
+    const val DISABLE_PREDICTIVE_BACK_ANIM = "disable_predictive_back_anim"
 
     // Double Tap to Wake (DTW) — framework-backed sensor implementation
     const val DTW_ENABLED = "pixelparts_dtw_enabled"
