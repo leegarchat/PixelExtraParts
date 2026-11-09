@@ -62,6 +62,8 @@ public final class FlashBlinkHook {
             "org.pixel.customparts.addon.flashnotify.TEST_CALL";
     public static final String EXTRA_TEST_SECONDS = "seconds";
     private static int sTestGen;
+    private static volatile boolean sTestBurst;
+    private static volatile long sTestUntil;
 
     private FlashBlinkHook() {}
 
@@ -433,6 +435,9 @@ public final class FlashBlinkHook {
      * Test-only simulated call: SIM-pattern burst for N seconds, then stop.
      * Trigger: am broadcast -a ...TEST_CALL --ei seconds N.
      * Skipped while a real call owns the blink (SIM/VoIP/ROM/audio).
+     * A supervisor thread owns the torch for the whole window: it restarts
+     * the burst if a notification blink kills it mid-test, so the test
+     * always runs to its deadline instead of dying on the first repost.
      */
     private static void onTestCall(Context context, Intent intent) {
         int seconds = 0;
@@ -449,32 +454,64 @@ public final class FlashBlinkHook {
             Log.w(TAG, "test call: null context, skip");
             return;
         }
+        final int count = clamp(Settings.getSimCount(app), 1, 50);
+        final int blink = clamp(Settings.getSimBlinkMs(app), 50, 2000);
+        final int pause = clamp(Settings.getSimPauseMs(app), 0, 10000);
+        final int strength = clamp(Settings.getSimBrightness(app), 1, 45);
+        final long deadline;
+        final int gen;
         synchronized (LOCK) {
             if (sCallBlink || sAudioBlink || sRomCall != ROM_IDLE || sVoipKey != null) {
                 Log.i(TAG, "test call: real call owns blink, skip");
                 return;
             }
             sTestGen++;
+            gen = sTestGen;
+            deadline = android.os.SystemClock.elapsedRealtime() + seconds * 1000L;
+            sTestUntil = deadline;
+            sTestBurst = true;
         }
-        final int gen = sTestGen;
-        int count = clamp(Settings.getSimCount(app), 1, 50);
-        int blink = clamp(Settings.getSimBlinkMs(app), 50, 2000);
-        int pause = clamp(Settings.getSimPauseMs(app), 0, 10000);
-        int strength = clamp(Settings.getSimBrightness(app), 1, 45);
         Log.i(TAG, "test call: go seconds=" + seconds
                 + " blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength);
-        startBurst(app, blink, count, pause, strength);
-        final Context appRef = app;
-        new android.os.Handler(app.getMainLooper()).postDelayed(new Runnable() {
+        Thread sup = new Thread(new Runnable() {
             @Override public void run() {
-                synchronized (LOCK) {
-                    if (gen != sTestGen) return;
+                while (true) {
+                    synchronized (LOCK) {
+                        if (gen != sTestGen) return;
+                        if (android.os.SystemClock.elapsedRealtime() >= sTestUntil) {
+                            sTestBurst = false;
+                            break;
+                        }
+                        Thread t = sBlinkThread;
+                        if (t == null || !t.isAlive()) {
+                            Log.i(TAG, "test call: (re)start burst");
+                            startBurst(app, blink, count, pause, strength);
+                        }
+                    }
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
                 }
                 Log.i(TAG, "test call: timeout, stop");
                 stopIfAllIdle();
             }
-        }, seconds * 1000L);
+        }, TAG + "-testcall");
+        sup.setDaemon(true);
+        sup.start();
+    }
+
+    /** Real calls preempt test mode: invalidate its generation. */
+    private static void cancelTestBurst(String why) {
+        synchronized (LOCK) {
+            if (!sTestBurst) return;
+            sTestBurst = false;
+            sTestGen++;
+            Log.i(TAG, "test call: preempted by " + why);
+        }
     }
 
     private static void onPosted(Context context, ClassLoader cl,
@@ -710,6 +747,14 @@ public final class FlashBlinkHook {
 
     private static void startBlink(final Context context, final int count,
             final int totalMs, final int strength, final boolean repeat) {
+        synchronized (LOCK) {
+            // Test mode owns the torch for its window; notifications wait.
+            if (sTestBurst
+                    && android.os.SystemClock.elapsedRealtime() < sTestUntil) {
+                Log.i(TAG, "test owns torch, skip notification blink");
+                return;
+            }
+        }
         int unit = totalMs / (2 * count);
         if (unit < MIN_PHASE_MS) unit = MIN_PHASE_MS;
         final int phase = unit;
