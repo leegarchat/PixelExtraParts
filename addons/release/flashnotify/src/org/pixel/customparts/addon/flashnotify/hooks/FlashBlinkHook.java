@@ -185,6 +185,7 @@ public final class FlashBlinkHook {
             Log.i(TAG, "rom call: go blink=" + blink + " count=" + count
                     + " pause=" + pause + " strength=" + strength);
             sAudioBlink = false;
+            cancelTestBurst("rom-sim");
             startBurst(context, blink, count, pause, strength);
         } else if (voipOn) {
             int count = clamp(Settings.getVoipCount(context), 1, 50);
@@ -192,6 +193,7 @@ public final class FlashBlinkHook {
             int pause = clamp(Settings.getVoipPauseMs(context), 0, 10000);
             Log.i(TAG, "rom voip: go blink=" + blink + " count=" + count
                     + " pause=" + pause + " strength=" + strength);
+            cancelTestBurst("rom-voip");
             startBurst(context, blink, count, pause, strength);
         }
     }
@@ -282,6 +284,7 @@ public final class FlashBlinkHook {
         Log.i(TAG, "audio ring: self-managed go blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength);
         sAudioBlink = true;
+        cancelTestBurst("audio");
         startBurst(context, blink, count, pause, strength);
     }
 
@@ -320,6 +323,7 @@ public final class FlashBlinkHook {
                 synchronized (LOCK) {
                     sVoipKey = null;
                 }
+                cancelTestBurst("sim");
                 startBurst(mContext, blink, count, pause, strength);
             } else {
                 sRadioRinging = false;
@@ -373,6 +377,7 @@ public final class FlashBlinkHook {
                             synchronized (LOCK) {
                                 sVoipKey = null;
                             }
+                            cancelTestBurst("sim-legacy");
                             startBurst(context, blink, count, pause, strength);
                         } else if (!Settings.getCallsEnabled(context)) {
                             Log.i(TAG, "call[legacy] blink disabled, skip");
@@ -625,6 +630,7 @@ public final class FlashBlinkHook {
         }
         Log.i(TAG, "posted: voip call go blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength + " key=" + key);
+        cancelTestBurst("voip");
         startBurst(context, blink, count, pause, strength);
     }
 
