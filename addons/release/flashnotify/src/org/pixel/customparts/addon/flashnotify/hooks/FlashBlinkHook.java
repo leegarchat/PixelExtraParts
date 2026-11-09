@@ -188,6 +188,16 @@ public final class FlashBlinkHook {
             sRomCall = ROM_IDLE;
             return;
         }
+        // A live VoIP call notification proves a messenger call: the SIM
+        // branch must not claim it (prevents SIM blink on Max/Telegram
+        // while SIM is on).
+        synchronized (LOCK) {
+            if (sVoipKey != null) {
+                Log.i(TAG, "rom ring: voip notification live, SIM stays out");
+                sRomCall = ROM_IDLE;
+                return;
+            }
+        }
         sRomCall = state;
         int strength = clamp(Settings.getSimBrightness(context), 1, 45);
         int count = clamp(Settings.getSimCount(context), 1, 50);
