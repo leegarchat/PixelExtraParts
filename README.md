@@ -81,6 +81,43 @@ Settings-only addons (no `src/`, no `entryClass`) package `META-INF/` without DE
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Drift of the base
 against a spec context fails the build — rebase the spec, do not force it.
 
+## Troubleshooting: stale weave spec
+
+ROM sources move, specs go stale. A stale spec stops the build loudly at Kati
+(`device.mk`), never silently:
+
+```text
+packages/apps/PixelExtraParts/device.mk:79: error: PixelExtraParts weave regen failed: fix the spec drift below, then rebuild. PEP_WEAVE_ERROR: packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java.patch target=frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java hunk 0 (@@ -5,6 +5,7 @@): context NOT FOUND in live vanilla (888 base lines, 6 expected lines, recorded at base line ~5, first expected line: 'import static com.android.settingslib.Utils.fetchUserIconInfo;'). Base drifted — rebase the spec..
+```
+
+Field decoding:
+
+- `spec` — which `.patch` under `soong/weave/specs/` failed to apply.
+- `target=` — which live-vanilla file the spec patches.
+- `hunk 0 (@@ ... @@)` — which diff chunk did not match.
+- `888 base lines, 6 expected lines` — live file size vs context lines the hunk needs.
+- `recorded at base line ~5` — where the context was recorded when the spec was written.
+- `first expected line:` — first non-blank context line that was not found.
+
+Why it fails: a spec is a unified diff against live vanilla. The applicator
+(`soong/weave/weave_apply.py`) matches context byte-for-byte, position-flexibly
+(recorded offset first, then the single unique match). No match = loud Kati
+stop in `device.mk` (`PEP_WEAVE_ERROR`); there is no silent desync.
+
+Rebase workflow (maintainer, against fresh ROM sources):
+
+1. Open the `target=` file in the live tree, find the moved place.
+2. Fix only the context lines in `soong/weave/specs/...` (` ` / `-` lines). `+` lines are our changes — leave them unless the called API itself changed.
+3. Re-run the applicator locally (not a build, safe to run):
+   `python3 soong/weave/weave_apply.py --top <repo-root> --manifest soong/weave/manifest.json`
+   until `PEP_WEAVE_OK`.
+4. Check `git diff` shows only the spec file.
+5. Commit the spec separately.
+6. Restart `make.sh`.
+
+There are no frozen copies: `soong/weave_gen/` is regenerated from live vanilla
+every time, so drift surfaces immediately instead of silently.
+
 ## License
 
 Project code plus several Android/LSPlant integration artifacts — check upstream

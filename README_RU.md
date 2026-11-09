@@ -82,6 +82,44 @@ jars из `prebuild/`, затем локальный SDK (переопредел
 Детали: [docs/ARCHITECTURE_RU.md](docs/ARCHITECTURE_RU.md). Уплывшая база
 против контекста спеки роняет сборку — спеку надо ребейзить, а не форсировать.
 
+## Troubleshooting: протухший weave-спек
+
+Исходники ROM двигаются, спеки протухают. Протухший спек громко роняет сборку
+на этапе Kati (`device.mk`), молчаливого рассинхрона нет:
+
+```text
+packages/apps/PixelExtraParts/device.mk:79: error: PixelExtraParts weave regen failed: fix the spec drift below, then rebuild. PEP_WEAVE_ERROR: packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java.patch target=frameworks/base/packages/SettingsLib/src/com/android/settingslib/Utils.java hunk 0 (@@ -5,6 +5,7 @@): context NOT FOUND in live vanilla (888 base lines, 6 expected lines, recorded at base line ~5, first expected line: 'import static com.android.settingslib.Utils.fetchUserIconInfo;'). Base drifted — rebase the spec..
+```
+
+Расшифровка полей:
+
+- `spec` — какой `.patch` под `soong/weave/specs/` не применился.
+- `target=` — какой файл живой ванили патчится.
+- `hunk 0 (@@ ... @@)` — какой кусок диффа не сошёлся.
+- `888 base lines, 6 expected lines` — размер живого файла против строк контекста, нужных ханку.
+- `recorded at base line ~5` — где контекст был записан, когда спеку писали.
+- `first expected line:` — первая непустая строка контекста, которая не нашлась.
+
+Почему падает: спека — unified-diff против живой ванили. Аппликатор
+(`soong/weave/weave_apply.py`) ищет контекст дословно, позиция гибкая
+(сначала записанное смещение, потом единственное уникальное совпадение).
+Нет совпадения = громкий стоп Kati в `device.mk` (`PEP_WEAVE_ERROR`);
+тихого рассинхрона нет.
+
+Воркфлоу актуализации (мейнтейнер, под свежие исходники ROM):
+
+1. Открыть `target=`-файл в живом дереве, найти изменившееся место.
+2. Поправить только контекст-строки в `soong/weave/specs/...` (` ` / `-`). `+`-строки — наши изменения, не трогать, кроме случаев когда меняется сам вызываемый API.
+3. Локально прогнать аппликатор (это НЕ сборка, запускать можно):
+   `python3 soong/weave/weave_apply.py --top <корень> --manifest soong/weave/manifest.json`
+   до `PEP_WEAVE_OK`.
+4. Убедиться, что `git diff` показывает только спек-файл.
+5. Закоммитить спек отдельно.
+6. Перезапустить `make.sh`.
+
+Заморозок копий нет: `soong/weave_gen/` генерируется из живой ванили каждый
+раз, поэтому дрейф виден сразу, а не молча.
+
 ## License
 
 Project code plus several Android/LSPlant integration artifacts — check upstream
