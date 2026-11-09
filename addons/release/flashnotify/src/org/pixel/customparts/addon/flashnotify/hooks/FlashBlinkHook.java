@@ -60,6 +60,8 @@ public final class FlashBlinkHook {
     /** Test-only: start a SIM-pattern burst for N seconds, then stop. */
     public static final String ACTION_TEST_CALL =
             "org.pixel.customparts.addon.flashnotify.TEST_CALL";
+    public static final String ACTION_TEST_VOIP =
+            "org.pixel.customparts.addon.flashnotify.TEST_VOIP";
     public static final String EXTRA_TEST_SECONDS = "seconds";
     private static int sTestGen;
     private static volatile boolean sTestBurst;
@@ -414,11 +416,16 @@ public final class FlashBlinkHook {
             // blink is harmless and must be reachable from shell/am.
             IntentFilter filter = new IntentFilter(ACTION_TEST);
             filter.addAction(ACTION_TEST_CALL);
+            filter.addAction(ACTION_TEST_VOIP);
             context.registerReceiver(new BroadcastReceiver() {
                 @Override public void onReceive(Context c, Intent intent) {
                     String action = intent != null ? intent.getAction() : null;
+                    if (ACTION_TEST_VOIP.equals(action)) {
+                        onTestCall(c != null ? c : context, intent, true);
+                        return;
+                    }
                     if (ACTION_TEST_CALL.equals(action)) {
-                        onTestCall(c != null ? c : context, intent);
+                        onTestCall(c != null ? c : context, intent, false);
                         return;
                     }
                     if (!ACTION_TEST.equals(action)) return;
@@ -444,7 +451,7 @@ public final class FlashBlinkHook {
      * the burst if a notification blink kills it mid-test, so the test
      * always runs to its deadline instead of dying on the first repost.
      */
-    private static void onTestCall(Context context, Intent intent) {
+    private static void onTestCall(Context context, Intent intent, final boolean voip) {
         int seconds = 0;
         try {
             seconds = intent.getIntExtra(EXTRA_TEST_SECONDS, 0);
@@ -459,10 +466,24 @@ public final class FlashBlinkHook {
             Log.w(TAG, "test call: null context, skip");
             return;
         }
-        final int count = clamp(Settings.getSimCount(app), 1, 50);
-        final int blink = clamp(Settings.getSimBlinkMs(app), 50, 2000);
-        final int pause = clamp(Settings.getSimPauseMs(app), 0, 10000);
-        final int strength = clamp(Settings.getSimBrightness(app), 1, 45);
+        final int count;
+        final int blink;
+        final int pause;
+        final int strength;
+        final String tag;
+        if (voip) {
+            count = clamp(Settings.getVoipCount(app), 1, 50);
+            blink = clamp(Settings.getVoipBlinkMs(app), 50, 2000);
+            pause = clamp(Settings.getVoipPauseMs(app), 0, 10000);
+            strength = clamp(Settings.getVoipBrightness(app), 1, 45);
+            tag = "voip-test";
+        } else {
+            count = clamp(Settings.getSimCount(app), 1, 50);
+            blink = clamp(Settings.getSimBlinkMs(app), 50, 2000);
+            pause = clamp(Settings.getSimPauseMs(app), 0, 10000);
+            strength = clamp(Settings.getSimBrightness(app), 1, 45);
+            tag = "sim-test";
+        }
         final long deadline;
         final int gen;
         synchronized (LOCK) {
@@ -476,7 +497,7 @@ public final class FlashBlinkHook {
             sTestUntil = deadline;
             sTestBurst = true;
         }
-        Log.i(TAG, "test call: go seconds=" + seconds
+        Log.i(TAG, "test call [" + tag + "]: go seconds=" + seconds
                 + " blink=" + blink + " count=" + count
                 + " pause=" + pause + " strength=" + strength);
         Thread sup = new Thread(new Runnable() {
@@ -490,7 +511,7 @@ public final class FlashBlinkHook {
                         }
                         Thread t = sBlinkThread;
                         if (t == null || !t.isAlive()) {
-                            Log.i(TAG, "test call: (re)start burst");
+                            Log.i(TAG, "test call [" + tag + "]: (re)start burst");
                             startBurst(app, blink, count, pause, strength);
                         }
                     }
