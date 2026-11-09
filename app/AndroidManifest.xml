@@ -812,7 +812,7 @@
         </service>
 
         <receiver 
-            android:name=".services.SleepReceiver"
+            android:name=".receivers.SleepReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="org.pixel.customparts.ACTION_SLEEP" />

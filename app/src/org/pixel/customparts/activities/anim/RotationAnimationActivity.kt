@@ -884,37 +884,6 @@ private fun CustomThemeItem(
     }
 }
 
-@Composable
-private fun FilePickerRow(
-    label: String,
-    uri: Uri?,
-    required: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Rounded.FileOpen, null, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                label + if (required) " *" else "",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                uri?.lastPathSegment ?: dynamicStringResource(R.string.rotation_anim_no_file),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (uri != null) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
 private val ROTATION_CONSTRUCTOR_TAB_LABELS = listOf(
     R.string.rotation_anim_constructor_exit,

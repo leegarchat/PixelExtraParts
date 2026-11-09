@@ -1,109 +1,38 @@
 --- a/frameworks/base/core/java/android/widget/EdgeEffect.java
 +++ b/frameworks/base/core/java/android/widget/EdgeEffect.java
-@@ -35,7 +35,13 @@
+@@ -30,16 +30,17 @@
+ import android.graphics.BlendMode;
+ import android.graphics.Canvas;
+ import android.graphics.Matrix;
+ import android.graphics.Paint;
+ import android.graphics.RecordingCanvas;
  import android.graphics.Rect;
  import android.graphics.RenderNode;
  import android.os.Build;
 +import android.os.SystemClock;
-+import android.provider.Settings;
-+import android.text.TextUtils;
  import android.util.AttributeSet;
-+import android.util.DisplayMetrics;
-+import android.util.Log;
-+import android.view.WindowManager;
  import android.view.animation.AnimationUtils;
  import android.view.animation.DecelerateInterpolator;
  import android.view.animation.Interpolator;
-@@ -227,6 +233,176 @@
+ 
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+ 
+@@ -222,16 +223,51 @@
+      * Current edge effect type, consumers should always query
+      * {@link #getCurrentEdgeEffectBehavior()} instead of this parameter
+      * directly in case animations have been disabled (ex. for accessibility reasons)
+      */
+     private @EdgeEffectType int mEdgeEffectType = TYPE_GLOW;
      private Matrix mTmpMatrix = null;
      private float[] mTmpPoints = null;
  
 +    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: Settings keys
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    private static final String KEY_ENABLED = "overscroll_enabled";
-+    private static final String KEY_PACKAGES_CONFIG = "overscroll_packages_config";
-+    private static final String KEY_PULL_COEFF = "overscroll_pull";
-+    private static final String KEY_STIFFNESS = "overscroll_stiffness";
-+    private static final String KEY_DAMPING = "overscroll_damping";
-+    private static final String KEY_FLING = "overscroll_fling";
-+    private static final String KEY_PHYSICS_MIN_VEL = "overscroll_physics_min_vel";
-+    private static final String KEY_PHYSICS_MIN_VAL = "overscroll_physics_min_val";
-+    private static final String KEY_INPUT_SMOOTH_FACTOR = "overscroll_input_smooth";
-+    private static final String KEY_ANIMATION_SPEED = "overscroll_anim_speed";
-+    private static final String KEY_RESISTANCE_EXPONENT = "overscroll_res_exponent";
-+    private static final String KEY_LERP_MAIN_IDLE = "overscroll_lerp_main_idle";
-+    private static final String KEY_LERP_MAIN_RUN = "overscroll_lerp_main_run";
-+    private static final String KEY_DISABLE_ARBITRARY_RENDERING = "overscroll_disable_arbitrary_rendering";
-+    private static final String KEY_SCALE_MODE = "overscroll_scale_mode";
-+    private static final String KEY_SCALE_INTENSITY = "overscroll_scale_intensity";
-+    private static final String KEY_SCALE_LIMIT_MIN = "overscroll_scale_limit_min";
-+    private static final String KEY_ZOOM_MODE = "overscroll_zoom_mode";
-+    private static final String KEY_ZOOM_INTENSITY = "overscroll_zoom_intensity";
-+    private static final String KEY_ZOOM_LIMIT_MIN = "overscroll_zoom_limit_min";
-+    private static final String KEY_ZOOM_ANCHOR_X = "overscroll_zoom_anchor_x";
-+    private static final String KEY_ZOOM_ANCHOR_Y = "overscroll_zoom_anchor_y";
-+    private static final String KEY_H_SCALE_MODE = "overscroll_h_scale_mode";
-+    private static final String KEY_H_SCALE_INTENSITY = "overscroll_h_scale_intensity";
-+    private static final String KEY_H_SCALE_LIMIT_MIN = "overscroll_h_scale_limit_min";
-+    private static final String KEY_SCALE_ANCHOR_Y = "overscroll_scale_anchor_y";
-+    private static final String KEY_H_SCALE_ANCHOR_X = "overscroll_h_scale_anchor_x";
-+    private static final String KEY_SCALE_ANCHOR_X_HORIZ = "overscroll_scale_anchor_x_horiz";
-+    private static final String KEY_H_SCALE_ANCHOR_Y_HORIZ = "overscroll_h_scale_anchor_y_horiz";
-+    private static final String KEY_ZOOM_ANCHOR_X_HORIZ = "overscroll_zoom_anchor_x_horiz";
-+    private static final String KEY_ZOOM_ANCHOR_Y_HORIZ = "overscroll_zoom_anchor_y_horiz";
-+    private static final String KEY_SCALE_INTENSITY_HORIZ = "overscroll_scale_intensity_horiz";
-+    private static final String KEY_ZOOM_INTENSITY_HORIZ = "overscroll_zoom_intensity_horiz";
-+    private static final String KEY_H_SCALE_INTENSITY_HORIZ = "overscroll_h_scale_intensity_horiz";
-+    private static final String KEY_INVERT_ANCHOR = "overscroll_invert_anchor";
-+    private static final String KEY_RECORD_PATTERNS = "record_patterns_edge_effect";
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Ключи Settings.Global: интеллектуальная нормализация дельт
-+    //  (Phase 2 — автоматическое подавление усиленных Compose-дельт)
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    // Главный выключатель нормализации: 0 = выкл (дефолт), 1 = вкл
-+    private static final String KEY_NORM_ENABLED = "overscroll_norm_enabled";
-+
-+    // Эталонная «нормальная» дельта View-приложения (доля от effectiveSize).
-+    private static final String KEY_NORM_REF_DELTA = "overscroll_norm_ref_delta";
-+
-+    // Множитель порога обнаружения. Активация: running_mean > ref × это.
-+    private static final String KEY_NORM_DETECT_MUL = "overscroll_norm_detect_mul";
-+
-+    // Фактор нормализации — на сколько домножить усиленную дельту.
-+    private static final String KEY_NORM_FACTOR = "overscroll_norm_factor";
-+
-+    // Размер скользящего окна — сколько последних |delta| анализировать.
-+    private static final String KEY_NORM_WINDOW = "overscroll_norm_window";
-+
-+    // Плавность перехода — за сколько событий перейти от 1.0 к factor.
-+    private static final String KEY_NORM_RAMP = "overscroll_norm_ramp";
-+
-+    // Режим определения caller'а: 0 = только поведение (окно дельт),
-+    // 1 = стек-трейс + поведение, 2 = только стек-трейс.
-+    private static final String KEY_NORM_DETECT_MODE = "overscroll_norm_detect_mode";
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: constants
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    private static final float FILTER_THRESHOLD = 0.08f;
-+    private static final float MICRO_DELTA_EPS = 0.00035f;
-+    private static final float DIRECTION_FLIP_DAMPING = 0.2f;
-+    private static final float NORMAL_FLIP_DAMPING = 0.65f;
-+    private static final long SETTINGS_CACHE_TTL_MS = 120L;
-+    private static final String RECORD_TAG = "EdgePatternRec";
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: per-instance fields
-+    //  (were XposedHelpers.additionalInstanceField in the hook)
++    //  Custom bounce: per-instance fields (logic in EdgeEffectBounceHelper)
 +    // ═══════════════════════════════════════════════════════════════════
 +
 +    private Context mCustomContext;
-+    private SpringDynamics mCustomSpring;
++    private EdgeEffectBounceHelper.SpringDynamics mCustomSpring;
 +    private float mCustomSmoothOffsetY;
 +    private float mCustomSmoothScale = 1.0f;
 +    private float mCustomSmoothZoom = 1.0f;
@@ -116,7 +45,7 @@
 +    private float mCustomScreenHeight = 2200f;
 +    private float mCustomScreenWidth = 1080f;
 +    private boolean mCustomFirstTouch = true;
-+    private SettingsCache mCustomSettingsCache;
++    private EdgeEffectBounceHelper.SettingsCache mCustomSettingsCache;
 +    private float mCfgScale = 1.0f;
 +    private boolean mCfgIgnore = false;
 +    private boolean mCfgFilter = false;
@@ -124,74 +53,29 @@
 +    private int mCustomGestureSeq;
 +    private long mCustomRecordLastNs;
 +
-+    // Per-instance поля для интеллектуальной нормализации дельт
++    // Per-instance fields for intelligent delta normalization
 +    private float[] mNormDeltaWindow;
 +    private int mNormWindowIdx;
 +    private int mNormWindowCount;
 +    private float mNormCurrentFactor = 1.0f;
-+    // true если конструктор вызван из Compose (определено по стек-трейсу)
++    // true if constructed from Compose (stack-trace based)
 +    private boolean mIsComposeCaller;
 +    private String mCallerInfo;
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: SettingsCache
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    private static class SettingsCache {
-+        long updatedAt;
-+        float pullCoeff;
-+        float stiffness;
-+        float damping;
-+        float fling;
-+        float minVel;
-+        float minVal;
-+        float inputSmooth;
-+        float animationSpeedPercent;
-+        float animationSpeedMul;
-+        float resExponent;
-+        float lerpMainIdle;
-+        float lerpMainRun;
-+        boolean disableArbitraryRendering;
-+        int scaleMode;
-+        float scaleIntensity;
-+        float scaleIntensityHoriz;
-+        float scaleLimitMin;
-+        int zoomMode;
-+        float zoomIntensity;
-+        float zoomIntensityHoriz;
-+        float zoomLimitMin;
-+        float zoomAnchorX;
-+        float zoomAnchorY;
-+        float zoomAnchorXHoriz;
-+        float zoomAnchorYHoriz;
-+        int hScaleMode;
-+        float hScaleIntensity;
-+        float hScaleIntensityHoriz;
-+        float hScaleLimitMin;
-+        float scaleAnchorY;
-+        float hScaleAnchorX;
-+        float scaleAnchorXHoriz;
-+        float hScaleAnchorYHoriz;
-+        boolean invertAnchor;
-+        boolean recordPatterns;
-+        // ── Delta normalization ──
-+        boolean normEnabled;
-+        float normRefDelta;
-+        float normDetectMul;
-+        float normFactor;
-+        int normWindow;
-+        int normRamp;
-+        int normDetectMode;  // 0=behavior, 1=hybrid, 2=stacktrace-only
-+    }
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Constructors
-+    // ═══════════════════════════════════════════════════════════════════
 +
      /**
       * Construct a new EdgeEffect with a theme appropriate for the provided context.
       * @param context Context used to provide theming and resource information for the EdgeEffect
-@@ -253,6 +429,9 @@
+      */
+     public EdgeEffect(Context context) {
+         this(context, null);
+     }
+ 
+@@ -248,16 +284,19 @@
+         mEdgeEffectType = Compatibility.isChangeEnabled(USE_STRETCH_EDGE_EFFECT_BY_DEFAULT)
+                 ? TYPE_STRETCH : TYPE_GLOW;
+         a.recycle();
+ 
+         mPaint.setAntiAlias(true);
          mPaint.setColor((themeColor & 0xffffff) | 0x33000000);
          mPaint.setStyle(Paint.Style.FILL);
          mPaint.setBlendMode(DEFAULT_BLEND_MODE);
@@ -201,7 +85,17 @@
      }
  
      @EdgeEffectType
-@@ -295,7 +474,37 @@
+     private int getCurrentEdgeEffectBehavior() {
+         if (!ValueAnimator.areAnimatorsEnabled()) {
+             return TYPE_NONE;
+         } else {
+             return mEdgeEffectType;
+@@ -290,27 +329,70 @@
+     /**
+      * Reports if this EdgeEffect's animation is finished. If this method returns false
+      * after a call to {@link #draw(Canvas)} the host widget should schedule another
+      * drawing pass to continue the animation.
+      *
       * @return true if animation is finished, false if drawing should continue on the next frame.
       */
      public boolean isFinished() {
@@ -211,7 +105,7 @@
 +        }
 +
 +        // ── Custom bounce logic ──
-+        SettingsCache cache = getSettingsCache(mCustomContext, false);
++        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, false);
 +        float minVal = cache.minVal;
 +
 +        if (mCustomSpring != null) {
@@ -239,7 +133,7 @@
      }
  
      /**
-@@ -303,9 +512,22 @@
+      * Immediately finish the current animation.
       * After this call {@link #isFinished()} will return true.
       */
      public void finish() {
@@ -265,7 +159,17 @@
      }
  
      /**
-@@ -339,57 +561,128 @@
+      * A view should call this when content is pulled away from an edge by the user.
+      * This will update the state of the current visual effect and its associated animation.
+      * The host view should always {@link android.view.View#invalidate()} after this
+      * and draw the results accordingly.
+      *
+@@ -334,67 +416,138 @@
+      * @param deltaDistance Change in distance since the last call. Values may be 0 (no change) to
+      *                      1.f (full length of the view) or negative values to express change
+      *                      back toward the edge reached to initiate the effect.
+      * @param displacement The displacement from the starting side of the effect of the point
+      *                     initiating the pull. In the case of touch this is the finger position.
       *                     Values may be from 0-1.
       */
      public void onPull(float deltaDistance, float displacement) {
@@ -284,7 +188,7 @@
 -            return;
 +
 +        // ── Custom bounce logic ──
-+        SettingsCache cache = getSettingsCache(mCustomContext, true);
++        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, true);
 +        boolean strictHold = cache.disableArbitraryRendering;
 +
 +        if (mCustomSpring == null) return;
@@ -293,9 +197,9 @@
 +        float cfgScale = mCfgScale;
 +        boolean cfgFilter = mCfgFilter;
 +
-+        if (cfgFilter && Math.abs(deltaDistance) > FILTER_THRESHOLD) return;
++        if (cfgFilter && Math.abs(deltaDistance) > EdgeEffectBounceHelper.FILTER_THRESHOLD) return;
 +        float correctedDelta = (Math.abs(cfgScale) > 0.001f) ? deltaDistance / cfgScale : deltaDistance;
-+        if (Math.abs(correctedDelta) < MICRO_DELTA_EPS) {
++        if (Math.abs(correctedDelta) < EdgeEffectBounceHelper.MICRO_DELTA_EPS) {
 +            correctedDelta = 0f;
          }
 -        if (mState != STATE_PULL) {
@@ -326,10 +230,10 @@
 +                    filteredDelta = 0f;
              } else {
 -                mGlowScaleY = Math.max(PULL_GLOW_BEGIN, mGlowScaleY);
-+                    filteredDelta = correctedDelta * DIRECTION_FLIP_DAMPING + lastDelta * (1.0f - DIRECTION_FLIP_DAMPING);
++                    filteredDelta = correctedDelta * EdgeEffectBounceHelper.DIRECTION_FLIP_DAMPING + lastDelta * (1.0f - EdgeEffectBounceHelper.DIRECTION_FLIP_DAMPING);
 +                }
 +            } else {
-+                filteredDelta = correctedDelta * NORMAL_FLIP_DAMPING + lastDelta * (1.0f - NORMAL_FLIP_DAMPING);
++                filteredDelta = correctedDelta * EdgeEffectBounceHelper.NORMAL_FLIP_DAMPING + lastDelta * (1.0f - EdgeEffectBounceHelper.NORMAL_FLIP_DAMPING);
              }
 +        } else {
 +            filteredDelta = correctedDelta * (1.0f - inputSmoothFactor) + lastDelta * inputSmoothFactor;
@@ -424,13 +328,23 @@
 +            mCustomGestureId = gid;
 +            mCustomGestureSeq = seq;
 +            mCustomRecordLastNs = nowNs;
-+            recordPattern(nowNs, mCustomContext.getPackageName(), gid, seq, dtUs,
++            EdgeEffectBounceHelper.recordPattern(mCallerInfo, nowNs, mCustomContext.getPackageName(), gid, seq, dtUs,
 +                    deltaDistance, correctedDelta, filteredDelta,
 +                    displacement, currentTranslation, effectiveSize);
          }
      }
  
-@@ -423,21 +716,26 @@
+     /**
+      * A view should call this when content is pulled away from an edge by the user.
+      * This will update the state of the current visual effect and its associated animation.
+      * The host view should always {@link android.view.View#invalidate()} after this
+      * and draw the results accordingly. This works similarly to {@link #onPull(float, float)},
+@@ -418,31 +571,36 @@
+      *                      back toward the edge reached to initiate the effect.
+      * @param displacement The displacement from the starting side of the effect of the point
+      *                     initiating the pull. In the case of touch this is the finger position.
+      *                     Values may be from 0-1.
+      * @return The amount of <code>deltaDistance</code> that was consumed, a number between
       * 0 and <code>deltaDistance</code>.
       */
      public float onPullDistance(float deltaDistance, float displacement) {
@@ -469,7 +383,17 @@
          onPull(delta, displacement);
          return delta;
      }
-@@ -463,22 +761,52 @@
+ 
+     /**
+      * Returns the pull distance needed to be released to remove the showing effect.
+      * It is determined by the {@link #onPull(float, float)} <code>deltaDistance</code> and
+      * any animating values, including from {@link #onAbsorb(int)} and {@link #onRelease()}.
+@@ -458,77 +616,109 @@
+ 
+     /**
+      * Call when the object is released after being pulled.
+      * This will begin the "decay" phase of the effect. After calling this method
+      * the host view should {@link android.view.View#invalidate()} and thereby
       * draw the results accordingly.
       */
      public void onRelease() {
@@ -493,7 +417,7 @@
              return;
          }
  
-+        SettingsCache cache = getSettingsCache(mCustomContext, true);
++        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, true);
 +        if (mCustomSpring != null && Math.abs(mCustomSpring.mValue) > 0.5f) {
 +            mCustomSpring.setSpeedMultiplier(cache.animationSpeedMul);
 +            float stiffness = cache.stiffness;
@@ -532,7 +456,13 @@
      }
  
      /**
-@@ -492,38 +820,40 @@
+      * Call when the effect absorbs an impact at the given velocity.
+      * Used when a fling reaches the scroll boundary.
+      *
+      * <p>When using a {@link android.widget.Scroller} or {@link android.widget.OverScroller},
+      * the method <code>getCurrVelocity</code> will provide a reasonable approximation
+      * to use here.</p>
+      *
       * @param velocity Velocity at impact in pixels per second.
       */
      public void onAbsorb(int velocity) {
@@ -560,7 +490,7 @@
 -            mGlowScaleYStart = Math.max(mGlowScaleY, 0.f);
 +        // ── Custom bounce logic ──
 +            mState = STATE_RECEDE;
-+            SettingsCache cache = getSettingsCache(mCustomContext, true);
++            EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, true);
  
 -            // Growth for the size of the glow should be quadratic to properly
 -            // respond
@@ -603,7 +533,17 @@
      }
  
      /**
-@@ -585,6 +915,340 @@
+      * Set the color of this edge effect in argb.
+      *
+      * @param color Color in argb
+      */
+     public void setColor(@ColorInt int color) {
+@@ -580,16 +770,341 @@
+      * 1.f of height. The effect will only be visible on a
+      * hardware canvas, e.g. {@link RenderNode#beginRecording()}.
+      *
+      * @param canvas Canvas to draw into
+      * @return true if drawing should continue beyond this frame to continue the
       *         animation
       */
      public boolean draw(Canvas canvas) {
@@ -613,7 +553,7 @@
 +        }
 +
 +        // ── Custom bounce draw logic ──
-+        SettingsCache cache = getSettingsCache(mCustomContext, false);
++        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, false);
 +        if (!canvas.isHardwareAccelerated()) {
 +            forceFinish(mCustomSpring);
 +            return false;
@@ -684,20 +624,20 @@
 +        float targetScaleV = 1f, targetScaleZ = 1f, targetScaleH = 1f;
 +
 +        if (isActive) {
-+            targetScaleV = calcScale(cache.scaleMode,
++            targetScaleV = EdgeEffectBounceHelper.calcScale(cache.scaleMode,
 +                    isVertical ? cache.scaleIntensity : cache.scaleIntensityHoriz,
 +                    cache.scaleLimitMin, ratio);
-+            targetScaleZ = calcScale(cache.zoomMode,
++            targetScaleZ = EdgeEffectBounceHelper.calcScale(cache.zoomMode,
 +                    isVertical ? cache.zoomIntensity : cache.zoomIntensityHoriz,
 +                    cache.zoomLimitMin, ratio);
-+            targetScaleH = calcScale(cache.hScaleMode,
++            targetScaleH = EdgeEffectBounceHelper.calcScale(cache.hScaleMode,
 +                    isVertical ? cache.hScaleIntensity : cache.hScaleIntensityHoriz,
 +                    cache.hScaleLimitMin, ratio);
 +        }
 +
-+        float newScaleV = lerp(mCustomSmoothScale, targetScaleV, lerpFactorMain);
-+        float newScaleZ = lerp(mCustomSmoothZoom, targetScaleZ, lerpFactorMain);
-+        float newScaleH = lerp(mCustomSmoothHScale, targetScaleH, lerpFactorMain);
++        float newScaleV = EdgeEffectBounceHelper.lerp(mCustomSmoothScale, targetScaleV, lerpFactorMain);
++        float newScaleZ = EdgeEffectBounceHelper.lerp(mCustomSmoothZoom, targetScaleZ, lerpFactorMain);
++        float newScaleH = EdgeEffectBounceHelper.lerp(mCustomSmoothHScale, targetScaleH, lerpFactorMain);
 +
 +        mCustomSmoothScale = newScaleV;
 +        mCustomSmoothZoom = newScaleZ;
@@ -708,7 +648,7 @@
 +                && Math.abs(newScaleZ - 1f) < 0.001f
 +                && Math.abs(newScaleH - 1f) < 0.001f;
 +        if (isResting && !mCustomSpring.isRunning()) {
-+            safeResetRenderNode(renderNode, mWidth, mHeight);
++            EdgeEffectBounceHelper.safeResetRenderNode(renderNode, mWidth, mHeight);
 +            forceFinish(mCustomSpring);
 +            return false;
 +        }
@@ -799,19 +739,10 @@
 +                || Math.abs(newScaleH - 1f) >= 0.001f;
 +
 +        if (!continueAnim) {
-+            safeResetRenderNode(renderNode, mWidth, mHeight);
++            EdgeEffectBounceHelper.safeResetRenderNode(renderNode, mWidth, mHeight);
 +            forceFinish(mCustomSpring);
 +        }
 +        return continueAnim;
-+    }
-+
-+    /**
-+     * Return the maximum height that the edge effect will be drawn at given the original
-+     * {@link #setSize(int, int) input size}.
-+     * @return The maximum height of the edge effect
-+     */
-+    public int getMaxHeight() {
-+        return (int) mHeight;
 +    }
 +
 +    // ═══════════════════════════════════════════════════════════════════
@@ -944,44 +875,35 @@
          int edgeEffectBehavior = getCurrentEdgeEffectBehavior();
          if (edgeEffectBehavior == TYPE_GLOW) {
              update();
-@@ -688,15 +1352,6 @@
-         return Math.max(max, f4);
+             final int count = canvas.save();
+ 
+             final float centerX = mBounds.centerX();
+             final float centerY = mBounds.height() - mRadius;
+ 
+@@ -692,16 +1207,17 @@
+      * Return the maximum height that the edge effect will be drawn at given the original
+      * {@link #setSize(int, int) input size}.
+      * @return The maximum height of the edge effect
+      */
+     public int getMaxHeight() {
+         return (int) mHeight;
      }
  
--    /**
--     * Return the maximum height that the edge effect will be drawn at given the original
--     * {@link #setSize(int, int) input size}.
--     * @return The maximum height of the edge effect
--     */
--    public int getMaxHeight() {
--        return (int) mHeight;
--    }
--
++
      private void update() {
          final long time = AnimationUtils.currentAnimationTimeMillis();
          final float t = Math.min((time - mStartTime) / mDuration, 1.f);
-@@ -748,9 +1403,9 @@
  
-     private void updateSpring() {
-         final long time = AnimationUtils.currentAnimationTimeMillis();
--        final float deltaT = (time - mStartTime) / 1000f; // Convert from millis to seconds
-+        final float deltaT = (time - mStartTime) / 1000f;
-         if (deltaT < 0.001f) {
--            return; // Must have at least 1 ms difference
-+            return;
-         }
-         mStartTime = time;
+         final float interp = mInterpolator.getInterpolation(t);
  
-@@ -818,7 +1473,7 @@
-      * considered at rest or false if it is still animating.
-      */
-     private boolean isAtEquilibrium() {
--        double displacement = mDistance * mHeight; // in pixels
-+        double displacement = mDistance * mHeight;
-         double velocity = mVelocity;
- 
-         // Don't allow displacement to drop below 0. We don't want it stretching the opposite
-@@ -836,4 +1491,510 @@
+         mGlowAlpha = mGlowAlphaStart + (mGlowAlphaFinish - mGlowAlphaStart) * interp;
+         mGlowScaleY = mGlowScaleYStart + (mGlowScaleYFinish - mGlowScaleYStart) * interp;
+@@ -831,9 +1347,191 @@
+     private float dampStretchVector(float normalizedVec) {
+         float sign = normalizedVec > 0 ? 1f : -1f;
+         float overscroll = Math.abs(normalizedVec);
+         float linearIntensity = LINEAR_STRETCH_INTENSITY * overscroll;
+         double scalar = Math.E / SCROLL_DIST_AFFECTED_BY_EXP_STRETCH;
          double expIntensity = EXP_STRETCH_INTENSITY * (1 - Math.exp(-overscroll * scalar));
          return sign * (float) (linearIntensity + expIntensity);
      }
@@ -992,7 +914,7 @@
 +
 +    private void initCustomInstance(Context context) {
 +        mCustomContext = context;
-+        mCustomSpring = new SpringDynamics();
++        mCustomSpring = new EdgeEffectBounceHelper.SpringDynamics();
 +        mCustomSmoothOffsetY = 0f;
 +        mCustomSmoothScale = 1.0f;
 +        mCustomSmoothZoom = 1.0f;
@@ -1010,47 +932,20 @@
 +        mNormWindowCount = 0;
 +        mNormCurrentFactor = 1.0f;
 +
-+        // Определяем caller по стек-трейсу (один раз при создании)
-+        mCallerInfo = detectCaller();
++        // Caller detection (stack trace, once per instance)
++        mCallerInfo = EdgeEffectBounceHelper.detectCaller();
 +        mIsComposeCaller = mCallerInfo.startsWith("compose");
 +
-+        float screenHeight = 2200f;
-+        float screenWidth = 1080f;
-+        try {
-+            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-+            if (wm != null) {
-+                DisplayMetrics dm = new DisplayMetrics();
-+                wm.getDefaultDisplay().getMetrics(dm);
-+                screenHeight = dm.heightPixels;
-+                screenWidth = dm.widthPixels;
-+            }
-+        } catch (Exception ignored) {}
-+        mCustomScreenHeight = screenHeight;
-+        mCustomScreenWidth = screenWidth;
++        float[] screenSize = EdgeEffectBounceHelper.getScreenSize(context);
++        mCustomScreenHeight = screenSize[0];
++        mCustomScreenWidth = screenSize[1];
 +
 +        // Per-package configuration
-+        float myScale = 1.0f;
-+        boolean myFilter = false;
-+        boolean myIgnore = false;
-+        try {
-+            String pkgName = context.getPackageName();
-+            String configString = getStringSetting(context, KEY_PACKAGES_CONFIG);
-+            if (!TextUtils.isEmpty(configString) && pkgName != null) {
-+                String[] apps = configString.split(" ");
-+                for (String appConfig : apps) {
-+                    String[] parts = appConfig.split(":");
-+                    if (parts.length >= 3 && matchesWildcard(parts[0], pkgName)) {
-+                        myFilter = Integer.parseInt(parts[1]) == 1;
-+                        myScale = Float.parseFloat(parts[2]);
-+                        if (parts.length >= 4) myIgnore = parts[3].equals("1");
-+                        break;
-+                    }
-+                }
-+            }
-+        } catch (Exception ignored) {}
-+        mCfgScale = myScale;
-+        mCfgFilter = myFilter;
-+        mCfgIgnore = myIgnore;
++        EdgeEffectBounceHelper.BounceConfig packageConfig =
++                EdgeEffectBounceHelper.parsePackageConfig(context);
++        mCfgScale = packageConfig.scale;
++        mCfgFilter = packageConfig.filter;
++        mCfgIgnore = packageConfig.ignore;
 +    }
 +
 +    // ═══════════════════════════════════════════════════════════════════
@@ -1067,7 +962,7 @@
 +        mCustomFirstTouch = true;
 +    }
 +
-+    private void forceFinish(SpringDynamics spring) {
++    private void forceFinish(EdgeEffectBounceHelper.SpringDynamics spring) {
 +        if (spring != null) {
 +            spring.cancel();
 +            spring.mValue = 0f;
@@ -1078,78 +973,14 @@
 +        mDistance = 0f;
 +    }
 +
-+    private void safeResetRenderNode(RenderNode renderNode, float viewWidth, float viewHeight) {
-+        if (renderNode == null) return;
-+        try {
-+            renderNode.setTranslationX(0f);
-+            renderNode.setTranslationY(0f);
-+            renderNode.setScaleX(1f);
-+            renderNode.setScaleY(1f);
-+            // [FIX] Pass actual W/H to stretch() — stretch(0,0,0,0) may not properly clear
-+            float sw = viewWidth > 0 ? viewWidth : 1f;
-+            float sh = viewHeight > 0 ? viewHeight : 1f;
-+            renderNode.stretch(0f, 0f, sw, sh);
-+        } catch (Throwable ignored) {}
++    private boolean isBounceEnabled() {
++        return EdgeEffectBounceHelper.isBounceEnabled(mCustomContext, mCfgIgnore);
 +    }
 +
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: caller detection
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    /**
-+     * Анализирует стек-трейс при создании EdgeEffect, чтобы определить,
-+     * кто инициировал создание — Compose или классический View.
-+     *
-+     * @return строка вида "compose:ClassName", "view:ClassName" или "unknown"
-+     */
-+    private static String detectCaller() {
-+        // Compose-характерные фрагменты в имени класса
-+        final String[] COMPOSE_SIGS = {
-+            "AndroidEdgeEffectOverscrollEffect",
-+            "OverscrollKt",
-+            "androidx.compose.foundation",
-+            "EdgeEffectCompat"                     // иногда Compose идёт через EdgeEffectCompat
-+        };
-+        // Классические View-caller'ы
-+        final String[] VIEW_SIGS = {
-+            "RecyclerView",
-+            "ScrollView",
-+            "AbsListView",
-+            "NestedScrollView",
-+            "ListView",
-+            "HorizontalScrollView",
-+            "ViewPager"
-+        };
-+
-+        try {
-+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-+            // Пропускаем первые фреймы (getStackTrace, detectCaller, initCustomInstance, <init>)
-+            int startIdx = Math.min(4, stack.length);
-+
-+            // Сначала ищем Compose (приоритет — он ближе к вызову)
-+            for (int i = startIdx; i < stack.length; i++) {
-+                String cls = stack[i].getClassName();
-+                for (String sig : COMPOSE_SIGS) {
-+                    if (cls.contains(sig)) {
-+                        String shortName = cls.substring(cls.lastIndexOf('.') + 1);
-+                        return "compose:" + shortName;
-+                    }
-+                }
-+            }
-+            // Если Compose не найден, ищем View
-+            for (int i = startIdx; i < stack.length; i++) {
-+                String cls = stack[i].getClassName();
-+                for (String sig : VIEW_SIGS) {
-+                    if (cls.contains(sig)) {
-+                        String shortName = cls.substring(cls.lastIndexOf('.') + 1);
-+                        return "view:" + shortName;
-+                    }
-+                }
-+            }
-+        } catch (Throwable ignored) {
-+            // Стек-трейс может не быть доступен в некоторых окружениях
-+        }
-+        return "unknown";
++    private EdgeEffectBounceHelper.SettingsCache getSettingsCache(Context context, boolean force) {
++        mCustomSettingsCache = EdgeEffectBounceHelper.refreshSettings(
++                context, mCustomSettingsCache, force, SystemClock.uptimeMillis());
++        return mCustomSettingsCache;
 +    }
 +
 +    // ═══════════════════════════════════════════════════════════════════
@@ -1176,7 +1007,8 @@
 +     *   2 = stacktrace-only — Compose → всегда normFactor, View/unknown → 1.0,
 +     *       окно не используется
 +     */
-+    private float applyDeltaNormalization(SettingsCache cache, float correctedDelta) {
++    private float applyDeltaNormalization(EdgeEffectBounceHelper.SettingsCache cache,
++            float correctedDelta) {
 +        float absDelta = Math.abs(correctedDelta);
 +
 +        boolean isCompose = mIsComposeCaller;
@@ -1204,7 +1036,7 @@
 +        float currentFactor = mNormCurrentFactor;
 +
 +        // Only real deltas go into the window — micro-deltas (noise) are excluded
-+        if (absDelta > MICRO_DELTA_EPS) {
++        if (absDelta > EdgeEffectBounceHelper.MICRO_DELTA_EPS) {
 +            mNormDeltaWindow[idx] = absDelta;
 +            idx = (idx + 1) % windowSize;
 +            if (count < windowSize) count++;
@@ -1256,239 +1088,5 @@
 +
 +        mNormCurrentFactor = currentFactor;
 +        return correctedDelta * currentFactor;
-+    }
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: pattern recording
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    /**
-+     * Logs one onPull event via logcat with tag RECORD_TAG.
-+     * Active only when global setting record_patterns_edge_effect = 1.
-+     * Format: elapsed_ns\tpkg\tgesture_id\tseq\tdt_us\traw\tcorrected\tfiltered\tdisp\tspring\tsize\tcaller
-+     * Use `adb logcat -s EdgePatternRec:D` to capture on PC.
-+     */
-+    private void recordPattern(long elapsedNs, String pkg, int gestureId, int seq,
-+                               long dtUs, float raw, float corrected, float filtered,
-+                               float disp, float springVal, float effSize) {
-+        String callerInfo = (mCallerInfo != null) ? mCallerInfo : "?";
-+        Log.d(RECORD_TAG, elapsedNs + "\t" + pkg + "\t" + gestureId + "\t" + seq + "\t" + dtUs
-+                + "\t" + raw + "\t" + corrected + "\t" + filtered
-+                + "\t" + disp + "\t" + springVal + "\t" + effSize + "\t" + callerInfo);
-+    }
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: settings & helpers
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    private boolean isBounceEnabled() {
-+        if (mCustomContext == null) return false;
-+        try {
-+            if (getIntSetting(mCustomContext, KEY_ENABLED, 1) != 1) return false;
-+            if (mCfgIgnore) return false;
-+            return true;
-+        } catch (Exception ignored) { return true; }
-+    }
-+
-+    private SettingsCache getSettingsCache(Context ctx, boolean force) {
-+        SettingsCache cache = mCustomSettingsCache;
-+        long now = SystemClock.uptimeMillis();
-+
-+        if (cache == null) {
-+            cache = new SettingsCache();
-+            force = true;
-+        }
-+
-+        if (!force && (now - cache.updatedAt) < SETTINGS_CACHE_TTL_MS) {
-+            return cache;
-+        }
-+
-+        cache.pullCoeff = getFloatSetting(ctx, KEY_PULL_COEFF, 1.5141f);
-+        cache.stiffness = getFloatSetting(ctx, KEY_STIFFNESS, 148.6191f);
-+        cache.damping = getFloatSetting(ctx, KEY_DAMPING, 0.9976f);
-+        cache.fling = getFloatSetting(ctx, KEY_FLING, 1.3679f);
-+        cache.minVel = getFloatSetting(ctx, KEY_PHYSICS_MIN_VEL, 8.0f);
-+        cache.minVal = getFloatSetting(ctx, KEY_PHYSICS_MIN_VAL, 0.6f);
-+        cache.inputSmooth = getFloatSetting(ctx, KEY_INPUT_SMOOTH_FACTOR, 0.5f);
-+        cache.animationSpeedPercent = getFloatSetting(ctx, KEY_ANIMATION_SPEED, 168.5232f);
-+        if (cache.animationSpeedPercent < 1.0f) cache.animationSpeedPercent = 1.0f;
-+        if (cache.animationSpeedPercent > 300.0f) cache.animationSpeedPercent = 300.0f;
-+        cache.animationSpeedMul = cache.animationSpeedPercent / 100.0f;
-+        cache.resExponent = getFloatSetting(ctx, KEY_RESISTANCE_EXPONENT, 4.0f);
-+        cache.lerpMainIdle = getFloatSetting(ctx, KEY_LERP_MAIN_IDLE, 0.4f);
-+        cache.lerpMainRun = getFloatSetting(ctx, KEY_LERP_MAIN_RUN, 0.6999f);
-+        cache.disableArbitraryRendering = getIntSetting(ctx, KEY_DISABLE_ARBITRARY_RENDERING, 0) == 1;
-+
-+        cache.scaleMode = getIntSetting(ctx, KEY_SCALE_MODE, 0);
-+        cache.scaleIntensity = getFloatSetting(ctx, KEY_SCALE_INTENSITY, 0.31f);
-+        cache.scaleIntensityHoriz = getFloatSetting(ctx, KEY_SCALE_INTENSITY_HORIZ, 0.3786f);
-+        cache.scaleLimitMin = getFloatSetting(ctx, KEY_SCALE_LIMIT_MIN, 0.1f);
-+
-+        cache.zoomMode = getIntSetting(ctx, KEY_ZOOM_MODE, 0);
-+        cache.zoomIntensity = getFloatSetting(ctx, KEY_ZOOM_INTENSITY, 0.2f);
-+        cache.zoomIntensityHoriz = getFloatSetting(ctx, KEY_ZOOM_INTENSITY_HORIZ, 0.2f);
-+        cache.zoomLimitMin = getFloatSetting(ctx, KEY_ZOOM_LIMIT_MIN, 0.1f);
-+        cache.zoomAnchorX = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X, 0.5f);
-+        cache.zoomAnchorY = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y, 0.5f);
-+        cache.zoomAnchorXHoriz = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_X_HORIZ, 0.5f);
-+        cache.zoomAnchorYHoriz = getFloatSetting(ctx, KEY_ZOOM_ANCHOR_Y_HORIZ, 0.5f);
-+
-+        cache.hScaleMode = getIntSetting(ctx, KEY_H_SCALE_MODE, 0);
-+        cache.hScaleIntensity = getFloatSetting(ctx, KEY_H_SCALE_INTENSITY, 0.2f);
-+        cache.hScaleIntensityHoriz = getFloatSetting(ctx, KEY_H_SCALE_INTENSITY_HORIZ, 0.0f);
-+        cache.hScaleLimitMin = getFloatSetting(ctx, KEY_H_SCALE_LIMIT_MIN, 0.1f);
-+
-+        cache.scaleAnchorY = getFloatSetting(ctx, KEY_SCALE_ANCHOR_Y, 0.5f);
-+        cache.hScaleAnchorX = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_X, 0.5f);
-+        cache.scaleAnchorXHoriz = getFloatSetting(ctx, KEY_SCALE_ANCHOR_X_HORIZ, 0.5f);
-+        cache.hScaleAnchorYHoriz = getFloatSetting(ctx, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f);
-+        cache.invertAnchor = getIntSetting(ctx, KEY_INVERT_ANCHOR, 1) == 1;
-+        cache.recordPatterns = getIntSetting(ctx, KEY_RECORD_PATTERNS, 0) == 1;
-+
-+        // ── Delta normalization keys ──
-+        cache.normEnabled = getIntSetting(ctx, KEY_NORM_ENABLED, 1) == 1;
-+        cache.normRefDelta = getFloatSetting(ctx, KEY_NORM_REF_DELTA, 9.9999f);
-+        cache.normDetectMul = getFloatSetting(ctx, KEY_NORM_DETECT_MUL, 0f);
-+        cache.normFactor = getFloatSetting(ctx, KEY_NORM_FACTOR, 0.33f);
-+        cache.normWindow = (int) getFloatSetting(ctx, KEY_NORM_WINDOW, 2f);
-+        cache.normRamp = (int) getFloatSetting(ctx, KEY_NORM_RAMP, 1f);
-+        cache.normDetectMode = getIntSetting(ctx, KEY_NORM_DETECT_MODE, 1);
-+        if (cache.normWindow < 2) cache.normWindow = 2;
-+        if (cache.normWindow > 64) cache.normWindow = 64;
-+        if (cache.normRamp < 1) cache.normRamp = 1;
-+        if (cache.normDetectMode < 0 || cache.normDetectMode > 2) cache.normDetectMode = 1;
-+
-+        cache.updatedAt = now;
-+        mCustomSettingsCache = cache;
-+        return cache;
-+    }
-+
-+    private static float calcScale(int mode, float intensity, float limit, float ratio) {
-+        if (mode == 0 || intensity <= 0) return 1.0f;
-+        if (mode == 1) return Math.max(1.0f - (ratio * intensity), limit);
-+        if (mode == 2) return 1.0f + (ratio * intensity);
-+        return 1.0f;
-+    }
-+
-+    private static float lerp(float start, float end, float factor) {
-+        return start + (end - start) * factor;
-+    }
-+
-+    private static boolean matchesWildcard(String pattern, String text) {
-+        if (pattern.equals("*")) return true;
-+        if (!pattern.contains("*")) return pattern.equals(text);
-+        // Split by '*' and match segments in order
-+        String[] segments = pattern.split("\\*", -1);
-+        int textIdx = 0;
-+        for (int i = 0; i < segments.length; i++) {
-+            String seg = segments[i];
-+            if (seg.isEmpty()) continue;
-+            int found = text.indexOf(seg, textIdx);
-+            if (found < 0) return false;
-+            // First segment must match at start if pattern doesn't start with '*'
-+            if (i == 0 && !pattern.startsWith("*") && found != 0) return false;
-+            textIdx = found + seg.length();
-+        }
-+        // Last segment must match at end if pattern doesn't end with '*'
-+        if (!pattern.endsWith("*")) {
-+            String lastSeg = segments[segments.length - 1];
-+            if (!lastSeg.isEmpty() && !text.endsWith(lastSeg)) return false;
-+        }
-+        return true;
-+    }
-+
-+    private static float getFloatSetting(Context ctx, String key, float def) {
-+        if (ctx == null) return def;
-+        try {
-+            return Settings.Global.getFloat(ctx.getContentResolver(), key, def);
-+        } catch (Exception ignored) { return def; }
-+    }
-+
-+    private static int getIntSetting(Context ctx, String key, int def) {
-+        if (ctx == null) return def;
-+        try {
-+            return Settings.Global.getInt(ctx.getContentResolver(), key, def);
-+        } catch (Exception ignored) { return def; }
-+    }
-+
-+    private static String getStringSetting(Context ctx, String key) {
-+        if (ctx == null) return null;
-+        try {
-+            return Settings.Global.getString(ctx.getContentResolver(), key);
-+        } catch (Exception ignored) { return null; }
-+    }
-+
-+    // ═══════════════════════════════════════════════════════════════════
-+    //  Custom bounce: SpringDynamics
-+    // ═══════════════════════════════════════════════════════════════════
-+
-+    /**
-+     * @hide
-+     */
-+    static class SpringDynamics {
-+        private float mStiffness = 450.0f;
-+        private float mDampingRatio = 0.7f;
-+        private float mMinVel = 1.0f;
-+        private float mMinVal = 0.5f;
-+        private float mSpeedMultiplier = 1.0f;
-+
-+        float mValue;
-+        float mVelocity;
-+        float mTargetValue = 0f;
-+        private boolean mIsRunning = false;
-+        private long mLastFrameTimeNanos = 0;
-+
-+        void setParams(float stiffness, float damping, float minVel, float minVal) {
-+            mStiffness = stiffness > 0 ? stiffness : 0.1f;
-+            mDampingRatio = damping >= 0 ? damping : 0;
-+            mMinVel = minVel;
-+            mMinVal = minVal;
-+        }
-+
-+        void setSpeedMultiplier(float speedMultiplier) {
-+            if (speedMultiplier < 0.01f) speedMultiplier = 0.01f;
-+            mSpeedMultiplier = speedMultiplier;
-+        }
-+
-+        void setTargetValue(float targetValue) { mTargetValue = targetValue; }
-+        void setVelocity(float velocity) { mVelocity = velocity; }
-+        boolean isRunning() { return mIsRunning; }
-+        void cancel() { mIsRunning = false; }
-+
-+        void start() {
-+            if (mIsRunning) return;
-+            mIsRunning = true;
-+            mLastFrameTimeNanos = System.nanoTime();
-+        }
-+
-+        void doFrame(long frameTimeNanos) {
-+            if (!mIsRunning) return;
-+            long deltaTimeNanos = frameTimeNanos - mLastFrameTimeNanos;
-+            if (deltaTimeNanos > 100_000_000) deltaTimeNanos = 16_000_000;
-+            mLastFrameTimeNanos = frameTimeNanos;
-+            float dt = (deltaTimeNanos / 1_000_000_000.0f) * mSpeedMultiplier;
-+
-+            float displacement = mValue - mTargetValue;
-+            float dampingCoefficient = 2 * mDampingRatio * (float) Math.sqrt(mStiffness);
-+            float force = -mStiffness * displacement - dampingCoefficient * mVelocity;
-+
-+            if (Float.isNaN(force) || Float.isInfinite(force)) force = 0;
-+
-+            mVelocity += force * dt;
-+            mValue += mVelocity * dt;
-+
-+            if (Float.isNaN(mValue) || Float.isInfinite(mValue)) {
-+                mValue = mTargetValue;
-+                mVelocity = 0;
-+                cancel();
-+                return;
-+            }
-+
-+            if (Math.abs(mVelocity) < mMinVel && Math.abs(mValue - mTargetValue) < mMinVal) {
-+                mValue = mTargetValue;
-+                mVelocity = 0;
-+                cancel();
-+            }
-+        }
 +    }
  }

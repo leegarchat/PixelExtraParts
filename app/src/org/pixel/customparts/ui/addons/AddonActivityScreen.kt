@@ -542,9 +542,6 @@ fun AddonMainEntryRow(
     }
 }
 
-private fun TextStyle.withAddonTextSize(sizeSp: Float): TextStyle {
-    return if (sizeSp > 0f) copy(fontSize = sizeSp.sp) else this
-}
 
 // =====================================================================
 // Helper: find entry by leafId in a tree

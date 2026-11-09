@@ -6,7 +6,7 @@ import android.provider.Settings
 import android.util.Log
 import com.android.internal.statusbar.IStatusBarService
 
-private const val TAG = "SystemUI_Restarter"
+internal const val TAG = "SystemUI_Restarter"
 const val MANUAL_RESTART_FLAG = "pixel_addon_manual_restart"
 
 fun restartSystemUI(context: Context) {

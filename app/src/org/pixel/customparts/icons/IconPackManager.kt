@@ -38,197 +38,17 @@ import java.util.Locale
 import java.util.zip.ZipFile
 import kotlin.math.roundToInt
 
-data class IconDashboardState(
-    val iconPacks: List<IconPackInfo>,
-    val installedApps: List<InstalledIconApp>,
-    val iconMap: IconMapSnapshot
-)
-
-data class IconPackInfo(
-    val packageName: String,
-    val label: String,
-    val icon: Drawable?,
-    val versionCode: Long,
-    val supportedIconCount: Int,
-    val supportedPackageCount: Int,
-    val appliedPackageCount: Int,
-    val status: IconPackApplyStatus,
-    val requiresUpdate: Boolean,
-    val installed: Boolean = true
-)
-
-enum class IconPackApplyStatus {
-    NOT_APPLIED,
-    APPLIED_PARTIAL,
-    APPLIED_FULL
-}
-
-data class IconPackEntry(
-    val iconPackPackage: String,
-    val appPackageName: String,
-    val componentName: String?,
-    val drawableName: String,
-    val label: String,
-    val installed: Boolean,
-    val isSystem: Boolean,
-    val dynamicIcon: DynamicIconInfo? = null
-)
-
-data class DynamicIconInfo(
-    val type: String,
-    val clockConfig: DynamicClockConfig? = null,
-    val calendarPrefix: String? = null,
-    val calendarFallbackDrawable: String? = null
-)
-
-data class DynamicClockConfig(
-    val hourLayerIndex: Int = -1,
-    val minuteLayerIndex: Int = -1,
-    val secondLayerIndex: Int = -1,
-    val defaultHour: Int = 0,
-    val defaultMinute: Int = 0,
-    val defaultSecond: Int = 0
-)
-
-data class IconPackPreviewItem(
-    val iconPackPackage: String,
-    val drawableName: String,
-    val label: String,
-    val appPackageName: String?
-)
-
-data class AppIconCandidate(
-    val iconPackPackage: String,
-    val iconPackLabel: String,
-    val drawableName: String
-)
-
-data class InstalledIconApp(
-    val label: String,
-    val packageName: String,
-    val icon: Drawable?,
-    val isSystem: Boolean,
-    val isLauncherVisible: Boolean,
-    val appliedIconPackLabel: String?,
-    val appliedIconFileName: String?,
-    val shapeOverrides: AppIconShapeOverrides?
-)
-
-data class IconApplyResult(
-    val requested: Int,
-    val applied: Int,
-    val failed: Int,
-    val removed: Int = 0,
-    val skipped: Int = 0
-)
-
-enum class IconApplyMode {
-    ALL_PACK,
-    SYSTEM_ONLY,
-    USER_ONLY,
-    INSTALLED_ONLY
-}
-
-data class IconApplyProgress(
-    val taskId: String,
-    val label: String,
-    val total: Int,
-    val processed: Int,
-    val applied: Int,
-    val failed: Int,
-    val removed: Int,
-    val skipped: Int,
-    val completed: Boolean,
-    val result: IconApplyResult? = null
-) {
-    val percent: Int
-        get() = if (total <= 0) 0 else ((processed * 100) / total).coerceIn(0, 100)
-}
-
-data class IconMapSnapshot(
-    val icons: Map<String, String>,
-    val sources: Map<String, IconSource>,
-    val packs: Map<String, IconPackVersion>,
-    val shapeOverrides: Map<String, AppIconShapeOverrides> = emptyMap()
-) {
-    companion object {
-        val EMPTY = IconMapSnapshot(emptyMap(), emptyMap(), emptyMap(), emptyMap())
-    }
-}
-
-enum class AppIconShapeArea(val jsonKey: String) {
-    SYSTEM("system"),
-    NOTIFICATION("notification"),
-    LAUNCHER("launcher")
-}
-
-data class IconShapeAreaConfig(
-    val stretchShape: Boolean = false,
-    val removeShape: Boolean = false,
-    val scalePercent: Float = IconPackManager.DEFAULT_SHAPE_SCALE_PERCENT
-) {
-    fun normalized(): IconShapeAreaConfig {
-        val remove = removeShape
-        return copy(
-            stretchShape = stretchShape && !remove,
-            scalePercent = scalePercent.coerceIn(
-                IconPackManager.MIN_SHAPE_SCALE_PERCENT,
-                IconPackManager.MAX_SHAPE_SCALE_PERCENT
-            )
-        )
-    }
-}
-
-data class AppIconShapeOverrides(
-    val system: IconShapeAreaConfig? = null,
-    val notification: IconShapeAreaConfig? = null,
-    val launcher: IconShapeAreaConfig? = null
-) {
-    fun area(area: AppIconShapeArea): IconShapeAreaConfig? = when (area) {
-        AppIconShapeArea.SYSTEM -> system
-        AppIconShapeArea.NOTIFICATION -> notification
-        AppIconShapeArea.LAUNCHER -> launcher
-    }
-
-    fun isEmpty(): Boolean = system == null && notification == null && launcher == null
-
-    fun normalizedOrNull(): AppIconShapeOverrides? {
-        val normalized = copy(
-            system = system?.normalized(),
-            notification = notification?.normalized(),
-            launcher = launcher?.normalized()
-        )
-        return normalized.takeUnless { it.isEmpty() }
-    }
-}
-
-data class IconSource(
-    val iconPackPackage: String,
-    val iconPackLabel: String,
-    val drawableName: String,
-    val iconPackVersionCode: Long,
-    val updatedAt: Long,
-    val dynamicIcon: DynamicIconInfo? = null
-)
-
-data class IconPackVersion(
-    val packageName: String,
-    val label: String,
-    val versionCode: Long,
-    val appliedAt: Long
-)
-
 object IconPackManager {
     const val RELOAD_ACTION = "com.pixelparts.intent.action.RELOAD_ICONS"
     const val MIN_SHAPE_SCALE_PERCENT = 0f
     const val MAX_SHAPE_SCALE_PERCENT = 200f
     const val DEFAULT_SHAPE_SCALE_PERCENT = 72f
-    private const val DYNAMIC_ICON_CALENDAR = "calendar"
-    private const val DYNAMIC_ICON_CLOCK = "clock"
+    internal const val DYNAMIC_ICON_CALENDAR = "calendar"
+    internal const val DYNAMIC_ICON_CLOCK = "clock"
 
     private const val TAG = "IconPackManager"
     private const val ICON_DP = 48
-    private const val CUSTOM_ICON_SOURCE_ID = "custom"
+    internal const val CUSTOM_ICON_SOURCE_ID = "custom"
     private val iconRoot = File("/data/pixelparts/IconsManager")
     private val iconMapFile = File(iconRoot, "icon_map.json")
     private val ioLock = Any()
@@ -237,11 +57,6 @@ object IconPackManager {
     @Volatile private var activeProgress: IconApplyProgress? = null
     @Volatile private var dashboardCache: IconDashboardState? = null
 
-    private val themeActions = listOf(
-        "org.adw.launcher.THEMES",
-        "com.teslacoilsw.launcher.THEME",
-        "com.novalauncher.THEME"
-    )
 
     private val densities = listOf(
         IconDensity("mdpi", 160),
@@ -591,375 +406,6 @@ object IconPackManager {
             }
         }
 
-    private fun loadIconPacks(
-        context: Context,
-        packageManager: PackageManager,
-        installedIndex: Map<String, InstalledAppRecord>,
-        iconMap: IconMapSnapshot
-    ): List<IconPackInfo> {
-        val discoveredPackages = discoverIconPackPackages(packageManager)
-        val appliedPackPackages = iconMap.sources.values
-            .map { it.iconPackPackage }
-            .filterNot { it == CUSTOM_ICON_SOURCE_ID }
-            .toSet()
-        return (discoveredPackages + appliedPackPackages).distinct().mapNotNull { packageName ->
-            val packageInfo = runCatching { packageManager.getPackageInfo(packageName, 0) }.getOrNull()
-            if (packageInfo == null) {
-                val storedPack = iconMap.packs[packageName]
-                val appliedSources = iconMap.sources.values.filter { it.iconPackPackage == packageName }
-                val fallbackSource = appliedSources.firstOrNull()
-                if (storedPack == null && fallbackSource == null) return@mapNotNull null
-                return@mapNotNull IconPackInfo(
-                    packageName = packageName,
-                    label = storedPack?.label?.takeIf { it.isNotBlank() }
-                        ?: fallbackSource?.iconPackLabel?.takeIf { it.isNotBlank() }
-                        ?: packageName,
-                    icon = null,
-                    versionCode = storedPack?.versionCode ?: fallbackSource?.iconPackVersionCode ?: 0L,
-                    supportedIconCount = appliedSources.map { it.drawableName }.distinct().size,
-                    supportedPackageCount = appliedSources.size,
-                    appliedPackageCount = appliedSources.size,
-                    status = IconPackApplyStatus.APPLIED_PARTIAL,
-                    requiresUpdate = false,
-                    installed = false
-                )
-            }
-            val appInfo = packageInfo.applicationInfo ?: return@mapNotNull null
-            val label = appInfo.loadLabel(packageManager)?.toString()?.takeIf { it.isNotBlank() }
-                ?: packageName
-            val entries = parseIconPackEntries(context, packageName, installedIndex)
-            val supportedPackages = entries.map { it.appPackageName }.distinct()
-            val appliedPackages = supportedPackages.count {
-                iconMap.sources[it]?.iconPackPackage == packageName
-            }
-            val status = when {
-                supportedPackages.isEmpty() || appliedPackages == 0 -> IconPackApplyStatus.NOT_APPLIED
-                appliedPackages >= supportedPackages.size -> IconPackApplyStatus.APPLIED_FULL
-                else -> IconPackApplyStatus.APPLIED_PARTIAL
-            }
-            val versionCode = packageInfo.versionCodeLong()
-            val lastAppliedVersion = iconMap.packs[packageName]?.versionCode
-
-            IconPackInfo(
-                packageName = packageName,
-                label = label,
-                icon = appInfo.loadIcon(packageManager),
-                versionCode = versionCode,
-                supportedIconCount = entries.map { it.drawableName }.distinct().size,
-                supportedPackageCount = supportedPackages.size,
-                appliedPackageCount = appliedPackages,
-                status = status,
-                requiresUpdate = lastAppliedVersion != null && lastAppliedVersion != versionCode,
-                installed = true
-            )
-        }.sortedBy { it.label.lowercase(Locale.getDefault()) }
-    }
-
-    private fun loadIconPackSelectionEntries(
-        context: Context,
-        iconPackPackage: String,
-        installedIndex: Map<String, InstalledAppRecord>,
-        iconMap: IconMapSnapshot
-    ): List<IconPackEntry> {
-        val parsedEntries = parseIconPackEntries(context, iconPackPackage, installedIndex)
-        val parsedPackages = parsedEntries.map { it.appPackageName }.toSet()
-        val storedEntries = iconMap.sources
-            .filterValues { it.iconPackPackage == iconPackPackage }
-            .filterKeys { it !in parsedPackages }
-            .map { (packageName, source) ->
-                val installedApp = installedIndex[packageName]
-                IconPackEntry(
-                    iconPackPackage = iconPackPackage,
-                    appPackageName = packageName,
-                    componentName = null,
-                    drawableName = source.drawableName,
-                    label = installedApp?.label ?: packageName,
-                    installed = installedApp != null,
-                    isSystem = installedApp?.isSystem == true,
-                    dynamicIcon = source.dynamicIcon
-                )
-            }
-        return (parsedEntries + storedEntries).sortedWith(
-            compareBy<IconPackEntry> { it.label.lowercase(Locale.getDefault()) }
-                .thenBy { it.appPackageName }
-                .thenBy { it.drawableName }
-        )
-    }
-
-    private fun buildInstalledApps(
-        installedIndex: Map<String, InstalledAppRecord>,
-        iconMap: IconMapSnapshot,
-        packLabels: Map<String, String>
-    ): List<InstalledIconApp> {
-        return installedIndex.values.map { app ->
-            val source = iconMap.sources[app.packageName]
-            InstalledIconApp(
-                label = app.label,
-                packageName = app.packageName,
-                icon = app.icon,
-                isSystem = app.isSystem,
-                isLauncherVisible = app.isLauncherVisible,
-                appliedIconPackLabel = source?.let { packLabels[it.iconPackPackage] ?: it.iconPackLabel },
-                appliedIconFileName = iconMap.icons[app.packageName],
-                shapeOverrides = iconMap.shapeOverrides[app.packageName]
-            )
-        }.sortedWith(
-            compareBy<InstalledIconApp> { it.label.lowercase(Locale.getDefault()) }
-                .thenBy { it.packageName }
-        )
-    }
-
-    private fun discoverIconPackPackages(packageManager: PackageManager): List<String> {
-        val packages = linkedSetOf<String>()
-        themeActions.forEach { action ->
-            val intent = Intent(action)
-            runCatching { packageManager.queryIntentActivities(intent, 0) }.getOrDefault(emptyList())
-                .mapNotNullTo(packages) { it.activityInfo?.packageName ?: it.resolvePackageName }
-            runCatching { packageManager.queryBroadcastReceivers(intent, 0) }.getOrDefault(emptyList())
-                .mapNotNullTo(packages) { it.activityInfo?.packageName ?: it.resolvePackageName }
-            runCatching { packageManager.queryIntentServices(intent, 0) }.getOrDefault(emptyList())
-                .mapNotNullTo(packages) { it.serviceInfo?.packageName ?: it.resolvePackageName }
-        }
-        return packages.toList()
-    }
-
-    private fun parseIconPackEntries(
-        context: Context,
-        iconPackPackage: String,
-        installedIndex: Map<String, InstalledAppRecord>
-    ): List<IconPackEntry> {
-        val packContext = runCatching { createIconPackContext(context, iconPackPackage) }.getOrNull()
-            ?: return emptyList()
-        val entries = mutableListOf<IconPackEntry>()
-
-        runCatching {
-            openAppFilterParser(packContext)?.useParser { parser ->
-                var event = parser.eventType
-                while (event != XmlPullParser.END_DOCUMENT) {
-                    if (event == XmlPullParser.START_TAG) {
-                        when (parser.name) {
-                            "item" -> parseStaticIconEntry(
-                                parser,
-                                iconPackPackage,
-                                installedIndex
-                            )?.let { entries += it }
-
-                            "calendar" -> parseCalendarIconEntry(
-                                parser,
-                                packContext,
-                                iconPackPackage,
-                                installedIndex
-                            )?.let { entries += it }
-
-                            "dynamic-clock", "dynamic_clock", "clock" -> parseDynamicClockIconEntry(
-                                parser,
-                                iconPackPackage,
-                                installedIndex
-                            )?.let { entries += it }
-                        }
-                    }
-                    event = parser.next()
-                }
-            }
-        }.onFailure { Log.w(TAG, "Unable to parse appfilter.xml for $iconPackPackage", it) }
-
-        return entries.distinctBy { it.appPackageName + "|" + it.drawableName }
-            .sortedWith(
-                compareByDescending<IconPackEntry> { it.installed }
-                    .thenBy { it.label.lowercase(Locale.getDefault()) }
-                    .thenBy { it.appPackageName }
-                    .thenBy { it.drawableName }
-            )
-    }
-
-    private fun parseStaticIconEntry(
-        parser: XmlPullParser,
-        iconPackPackage: String,
-        installedIndex: Map<String, InstalledAppRecord>
-    ): IconPackEntry? {
-        val component = parser.getAttributeValue(null, "component")
-        val drawable = parser.getAttributeValue(null, "drawable")
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-        val appPackage = parseComponentPackage(component)
-        return buildIconPackEntry(iconPackPackage, appPackage, component, drawable, installedIndex)
-    }
-
-    private fun parseCalendarIconEntry(
-        parser: XmlPullParser,
-        packContext: Context,
-        iconPackPackage: String,
-        installedIndex: Map<String, InstalledAppRecord>
-    ): IconPackEntry? {
-        val component = parser.getAttributeValue(null, "component")
-        val appPackage = parseComponentPackage(component)
-        val prefix = parser.getAttributeValue(null, "prefix")?.trim()?.takeIf { it.isNotBlank() }
-        val fallbackDrawable = parser.getAttributeValue(null, "drawable")?.trim()?.takeIf { it.isNotBlank() }
-        val drawable = resolveCalendarDrawableName(packContext, prefix, fallbackDrawable)
-        return buildIconPackEntry(
-            iconPackPackage,
-            appPackage,
-            component,
-            drawable,
-            installedIndex,
-            DynamicIconInfo(
-                type = DYNAMIC_ICON_CALENDAR,
-                calendarPrefix = prefix,
-                calendarFallbackDrawable = fallbackDrawable
-            )
-        )
-    }
-
-    private fun parseDynamicClockIconEntry(
-        parser: XmlPullParser,
-        iconPackPackage: String,
-        installedIndex: Map<String, InstalledAppRecord>
-    ): IconPackEntry? {
-        val component = parser.getAttributeValue(null, "component")
-        val drawable = parser.getAttributeValue(null, "drawable")
-            ?.trim()
-            ?.takeIf { it.isNotBlank() }
-        val appPackage = parseComponentPackage(component)
-        val clockConfig = DynamicClockConfig(
-            hourLayerIndex = parser.intAttribute("hourLayerIndex", "hourLayer", "hour", defaultValue = -1),
-            minuteLayerIndex = parser.intAttribute("minuteLayerIndex", "minuteLayer", "minute", defaultValue = -1),
-            secondLayerIndex = parser.intAttribute("secondLayerIndex", "secondLayer", "second", defaultValue = -1),
-            defaultHour = parser.intAttribute("defaultHour", defaultValue = 0),
-            defaultMinute = parser.intAttribute("defaultMinute", defaultValue = 0),
-            defaultSecond = parser.intAttribute("defaultSecond", defaultValue = 0)
-        )
-        return buildIconPackEntry(
-            iconPackPackage,
-            appPackage,
-            component,
-            drawable,
-            installedIndex,
-            DynamicIconInfo(DYNAMIC_ICON_CLOCK, clockConfig)
-        )
-    }
-
-    private fun buildIconPackEntry(
-        iconPackPackage: String,
-        appPackage: String?,
-        component: String?,
-        drawable: String?,
-        installedIndex: Map<String, InstalledAppRecord>,
-        dynamicIcon: DynamicIconInfo? = null
-    ): IconPackEntry? {
-        if (appPackage.isNullOrBlank() || drawable.isNullOrBlank()) return null
-        val installedApp = installedIndex[appPackage]
-        return IconPackEntry(
-            iconPackPackage = iconPackPackage,
-            appPackageName = appPackage,
-            componentName = component,
-            drawableName = drawable,
-            label = installedApp?.label ?: appPackage,
-            installed = installedApp != null,
-            isSystem = installedApp?.isSystem == true,
-            dynamicIcon = dynamicIcon
-        )
-    }
-
-    private fun singleSelectionEntries(
-        context: Context,
-        iconPackPackage: String,
-        packageName: String,
-        drawableName: String?,
-        installedIndex: Map<String, InstalledAppRecord>
-    ): List<IconPackEntry> {
-        val parsedEntries = parseIconPackEntries(context, iconPackPackage, installedIndex)
-            .filter { it.appPackageName == packageName && (drawableName == null || it.drawableName == drawableName) }
-        if (parsedEntries.isNotEmpty() || drawableName.isNullOrBlank()) {
-            return parsedEntries
-        }
-
-        val installedApp = installedIndex[packageName]
-        return listOf(
-            IconPackEntry(
-                iconPackPackage = iconPackPackage,
-                appPackageName = packageName,
-                componentName = null,
-                drawableName = drawableName,
-                label = installedApp?.label ?: packageName,
-                installed = installedApp != null,
-                isSystem = installedApp?.isSystem == true
-            )
-        )
-    }
-
-    private fun resolveCalendarDrawableName(
-        context: Context,
-        prefix: String?,
-        fallbackDrawable: String?
-    ): String? {
-        val day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-        val dayPadded = day.toString().padStart(2, '0')
-        val candidates = buildList {
-            prefix?.let { value ->
-                add("$value$day")
-                add("$value$dayPadded")
-                add("${value}_$day")
-                add("${value}_$dayPadded")
-            }
-            fallbackDrawable?.let { drawable ->
-                add(drawable.replace("%02d", dayPadded).replace("%d", day.toString()))
-                replaceTrailingCalendarNumber(drawable, day.toString(), dayPadded)?.let(::add)
-                add(drawable)
-            }
-        }.distinct()
-        return candidates.firstOrNull { drawableResourceExists(context, it) } ?: candidates.firstOrNull()
-    }
-
-    private fun replaceTrailingCalendarNumber(value: String, day: String, dayPadded: String): String? {
-        val extensionStart = value.lastIndexOf('.').takeIf { it > 0 } ?: value.length
-        val numberStart = value.substring(0, extensionStart).indexOfLast { !it.isDigit() } + 1
-        if (numberStart >= extensionStart) return null
-        val replacement = if (extensionStart - numberStart >= 2) dayPadded else day
-        return value.substring(0, numberStart) + replacement + value.substring(extensionStart)
-    }
-
-    private fun drawableResourceExists(context: Context, drawableName: String): Boolean {
-        val cleanName = drawableName.substringBeforeLast('.').trim()
-        if (cleanName.isBlank()) return false
-        val resources = context.resources
-        return resources.getIdentifier(cleanName, "drawable", context.packageName) != 0 ||
-            resources.getIdentifier(cleanName, "mipmap", context.packageName) != 0
-    }
-
-    private fun XmlPullParser.intAttribute(
-        vararg names: String,
-        defaultValue: Int
-    ): Int {
-        return names.firstNotNullOfOrNull { name ->
-            getAttributeValue(null, name)?.trim()?.toIntOrNull()
-        } ?: defaultValue
-    }
-
-    private fun openAppFilterParser(context: Context): ParserHolder? {
-        runCatching {
-            val input = context.assets.open("appfilter.xml")
-            val parser = Xml.newPullParser()
-            parser.setInput(input, null)
-            return ParserHolder(parser, input)
-        }
-
-        val resId = context.resources.getIdentifier("appfilter", "xml", context.packageName)
-        if (resId != 0) {
-            runCatching {
-                val parser = context.resources.getXml(resId)
-                return ParserHolder(parser, parser)
-            }
-        }
-
-        return null
-    }
-
-    private fun parseComponentPackage(component: String?): String? {
-        if (component.isNullOrBlank()) return null
-        val body = component.substringAfter("ComponentInfo{", component).substringBefore("}")
-        return body.substringBefore("/").takeIf { it.isNotBlank() }
-    }
-
     private fun applyIconSelection(
         context: Context,
         iconPackPackage: String,
@@ -1190,15 +636,6 @@ object IconPackManager {
         }
     }
 
-    private fun filterEntriesForMode(entries: List<IconPackEntry>, mode: IconApplyMode): List<IconPackEntry> {
-        return when (mode) {
-            IconApplyMode.ALL_PACK -> entries
-            IconApplyMode.SYSTEM_ONLY -> entries.filter { it.installed && it.isSystem }
-            IconApplyMode.USER_ONLY -> entries.filter { it.installed && !it.isSystem }
-            IconApplyMode.INSTALLED_ONLY -> entries.filter { it.installed }
-        }
-    }
-
     private fun startBackgroundOperation(
         initialLabel: String,
         block: (String) -> IconApplyResult
@@ -1344,21 +781,6 @@ object IconPackManager {
         }
     }
 
-    private fun decodeBitmapFromUri(context: Context, uri: Uri): Bitmap? {
-        return runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, _, _ ->
-                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-                    decoder.isMutableRequired = false
-                }.copy(Bitmap.Config.ARGB_8888, false)
-            } else {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input)?.copy(Bitmap.Config.ARGB_8888, false)
-                }
-            }
-        }.getOrNull()
-    }
-
     private fun exportBitmapForAllDensities(bitmap: Bitmap, fileName: String): Boolean {
         var exportedAny = false
         densities.forEach { density ->
@@ -1380,24 +802,6 @@ object IconPackManager {
             exportedAny = true
         }
         return exportedAny
-    }
-
-    private fun Bitmap.toCenteredSquareBitmap(targetPx: Int): Bitmap {
-        val output = Bitmap.createBitmap(targetPx, targetPx, Bitmap.Config.ARGB_8888)
-        val scale = minOf(targetPx / width.toFloat(), targetPx / height.toFloat())
-        val scaledWidth = (width * scale).roundToInt().coerceAtLeast(1)
-        val scaledHeight = (height * scale).roundToInt().coerceAtLeast(1)
-        val scaled = Bitmap.createScaledBitmap(this, scaledWidth, scaledHeight, true)
-        Canvas(output).drawBitmap(
-            scaled,
-            ((targetPx - scaledWidth) / 2f),
-            ((targetPx - scaledHeight) / 2f),
-            null
-        )
-        if (scaled !== this) {
-            scaled.recycle()
-        }
-        return output
     }
 
     private fun Drawable.toNormalizedIconBitmap(targetPx: Int): Bitmap {
@@ -1438,32 +842,6 @@ object IconPackManager {
         return output
     }
 
-    private fun Bitmap.visibleAlphaBounds(): Rect? {
-        var left = width
-        var top = height
-        var right = -1
-        var bottom = -1
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                if ((getPixel(x, y) ushr 24) > 8) {
-                    if (x < left) left = x
-                    if (x > right) right = x
-                    if (y < top) top = y
-                    if (y > bottom) bottom = y
-                }
-            }
-        }
-        return if (right >= left && bottom >= top) Rect(left, top, right + 1, bottom + 1) else null
-    }
-
-    private fun getDisplayName(context: Context, uri: Uri): String? {
-        return runCatching {
-            context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-        }.getOrNull()?.takeIf { it.isNotBlank() }
-    }
-
     private fun hasExportedIcon(fileName: String): Boolean {
         return densities.any { density -> File(File(iconRoot, density.folder), fileName).isFile }
     }
@@ -1474,69 +852,6 @@ object IconPackManager {
                 File(File(iconRoot, density.folder), safeName).delete()
             }
         }
-    }
-
-    private fun loadIconPackDrawable(
-        context: Context,
-        drawableName: String,
-        dynamicIcon: DynamicIconInfo? = null
-    ): Drawable? {
-        val cleanName = drawableName.substringBeforeLast('.').trim()
-        if (cleanName.isBlank()) return null
-        val resources = context.resources
-        val resId = resources.getIdentifier(cleanName, "drawable", context.packageName)
-            .takeIf { it != 0 }
-            ?: resources.getIdentifier(cleanName, "mipmap", context.packageName).takeIf { it != 0 }
-            ?: return null
-        val drawable = runCatching { resources.getDrawable(resId, context.theme) }.getOrNull()
-            ?: return null
-        return if (dynamicIcon?.type == DYNAMIC_ICON_CLOCK && dynamicIcon.clockConfig != null) {
-            DynamicClockDrawable(drawable, dynamicIcon.clockConfig)
-        } else {
-            drawable
-        }
-    }
-
-    private fun loadInstalledApplicationIndex(packageManager: PackageManager): Map<String, InstalledAppRecord> {
-        val launcherPackages = loadLauncherVisiblePackages(packageManager)
-        return runCatching { packageManager.getInstalledApplications(PackageManager.GET_META_DATA) }
-            .getOrDefault(emptyList())
-            .mapNotNull { info ->
-                val packageName = info.packageName ?: return@mapNotNull null
-                val label = info.loadLabel(packageManager)?.toString()?.takeIf { it.isNotBlank() }
-                    ?: packageName
-                InstalledAppRecord(
-                    label = label,
-                    packageName = packageName,
-                    icon = loadOriginalApplicationIcon(packageManager, info),
-                    isSystem = info.isSystemApplication(),
-                    isLauncherVisible = launcherPackages.contains(packageName)
-                )
-            }.associateBy { it.packageName }
-    }
-
-    private fun loadOriginalApplicationIcon(
-        packageManager: PackageManager,
-        info: ApplicationInfo
-    ): Drawable? {
-        val iconResId = when {
-            info.icon != 0 -> info.icon
-            info.logo != 0 -> info.logo
-            else -> 0
-        }
-        if (iconResId != 0) {
-            runCatching {
-                packageManager.getResourcesForApplication(info).getDrawable(iconResId, null)
-            }.getOrNull()?.let { return it }
-        }
-        return runCatching { info.loadUnbadgedIcon(packageManager) }.getOrNull()
-    }
-
-    private fun loadLauncherVisiblePackages(packageManager: PackageManager): Set<String> {
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return runCatching { packageManager.queryIntentActivities(intent, 0) }
-            .getOrDefault(emptyList())
-            .mapNotNullTo(linkedSetOf()) { it.activityInfo?.packageName ?: it.resolvePackageName }
     }
 
     private fun readIconMap(): IconMapSnapshot {
@@ -1658,68 +973,6 @@ object IconPackManager {
         iconMapFile.setReadable(true, false)
     }
 
-    private fun readShapeAreaConfig(areaObject: JSONObject?): IconShapeAreaConfig? {
-        if (areaObject == null) return null
-        return IconShapeAreaConfig(
-            stretchShape = areaObject.optBoolean("stretchShape", false),
-            removeShape = areaObject.optBoolean("removeShape", false),
-            scalePercent = areaObject.optDouble("scalePercent", DEFAULT_SHAPE_SCALE_PERCENT.toDouble()).toFloat()
-        ).normalized()
-    }
-
-    private fun writeShapeAreaConfig(config: IconShapeAreaConfig?): JSONObject? {
-        val normalized = config?.normalized() ?: return null
-        return JSONObject().apply {
-            put("stretchShape", normalized.stretchShape)
-            put("removeShape", normalized.removeShape)
-            put("scalePercent", normalized.scalePercent)
-        }
-    }
-
-    private fun readDynamicIconInfo(sourceObject: JSONObject): DynamicIconInfo? {
-        val dynamicObject = sourceObject.optJSONObject("dynamicIcon")
-        val type = (dynamicObject?.optString("type") ?: sourceObject.optString("dynamicType"))
-            .takeIf { it.isNotBlank() }
-            ?: return null
-        val clockObject = dynamicObject?.optJSONObject("clockConfig") ?: sourceObject.optJSONObject("clockConfig")
-        return DynamicIconInfo(
-            type = type,
-            clockConfig = clockObject?.let {
-                DynamicClockConfig(
-                    hourLayerIndex = it.optInt("hourLayerIndex", -1),
-                    minuteLayerIndex = it.optInt("minuteLayerIndex", -1),
-                    secondLayerIndex = it.optInt("secondLayerIndex", -1),
-                    defaultHour = it.optInt("defaultHour", 0),
-                    defaultMinute = it.optInt("defaultMinute", 0),
-                    defaultSecond = it.optInt("defaultSecond", 0)
-                )
-            },
-            calendarPrefix = dynamicObject?.optString("calendarPrefix")?.takeIf { it.isNotBlank() }
-                ?: sourceObject.optString("calendarPrefix").takeIf { it.isNotBlank() },
-            calendarFallbackDrawable = dynamicObject?.optString("calendarFallbackDrawable")?.takeIf { it.isNotBlank() }
-                ?: sourceObject.optString("calendarFallbackDrawable").takeIf { it.isNotBlank() }
-        )
-    }
-
-    private fun writeDynamicIconInfo(dynamicIcon: DynamicIconInfo?): JSONObject? {
-        dynamicIcon ?: return null
-        return JSONObject().apply {
-            put("type", dynamicIcon.type)
-            dynamicIcon.calendarPrefix?.let { put("calendarPrefix", it) }
-            dynamicIcon.calendarFallbackDrawable?.let { put("calendarFallbackDrawable", it) }
-            dynamicIcon.clockConfig?.let { config ->
-                put("clockConfig", JSONObject().apply {
-                    put("hourLayerIndex", config.hourLayerIndex)
-                    put("minuteLayerIndex", config.minuteLayerIndex)
-                    put("secondLayerIndex", config.secondLayerIndex)
-                    put("defaultHour", config.defaultHour)
-                    put("defaultMinute", config.defaultMinute)
-                    put("defaultSecond", config.defaultSecond)
-                })
-            }
-        }
-    }
-
     private fun ensureStorageDirs() {
         iconRoot.mkdirs()
         iconRoot.setReadable(true, false)
@@ -1733,27 +986,6 @@ object IconPackManager {
         }
     }
 
-    private fun findDrawableResourceNames(sourceDir: String): List<String> {
-        return runCatching {
-            ZipFile(sourceDir).use { zip ->
-                zip.entries().asSequence()
-                    .map { it.name }
-                    .filter { path ->
-                        (path.startsWith("res/drawable") || path.startsWith("res/mipmap")) &&
-                            (path.endsWith(".png") || path.endsWith(".webp") || path.endsWith(".xml") || path.endsWith(".jpg"))
-                    }
-                    .map { path ->
-                        path.substringAfterLast('/')
-                            .substringBeforeLast('.')
-                            .removeSuffix(".9")
-                    }
-                    .filter { it.isNotBlank() }
-                    .distinct()
-                    .toList()
-            }
-        }.getOrDefault(emptyList())
-    }
-
     private fun findIconFile(fileName: String, densityDpi: Int): File? {
         val currentFolder = densityFolderForDpi(densityDpi)
         val current = File(File(iconRoot, currentFolder), fileName)
@@ -1765,57 +997,15 @@ object IconPackManager {
         return null
     }
 
-    private fun densityFolderForDpi(densityDpi: Int): String = when {
-        densityDpi <= 160 -> "mdpi"
-        densityDpi <= 240 -> "hdpi"
-        densityDpi <= 320 -> "xhdpi"
-        densityDpi <= 480 -> "xxhdpi"
-        else -> "xxxhdpi"
-    }
-
     private fun sendReloadBroadcast(context: Context) {
         context.sendBroadcast(
             Intent(RELOAD_ACTION).addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND)
         )
     }
 
-    private fun createIconPackContext(context: Context, iconPackPackage: String): Context {
-        return context.createPackageContext(iconPackPackage, Context.CONTEXT_IGNORE_SECURITY)
-    }
-
-    private fun fileNameForPackage(packageName: String): String {
-        return packageName.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".png"
-    }
-
-    private fun normalizeFileName(value: String): String? {
-        val fileName = value.trim()
-        if (fileName.isBlank() || fileName.contains('/') || fileName.contains('\\') || fileName.contains("..")) {
-            return null
-        }
-        return if (fileName.endsWith(".png")) fileName else "$fileName.png"
-    }
-
-    private fun PackageInfo.versionCodeLong(): Long {
-        @Suppress("DEPRECATION")
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) longVersionCode else versionCode.toLong()
-    }
-
-    private fun ApplicationInfo.isSystemApplication(): Boolean {
-        return (flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
-            (flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-    }
-
     private data class IconDensity(val folder: String, val dpi: Int)
 
-    private data class InstalledAppRecord(
-        val label: String,
-        val packageName: String,
-        val icon: Drawable?,
-        val isSystem: Boolean,
-        val isLauncherVisible: Boolean
-    )
-
-    private class DynamicClockDrawable(
+    internal class DynamicClockDrawable(
         private val drawable: Drawable,
         private val config: DynamicClockConfig
     ) : Drawable() {
@@ -1885,16 +1075,4 @@ object IconPackManager {
         override fun getIntrinsicHeight(): Int = drawable.intrinsicHeight
     }
 
-    private class ParserHolder(
-        val parser: XmlPullParser,
-        private val closeable: AutoCloseable
-    ) : AutoCloseable {
-        override fun close() {
-            closeable.close()
-        }
-    }
-
-    private inline fun ParserHolder.useParser(block: (XmlPullParser) -> Unit) {
-        use { holder -> block(holder.parser) }
-    }
 }

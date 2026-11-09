@@ -1,4 +1,4 @@
-package org.pixel.customparts.services
+package org.pixel.customparts.receivers
 
 import android.content.BroadcastReceiver
 import android.content.Context

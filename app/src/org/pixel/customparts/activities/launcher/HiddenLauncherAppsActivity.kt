@@ -575,22 +575,6 @@ private fun SystemAppBadge() {
     }
 }
 
-@Composable
-private fun EmptyStateText(text: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(20.dp)
-        )
-    }
-}
-
 private suspend fun loadHiddenLauncherApps(context: Context): HiddenLauncherAppsLoadResult =
     withContext(Dispatchers.IO) {
         val manager = context.getSystemService(AxSandboxManager::class.java)

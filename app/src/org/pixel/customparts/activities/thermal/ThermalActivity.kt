@@ -467,7 +467,7 @@ data class ThermalMode(val id: Int, val labelRes: Int)
  * на светлом контейнере затемняет, на тёмном — осветляет к белому.
  * Локально для Thermal, чтобы не трогать общие компоненты.
  */
-private fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color {
+internal fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color {
     val luminance = 0.2126f * red + 0.7152f * green + 0.0722f * blue
     val shifted = if (luminance > 0.55f) {
         copy(red = red * 0.8f, green = green * 0.8f, blue = blue * 0.8f)

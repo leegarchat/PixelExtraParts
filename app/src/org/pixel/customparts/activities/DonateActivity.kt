@@ -60,7 +60,7 @@ import java.net.URL
 import java.net.UnknownHostException
 import java.util.Locale
 
-private const val TAG = "DonateActivity"
+internal const val TAG = "DonateActivity"
 
 class DonateActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
