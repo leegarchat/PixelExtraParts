@@ -161,6 +161,10 @@ public final class FlashBlinkHook {
 
     private static void onRomStateChanged(Context context, int state) {
         Log.i(TAG, "rom state=" + state);
+        synchronized (LOCK) {
+            // Any state move cancels a pending SIM hold below.
+            sRomGen++;
+        }
         boolean simOn = Settings.getCallsEnabled(context);
         boolean voipOn = Settings.getVoipEnabled(context);
         if (!simOn && !voipOn) {
@@ -199,6 +203,56 @@ public final class FlashBlinkHook {
             }
         }
         sRomCall = state;
+        // Hold the SIM burst briefly: a messenger call notification that is
+        // still in flight would otherwise lose the race (ROM observer fires
+        // first) and flash the SIM pattern once before VoIP takes over.
+        // If a VoIP key lands during the hold, SIM yields without a blink.
+        final int gen;
+        synchronized (LOCK) {
+            gen = sRomGen;
+        }
+        final Context appContext = context;
+        Log.i(TAG, "rom ring: hold SIM 350ms for voip key (gen=" + gen + ")");
+        try {
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(
+                    new Runnable() {
+                        @Override public void run() {
+                            startRomSimIfClear(appContext, gen);
+                        }
+                    }, ROM_SIM_HOLD_MS);
+        } catch (Throwable t) {
+            Log.w(TAG, "rom ring: no looper, SIM goes immediate: " + t);
+            startRomSimBurst(context);
+        }
+    }
+
+    /** Fires the held SIM burst only if no VoIP key arrived meanwhile. */
+    private static void startRomSimIfClear(Context context, int gen) {
+        synchronized (LOCK) {
+            if (gen != sRomGen) {
+                Log.i(TAG, "rom ring: hold gen stale, drop");
+                return;
+            }
+            if (sVoipKey != null) {
+                Log.i(TAG, "rom ring: voip key arrived during hold, SIM yields");
+                sRomCall = ROM_IDLE;
+                return;
+            }
+        }
+        if (sRomCall != ROM_RINGING) {
+            Log.i(TAG, "rom ring: state moved during hold, drop");
+            return;
+        }
+        if (!Settings.getCallsEnabled(context)) {
+            Log.i(TAG, "rom ring: SIM went off during hold, drop");
+            sRomCall = ROM_IDLE;
+            return;
+        }
+        startRomSimBurst(context);
+    }
+
+    /** Immediate SIM burst (held path above, or no-Looper fallback). */
+    private static void startRomSimBurst(Context context) {
         int strength = clamp(Settings.getSimBrightness(context), 1, 45);
         int count = clamp(Settings.getSimCount(context), 1, 50);
         int blink = clamp(Settings.getSimBlinkMs(context), 50, 2000);
@@ -613,6 +667,10 @@ public final class FlashBlinkHook {
     }
 
     private static String sVoipBurstSig;
+    /** SIM hold generation: any ROM state move or new VoIP key bumps it,
+     * cancelling a pending SIM hold. Guarded by LOCK. */
+    private static int sRomGen;
+    private static final int ROM_SIM_HOLD_MS = 350;
     private static volatile boolean sLegacyRinging;
 
     /** Packages that render the *SIM* call UI — their call notifications are
@@ -675,6 +733,7 @@ public final class FlashBlinkHook {
             if (!key.equals(sVoipKey)) {
                 sVoipKey = key;
                 sVoipBurstSig = null;
+                sRomGen++; // cancel any pending SIM hold: messenger wins
                 boolean fsi = false;
                 try {
                     fsi = n.fullScreenIntent != null;
