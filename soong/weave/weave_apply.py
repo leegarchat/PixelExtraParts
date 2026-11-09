@@ -13,7 +13,7 @@ from pathlib import Path
 HUNK_RE = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 
 
-def apply_unified_diff(base_lines, diff_text, label="spec"):
+def apply_unified_diff(base_lines, diff_text, label="spec", target=None):
     """Apply unified diff to base_lines (list of lines WITH endings).
 
     Content-exact, position-flexible: each hunk's context must match
@@ -32,6 +32,7 @@ def apply_unified_diff(base_lines, diff_text, label="spec"):
         old_start = int(m.group(1))
         old_count = int(m.group(2)) if m.group(2) is not None else 1
         new_count = int(m.group(4)) if m.group(4) is not None else 1
+        header = lines[i].strip()
         i += 1
         old_block, new_block = [], []
         while i < len(lines) and not HUNK_RE.match(lines[i]):
@@ -46,7 +47,7 @@ def apply_unified_diff(base_lines, diff_text, label="spec"):
             if ln[0] in (" ", "+"):
                 new_block.append(ln[1:])
             i += 1
-        hunks.append((old_start, old_count, new_count, old_block, new_block))
+        hunks.append((old_start, old_count, new_count, old_block, new_block, header))
 
     if not hunks:
         raise ValueError(f"{label}: no hunks found")
@@ -56,11 +57,12 @@ def apply_unified_diff(base_lines, diff_text, label="spec"):
     base_has_nl = not base_lines or base_lines[-1].endswith("\n")
     out = list(base)
     offset = 0  # cumulative shift from already-applied hunks
-    for hi, (old_start, old_count, new_count, old_block, new_block) in enumerate(hunks):
+    for hi, (old_start, old_count, new_count, old_block, new_block, header) in enumerate(hunks):
         if len(old_block) != old_count:
             raise ValueError(
                 f"{label} hunk {hi}: context has {len(old_block)} lines, header says {old_count}"
             )
+        where = f"target={target} " if target else ""
         guess = old_start - 1 + offset
         pos = None
         # 1) exact recorded position (adjusted by accumulated offset)
@@ -76,13 +78,18 @@ def apply_unified_diff(base_lines, diff_text, label="spec"):
             if len(matches) == 1:
                 pos = matches[0]
             elif not matches:
+                first = next((ln for ln in old_block if ln.strip()), "")
                 raise ValueError(
-                    f"{label} hunk {hi} (@@ -{old_start}): context NOT FOUND in base "
-                    f"({len(old_block)} lines). Base drifted — rebase the spec."
+                    f"{label} {where}hunk {hi} ({header}): context NOT FOUND "
+                    f"in live vanilla ({len(base)} base lines, {len(old_block)} "
+                    f"expected lines, recorded at base line ~{old_start}, first "
+                    f"expected line: {first.strip()[:100]!r}). Base drifted — "
+                    "rebase the spec."
                 )
             else:
                 raise ValueError(
-                    f"{label} hunk {hi}: context matches {len(matches)} places, ambiguous."
+                    f"{label} {where}hunk {hi} ({header}): context matches "
+                    f"{len(matches)} places, ambiguous."
                 )
         out[pos:pos + len(old_block)] = new_block
         offset += len(new_block) - len(old_block)
@@ -100,7 +107,7 @@ def process_one(top, rel, spec, out_rel):
     base_text = base_p.read_text()
     diff_text = spec_p.read_text()
     new_text = apply_unified_diff(
-        base_text.splitlines(keepends=True), diff_text, label=spec
+        base_text.splitlines(keepends=True), diff_text, label=spec, target=rel
     )
     if out_p.exists() and out_p.read_text() == new_text:
         return "unchanged"

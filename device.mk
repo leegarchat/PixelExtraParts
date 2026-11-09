@@ -76,7 +76,7 @@ BUILD_BROKEN_PLUGIN_VALIDATION += soong-pixelparts-plugin
 # loudly on spec drift (never silent). Idempotent: writes only on change.
 PEP_WEAVE_RES := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/weave_apply.py --top $(shell pwd) --manifest $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/manifest.json 2>&1)
 ifneq ($(filter PEP_WEAVE_ERROR%,$(PEP_WEAVE_RES)),)
-$(error PixelExtraParts weave regen failed: $(PEP_WEAVE_RES))
+$(error PixelExtraParts weave regen failed: fix the spec drift below, then rebuild. $(PEP_WEAVE_RES))
 endif
 
 # PixelExtraParts sepolicy
