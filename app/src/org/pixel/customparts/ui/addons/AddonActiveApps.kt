@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -145,13 +145,13 @@ internal fun ActiveAppsSection(
                 Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        dynamicStringResource(R.string.addon_active_apps_title),
+                        stringResource(R.string.addon_active_apps_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        dynamicStringResource(R.string.addon_active_apps_desc, activeAppsMap.size),
+                        stringResource(R.string.addon_active_apps_desc, activeAppsMap.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -251,7 +251,7 @@ private fun ActiveAppRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    dynamicStringResource(R.string.addon_active_apps_modules, addons.size),
+                    stringResource(R.string.addon_active_apps_modules, addons.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

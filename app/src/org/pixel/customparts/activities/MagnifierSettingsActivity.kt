@@ -63,7 +63,7 @@ import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 class MagnifierSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,7 +98,7 @@ fun MagnifierSettingsScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = {
-                    Text(dynamicStringResource(R.string.magnifier_section_title), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.magnifier_section_title), fontWeight = FontWeight.Bold)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
@@ -176,15 +176,15 @@ private fun MagnifierSection() {
         )
     }
 
-    val defaultSampleText = dynamicStringResource(R.string.magnifier_sample_text)
+    val defaultSampleText = stringResource(R.string.magnifier_sample_text)
     var sampleText by remember { mutableStateOf(defaultSampleText) }
 
     SettingsGroupCard(
-        title = dynamicStringResource(R.string.magnifier_section_title),
+        title = stringResource(R.string.magnifier_section_title),
     ) {
         GenericSwitchRow(
-            title = dynamicStringResource(R.string.magnifier_enable_title),
-            summary = dynamicStringResource(R.string.magnifier_enable_summary),
+            title = stringResource(R.string.magnifier_enable_title),
+            summary = stringResource(R.string.magnifier_enable_summary),
             checked = enabled,
             onCheckedChange = { newValue ->
                 enabled = newValue
@@ -199,7 +199,7 @@ private fun MagnifierSection() {
         HorizontalDivider()
 
         SliderSettingFloat(
-            title = dynamicStringResource(R.string.magnifier_zoom_title),
+            title = stringResource(R.string.magnifier_zoom_title),
             value = zoom,
             range = 0.5f..4.0f,
             unit = "x",
@@ -219,7 +219,7 @@ private fun MagnifierSection() {
         HorizontalDivider()
 
         SliderSettingFloat(
-            title = dynamicStringResource(R.string.magnifier_size_title),
+            title = stringResource(R.string.magnifier_size_title),
             value = sizeScale,
             range = 0.5f..3.0f,
             unit = "x",
@@ -239,11 +239,11 @@ private fun MagnifierSection() {
         HorizontalDivider()
 
         RadioSelectionGroup(
-            title = dynamicStringResource(R.string.magnifier_shape_title),
+            title = stringResource(R.string.magnifier_shape_title),
             options = listOf(
-                dynamicStringResource(R.string.magnifier_shape_default),
-                dynamicStringResource(R.string.magnifier_shape_square),
-                dynamicStringResource(R.string.magnifier_shape_circle)
+                stringResource(R.string.magnifier_shape_default),
+                stringResource(R.string.magnifier_shape_square),
+                stringResource(R.string.magnifier_shape_circle)
             ),
             selectedIndex = shape,
             enabled = enabled,
@@ -256,7 +256,7 @@ private fun MagnifierSection() {
         HorizontalDivider()
 
         SliderSetting(
-            title = dynamicStringResource(R.string.magnifier_offset_y_title),
+            title = stringResource(R.string.magnifier_offset_y_title),
             value = offsetY,
             range = -200..200,
             unit = "dp",
@@ -304,7 +304,8 @@ private fun MagnifierPreviewCard(
     offsetY: Int,
     modifier: Modifier = Modifier
 ) {
-    val previewLabel = dynamicStringResource(R.string.magnifier_preview_label)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val previewLabel = stringResource(R.string.magnifier_preview_label)
 
     val animatedZoom by animateFloatAsState(
         targetValue = zoom,
@@ -364,10 +365,25 @@ private fun MagnifierPreviewCard(
     val textTopOffset = -textHalfH - topEdge
     val lensTopOffset = lensTop - topEdge
 
-    // SQUARE keeps the same corner radius as DEFAULT (system uses dialogCornerRadius for both).
+    // Framework 1:1 (MagnifierCustomizer.computeInitial/computeRuntime):
+    // DEFAULT and SQUARE keep the source loupe-window cornerRadius
+    // (device-default dialogCornerRadius, see Magnifier.getDeviceDefaultDialogCornerRadius),
+    // only CIRCLE overrides it to side/2. So a square is NOT a circle:
+    // same side x side bounds, but with the small system radius, not 50%.
+    val dialogCornerRadiusDp = remember(context) {
+        runCatching {
+            val themed = android.view.ContextThemeWrapper(
+                context, android.R.style.Theme_DeviceDefault
+            )
+            val ta = themed.obtainStyledAttributes(intArrayOf(android.R.attr.dialogCornerRadius))
+            val px = ta.getDimension(0, 0f)
+            ta.recycle()
+            px / context.resources.displayMetrics.density
+        }.getOrDefault(0f).coerceAtLeast(0f)
+    }
     val magShape = when (shape) {
         2 -> CircleShape
-        else -> RoundedCornerShape(50)
+        else -> RoundedCornerShape(dialogCornerRadiusDp.dp)
     }
 
     Card(

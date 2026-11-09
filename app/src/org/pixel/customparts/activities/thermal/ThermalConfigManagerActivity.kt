@@ -131,16 +131,15 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
 import java.text.Normalizer
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
 private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
@@ -280,8 +279,8 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
     pickerTarget?.let { target ->
         ConfigPickerDialog(
             title = when (target) {
-                ProfilePickerTarget.Global -> dynamicStringResource(R.string.thermal_manager_global_profile)
-                ProfilePickerTarget.TileQueue -> dynamicStringResource(R.string.thermal_manager_tile_queue_add)
+                ProfilePickerTarget.Global -> stringResource(R.string.thermal_manager_global_profile)
+                ProfilePickerTarget.TileQueue -> stringResource(R.string.thermal_manager_tile_queue_add)
                 is ProfilePickerTarget.Package -> target.app.label
             },
             selectedConfig = when (target) {
@@ -318,7 +317,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                 extraActions = listOf(
                     RebootBubbleMenuAction(
                         icon = Icons.Rounded.Add,
-                        label = dynamicStringResource(R.string.thermal_manager_add_tile),
+                        label = stringResource(R.string.thermal_manager_add_tile),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
@@ -337,13 +336,13 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        text = dynamicStringResource(R.string.thermal_manager_title),
+                        text = stringResource(R.string.thermal_manager_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -413,7 +412,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                     ThermalCompactSearchField(
                         query = appSearchQuery,
                         onQueryChange = { appSearchQuery = it },
-                        hint = dynamicStringResource(R.string.thermal_manager_app_search_hint)
+                        hint = stringResource(R.string.thermal_manager_app_search_hint)
                     )
                 }
 
@@ -425,7 +424,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = dynamicStringResource(R.string.thermal_manager_apps_loading),
+                                text = stringResource(R.string.thermal_manager_apps_loading),
                                 modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -439,7 +438,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = dynamicStringResource(R.string.thermal_manager_apps_empty),
+                                text = stringResource(R.string.thermal_manager_apps_empty),
                                 modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -449,7 +448,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                     else -> {
                         item {
                             Text(
-                                text = dynamicStringResource(R.string.thermal_manager_apps_title),
+                                text = stringResource(R.string.thermal_manager_apps_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
@@ -492,14 +491,14 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
     val store = remember { ThermalConfigStore(context) }
     val blurState = rememberGraphicsLayerRecordingState()
     val listState = rememberLazyListState()
-    val defaultEditorSource = dynamicStringResource(R.string.thermal_manager_source_vendor)
+    val defaultEditorSource = stringResource(R.string.thermal_manager_source_vendor)
 
     var savedConfigs by remember { mutableStateOf(emptyList<SavedThermalConfig>()) }
     var userConfigsExpanded by rememberSaveable { mutableStateOf(false) }
     var systemConfigsExpanded by rememberSaveable { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var editorSource by remember { mutableStateOf(defaultEditorSource) }
-    val defaultProfileName = dynamicStringResource(R.string.thermal_manager_default_profile_name)
+    val defaultProfileName = stringResource(R.string.thermal_manager_default_profile_name)
     var profileName by remember(defaultProfileName) { mutableStateOf(defaultProfileName) }
     var fileNameInput by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
@@ -740,7 +739,7 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
             },
             confirmButton = {
                 TextButton(onClick = { infoParam = null }) {
-                    Text(dynamicStringResource(R.string.btn_ok))
+                    Text(stringResource(R.string.btn_ok))
                 }
             }
         )
@@ -773,13 +772,13 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
             TopAppBar(
                 title = {
                     Text(
-                        text = dynamicStringResource(R.string.thermal_manager_editor_title),
+                        text = stringResource(R.string.thermal_manager_editor_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -806,13 +805,13 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
             ) {
                 item {
                     ProfileConfigSectionCard(
-                        title = dynamicStringResource(R.string.thermal_manager_user_configs),
+                        title = stringResource(R.string.thermal_manager_user_configs),
                         configs = userConfigs,
                         expanded = userConfigsExpanded,
                         onExpandedChange = { userConfigsExpanded = it },
                         onImport = { importLauncher.launch(arrayOf("application/json", "text/json", "text/*", "*/*")) },
                         onCreate = ::openBaseEditor,
-                        emptyText = dynamicStringResource(R.string.thermal_manager_user_configs_empty),
+                        emptyText = stringResource(R.string.thermal_manager_user_configs_empty),
                         onEdit = ::openSavedEditor,
                         onClone = ::openSavedClone,
                         onExport = { config ->
@@ -847,13 +846,13 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
 
                 item {
                     ProfileConfigSectionCard(
-                        title = dynamicStringResource(R.string.thermal_manager_system_configs),
+                        title = stringResource(R.string.thermal_manager_system_configs),
                         configs = systemConfigs,
                         expanded = systemConfigsExpanded,
                         onExpandedChange = { systemConfigsExpanded = it },
                         onImport = null,
                         onCreate = null,
-                        emptyText = dynamicStringResource(R.string.thermal_manager_system_configs_empty),
+                        emptyText = stringResource(R.string.thermal_manager_system_configs_empty),
                         onEdit = ::openSavedEditor,
                         onClone = ::openSavedClone,
                         onExport = { config ->
@@ -881,7 +880,7 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = dynamicStringResource(R.string.thermal_manager_loading),
+                                text = stringResource(R.string.thermal_manager_loading),
                                 modifier = Modifier.padding(16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

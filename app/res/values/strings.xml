@@ -659,8 +659,6 @@
     <string name="donate_desc_long">Если вам нравится этот модуль и вы хотите поддержать его дальнейшую разработку, вы можете сделать это на Boosty.</string>
     <string name="donate_btn_boosty">Перейти на Boosty</string>
     <string name="donate_links_header">Полезные ссылки</string>
-    <string name="error_network">Network Error</string>
-    <string name="refresh_strings">Activity page strings updated</string>
     <string name="donate_page_updated">Page updated</string>
     <string name="donate_page_updated_error">Error loading data</string>
 

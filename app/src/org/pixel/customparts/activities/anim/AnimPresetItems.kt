@@ -87,10 +87,10 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -138,13 +138,13 @@ internal fun BuiltinAnimItem(
                         fontWeight = FontWeight.SemiBold
                     )
                     if (isActiveOpen && isActiveClose) {
-                        Text(dynamicStringResource(R.string.anim_active_open_close), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_active_open_close), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     } else if (isActiveOpen) {
-                        Text(dynamicStringResource(R.string.anim_preview_open), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_preview_open), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     } else if (isActiveClose) {
-                        Text(dynamicStringResource(R.string.anim_preview_close), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_preview_close), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     }
                 }
@@ -152,7 +152,7 @@ internal fun BuiltinAnimItem(
                     Icon(
                         imageVector = if (expanded) Icons.Rounded.ExpandLess
                         else Icons.Rounded.ExpandMore,
-                        contentDescription = dynamicStringResource(R.string.anim_constructor_preview)
+                        contentDescription = stringResource(R.string.anim_constructor_preview)
                     )
                 }
             }
@@ -178,13 +178,13 @@ internal fun BuiltinAnimItem(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         LoopingAnimPreview(
-                            label = dynamicStringResource(R.string.anim_preview_open),
+                            label = stringResource(R.string.anim_preview_open),
                             enterAnimRes = mode.openEnterAnim,
                             exitAnimRes = mode.openExitAnim,
                             isOpen = true
                         )
                         LoopingAnimPreview(
-                            label = dynamicStringResource(R.string.anim_preview_close),
+                            label = stringResource(R.string.anim_preview_close),
                             enterAnimRes = mode.closeEnterAnim,
                             exitAnimRes = mode.closeExitAnim,
                             isOpen = false
@@ -204,7 +204,7 @@ internal fun BuiltinAnimItem(
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                dynamicStringResource(R.string.anim_apply_both),
+                                stringResource(R.string.anim_apply_both),
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1
                             )
@@ -215,7 +215,7 @@ internal fun BuiltinAnimItem(
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                dynamicStringResource(R.string.anim_apply_open),
+                                stringResource(R.string.anim_apply_open),
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1
                             )
@@ -226,7 +226,7 @@ internal fun BuiltinAnimItem(
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                dynamicStringResource(R.string.anim_apply_close),
+                                stringResource(R.string.anim_apply_close),
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1
                             )
@@ -337,13 +337,13 @@ internal fun ThemeItem(
                         fontSize = 10.sp
                     )
                     if (theme.isActiveOpen && theme.isActiveClose) {
-                        Text(dynamicStringResource(R.string.anim_active_open_close), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_active_open_close), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     } else if (theme.isActiveOpen) {
-                        Text(dynamicStringResource(R.string.anim_preview_open), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_preview_open), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     } else if (theme.isActiveClose) {
-                        Text(dynamicStringResource(R.string.anim_preview_close), style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.anim_preview_close), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     }
                 }
@@ -352,13 +352,13 @@ internal fun ThemeItem(
                     Icon(
                         imageVector = if (expanded) Icons.Rounded.ExpandLess
                         else Icons.Rounded.ExpandMore,
-                        contentDescription = dynamicStringResource(R.string.anim_constructor_preview)
+                        contentDescription = stringResource(R.string.anim_constructor_preview)
                     )
                 }
 
                 if (!showConfirmDelete) {
                     IconButton(onClick = { showConfirmDelete = true }) {
-                        Icon(Icons.Rounded.Delete, dynamicStringResource(R.string.anim_cd_delete),
+                        Icon(Icons.Rounded.Delete, stringResource(R.string.anim_cd_delete),
                             tint = MaterialTheme.colorScheme.error)
                     }
                 } else {
@@ -366,11 +366,11 @@ internal fun ThemeItem(
                         IconButton(onClick = {
                             showConfirmDelete = false; onUninstall()
                         }) {
-                            Icon(Icons.Rounded.Check, dynamicStringResource(R.string.anim_cd_confirm_delete),
+                            Icon(Icons.Rounded.Check, stringResource(R.string.anim_cd_confirm_delete),
                                 tint = MaterialTheme.colorScheme.error)
                         }
                         IconButton(onClick = { showConfirmDelete = false }) {
-                            Icon(Icons.Rounded.Close, dynamicStringResource(R.string.anim_dialog_cancel),
+                            Icon(Icons.Rounded.Close, stringResource(R.string.anim_dialog_cancel),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -426,14 +426,14 @@ private fun ThemePreviewPanel(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             LoopingThemePreview(
-                label = dynamicStringResource(R.string.anim_preview_open),
+                label = stringResource(R.string.anim_preview_open),
                 packageName = packageName,
                 enterAnimName = "custom_open_enter",
                 exitAnimName = "custom_open_exit",
                 isOpen = true
             )
             LoopingThemePreview(
-                label = dynamicStringResource(R.string.anim_preview_close),
+                label = stringResource(R.string.anim_preview_close),
                 packageName = packageName,
                 enterAnimName = "custom_close_enter",
                 exitAnimName = "custom_close_exit",
@@ -452,7 +452,7 @@ private fun ThemePreviewPanel(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(dynamicStringResource(R.string.anim_apply_both),
+                Text(stringResource(R.string.anim_apply_both),
                     style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
             OutlinedButton(
@@ -460,7 +460,7 @@ private fun ThemePreviewPanel(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(dynamicStringResource(R.string.anim_apply_open),
+                Text(stringResource(R.string.anim_apply_open),
                     style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
             OutlinedButton(
@@ -468,7 +468,7 @@ private fun ThemePreviewPanel(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Text(dynamicStringResource(R.string.anim_apply_close),
+                Text(stringResource(R.string.anim_apply_close),
                     style = MaterialTheme.typography.labelSmall, maxLines = 1)
             }
         }
@@ -560,7 +560,7 @@ internal fun FilePickerRow(
                 )
             } else {
                 Text(
-                    text = dynamicStringResource(R.string.anim_theme_tap_to_select),
+                    text = stringResource(R.string.anim_theme_tap_to_select),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -591,7 +591,7 @@ internal fun XmlInputField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = { Text(dynamicStringResource(R.string.anim_theme_xml_hint),
+            placeholder = { Text(stringResource(R.string.anim_theme_xml_hint),
                 style = MaterialTheme.typography.bodySmall) },
             textStyle = MaterialTheme.typography.bodySmall.copy(
                 fontFamily = FontFamily.Monospace,

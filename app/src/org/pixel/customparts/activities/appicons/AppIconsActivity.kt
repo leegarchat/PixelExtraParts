@@ -143,8 +143,8 @@ import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 
 
@@ -438,7 +438,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
                 extraActions = listOf(
                     RebootBubbleMenuAction(
                         icon = Icons.Rounded.Delete,
-                        label = dynamicStringResource(R.string.app_icons_clear_all),
+                        label = stringResource(R.string.app_icons_clear_all),
                         containerColor = MaterialTheme.colorScheme.errorContainer,
                         contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         onClick = { confirmClearAllIcons = true }
@@ -450,7 +450,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        dynamicStringResource(R.string.app_icons_title),
+                        stringResource(R.string.app_icons_title),
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -458,7 +458,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 actions = {
@@ -466,7 +466,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
                         onClick = { scope.launch { loadDashboard(forceRefresh = true) } },
                         enabled = !isLoading && activeProgress?.completed != false
                     ) {
-                        Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.app_icons_refresh))
+                        Icon(Icons.Rounded.Refresh, stringResource(R.string.app_icons_refresh))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -493,7 +493,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
             ) {
                 when {
                     isLoading -> item { LoadingCard() }
-                    loadFailed -> item { EmptyStateText(dynamicStringResource(R.string.app_icons_load_failed)) }
+                    loadFailed -> item { EmptyStateText(stringResource(R.string.app_icons_load_failed)) }
                     else -> {
                         val state = dashboard
                         if (state != null) {
@@ -709,8 +709,8 @@ fun AppIconsScreen(onBack: () -> Unit) {
 
                             item {
                                 ExpandableSectionHeader(
-                                    title = dynamicStringResource(R.string.app_icons_all_apps_section),
-                                    subtitle = dynamicStringResource(R.string.app_icons_app_count_format, visibleApps.size),
+                                    title = stringResource(R.string.app_icons_all_apps_section),
+                                    subtitle = stringResource(R.string.app_icons_app_count_format, visibleApps.size),
                                     icon = Icons.Rounded.Apps,
                                     expanded = appsExpanded,
                                     onExpandChange = { appsExpanded = it }
@@ -721,27 +721,27 @@ fun AppIconsScreen(onBack: () -> Unit) {
                                 item(key = "app_icons_filters") {
                                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         AppIconsFilterSwitchRow(
-                                            title = dynamicStringResource(R.string.app_icons_show_system_title),
-                                            summary = dynamicStringResource(R.string.app_icons_show_system_summary),
+                                            title = stringResource(R.string.app_icons_show_system_title),
+                                            summary = stringResource(R.string.app_icons_show_system_summary),
                                             checked = showSystemApps,
                                             onCheckedChange = { showSystemApps = it }
                                         )
                                         AppIconsFilterSwitchRow(
-                                            title = dynamicStringResource(R.string.app_icons_show_hidden_title),
-                                            summary = dynamicStringResource(R.string.app_icons_show_hidden_summary),
+                                            title = stringResource(R.string.app_icons_show_hidden_title),
+                                            summary = stringResource(R.string.app_icons_show_hidden_summary),
                                             checked = showHiddenApps,
                                             onCheckedChange = { showHiddenApps = it }
                                         )
                                         AppIconsSearchField(
                                             query = appSearchQuery,
-                                            hint = dynamicStringResource(R.string.launcher_hidden_apps_search_hint),
+                                            hint = stringResource(R.string.launcher_hidden_apps_search_hint),
                                             onQueryChange = { appSearchQuery = it }
                                         )
                                     }
                                 }
                                 if (visibleApps.isEmpty()) {
                                     item(key = "app_icons_empty") {
-                                        EmptyStateText(dynamicStringResource(R.string.app_icons_no_apps))
+                                        EmptyStateText(stringResource(R.string.app_icons_no_apps))
                                     }
                                 } else {
                                     items(visibleApps, key = { it.packageName }) { app ->
@@ -844,8 +844,8 @@ fun AppIconsScreen(onBack: () -> Unit) {
             icon = {
                 Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error)
             },
-            title = { Text(dynamicStringResource(R.string.app_icons_clear_all_confirm_title)) },
-            text = { Text(dynamicStringResource(R.string.app_icons_clear_all_confirm_message)) },
+            title = { Text(stringResource(R.string.app_icons_clear_all_confirm_title)) },
+            text = { Text(stringResource(R.string.app_icons_clear_all_confirm_message)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -857,12 +857,12 @@ fun AppIconsScreen(onBack: () -> Unit) {
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text(dynamicStringResource(R.string.app_icons_clear_all), maxLines = 1)
+                    Text(stringResource(R.string.app_icons_clear_all), maxLines = 1)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmClearAllIcons = false }) {
-                    Text(dynamicStringResource(R.string.btn_cancel))
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )

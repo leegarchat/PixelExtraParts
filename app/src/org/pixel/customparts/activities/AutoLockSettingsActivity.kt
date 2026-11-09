@@ -61,7 +61,7 @@ import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoLockController
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 class AutoLockSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,10 +125,10 @@ private fun AutoLockScreen(onBack: () -> Unit) {
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.auto_lock_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.auto_lock_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -155,11 +155,11 @@ private fun AutoLockScreen(onBack: () -> Unit) {
             ) {
                 item {
                     SettingsGroupCard(
-                        title = dynamicStringResource(R.string.auto_lock_title),
+                        title = stringResource(R.string.auto_lock_title),
                     ) {
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_lock_enable_title),
-                            summary = dynamicStringResource(R.string.auto_lock_enable_summary),
+                            title = stringResource(R.string.auto_lock_enable_title),
+                            summary = stringResource(R.string.auto_lock_enable_summary),
                             checked = enabled,
                             onCheckedChange = {
                                 enabled = it
@@ -176,8 +176,8 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_lock_blocker_only_title),
-                            summary = dynamicStringResource(R.string.auto_lock_blocker_only_summary),
+                            title = stringResource(R.string.auto_lock_blocker_only_title),
+                            summary = stringResource(R.string.auto_lock_blocker_only_summary),
                             checked = blockerOnly,
                             enabled = enabled,
                             onCheckedChange = {
@@ -192,8 +192,8 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_lock_pause_media_title),
-                            summary = dynamicStringResource(R.string.auto_lock_pause_media_summary),
+                            title = stringResource(R.string.auto_lock_pause_media_title),
+                            summary = stringResource(R.string.auto_lock_pause_media_summary),
                             checked = pauseMedia,
                             enabled = enabled,
                             onCheckedChange = {
@@ -206,11 +206,11 @@ private fun AutoLockScreen(onBack: () -> Unit) {
 
                 item {
                     SettingsGroupCard(
-                        title = dynamicStringResource(R.string.auto_lock_timer_section),
+                        title = stringResource(R.string.auto_lock_timer_section),
                         enabled = enabled,
                     ) {
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_lock_timeout_title),
+                            title = stringResource(R.string.auto_lock_timeout_title),
                             value = timeoutSeconds,
                             range = AutoLockController.MIN_TIMEOUT_SECONDS..AutoLockController.MAX_TIMEOUT_SECONDS,
                             unit = "",
@@ -230,7 +230,7 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                         )
 
                         Text(
-                            text = dynamicStringResource(R.string.auto_lock_timeout_description),
+                            text = stringResource(R.string.auto_lock_timeout_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)

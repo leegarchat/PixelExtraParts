@@ -288,8 +288,6 @@
     <string name="donate_desc_long">Jika Anda menyukai modul ini dan ingin mendukung pengembangannya, Anda bisa melakukannya melalui Boosty.</string>
     <string name="donate_btn_boosty">Ke Boosty</string>
     <string name="donate_links_header">Tautan berguna</string>
-    <string name="error_network">Kesalahan jaringan</string>
-    <string name="refresh_strings">String halaman diperbarui</string>
     <string name="donate_page_updated">Halaman diperbarui</string>
     <string name="donate_page_updated_error">Gagal memuat data</string>
 

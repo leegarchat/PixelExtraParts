@@ -49,7 +49,7 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 // =====================================================================
 // Navigation state for addon page stack
@@ -82,6 +82,7 @@ fun AddonPageScreen(
     addonId: String,
     pageId: String? = null,
     includeTargetActivityEntries: Boolean = false,
+    highlightSettingKey: String? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -160,7 +161,7 @@ fun AddonPageScreen(
                     IconButton(onClick = {
                         if (backStack.size > 1) backStack.removeLast() else onBack()
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -199,6 +200,7 @@ fun AddonPageScreen(
                         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
                         innerPadding = innerPadding,
                         blurState = blurState,
+                        highlightSettingKey = highlightSettingKey,
                         onNavigate = { child ->
                             backStack.add(PageStackEntry(entry = child, title = child.title, depth = page.depth + 1))
                         }
@@ -232,6 +234,7 @@ private fun AddonPageContent(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     blurState: GraphicsLayerRecordingState,
+    highlightSettingKey: String? = null,
     onNavigate: (AddonMainEntry) -> Unit
 ) {
     val context = LocalContext.current
@@ -281,6 +284,7 @@ private fun AddonPageContent(
                                 addon = addonUiModel,
                                 allSettings = allSettings,
                                 dependencyRevision = settingsRevision,
+                                highlightSettingKey = highlightSettingKey,
                                 onSettingChanged = { changedSetting, boolVal ->
                                     if (boolVal == true) {
                                         applyExclusiveSettingLogic(context, addonUiModel, changedSetting, allSettings)
@@ -322,12 +326,12 @@ private fun AddonPageContent(
 
                 item(key = "group_$group") {
                     val groupTitle = when (group) {
-                        "launcher" -> dynamicStringResource(R.string.main_header_launcher)
-                        "gesture" -> dynamicStringResource(R.string.main_header_gesture)
-                        "network" -> dynamicStringResource(R.string.main_header_network)
-                        "system" -> dynamicStringResource(R.string.main_header_system)
-                        "systemui", "system_ui" -> dynamicStringResource(R.string.main_header_systemui)
-                        "camera" -> dynamicStringResource(R.string.main_header_camera)
+                        "launcher" -> stringResource(R.string.main_header_launcher)
+                        "gesture" -> stringResource(R.string.main_header_gesture)
+                        "network" -> stringResource(R.string.main_header_network)
+                        "system" -> stringResource(R.string.main_header_system)
+                        "systemui", "system_ui" -> stringResource(R.string.main_header_systemui)
+                        "camera" -> stringResource(R.string.main_header_camera)
                         else -> group.replaceFirstChar { it.uppercase() }
                     }
                     SettingsGroupCard(title = groupTitle) {
@@ -353,7 +357,7 @@ private fun AddonPageContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        dynamicStringResource(R.string.addon_settings_empty),
+                        stringResource(R.string.addon_settings_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -369,6 +373,7 @@ private fun AddonPageSettingsCategoryCard(
     addon: AddonUiModel,
     allSettings: List<AddonSettingDef>,
     dependencyRevision: Int,
+    highlightSettingKey: String? = null,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     Card(
@@ -409,7 +414,8 @@ private fun AddonPageSettingsCategoryCard(
                         modifier = settingModifier,
                         allSettings = allSettings,
                         dependencyRevision = dependencyRevision,
-                        onSettingChanged = onSettingChanged
+                        onSettingChanged = onSettingChanged,
+                        highlightKey = highlightSettingKey
                     )
                 }
             }

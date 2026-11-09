@@ -3,9 +3,9 @@ package org.pixel.customparts
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,10 +33,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.activities.*
 import org.pixel.customparts.services.MainActivityTileService
@@ -50,14 +52,14 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.addons.AddonMainEntry
+import org.pixel.customparts.ui.addons.AddonMainEntryIcon
 import org.pixel.customparts.ui.addons.AddonMainEntryRow
 import org.pixel.customparts.ui.addons.AddonSettingDef
 import org.pixel.customparts.ui.addons.SettingType
 import org.pixel.customparts.ui.addons.scanAddonMainEntries
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,14 +68,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
-
-            LaunchedEffect(Unit) {
-                try {
-                    RemoteStringsManager.initialize(context)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
 
             val colorScheme = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
@@ -92,7 +86,6 @@ fun MainDashboard() {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val activity = context as? Activity
-    val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val blurState = rememberGraphicsLayerRecordingState()
     val lazyListState = rememberLazyListState()
@@ -155,15 +148,37 @@ fun MainDashboard() {
     val addonSearchSettingEntries = addonSearchEntries
         .flatMap { it.flattenAddonSettingSearchEntries() }
         .distinctBy { it.uniqueKey }
-    val internalStringIndex = remember(context) { collectMainSearchResourceStrings(context) }
 
-    val dashboardSearchItems = buildList {
+    // English fallback resources: app strings resolve to the current locale, while addon
+    // descriptors are usually English-only — index both so search works in ru and en.
+    val enResources = remember(context) {
+        runCatching {
+            val config = Configuration(context.resources.configuration)
+            config.setLocale(Locale.ENGLISH)
+            context.createConfigurationContext(config).resources
+        }.getOrNull()
+    }
+    fun enString(resId: Int): String =
+        runCatching { enResources?.getString(resId).orEmpty() }.getOrNull().orEmpty()
+
+    val sectionSystem = stringResource(R.string.main_header_system)
+    val sectionLauncher = stringResource(R.string.main_header_launcher)
+    val parentDisplay = stringResource(R.string.display_title)
+    val parentSystemUi = stringResource(R.string.sysui_settings_title)
+    val parentAppIcons = stringResource(R.string.app_icons_title)
+
+    // Full index: every built-in screen (including nested ones, deep-linked) plus all
+    // addon pages and their individual settings. Built only from loaded data, no I/O here.
+    val dashboardSearchIndex = buildList {
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.donate_title),
-                subtitle = dynamicStringResource(R.string.donate_desc_short),
-                section = dynamicStringResource(R.string.donate_title),
-                keywords = "donate support contribution",
+            DashboardSearchEntry(
+                id = "builtin:donate",
+                title = stringResource(R.string.donate_title),
+                subtitle = stringResource(R.string.donate_desc_short),
+                breadcrumb = "",
+                titleEn = enString(R.string.donate_title),
+                subtitleEn = enString(R.string.donate_desc_short),
+                keywords = "donate support contribution sponsor пожертвование поддержка спонсор донат",
                 icon = Icons.Rounded.Favorite,
                 iconContainerColor = MaterialTheme.colorScheme.primary,
                 iconContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -171,11 +186,14 @@ fun MainDashboard() {
             )
         )
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.os_title_activity),
-                subtitle = dynamicStringResource(R.string.os_desc_activity),
-                section = dynamicStringResource(R.string.main_header_system),
-                keywords = "overscroll scroll animation bounce edge " + internalStringIndex.categoryText("overscroll"),
+            DashboardSearchEntry(
+                id = "builtin:overscroll",
+                title = stringResource(R.string.os_title_activity),
+                subtitle = stringResource(R.string.os_desc_activity),
+                breadcrumb = sectionSystem,
+                titleEn = enString(R.string.os_title_activity),
+                subtitleEn = enString(R.string.os_desc_activity),
+                keywords = "overscroll scroll physics bounce edge animation rubber прокрутка физика пружина отскок край анимация резинка скролл",
                 icon = Icons.Rounded.Animation,
                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -183,11 +201,14 @@ fun MainDashboard() {
             )
         )
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.display_title),
-                subtitle = dynamicStringResource(R.string.display_desc),
-                section = dynamicStringResource(R.string.main_header_system),
-                keywords = "display color theme palette screen " + internalStringIndex.categoryText("display"),
+            DashboardSearchEntry(
+                id = "builtin:display",
+                title = stringResource(R.string.display_title),
+                subtitle = stringResource(R.string.display_desc),
+                breadcrumb = sectionSystem,
+                titleEn = enString(R.string.display_title),
+                subtitleEn = enString(R.string.display_desc),
+                keywords = "display color theme palette screen brightness экран дисплей цвета тема палитра яркость",
                 icon = Icons.Rounded.Palette,
                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -195,11 +216,74 @@ fun MainDashboard() {
             )
         )
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.app_icons_title),
-                subtitle = dynamicStringResource(R.string.app_icons_summary),
-                section = dynamicStringResource(R.string.main_header_system),
-                keywords = "icons icon manager shapes tint apps " + internalStringIndex.categoryText("app_icons"),
+            DashboardSearchEntry(
+                id = "builtin:saturation",
+                title = stringResource(R.string.saturation_title),
+                subtitle = stringResource(R.string.saturation_summary),
+                breadcrumb = "$sectionSystem › $parentDisplay",
+                titleEn = enString(R.string.saturation_title),
+                subtitleEn = enString(R.string.saturation_summary),
+                keywords = "saturation color vivid intensity насыщенность цвета сочность интенсивность",
+                icon = Icons.Rounded.Palette,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                onClick = { context.startActivity(Intent(context, SaturationActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:autohbm",
+                title = stringResource(R.string.auto_hbm_title),
+                subtitle = stringResource(R.string.auto_hbm_summary),
+                breadcrumb = "$sectionSystem › $parentDisplay",
+                titleEn = enString(R.string.auto_hbm_title),
+                subtitleEn = enString(R.string.auto_hbm_summary),
+                keywords = "hbm brightness auto lux sunlight high яркость авто солнце свет максимальная",
+                icon = Icons.Rounded.WbSunny,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = { context.startActivity(Intent(context, AutoHbmActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:dtw",
+                title = stringResource(R.string.dtw_title),
+                subtitle = stringResource(R.string.dtw_summary),
+                breadcrumb = "$sectionSystem › $parentDisplay",
+                titleEn = enString(R.string.dtw_title),
+                subtitleEn = enString(R.string.dtw_summary),
+                keywords = "tap wake double dt2w touch gesture пробуждение двойной тап касание",
+                icon = Icons.Rounded.TouchApp,
+                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                onClick = { context.startActivity(Intent(context, DtwSettingsActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:autolock",
+                title = stringResource(R.string.auto_lock_title),
+                subtitle = stringResource(R.string.auto_lock_summary),
+                breadcrumb = "$sectionSystem › $parentDisplay",
+                titleEn = enString(R.string.auto_lock_title),
+                subtitleEn = enString(R.string.auto_lock_summary),
+                keywords = "lock auto screen timeout inactivity sleep блокировка автоблокировка экран бездействие сон таймаут",
+                icon = Icons.Rounded.Timer,
+                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+                iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
+                onClick = { context.startActivity(Intent(context, AutoLockSettingsActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:appicons",
+                title = stringResource(R.string.app_icons_title),
+                subtitle = stringResource(R.string.app_icons_summary),
+                breadcrumb = sectionSystem,
+                titleEn = enString(R.string.app_icons_title),
+                subtitleEn = enString(R.string.app_icons_summary),
+                keywords = "icons apps launcher shape pack иконки приложения значки лаунчер пакеты",
                 icon = Icons.Rounded.Apps,
                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -207,11 +291,28 @@ fun MainDashboard() {
             )
         )
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.sysui_settings_title),
+            DashboardSearchEntry(
+                id = "builtin:iconshape",
+                title = stringResource(R.string.icon_shape_title),
+                subtitle = stringResource(R.string.icon_shape_summary),
+                breadcrumb = "$sectionSystem › $parentAppIcons",
+                titleEn = enString(R.string.icon_shape_title),
+                subtitleEn = enString(R.string.icon_shape_summary),
+                keywords = "shape mask adaptive squircle circle theme overlay форма маска сквиркл круг адаптивная тема оверлей",
+                icon = Icons.Rounded.Interests,
+                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                onClick = { context.startActivity(Intent(context, IconShapeActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:systemui",
+                title = stringResource(R.string.sysui_settings_title),
                 subtitle = "Configure SystemUI components",
-                section = dynamicStringResource(R.string.main_header_system),
-                keywords = "systemui status bar quick settings qs shade lockscreen " + internalStringIndex.categoryText("systemui"),
+                breadcrumb = sectionSystem,
+                titleEn = enString(R.string.sysui_settings_title),
+                keywords = "systemui status bar quick settings shade lockscreen qs tiles шторка статус бар быстрые настройки плитки экран блокировки системный",
                 icon = Icons.Rounded.SettingsSystemDaydream,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -219,11 +320,59 @@ fun MainDashboard() {
             )
         )
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.launcher_hidden_apps_title),
-                subtitle = dynamicStringResource(R.string.launcher_hidden_apps_subtitle),
-                section = dynamicStringResource(R.string.launcher_settings_title),
-                keywords = "launcher hidden apps hide home nexus " + internalStringIndex.categoryText("launcher"),
+            DashboardSearchEntry(
+                id = "builtin:magnifier",
+                title = stringResource(R.string.magnifier_section_title),
+                subtitle = stringResource(R.string.magnifier_enable_summary),
+                breadcrumb = "$sectionSystem › $parentSystemUi",
+                titleEn = enString(R.string.magnifier_section_title),
+                subtitleEn = enString(R.string.magnifier_enable_summary),
+                keywords = "magnifier loupe zoom text accessibility лупа увеличение текст доступность",
+                icon = Icons.Rounded.ZoomIn,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = { context.startActivity(Intent(context, MagnifierSettingsActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:activitytransition",
+                title = stringResource(R.string.anim_transition_title),
+                subtitle = stringResource(R.string.anim_transition_subtitle),
+                breadcrumb = "$sectionSystem › $parentSystemUi",
+                titleEn = enString(R.string.anim_transition_title),
+                subtitleEn = enString(R.string.anim_transition_subtitle),
+                keywords = "animation transition activity window open close анимация переход активность окно открытие закрытие",
+                icon = Icons.Rounded.Animation,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                onClick = { context.startActivity(Intent(context, ActivityTransitionActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:rotation",
+                title = stringResource(R.string.rotation_anim_title),
+                subtitle = stringResource(R.string.rotation_anim_subtitle),
+                breadcrumb = "$sectionSystem › $parentSystemUi",
+                titleEn = enString(R.string.rotation_anim_title),
+                subtitleEn = enString(R.string.rotation_anim_subtitle),
+                keywords = "rotation orientation animation autorotate поворот ориентация анимация автоповорот",
+                icon = Icons.Rounded.ScreenRotation,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                onClick = { context.startActivity(Intent(context, RotationAnimationActivity::class.java)) }
+            )
+        )
+        add(
+            DashboardSearchEntry(
+                id = "builtin:hiddenapps",
+                title = stringResource(R.string.launcher_hidden_apps_title),
+                subtitle = stringResource(R.string.launcher_hidden_apps_subtitle),
+                breadcrumb = sectionLauncher,
+                titleEn = enString(R.string.launcher_hidden_apps_title),
+                subtitleEn = enString(R.string.launcher_hidden_apps_subtitle),
+                keywords = "launcher hidden apps hide home nexus pixel лаунчер скрытые приложения скрыть домой",
                 icon = Icons.Rounded.Apps,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -232,11 +381,14 @@ fun MainDashboard() {
         )
         if (AppConfig.ENABLE_THERMALS) {
             add(
-                MainDashboardSearchItem(
-                    title = dynamicStringResource(R.string.thermal_manager_title),
-                    subtitle = dynamicStringResource(R.string.thermal_manager_desc_activity),
-                    section = dynamicStringResource(R.string.main_header_system),
-                    keywords = "thermal temperature performance profiles " + internalStringIndex.categoryText("thermal"),
+                DashboardSearchEntry(
+                    id = "builtin:thermal",
+                    title = stringResource(R.string.thermal_manager_title),
+                    subtitle = stringResource(R.string.thermal_manager_desc_activity),
+                    breadcrumb = sectionSystem,
+                    titleEn = enString(R.string.thermal_manager_title),
+                    subtitleEn = enString(R.string.thermal_manager_desc_activity),
+                    keywords = "thermal temperature performance profiles throttling heat троттлинг температура производительность профили нагрев",
                     icon = Icons.Rounded.Tune,
                     iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -245,11 +397,14 @@ fun MainDashboard() {
             )
         }
         add(
-            MainDashboardSearchItem(
-                title = dynamicStringResource(R.string.addon_title),
-                subtitle = dynamicStringResource(R.string.addon_desc),
-                section = dynamicStringResource(R.string.main_header_system),
-                keywords = "addons modules extensions hooks " + internalStringIndex.categoryText("addons"),
+            DashboardSearchEntry(
+                id = "builtin:addons",
+                title = stringResource(R.string.addon_title),
+                subtitle = stringResource(R.string.addon_desc),
+                breadcrumb = sectionSystem,
+                titleEn = enString(R.string.addon_title),
+                subtitleEn = enString(R.string.addon_desc),
+                keywords = "addons modules extensions hooks аддоны модули расширения хуки",
                 icon = Icons.Rounded.Extension,
                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                 iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -258,10 +413,11 @@ fun MainDashboard() {
         )
         addonSearchEntries.forEach { entry ->
             add(
-                MainDashboardSearchItem(
-                    title = entry.title,
+                DashboardSearchEntry(
+                    id = "addon:${entry.addonId}:${entry.rawId}",
+                    title = entry.title.ifBlank { entry.leafId },
                     subtitle = entry.subtitle,
-                    section = addonGroupTitle(context, entry.normalizedAddonGroup()),
+                    breadcrumb = addonGroupTitle(context, entry.normalizedAddonGroup()),
                     keywords = entry.addonSearchText(),
                     icon = Icons.Rounded.Extension,
                     iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -273,24 +429,40 @@ fun MainDashboard() {
         }
         addonSearchSettingEntries.forEach { settingEntry ->
             val setting = settingEntry.setting
+            val crumb = buildString {
+                append(addonGroupTitle(context, settingEntry.entry.normalizedAddonGroup()))
+                val path = settingEntry.path.replace(" / ", " › ").trim()
+                if (path.isNotEmpty()) {
+                    append(" › ")
+                    append(path)
+                }
+            }
             add(
-                MainDashboardSearchItem(
+                DashboardSearchEntry(
+                    id = "addonsetting:${settingEntry.uniqueKey}",
                     title = setting.title.ifBlank { setting.key },
-                    subtitle = listOf(setting.description, settingEntry.entry.title)
-                        .filter { it.isNotBlank() }
-                        .joinToString(" - "),
-                    section = addonGroupTitle(context, settingEntry.entry.normalizedAddonGroup()),
+                    subtitle = setting.description,
+                    breadcrumb = crumb,
                     keywords = settingEntry.searchText(),
                     icon = Icons.Rounded.Tune,
                     iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     addonEntry = settingEntry.entry,
-                    onClick = { openAddonSearchEntry(context, settingEntry.entry) }
+                    onClick = { openAddonSearchEntry(context, settingEntry.entry, setting.key) }
                 )
             )
         }
     }
-    val searchResults = searchDashboardItems(searchQuery, dashboardSearchItems)
+
+    // Debounced query: filter the index only after the user pauses typing, like system Settings.
+    var debouncedQuery by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(searchQuery) {
+        delay(SEARCH_DEBOUNCE_MS)
+        debouncedQuery = searchQuery
+    }
+    val activeSearchQuery = debouncedQuery.trim()
+    val activeSearchTokens = tokenizeSearchQuery(activeSearchQuery)
+    val searchResults = searchDashboardEntries(activeSearchQuery, dashboardSearchIndex)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -301,7 +473,7 @@ fun MainDashboard() {
                 extraActions = listOf(
                     RebootBubbleMenuAction(
                         icon = Icons.Rounded.Add,
-                        label = dynamicStringResource(R.string.main_add_tile),
+                        label = stringResource(R.string.main_add_tile),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
@@ -321,10 +493,10 @@ fun MainDashboard() {
                 scrollBehavior = scrollBehavior,
                 title = {
                     Column {
-                        Text(dynamicStringResource(R.string.main_title), fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.main_title), fontWeight = FontWeight.Bold)
 
                         Text(
-                            dynamicStringResource(R.string.main_desc),
+                            stringResource(R.string.main_desc),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -338,26 +510,7 @@ fun MainDashboard() {
                             activity?.finish()
                         }
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.btn_exit))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        scope.launch {
-                            val success = RemoteStringsManager.forceRefresh(context)
-
-                            val message = if (success) RemoteStringsManager.getString(context, R.string.refresh_strings) else RemoteStringsManager.getString(context, R.string.error_network)
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-
-                            if (success) {
-                                activity?.recreate()
-                            }
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = dynamicStringResource(R.string.menu_refresh)
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.btn_exit))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -390,10 +543,11 @@ fun MainDashboard() {
                     )
                 }
 
-                if (searchQuery.isNotBlank()) {
+                if (activeSearchQuery.isNotBlank()) {
                     item {
                         MainDashboardSearchResults(
-                            query = searchQuery,
+                            query = activeSearchQuery,
+                            tokens = activeSearchTokens,
                             results = searchResults
                         )
                     }
@@ -401,10 +555,10 @@ fun MainDashboard() {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.donate_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.donate_title)) {
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.donate_title),
-                            subtitle = dynamicStringResource(R.string.donate_desc_short),
+                            title = stringResource(R.string.donate_title),
+                            subtitle = stringResource(R.string.donate_desc_short),
                             icon = Icons.Rounded.Favorite,
                             iconContainerColor = MaterialTheme.colorScheme.primary,
                             iconContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -415,7 +569,7 @@ fun MainDashboard() {
 
                 if (addonGestureEntries.isNotEmpty()) {
                     item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.main_header_gesture)) {
+                        SettingsGroupCard(title = stringResource(R.string.main_header_gesture)) {
                             addonGestureEntries.forEachIndexed { index, entry ->
                                 if (index > 0) HorizontalDivider()
                                 AddonMainEntryRow(
@@ -430,10 +584,10 @@ fun MainDashboard() {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.main_header_system)) {
+                    SettingsGroupCard(title = stringResource(R.string.main_header_system)) {
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.display_title),
-                            subtitle = dynamicStringResource(R.string.display_desc),
+                            title = stringResource(R.string.display_title),
+                            subtitle = stringResource(R.string.display_desc),
                             icon = Icons.Rounded.Palette,
                             iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -443,8 +597,8 @@ fun MainDashboard() {
                         HorizontalDivider()
 
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.app_icons_title),
-                            subtitle = dynamicStringResource(R.string.app_icons_summary),
+                            title = stringResource(R.string.app_icons_title),
+                            subtitle = stringResource(R.string.app_icons_summary),
                             icon = Icons.Rounded.Apps,
                             iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -454,7 +608,7 @@ fun MainDashboard() {
                         HorizontalDivider()
 
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.sysui_settings_title),
+                            title = stringResource(R.string.sysui_settings_title),
                             subtitle = "Configure SystemUI components",
                             icon = Icons.Rounded.SettingsSystemDaydream,
                             iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -465,8 +619,8 @@ fun MainDashboard() {
                         HorizontalDivider()
 
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.os_title_activity),
-                            subtitle = dynamicStringResource(R.string.os_desc_activity),
+                            title = stringResource(R.string.os_title_activity),
+                            subtitle = stringResource(R.string.os_desc_activity),
                             icon = Icons.Rounded.Animation,
                             iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -477,8 +631,8 @@ fun MainDashboard() {
                             HorizontalDivider()
 
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.thermal_manager_title),
-                                subtitle = dynamicStringResource(R.string.thermal_manager_desc_activity),
+                                title = stringResource(R.string.thermal_manager_title),
+                                subtitle = stringResource(R.string.thermal_manager_desc_activity),
                                 icon = Icons.Rounded.Tune,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -489,8 +643,8 @@ fun MainDashboard() {
                         HorizontalDivider()
 
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.addon_title),
-                            subtitle = dynamicStringResource(R.string.addon_desc),
+                            title = stringResource(R.string.addon_title),
+                            subtitle = stringResource(R.string.addon_desc),
                             icon = Icons.Rounded.Extension,
                             iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -512,7 +666,7 @@ fun MainDashboard() {
 
                 if (addonNetworkEntries.isNotEmpty()) {
                     item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.main_header_network)) {
+                        SettingsGroupCard(title = stringResource(R.string.main_header_network)) {
                             addonNetworkEntries.forEachIndexed { index, entry ->
                                 if (index > 0) HorizontalDivider()
                                 AddonMainEntryRow(
@@ -528,10 +682,10 @@ fun MainDashboard() {
 
                 // Pixel Launcher addon settings plus the remaining system-only launcher entry.
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.launcher_settings_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.launcher_settings_title)) {
                         MainMenuNavigationRow(
-                            title = dynamicStringResource(R.string.launcher_hidden_apps_title),
-                            subtitle = dynamicStringResource(R.string.launcher_hidden_apps_subtitle),
+                            title = stringResource(R.string.launcher_hidden_apps_title),
+                            subtitle = stringResource(R.string.launcher_hidden_apps_subtitle),
                             icon = Icons.Rounded.Apps,
                             iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                             iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -618,23 +772,28 @@ private fun addonCustomGroupTitle(group: String): String {
     }
 }
 
-private data class MainDashboardSearchItem(
+// ---------- Dashboard search: index model, ranking and results UI (system-Settings-like) ----------
+
+private const val SEARCH_DEBOUNCE_MS = 180L
+private const val SEARCH_MAX_RESULTS = 50
+
+private data class DashboardSearchEntry(
+    val id: String,
     val title: String,
     val subtitle: String,
-    val section: String,
-    val keywords: String,
+    val breadcrumb: String,
+    val titleEn: String = "",
+    val subtitleEn: String = "",
+    val keywords: String = "",
     val icon: ImageVector,
     val iconContainerColor: Color,
     val iconContentColor: Color,
     val addonEntry: AddonMainEntry? = null,
     val onClick: () -> Unit
-) {
-    val searchableText: String
-        get() = listOf(title, subtitle, section, keywords).joinToString(" ")
-}
+)
 
-private data class MainDashboardSearchResult(
-    val item: MainDashboardSearchItem,
+private data class DashboardSearchMatch(
+    val entry: DashboardSearchEntry,
     val score: Int
 )
 
@@ -672,7 +831,7 @@ private fun MainDashboardSearchBar(
             }
         },
         placeholder = {
-            Text(dynamicStringResource(R.string.main_search_hint))
+            Text(stringResource(R.string.main_search_hint))
         }
     )
 }
@@ -680,76 +839,228 @@ private fun MainDashboardSearchBar(
 @Composable
 private fun MainDashboardSearchResults(
     query: String,
-    results: List<MainDashboardSearchResult>
+    tokens: List<String>,
+    results: List<DashboardSearchMatch>
 ) {
-    SettingsGroupCard(title = dynamicStringResource(R.string.main_search_results_title)) {
+    SettingsGroupCard(
+        title = stringResource(R.string.main_search_results_title) + " • " + results.size
+    ) {
         if (results.isEmpty()) {
-            Text(
-                text = dynamicStringResource(R.string.main_search_no_results, query.trim()),
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.SearchOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.main_search_no_results, query.trim()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
-            results.forEachIndexed { index, result ->
+            results.forEachIndexed { index, match ->
                 if (index > 0) HorizontalDivider()
-                val item = result.item
-                val addonEntry = item.addonEntry
-                if (addonEntry != null) {
-                    AddonMainEntryRow(
-                        entry = addonEntry,
-                        onClick = item.onClick
-                    )
-                } else {
-                    MainMenuNavigationRow(
-                        title = item.title,
-                        subtitle = item.subtitle,
-                        icon = item.icon,
-                        iconContainerColor = item.iconContainerColor,
-                        iconContentColor = item.iconContentColor,
-                        onClick = item.onClick
-                    )
-                }
+                DashboardSearchResultRow(
+                    entry = match.entry,
+                    tokens = tokens,
+                    onClick = match.entry.onClick
+                )
             }
         }
     }
 }
 
-private fun searchDashboardItems(query: String, items: List<MainDashboardSearchItem>): List<MainDashboardSearchResult> {
-    val normalizedQuery = normalizeSearchText(query)
-    if (normalizedQuery.isBlank()) return emptyList()
-    return items.mapNotNull { item ->
-        val score = scoreSearchMatch(normalizedQuery, item.searchableText)
-        if (score > 0) MainDashboardSearchResult(item, score) else null
-    }.sortedWith(compareByDescending<MainDashboardSearchResult> { it.score }.thenBy { it.item.title })
+@Composable
+private fun DashboardSearchResultRow(
+    entry: DashboardSearchEntry,
+    tokens: List<String>,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val addonEntry = entry.addonEntry
+        if (addonEntry != null) {
+            AddonMainEntryIcon(entry = addonEntry)
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(entry.iconContainerColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = entry.icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = entry.iconContentColor
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp)
+                .weight(1f)
+        ) {
+            Text(
+                text = highlightedSearchText(entry.title, tokens),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2
+            )
+            val secondaryLine = buildList {
+                if (entry.breadcrumb.isNotBlank()) add(entry.breadcrumb)
+                if (entry.subtitle.isNotBlank()) add(entry.subtitle)
+            }.joinToString(" • ")
+            if (secondaryLine.isNotBlank()) {
+                Text(
+                    text = highlightedSearchText(secondaryLine, tokens),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
+        }
+
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
-private fun scoreSearchMatch(normalizedQuery: String, text: String): Int {
-    val normalizedText = normalizeSearchText(text)
-    if (normalizedText.isBlank()) return 0
-    val queryTokens = normalizedQuery.split(SEARCH_TOKEN_SPLIT).filter { it.isNotBlank() }
-    if (queryTokens.isEmpty()) return 0
-    val textTokens = normalizedText.split(SEARCH_TOKEN_SPLIT).filter { it.isNotBlank() }
-    var score = 0
-    if (normalizedText == normalizedQuery) score += 500
-    if (normalizedText.contains(normalizedQuery)) score += 180
-    for (token in queryTokens) {
-        val tokenScore = when {
-            textTokens.any { it == token } -> 90
-            textTokens.any { it.startsWith(token) } -> 60
-            normalizedText.contains(token) -> 25
-            else -> return 0
+@Composable
+private fun highlightedSearchText(text: String, tokens: List<String>): AnnotatedString {
+    if (text.isEmpty() || tokens.isEmpty()) return AnnotatedString(text)
+    val highlightStyle = SpanStyle(
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.Bold
+    )
+    val lower = text.lowercase(Locale.ROOT)
+    val spans = mutableListOf<Pair<Int, Int>>()
+    for (token in tokens) {
+        if (token.isBlank()) continue
+        var from = 0
+        while (from <= lower.length - token.length) {
+            val found = lower.indexOf(token, from)
+            if (found < 0) break
+            spans.add(found to found + token.length)
+            from = found + token.length
         }
-        score += tokenScore
+    }
+    if (spans.isEmpty()) return AnnotatedString(text)
+    val merged = spans.sortedWith(compareBy({ it.first }, { it.second }))
+        .fold(mutableListOf<Pair<Int, Int>>()) { acc, span ->
+            val last = acc.lastOrNull()
+            if (last != null && span.first <= last.second) {
+                acc[acc.lastIndex] = last.first to maxOf(last.second, span.second)
+            } else {
+                acc.add(span)
+            }
+            acc
+        }
+    return buildAnnotatedString {
+        append(text)
+        merged.forEach { (start, end) -> addStyle(highlightStyle, start, end) }
+    }
+}
+
+private fun searchDashboardEntries(query: String, entries: List<DashboardSearchEntry>): List<DashboardSearchMatch> {
+    val tokens = tokenizeSearchQuery(query)
+    if (tokens.isEmpty()) return emptyList()
+    val normalizedQuery = normalizeSearchText(query)
+    return entries.mapNotNull { entry ->
+        val score = scoreSearchEntry(tokens, normalizedQuery, entry)
+        if (score > 0) DashboardSearchMatch(entry, score) else null
+    }.sortedWith(compareByDescending<DashboardSearchMatch> { it.score }.thenBy { it.entry.title })
+        .take(SEARCH_MAX_RESULTS)
+}
+
+/**
+ * Weighted ranking, Settings-like: every query token must match somewhere (AND), and
+ * title hits outrank subtitle/keyword/breadcrumb hits. Bilingual fields (titleEn/…)
+ * carry the same weight as their primary counterparts.
+ */
+private fun scoreSearchEntry(
+    tokens: List<String>,
+    normalizedQuery: String,
+    entry: DashboardSearchEntry
+): Int {
+    val fTitle = normalizeSearchText(entry.title)
+    val fTitleEn = normalizeSearchText(entry.titleEn)
+    val fSubtitle = normalizeSearchText(entry.subtitle)
+    val fSubtitleEn = normalizeSearchText(entry.subtitleEn)
+    val fKeywords = normalizeSearchText(entry.keywords)
+    val fBreadcrumb = normalizeSearchText(entry.breadcrumb)
+    var score = 0
+    for (token in tokens) {
+        val best = maxOf(
+            matchFieldWeight(token, fTitle, exact = 100, prefix = 60, contains = 30),
+            matchFieldWeight(token, fTitleEn, exact = 100, prefix = 60, contains = 30),
+            matchFieldWeight(token, fSubtitle, exact = 45, prefix = 28, contains = 14),
+            matchFieldWeight(token, fSubtitleEn, exact = 45, prefix = 28, contains = 14),
+            matchFieldWeight(token, fKeywords, exact = 35, prefix = 22, contains = 10),
+            matchFieldWeight(token, fBreadcrumb, exact = 25, prefix = 15, contains = 8)
+        )
+        if (best <= 0) return 0
+        score += best
+    }
+    // Whole-query bonuses: exact title match first, then title prefix/contains.
+    if (fTitle == normalizedQuery || fTitleEn == normalizedQuery) {
+        score += 400
+    } else if (fTitle.startsWith(normalizedQuery) || fTitleEn.startsWith(normalizedQuery)) {
+        score += 150
+    } else if (fTitle.contains(normalizedQuery) || fTitleEn.contains(normalizedQuery)) {
+        score += 80
+    } else if (fSubtitle.contains(normalizedQuery) || fSubtitleEn.contains(normalizedQuery) ||
+        fKeywords.contains(normalizedQuery)
+    ) {
+        score += 25
     }
     return score
+}
+
+private fun matchFieldWeight(token: String, field: String, exact: Int, prefix: Int, contains: Int): Int {
+    if (field.isBlank()) return 0
+    var prefixHit = false
+    for (word in field.split(SEARCH_TOKEN_SPLIT)) {
+        if (word.isEmpty()) continue
+        if (word == token) return exact
+        if (word.startsWith(token)) prefixHit = true
+    }
+    if (prefixHit) return prefix
+    if (field.contains(token)) return contains
+    return 0
+}
+
+private fun tokenizeSearchQuery(query: String): List<String> {
+    return normalizeSearchText(query).split(SEARCH_TOKEN_SPLIT)
+        .filter { it.isNotBlank() }
+        .distinct()
 }
 
 private fun normalizeSearchText(value: String): String {
     return value
         .lowercase(Locale.ROOT)
+        .replace('ё', 'е')
         .replace(SEARCH_NORMALIZE_REGEX, " ")
         .trim()
+        .replace(SEARCH_TOKEN_SPLIT, " ")
 }
 
 private val SEARCH_NORMALIZE_REGEX = Regex("[^\\p{L}\\p{Nd}]+")
@@ -820,12 +1131,18 @@ private fun AddonSettingDef.searchText(): String {
     ).joinToString(" ")
 }
 
-private fun openAddonSearchEntry(context: Context, entry: AddonMainEntry) {
+private fun openAddonSearchEntry(context: Context, entry: AddonMainEntry, highlightSettingKey: String? = null) {
     val targetIntent = intentForTargetActivity(context, entry.targetActivity)
     if (targetIntent != null) {
         context.startActivity(targetIntent)
     } else {
-        AddonPageActivity.start(context, addonId = entry.addonId, pageId = entry.leafId, title = entry.title)
+        AddonPageActivity.start(
+            context,
+            addonId = entry.addonId,
+            pageId = entry.leafId,
+            title = entry.title,
+            highlightSettingKey = highlightSettingKey
+        )
     }
 }
 
@@ -840,35 +1157,6 @@ private fun intentForTargetActivity(context: Context, targetActivity: String): I
         "thermalconfigmanager", "thermal" -> Intent(context, ThermalConfigManagerActivity::class.java)
         else -> null
     }
-}
-
-private fun Map<String, String>.categoryText(category: String): String = get(category).orEmpty()
-
-private fun collectMainSearchResourceStrings(context: Context): Map<String, String> {
-    val categories = mapOf(
-        "double_tap" to listOf("dt_", "dt2w_", "dt2s_", "doze_"),
-        "overscroll" to listOf("os_", "overscroll_"),
-        "display" to listOf("display_", "saturation_", "auto_hbm_"),
-        "app_icons" to listOf("app_icons_", "icon_", "icon_shape_"),
-        "systemui" to listOf("sysui_", "qs_", "shade_", "lockscreen_", "battery_", "charging_", "magnifier_", "activity_transition_", "log_"),
-        "launcher" to listOf("launcher_", "recents_", "search_widget_", "grid_", "clear_all_", "gesture_bar_"),
-        "thermal" to listOf("thermal_"),
-        "addons" to listOf("addon_")
-    )
-    val result = categories.keys.associateWith { StringBuilder() }.toMutableMap()
-    runCatching {
-        R.string::class.java.fields.forEach { field ->
-            val name = field.name
-            val matchedCategories = categories.filterValues { prefixes -> prefixes.any { name.startsWith(it) } }.keys
-            if (matchedCategories.isEmpty()) return@forEach
-            val value = runCatching { context.getString(field.getInt(null)) }.getOrNull().orEmpty()
-            if (value.isBlank()) return@forEach
-            matchedCategories.forEach { category ->
-                result[category]?.append(' ')?.append(name)?.append(' ')?.append(value)
-            }
-        }
-    }
-    return result.mapValues { (_, value) -> value.toString() }
 }
 
 @Composable

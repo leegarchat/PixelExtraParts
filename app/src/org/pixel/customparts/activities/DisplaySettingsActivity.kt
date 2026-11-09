@@ -57,7 +57,7 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 class DisplaySettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,10 +97,10 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.display_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.display_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -127,11 +127,11 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
             ) {
                 item {
                         SettingsGroupCard(
-                            title = dynamicStringResource(R.string.display_section_screen),
+                            title = stringResource(R.string.display_section_screen),
                         ) {
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.saturation_title),
-                                subtitle = dynamicStringResource(R.string.saturation_summary),
+                                title = stringResource(R.string.saturation_title),
+                                subtitle = stringResource(R.string.saturation_summary),
                                 icon = Icons.Rounded.Palette,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -144,8 +144,8 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                             HorizontalDivider()
 
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.auto_hbm_title),
-                                subtitle = dynamicStringResource(R.string.auto_hbm_summary),
+                                title = stringResource(R.string.auto_hbm_title),
+                                subtitle = stringResource(R.string.auto_hbm_summary),
                                 icon = Icons.Rounded.WbSunny,
                                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -158,8 +158,8 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                             HorizontalDivider()
 
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.dtw_title),
-                                subtitle = dynamicStringResource(R.string.dtw_summary),
+                                title = stringResource(R.string.dtw_title),
+                                subtitle = stringResource(R.string.dtw_summary),
                                 icon = Icons.Rounded.TouchApp,
                                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -172,8 +172,8 @@ fun DisplaySettingsScreen(onBack: () -> Unit) {
                             HorizontalDivider()
 
                             MainMenuNavigationRow(
-                                title = dynamicStringResource(R.string.auto_lock_title),
-                                subtitle = dynamicStringResource(R.string.auto_lock_summary),
+                                title = stringResource(R.string.auto_lock_title),
+                                subtitle = stringResource(R.string.auto_lock_summary),
                                 icon = Icons.Rounded.Timer,
                                 iconContainerColor = MaterialTheme.colorScheme.errorContainer,
                                 iconContentColor = MaterialTheme.colorScheme.onErrorContainer,

@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -253,12 +253,12 @@ internal fun XposedModulesSection(
         return
     }
 
-    SectionHeader(dynamicStringResource(R.string.addon_tab_modules))
+    SectionHeader(stringResource(R.string.addon_tab_modules))
 
     if (modules.isEmpty()) {
         EmptySectionCard(
-            title = dynamicStringResource(R.string.addon_modules_empty_title),
-            description = dynamicStringResource(R.string.addon_modules_empty_desc)
+            title = stringResource(R.string.addon_modules_empty_title),
+            description = stringResource(R.string.addon_modules_empty_desc)
         )
         return
     }
@@ -303,7 +303,7 @@ internal fun XposedModulesSection(
                         pickerSelection = mod.customTargets
                         pickerMode = mod.scopeMode
                     }) {
-                        Text(dynamicStringResource(R.string.addon_select_apps))
+                        Text(stringResource(R.string.addon_select_apps))
                     }
                 }
             }
@@ -331,7 +331,7 @@ internal fun XposedModulesSection(
                     }
                     Spacer(Modifier.height(8.dp))
                     FilledTonalButton(onClick = { showAppPicker = true }) {
-                        Text(dynamicStringResource(R.string.addon_select_apps))
+                        Text(stringResource(R.string.addon_select_apps))
                     }
                     if (pickerSelection.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
@@ -346,11 +346,11 @@ internal fun XposedModulesSection(
                     writeCustomTargets(context, target.keyId, pickerSelection)
                     scopeModule = null
                     onScopeSaved()
-                }) { Text(dynamicStringResource(R.string.addon_btn_save)) }
+                }) { Text(stringResource(R.string.addon_btn_save)) }
             },
             dismissButton = {
                 TextButton(onClick = { scopeModule = null }) {
-                    Text(dynamicStringResource(R.string.addon_btn_cancel))
+                    Text(stringResource(R.string.addon_btn_cancel))
                 }
             }
         )

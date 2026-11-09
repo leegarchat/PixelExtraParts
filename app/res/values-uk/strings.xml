@@ -288,8 +288,6 @@
     <string name="donate_desc_long">Якщо вам подобається цей модуль і ви хочете підтримати його розвиток, ви можете зробити це через Boosty.</string>
     <string name="donate_btn_boosty">На Boosty</string>
     <string name="donate_links_header">Корисні посилання</string>
-    <string name="error_network">Помилка мережі</string>
-    <string name="refresh_strings">Рядки сторінки оновлено</string>
     <string name="donate_page_updated">Сторінку оновлено</string>
     <string name="donate_page_updated_error">Помилка завантаження даних</string>
 

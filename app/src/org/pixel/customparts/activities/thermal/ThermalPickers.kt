@@ -131,16 +131,15 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
 import java.text.Normalizer
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
 private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
@@ -182,14 +181,14 @@ internal fun ThermalSystemAppsFilterRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = dynamicStringResource(R.string.thermal_manager_show_system_title),
+                    text = stringResource(R.string.thermal_manager_show_system_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = dynamicStringResource(R.string.thermal_manager_show_system_summary),
+                    text = stringResource(R.string.thermal_manager_show_system_summary),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -272,7 +271,7 @@ internal fun ThermalCompactSearchField(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = dynamicStringResource(R.string.btn_close),
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -414,7 +413,7 @@ private fun ThermalSystemAppBadge() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
+            text = stringResource(R.string.launcher_hidden_apps_system_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onErrorContainer,
             fontWeight = FontWeight.Bold,
@@ -437,9 +436,9 @@ private fun SelectionTypeBadge(isGlobalSelection: Boolean) {
     ) {
         Text(
             text = if (isGlobalSelection) {
-                dynamicStringResource(R.string.thermal_manager_selection_global)
+                stringResource(R.string.thermal_manager_selection_global)
             } else {
-                dynamicStringResource(R.string.thermal_manager_selection_selected)
+                stringResource(R.string.thermal_manager_selection_selected)
             },
             style = MaterialTheme.typography.labelSmall,
             color = if (isGlobalSelection) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
@@ -500,7 +499,7 @@ internal fun ConfigPickerDialog(
                         },
                         navigationIcon = {
                             IconButton(onClick = onDismiss) {
-                                Icon(Icons.Rounded.Close, dynamicStringResource(R.string.btn_close))
+                                Icon(Icons.Rounded.Close, stringResource(R.string.btn_close))
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -526,14 +525,14 @@ internal fun ConfigPickerDialog(
                         ThermalCompactSearchField(
                             query = searchQuery,
                             onQueryChange = { searchQuery = it },
-                            hint = dynamicStringResource(R.string.thermal_manager_profile_search_hint)
+                            hint = stringResource(R.string.thermal_manager_profile_search_hint)
                         )
                     }
 
                     if (filteredChoices.isEmpty()) {
                         item {
                             Text(
-                                text = dynamicStringResource(R.string.thermal_manager_profile_search_empty),
+                                text = stringResource(R.string.thermal_manager_profile_search_empty),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp)
@@ -679,20 +678,18 @@ private fun isSystemProfileChoice(choice: ThermalConfigChoice): Boolean {
 
 private fun profileChoiceSearchText(context: Context, choice: ThermalConfigChoice): String {
     val title = when (choice.id) {
-        ThermalProfileController.FOLLOW_GLOBAL_ID -> RemoteStringsManager.getString(
-            context,
+        ThermalProfileController.FOLLOW_GLOBAL_ID -> context.getString(
             R.string.thermal_manager_follow_global
         )
-        ThermalProfileController.STOCK_CONFIG_ID -> RemoteStringsManager.getString(
-            context,
+        ThermalProfileController.STOCK_CONFIG_ID -> context.getString(
             R.string.thermal_manager_stock_profile
         )
         else -> choice.label
     }
     val source = if (isSystemProfileChoice(choice)) {
-        RemoteStringsManager.getString(context, R.string.thermal_manager_profile_system)
+        context.getString(R.string.thermal_manager_profile_system)
     } else {
-        RemoteStringsManager.getString(context, R.string.thermal_manager_profile_user)
+        context.getString(R.string.thermal_manager_profile_user)
     }
     return listOfNotNull(
         choice.id,
@@ -708,8 +705,8 @@ private fun profileChoiceSearchText(context: Context, choice: ThermalConfigChoic
 @Composable
 internal fun profileChoiceTitle(choice: ThermalConfigChoice): String {
     return when (choice.id) {
-        ThermalProfileController.FOLLOW_GLOBAL_ID -> dynamicStringResource(R.string.thermal_manager_follow_global)
-        ThermalProfileController.STOCK_CONFIG_ID -> dynamicStringResource(R.string.thermal_manager_stock_profile)
+        ThermalProfileController.FOLLOW_GLOBAL_ID -> stringResource(R.string.thermal_manager_follow_global)
+        ThermalProfileController.STOCK_CONFIG_ID -> stringResource(R.string.thermal_manager_stock_profile)
         else -> choice.label
     }
 }

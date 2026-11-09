@@ -87,7 +87,6 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString

@@ -91,8 +91,8 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 class HiddenLauncherAppsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -172,7 +172,7 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        dynamicStringResource(R.string.launcher_hidden_apps_title),
+                        stringResource(R.string.launcher_hidden_apps_title),
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -180,7 +180,7 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 actions = {
@@ -204,7 +204,7 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                         ) {
                             Icon(
                                 Icons.Rounded.Refresh,
-                                contentDescription = dynamicStringResource(R.string.btn_restart),
+                                contentDescription = stringResource(R.string.btn_restart),
                                 tint = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -266,17 +266,17 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
                     }
 
                     loadFailed -> item {
-                        EmptyStateText(dynamicStringResource(R.string.launcher_hidden_apps_error))
+                        EmptyStateText(stringResource(R.string.launcher_hidden_apps_error))
                     }
 
                     visibleApps.isEmpty() -> item {
-                        EmptyStateText(dynamicStringResource(R.string.launcher_hidden_apps_empty))
+                        EmptyStateText(stringResource(R.string.launcher_hidden_apps_empty))
                     }
 
                     else -> {
                         item {
                             Text(
-                                text = dynamicStringResource(R.string.launcher_hidden_apps_list_title),
+                                text = stringResource(R.string.launcher_hidden_apps_list_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
@@ -346,7 +346,7 @@ private fun RestartWarningCard() {
         )
     ) {
         Text(
-            text = dynamicStringResource(R.string.launcher_hidden_apps_restart_warning),
+            text = stringResource(R.string.launcher_hidden_apps_restart_warning),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onErrorContainer,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
@@ -374,14 +374,14 @@ private fun SystemAppsFilterRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = dynamicStringResource(R.string.launcher_hidden_apps_system_title),
+                    text = stringResource(R.string.launcher_hidden_apps_system_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = dynamicStringResource(R.string.launcher_hidden_apps_system_summary),
+                    text = stringResource(R.string.launcher_hidden_apps_system_summary),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -430,7 +430,7 @@ private fun CompactSearchField(
             ) {
                 if (query.isEmpty()) {
                     Text(
-                        text = dynamicStringResource(R.string.launcher_hidden_apps_search_hint),
+                        text = stringResource(R.string.launcher_hidden_apps_search_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -457,7 +457,7 @@ private fun CompactSearchField(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = dynamicStringResource(R.string.btn_close),
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -566,7 +566,7 @@ private fun SystemAppBadge() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
+            text = stringResource(R.string.launcher_hidden_apps_system_badge),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onErrorContainer,
             fontWeight = FontWeight.Bold,

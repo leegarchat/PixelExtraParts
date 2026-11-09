@@ -54,7 +54,6 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.dynamicStringResource
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.UnknownHostException
@@ -240,7 +239,7 @@ fun DonateScreen(onBack: () -> Unit) {
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.donate_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.donate_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -250,7 +249,7 @@ fun DonateScreen(onBack: () -> Unit) {
                     IconButton(onClick = { refreshKey++ }) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = dynamicStringResource(R.string.menu_refresh)
+                            contentDescription = stringResource(R.string.menu_refresh)
                         )
                     }
                 },
@@ -264,11 +263,25 @@ fun DonateScreen(onBack: () -> Unit) {
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator()
                 }
             } else if (loadError != null) {
-                Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(innerPadding),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(text = loadError!!, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
                 }
             } else {
@@ -347,7 +360,7 @@ fun DonateTargetCard(config: DonateCardConfig, state: TargetState, onRefresh: ()
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = config.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text(text = dynamicStringResource(R.string.donate_progress_title), style = MaterialTheme.typography.bodySmall)
+                    Text(text = stringResource(R.string.donate_progress_title), style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -373,7 +386,7 @@ fun DonateTargetCard(config: DonateCardConfig, state: TargetState, onRefresh: ()
                         Column(modifier = Modifier.fillMaxWidth().height(120.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                             Icon(Icons.Rounded.Warning, null, tint = MaterialTheme.colorScheme.error)
                             Text(text = targetState.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = onRefresh) { Text(dynamicStringResource(R.string.donate_retry)) }
+                            TextButton(onClick = onRefresh) { Text(stringResource(R.string.donate_retry)) }
                         }
                     }
                     is TargetState.Success -> {
@@ -400,7 +413,7 @@ fun DonateTargetCard(config: DonateCardConfig, state: TargetState, onRefresh: ()
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
                 ) {
-                    Text(dynamicStringResource(R.string.donate_open_target))
+                    Text(stringResource(R.string.donate_open_target))
                     Spacer(Modifier.width(8.dp))
                     Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, modifier = Modifier.size(18.dp))
                 }

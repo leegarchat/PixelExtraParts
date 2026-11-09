@@ -99,7 +99,6 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
 
 private const val TAG = "AddonManagerUI"
@@ -299,9 +298,7 @@ enum class BinderValueType { STRING, BOOL, INT, LONG, DOUBLE, INT_ARRAY, LONG_AR
  * }
  *
  * Path resolution rules:
-                    val defaultSettingsTitle = dynamicStringResource(R.string.addon_settings_title)
  *  - "foo"            → top-level entry with id "foo"
-                        val categoryTitle = category.title.ifBlank { if (settingCategories.size == 1) defaultSettingsTitle else "" }
  */
 data class AddonMainEntry(
     val addonId: String,          // owning addon id

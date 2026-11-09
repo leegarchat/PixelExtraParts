@@ -87,8 +87,8 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AutoHbmController
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 class AutoHbmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -197,10 +197,10 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.auto_hbm_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.auto_hbm_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -228,8 +228,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 if (!supported) {
                     item {
                         ExpandableWarningCard(
-                            title = dynamicStringResource(R.string.auto_hbm_unsupported_title),
-                            text = dynamicStringResource(R.string.auto_hbm_unsupported_summary)
+                            title = stringResource(R.string.auto_hbm_unsupported_title),
+                            text = stringResource(R.string.auto_hbm_unsupported_summary)
                         )
                     }
                 }
@@ -258,12 +258,12 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
 
                 item {
                     SettingsGroupCard(
-                        title = dynamicStringResource(R.string.auto_hbm_title),
+                        title = stringResource(R.string.auto_hbm_title),
                         enabled = supported,
                     ) {
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_hbm_enable_title),
-                            summary = dynamicStringResource(R.string.auto_hbm_summary),
+                            title = stringResource(R.string.auto_hbm_enable_title),
+                            summary = stringResource(R.string.auto_hbm_summary),
                             checked = autoModeEnabled,
                             enabled = supported,
                             onCheckedChange = {
@@ -277,8 +277,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_hbm_permanent_title),
-                            summary = dynamicStringResource(R.string.auto_hbm_permanent_summary),
+                            title = stringResource(R.string.auto_hbm_permanent_title),
+                            summary = stringResource(R.string.auto_hbm_permanent_summary),
                             checked = permanentModeEnabled,
                             enabled = supported,
                             onCheckedChange = {
@@ -292,8 +292,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_hbm_brightness_lock_title),
-                            summary = dynamicStringResource(R.string.auto_hbm_brightness_lock_summary),
+                            title = stringResource(R.string.auto_hbm_brightness_lock_title),
+                            summary = stringResource(R.string.auto_hbm_brightness_lock_summary),
                             checked = brightnessLockEnabled,
                             enabled = supported,
                             onCheckedChange = {
@@ -304,7 +304,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
 
                         if (permanentModeEnabled) {
                             Text(
-                                text = dynamicStringResource(R.string.auto_hbm_auto_disabled_in_permanent),
+                                text = stringResource(R.string.auto_hbm_auto_disabled_in_permanent),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
@@ -315,7 +315,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         val rampSettingsEnabled = enabled && supported
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_threshold_title),
+                            title = stringResource(R.string.auto_hbm_threshold_title),
                             value = threshold,
                             range = AutoHbmController.MIN_THRESHOLD_LUX..AutoHbmController.MAX_THRESHOLD_LUX,
                             unit = "lx",
@@ -333,7 +333,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_enable_time_title),
+                            title = stringResource(R.string.auto_hbm_enable_time_title),
                             value = enableTime,
                             range = AutoHbmController.MIN_TIME_SECONDS..AutoHbmController.MAX_TIME_SECONDS,
                             unit = "s",
@@ -351,7 +351,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_disable_time_title),
+                            title = stringResource(R.string.auto_hbm_disable_time_title),
                             value = disableTime,
                             range = AutoHbmController.MIN_TIME_SECONDS..AutoHbmController.MAX_TIME_SECONDS,
                             unit = "s",
@@ -369,8 +369,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.auto_hbm_smooth_ramp_title),
-                            summary = dynamicStringResource(R.string.auto_hbm_smooth_ramp_summary),
+                            title = stringResource(R.string.auto_hbm_smooth_ramp_title),
+                            summary = stringResource(R.string.auto_hbm_smooth_ramp_summary),
                             checked = smoothRampEnabled,
                             enabled = rampSettingsEnabled,
                             onCheckedChange = {
@@ -381,7 +381,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
 
                         if (smoothRampEnabled) {
                             SliderSetting(
-                                title = dynamicStringResource(R.string.auto_hbm_ramp_time_title),
+                                title = stringResource(R.string.auto_hbm_ramp_time_title),
                                 value = rampTimeMs,
                                 range = AutoHbmController.MIN_RAMP_TIME_MS..AutoHbmController.MAX_RAMP_TIME_MS,
                                 unit = "ms",
@@ -400,7 +400,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         }
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_max_active_time_title),
+                            title = stringResource(R.string.auto_hbm_max_active_time_title),
                             value = maxActiveTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
@@ -418,7 +418,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_cooldown_time_title),
+                            title = stringResource(R.string.auto_hbm_cooldown_time_title),
                             value = cooldownTime,
                             range = AutoHbmController.MIN_TIMEOUT_SECONDS..AutoHbmController.MAX_TIMEOUT_SECONDS,
                             unit = "s",
@@ -436,7 +436,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.auto_hbm_temperature_limit_title),
+                            title = stringResource(R.string.auto_hbm_temperature_limit_title),
                             value = temperatureLimit,
                             range = AutoHbmController.MIN_TEMPERATURE_LIMIT_C..AutoHbmController.MAX_TEMPERATURE_LIMIT_C,
                             unit = "°C",
@@ -479,7 +479,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                     ) {
                         Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(8.dp))
-                        Text(dynamicStringResource(R.string.auto_hbm_add_tile))
+                        Text(stringResource(R.string.auto_hbm_add_tile))
                     }
                 }
             }
@@ -514,7 +514,7 @@ private fun AutoHbmLuxCard(
 ) {
     val progress = (currentLux / threshold.coerceAtLeast(1)).coerceIn(0f, 1f)
     val temperatureText = currentTemperature?.let { String.format(Locale.US, "%.1f°C", it) }
-        ?: dynamicStringResource(R.string.auto_hbm_temperature_unknown)
+        ?: stringResource(R.string.auto_hbm_temperature_unknown)
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -540,12 +540,12 @@ private fun AutoHbmLuxCard(
                     )
                     Column(modifier = Modifier.padding(start = 16.dp).weight(1f)) {
                         Text(
-                            text = dynamicStringResource(R.string.auto_hbm_current_lux_title),
+                            text = stringResource(R.string.auto_hbm_current_lux_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = dynamicStringResource(
+                            text = stringResource(
                                 if (hbmActive) R.string.auto_hbm_status_active else R.string.auto_hbm_status_monitoring
                             ),
                             style = MaterialTheme.typography.bodyMedium,
@@ -566,7 +566,7 @@ private fun AutoHbmLuxCard(
                 )
 
                 Text(
-                    text = dynamicStringResource(
+                    text = stringResource(
                         R.string.auto_hbm_status_format,
                         threshold,
                         brightness,
@@ -580,7 +580,7 @@ private fun AutoHbmLuxCard(
             }
 
             SliderSetting(
-                title = dynamicStringResource(R.string.auto_hbm_check_interval_title),
+                title = stringResource(R.string.auto_hbm_check_interval_title),
                 value = checkIntervalMs,
                 range = AutoHbmController.MIN_CHECK_INTERVAL_MS..AutoHbmController.MAX_CHECK_INTERVAL_MS,
                 unit = "ms",

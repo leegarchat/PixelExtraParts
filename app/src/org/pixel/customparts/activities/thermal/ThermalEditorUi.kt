@@ -131,16 +131,15 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
 import java.text.Normalizer
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
 private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
@@ -169,13 +168,13 @@ internal fun EditorHeaderCard(
     onSave: () -> Unit,
     onSaveAndApply: () -> Unit
 ) {
-    SettingsGroupCard(title = dynamicStringResource(R.string.thermal_manager_editor_title)) {
+    SettingsGroupCard(title = stringResource(R.string.thermal_manager_editor_title)) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = dynamicStringResource(R.string.thermal_manager_source, source),
+                text = stringResource(R.string.thermal_manager_source, source),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -184,15 +183,15 @@ internal fun EditorHeaderCard(
                 onValueChange = onProfileNameChange,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text(dynamicStringResource(R.string.thermal_manager_profile_name)) }
+                label = { Text(stringResource(R.string.thermal_manager_profile_name)) }
             )
             OutlinedTextField(
                 value = fileNameInput,
                 onValueChange = onFileNameInputChange,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text(dynamicStringResource(R.string.thermal_manager_file_name_optional)) },
-                supportingText = { Text(dynamicStringResource(R.string.thermal_manager_file_name_help)) }
+                label = { Text(stringResource(R.string.thermal_manager_file_name_optional)) },
+                supportingText = { Text(stringResource(R.string.thermal_manager_file_name_help)) }
             )
 
             Row(
@@ -213,7 +212,7 @@ internal fun EditorHeaderCard(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = dynamicStringResource(tab.labelRes),
+                                text = stringResource(tab.labelRes),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
@@ -236,7 +235,7 @@ internal fun EditorHeaderCard(
                     Icon(Icons.Rounded.Save, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = dynamicStringResource(R.string.thermal_manager_save),
+                        text = stringResource(R.string.thermal_manager_save),
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -253,7 +252,7 @@ internal fun EditorHeaderCard(
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = dynamicStringResource(R.string.thermal_manager_save_apply),
+                        text = stringResource(R.string.thermal_manager_save_apply),
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -277,7 +276,7 @@ internal fun ThermalParamTreeCard(
     onParamClick: (ThermalConfigParam) -> Unit,
     onInfoClick: (ThermalConfigParam) -> Unit
 ) {
-    SettingsGroupCard(title = dynamicStringResource(R.string.thermal_manager_editor_tree_title)) {
+    SettingsGroupCard(title = stringResource(R.string.thermal_manager_editor_tree_title)) {
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -285,10 +284,10 @@ internal fun ThermalParamTreeCard(
             ThermalCompactSearchField(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange,
-                hint = dynamicStringResource(R.string.thermal_manager_search_hint)
+                hint = stringResource(R.string.thermal_manager_search_hint)
             )
             Text(
-                text = dynamicStringResource(R.string.thermal_manager_search_count, visibleCount, totalCount),
+                text = stringResource(R.string.thermal_manager_search_count, visibleCount, totalCount),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -297,7 +296,7 @@ internal fun ThermalParamTreeCard(
 
         if (branches.isEmpty()) {
             Text(
-                text = dynamicStringResource(R.string.thermal_manager_editor_tree_empty),
+                text = stringResource(R.string.thermal_manager_editor_tree_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
@@ -448,7 +447,7 @@ private fun ThermalTreeParamRow(
         IconButton(onClick = onInfoClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Rounded.Info,
-                contentDescription = dynamicStringResource(R.string.thermal_manager_info),
+                contentDescription = stringResource(R.string.thermal_manager_info),
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -526,12 +525,12 @@ internal fun ThermalParamEditDialog(
         },
         confirmButton = {
             IconButton(onClick = { onSave(draftValue) }) {
-                Icon(Icons.Rounded.Check, contentDescription = dynamicStringResource(R.string.btn_save))
+                Icon(Icons.Rounded.Check, contentDescription = stringResource(R.string.btn_save))
             }
         },
         dismissButton = {
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Rounded.Close, contentDescription = dynamicStringResource(R.string.btn_cancel))
+                Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.btn_cancel))
             }
         }
     )
@@ -556,11 +555,11 @@ private fun FieldBadge(param: ThermalConfigParam) {
     ) {
         Text(
             text = if (param.throttlingField) {
-                dynamicStringResource(R.string.thermal_manager_badge_throttle)
+                stringResource(R.string.thermal_manager_badge_throttle)
             } else if (param.knownField) {
-                dynamicStringResource(R.string.thermal_manager_badge_known)
+                stringResource(R.string.thermal_manager_badge_known)
             } else {
-                dynamicStringResource(R.string.thermal_manager_badge_unknown)
+                stringResource(R.string.thermal_manager_badge_unknown)
             },
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)

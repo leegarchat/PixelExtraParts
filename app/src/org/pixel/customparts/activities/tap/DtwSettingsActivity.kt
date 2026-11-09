@@ -78,11 +78,11 @@ import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.TopStatusVeil
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 class DtwSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -133,10 +133,10 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
         contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.dtw_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.dtw_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -163,12 +163,12 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
             ) {
                 item {
                     SettingsGroupCard(
-                        title = dynamicStringResource(R.string.dtw_title),
+                        title = stringResource(R.string.dtw_title),
                         enabled = supported,
                     ) {
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.dtw_enable_title),
-                            summary = dynamicStringResource(R.string.dtw_summary),
+                            title = stringResource(R.string.dtw_enable_title),
+                            summary = stringResource(R.string.dtw_summary),
                             checked = enabled,
                             enabled = supported,
                             onCheckedChange = {
@@ -178,7 +178,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.dtw_tap_count_title),
+                            title = stringResource(R.string.dtw_tap_count_title),
                             value = tapCount,
                             range = 1..3,
                             unit = "",
@@ -196,7 +196,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                         )
 
                         SliderSetting(
-                            title = dynamicStringResource(R.string.dtw_timeout_title),
+                            title = stringResource(R.string.dtw_timeout_title),
                             value = timeoutMs,
                             range = 100..2000,
                             unit = "ms",
@@ -214,8 +214,8 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                         )
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.dtw_coordinate_check_title),
-                            summary = dynamicStringResource(R.string.dtw_coordinate_check_summary),
+                            title = stringResource(R.string.dtw_coordinate_check_title),
+                            summary = stringResource(R.string.dtw_coordinate_check_summary),
                             checked = coordinateCheck,
                             enabled = enabled && supported,
                             onCheckedChange = {
@@ -230,7 +230,7 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                             )
 
                             SliderSetting(
-                                title = dynamicStringResource(R.string.dtw_max_distance_title),
+                                title = stringResource(R.string.dtw_max_distance_title),
                                 value = maxDistance,
                                 range = 10..500,
                                 unit = "dp",
@@ -306,13 +306,13 @@ private fun DtwCoordinatePreview(maxDistance: Int) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = dynamicStringResource(R.string.dtw_coordinate_preview_title),
+                text = stringResource(R.string.dtw_coordinate_preview_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = dynamicStringResource(R.string.dtw_coordinate_preview_summary),
+                text = stringResource(R.string.dtw_coordinate_preview_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -416,7 +416,7 @@ private fun DtwCoordinatePreview(maxDistance: Int) {
             }
 
             Text(
-                text = dynamicStringResource(R.string.dtw_coordinate_preview_value, maxDistance),
+                text = stringResource(R.string.dtw_coordinate_preview_value, maxDistance),
                 style = MaterialTheme.typography.labelLarge,
                 color = primary,
                 fontWeight = FontWeight.Bold,

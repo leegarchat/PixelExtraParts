@@ -79,9 +79,9 @@ import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import java.util.concurrent.atomic.AtomicBoolean
+import androidx.compose.ui.res.stringResource
 
 private const val ROTATION_STYLE_DEFAULT = 0
 private const val ROTATION_STYLE_CUSTOM_APK = -1
@@ -406,10 +406,10 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.rotation_anim_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.rotation_anim_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -445,7 +445,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                         Column(Modifier.padding(20.dp)) {
                             Text(
                                 String.format(
-                                    dynamicStringResource(R.string.rotation_anim_current),
+                                    stringResource(R.string.rotation_anim_current),
                                     styleDisplayName(context, currentStyle)
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -461,7 +461,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                                     ),
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                                 ) {
-                                    Text(dynamicStringResource(R.string.rotation_anim_reset))
+                                    Text(stringResource(R.string.rotation_anim_reset))
                                 }
                             }
                         }
@@ -470,7 +470,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
 
                 item {
                     Text(
-                        dynamicStringResource(R.string.rotation_anim_builtin_title),
+                        stringResource(R.string.rotation_anim_builtin_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -487,7 +487,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
 
                 item {
                     Text(
-                        dynamicStringResource(R.string.rotation_anim_custom_title),
+                        stringResource(R.string.rotation_anim_custom_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -501,7 +501,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Text(
-                                dynamicStringResource(R.string.rotation_anim_no_themes),
+                                stringResource(R.string.rotation_anim_no_themes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
@@ -528,12 +528,12 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.rotation_anim_import_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.rotation_anim_import_title)) {
                         Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                             OutlinedTextField(
                                 value = styleName,
                                 onValueChange = { styleName = filterThemeNameInput(it) },
-                                label = { Text(dynamicStringResource(R.string.rotation_anim_style_name)) },
+                                label = { Text(stringResource(R.string.rotation_anim_style_name)) },
                                 placeholder = { Text("e.g. windows phone") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -544,13 +544,13 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                             )
                             Spacer(Modifier.height(12.dp))
                             FilePickerRow(
-                                label = dynamicStringResource(R.string.rotation_anim_exit_file),
+                                label = stringResource(R.string.rotation_anim_exit_file),
                                 uri = exitUri,
                                 required = true,
                                 onClick = { exitPicker.launch("text/xml") }
                             )
                             FilePickerRow(
-                                label = dynamicStringResource(R.string.rotation_anim_enter_file),
+                                label = stringResource(R.string.rotation_anim_enter_file),
                                 uri = enterUri,
                                 required = true,
                                 onClick = { enterPicker.launch("text/xml") }
@@ -571,7 +571,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                                 }
                                 Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(dynamicStringResource(R.string.rotation_anim_compile_btn))
+                                Text(stringResource(R.string.rotation_anim_compile_btn))
                             }
                             if (compileError != null) {
                                 Spacer(Modifier.height(8.dp))
@@ -587,7 +587,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
 
                 if (compileLog.isNotEmpty()) {
                     item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.rotation_anim_log_title)) {
+                        SettingsGroupCard(title = stringResource(R.string.rotation_anim_log_title)) {
                             Card(
                                 colors = CardDefaults.cardColors(
                                     containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
@@ -621,7 +621,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
 
                 item {
                     Text(
-                        dynamicStringResource(R.string.rotation_anim_constructor_title),
+                        stringResource(R.string.rotation_anim_constructor_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -698,13 +698,13 @@ private fun RotationStyleItem(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        dynamicStringResource(style.nameRes),
+                        stringResource(style.nameRes),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold
                     )
                     if (isActive) {
                         Text(
-                            dynamicStringResource(R.string.rotation_anim_active),
+                            stringResource(R.string.rotation_anim_active),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -713,7 +713,7 @@ private fun RotationStyleItem(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                        dynamicStringResource(R.string.rotation_anim_preview)
+                        stringResource(R.string.rotation_anim_preview)
                     )
                 }
             }
@@ -742,7 +742,7 @@ private fun RotationStyleItem(
                             Spacer(Modifier.width(8.dp))
                         }
                         Text(
-                            dynamicStringResource(
+                            stringResource(
                                 if (isActive) R.string.rotation_anim_active
                                 else R.string.rotation_anim_apply
                             )
@@ -806,7 +806,7 @@ private fun CustomThemeItem(
                         )
                         if (isActive) {
                             Text(
-                                dynamicStringResource(R.string.rotation_anim_active),
+                                stringResource(R.string.rotation_anim_active),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -815,14 +815,14 @@ private fun CustomThemeItem(
                     IconButton(onClick = { expanded = !expanded }) {
                         Icon(
                             if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                            dynamicStringResource(R.string.rotation_anim_preview)
+                            stringResource(R.string.rotation_anim_preview)
                         )
                     }
                     if (!showConfirmDelete) {
                         IconButton(onClick = { showConfirmDelete = true }) {
                             Icon(
                                 Icons.Rounded.Delete,
-                                dynamicStringResource(R.string.rotation_anim_delete),
+                                stringResource(R.string.rotation_anim_delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -830,12 +830,12 @@ private fun CustomThemeItem(
                         IconButton(onClick = { showConfirmDelete = false; onUninstall() }) {
                             Icon(
                                 Icons.Rounded.Check,
-                                dynamicStringResource(R.string.rotation_anim_delete_confirm),
+                                stringResource(R.string.rotation_anim_delete_confirm),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
                         IconButton(onClick = { showConfirmDelete = false }) {
-                            Icon(Icons.Rounded.Close, dynamicStringResource(R.string.rotation_anim_cancel))
+                            Icon(Icons.Rounded.Close, stringResource(R.string.rotation_anim_cancel))
                         }
                     }
                 }
@@ -864,7 +864,7 @@ private fun CustomThemeItem(
                                 Spacer(Modifier.width(8.dp))
                             }
                             Text(
-                                dynamicStringResource(
+                                stringResource(
                                     if (isActive) R.string.rotation_anim_active
                                     else R.string.rotation_anim_apply
                                 )
@@ -909,7 +909,7 @@ private fun RotationConstructorBlock(
                     Tab(
                         selected = selectedTab == index,
                         onClick = { onTabSelected(index) },
-                        text = { Text(dynamicStringResource(labelRes)) }
+                        text = { Text(stringResource(labelRes)) }
                     )
                 }
             }
@@ -940,7 +940,7 @@ private fun RotationConstructorPreview(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                dynamicStringResource(R.string.rotation_anim_constructor_preview),
+                stringResource(R.string.rotation_anim_constructor_preview),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -990,8 +990,8 @@ private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
                     OutlinedTextField(
                         value = buildThemeName,
                         onValueChange = { buildThemeName = filterThemeNameInput(it) },
-                        label = { Text(dynamicStringResource(R.string.rotation_anim_constructor_style_name)) },
-                        placeholder = { Text(dynamicStringResource(R.string.rotation_anim_constructor_style_hint)) },
+                        label = { Text(stringResource(R.string.rotation_anim_constructor_style_name)) },
+                        placeholder = { Text(stringResource(R.string.rotation_anim_constructor_style_hint)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Ascii,
@@ -1012,7 +1012,7 @@ private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
                     ) {
                         Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.rotation_anim_constructor_build))
+                        Text(stringResource(R.string.rotation_anim_constructor_build))
                     }
                 }
             }
@@ -1023,8 +1023,8 @@ private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
                 Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (showBuildInput) dynamicStringResource(R.string.rotation_anim_constructor_hide)
-                    else dynamicStringResource(R.string.rotation_anim_constructor_build)
+                    if (showBuildInput) stringResource(R.string.rotation_anim_constructor_hide)
+                    else stringResource(R.string.rotation_anim_constructor_build)
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -1035,8 +1035,8 @@ private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
                 Icon(Icons.Rounded.Code, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    if (showXml) dynamicStringResource(R.string.rotation_anim_constructor_hide_xml)
-                    else dynamicStringResource(R.string.rotation_anim_constructor_show_xml)
+                    if (showXml) stringResource(R.string.rotation_anim_constructor_hide_xml)
+                    else stringResource(R.string.rotation_anim_constructor_show_xml)
                 )
             }
             if (showXml) {
@@ -1333,18 +1333,18 @@ internal fun AnimationCompileDialog(
                 Spacer(Modifier.size(if (terminal) 16.dp else 8.dp))
                 Text(
                     text = when (state.phase) {
-                        AnimationCompilePhase.COMPILING -> dynamicStringResource(labels.compiling)
-                        AnimationCompilePhase.INSTALLING -> dynamicStringResource(labels.installing)
-                        AnimationCompilePhase.SUCCESS -> dynamicStringResource(labels.success)
-                        AnimationCompilePhase.ERROR -> dynamicStringResource(labels.error)
-                        AnimationCompilePhase.CANCELLED -> dynamicStringResource(labels.cancelled)
+                        AnimationCompilePhase.COMPILING -> stringResource(labels.compiling)
+                        AnimationCompilePhase.INSTALLING -> stringResource(labels.installing)
+                        AnimationCompilePhase.SUCCESS -> stringResource(labels.success)
+                        AnimationCompilePhase.ERROR -> stringResource(labels.error)
+                        AnimationCompilePhase.CANCELLED -> stringResource(labels.cancelled)
                     },
                     style = MaterialTheme.typography.titleMedium
                 )
                 if (!terminal) {
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        dynamicStringResource(labels.progress, (animatedProgress * 100).toInt()),
+                        stringResource(labels.progress, (animatedProgress * 100).toInt()),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -1365,11 +1365,11 @@ internal fun AnimationCompileDialog(
                 ) {
                     if (!terminal) {
                         TextButton(onClick = onCancel) {
-                            Text(dynamicStringResource(labels.cancel))
+                            Text(stringResource(labels.cancel))
                         }
                     } else {
                         Button(onClick = onDismiss) {
-                            Text(dynamicStringResource(labels.ok))
+                            Text(stringResource(labels.ok))
                         }
                     }
                 }

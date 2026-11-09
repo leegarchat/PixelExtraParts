@@ -34,6 +34,7 @@ class AddonPageActivity : ComponentActivity() {
         const val EXTRA_ADDON_ID = "addon_id"
         const val EXTRA_PAGE_ID  = "page_id"
         const val EXTRA_TITLE    = "title"
+        const val EXTRA_HIGHLIGHT_SETTING_KEY = "highlight_setting_key"
         const val EXTRA_USE_SYSTEM_ACTIVITY_ANIMATION = "org.pixel.customparts.extra.USE_SYSTEM_ACTIVITY_ANIMATION"
         const val EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES = "org.pixel.customparts.extra.INCLUDE_TARGET_ACTIVITY_ENTRIES"
 
@@ -42,13 +43,15 @@ class AddonPageActivity : ComponentActivity() {
             addonId: String,
             pageId: String? = null,
             title: String? = null,
-            includeTargetActivityEntries: Boolean = false
+            includeTargetActivityEntries: Boolean = false,
+            highlightSettingKey: String? = null
         ) {
             val intent = Intent(context, AddonPageActivity::class.java).apply {
                 putExtra(EXTRA_ADDON_ID, addonId)
                 if (pageId != null) putExtra(EXTRA_PAGE_ID, pageId)
                 if (title != null) putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, includeTargetActivityEntries)
+                if (!highlightSettingKey.isNullOrBlank()) putExtra(EXTRA_HIGHLIGHT_SETTING_KEY, highlightSettingKey)
             }
             context.startActivity(intent)
         }
@@ -63,6 +66,7 @@ class AddonPageActivity : ComponentActivity() {
         }
         val pageId = intent.getStringExtra(EXTRA_PAGE_ID)
         val includeTargetActivityEntries = intent.getBooleanExtra(EXTRA_INCLUDE_TARGET_ACTIVITY_ENTRIES, false)
+        val highlightSettingKey = intent.getStringExtra(EXTRA_HIGHLIGHT_SETTING_KEY)
 
         enableEdgeToEdge()
         setContent {
@@ -79,6 +83,7 @@ class AddonPageActivity : ComponentActivity() {
                         addonId = addonId,
                         pageId = pageId,
                         includeTargetActivityEntries = includeTargetActivityEntries,
+                        highlightSettingKey = highlightSettingKey,
                         onBack = { finish() }
                     )
                 }

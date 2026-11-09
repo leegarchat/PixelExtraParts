@@ -36,7 +36,6 @@ import androidx.compose.ui.draw.alpha
 import java.util.Locale
 import org.pixel.customparts.R
 import androidx.compose.ui.res.stringResource
-import org.pixel.customparts.utils.dynamicStringResource
 
 data class AppItem(val name: String, val pkg: String, val icon: Drawable)
 
@@ -102,7 +101,7 @@ fun AppConfigCard(
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(dynamicStringResource(R.string.os_app_filter), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                Text(stringResource(R.string.os_app_filter), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
                 Spacer(Modifier.width(8.dp))
                 Switch(
                     checked = item.filter,
@@ -114,7 +113,7 @@ fun AppConfigCard(
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(dynamicStringResource(R.string.os_app_ignore), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, maxLines = 1)
+                Text(stringResource(R.string.os_app_ignore), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, maxLines = 1)
                 Spacer(Modifier.width(8.dp))
                 Switch(
                     checked = item.ignore,
@@ -130,7 +129,7 @@ fun AppConfigCard(
         Spacer(Modifier.height(8.dp))
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(dynamicStringResource(R.string.os_app_scale), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+            Text(stringResource(R.string.os_app_scale), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
             Spacer(Modifier.width(8.dp))
             Text(
                 String.format(Locale.US, "%.1f", sliderValue), 
@@ -199,11 +198,11 @@ fun AppSelectorDialog(
             modifier = Modifier.fillMaxWidth().heightIn(max = 600.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(dynamicStringResource(R.string.os_app_select_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
+                Text(stringResource(R.string.os_app_select_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text(dynamicStringResource(R.string.os_app_search_hint)) },
+                    label = { Text(stringResource(R.string.os_app_search_hint)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -244,7 +243,7 @@ fun AppSelectorDialog(
                 }
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_cancel)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
                 }
             }
         }

@@ -99,7 +99,6 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
 
 private const val TAG = "AddonManagerUI"

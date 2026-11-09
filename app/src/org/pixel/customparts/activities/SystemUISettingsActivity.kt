@@ -77,7 +77,7 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.PixelPartsLogController
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 class SystemUISettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,7 +132,7 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 extraActions = listOf(
                     RebootBubbleMenuAction(
                         icon = Icons.Filled.Add,
-                        label = dynamicStringResource(R.string.sysui_log_service_add_tile),
+                        label = stringResource(R.string.sysui_log_service_add_tile),
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = {
@@ -149,7 +149,7 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
         },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.sysui_settings_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.sysui_settings_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
                 },
@@ -184,7 +184,7 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.sysui_log_service_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.sysui_log_service_title)) {
                         LogServiceControlRow(
                             running = logServiceRunning,
                             onClick = {
@@ -200,8 +200,8 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                         HorizontalDivider()
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.sysui_logcat_title),
-                            summary = dynamicStringResource(R.string.sysui_logcat_summary),
+                            title = stringResource(R.string.sysui_logcat_title),
+                            summary = stringResource(R.string.sysui_logcat_summary),
                             checked = logcatEnabled,
                             onCheckedChange = { checked ->
                                 logcatEnabled = checked
@@ -212,8 +212,8 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                         HorizontalDivider()
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.sysui_dmesg_title),
-                            summary = dynamicStringResource(R.string.sysui_dmesg_summary),
+                            title = stringResource(R.string.sysui_dmesg_title),
+                            summary = stringResource(R.string.sysui_dmesg_summary),
                             checked = dmesgEnabled,
                             onCheckedChange = { checked ->
                                 dmesgEnabled = checked
@@ -224,8 +224,8 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                         HorizontalDivider()
 
                         GenericSwitchRow(
-                            title = dynamicStringResource(R.string.sysui_crash_log_title),
-                            summary = dynamicStringResource(R.string.sysui_crash_log_summary),
+                            title = stringResource(R.string.sysui_crash_log_title),
+                            summary = stringResource(R.string.sysui_crash_log_summary),
                             checked = crashLogEnabled,
                             onCheckedChange = { checked ->
                                 crashLogEnabled = checked
@@ -236,10 +236,10 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.magnifier_section_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.magnifier_section_title)) {
                         SystemUIStaticNavigationRow(
-                            title = dynamicStringResource(R.string.magnifier_section_title),
-                            subtitle = dynamicStringResource(R.string.magnifier_enable_summary),
+                            title = stringResource(R.string.magnifier_section_title),
+                            subtitle = stringResource(R.string.magnifier_enable_summary),
                             onClick = {
                                 context.startActivity(Intent(context, MagnifierSettingsActivity::class.java))
                             }
@@ -248,10 +248,10 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.anim_transition_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.anim_transition_title)) {
                         SystemUIStaticNavigationRow(
-                            title = dynamicStringResource(R.string.anim_transition_title),
-                            subtitle = dynamicStringResource(R.string.anim_transition_subtitle),
+                            title = stringResource(R.string.anim_transition_title),
+                            subtitle = stringResource(R.string.anim_transition_subtitle),
                             onClick = {
                                 context.startActivity(Intent(context, ActivityTransitionActivity::class.java))
                             }
@@ -260,10 +260,10 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.rotation_anim_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.rotation_anim_title)) {
                         SystemUIStaticNavigationRow(
-                            title = dynamicStringResource(R.string.rotation_anim_title),
-                            subtitle = dynamicStringResource(R.string.rotation_anim_subtitle),
+                            title = stringResource(R.string.rotation_anim_title),
+                            subtitle = stringResource(R.string.rotation_anim_subtitle),
                             onClick = {
                                 context.startActivity(Intent(context, RotationAnimationActivity::class.java))
                             }
@@ -293,7 +293,7 @@ private fun SystemUIAddonInjectedSettings(
     entries: List<AddonMainEntry>
 ) {
     val context = LocalContext.current
-    SettingsGroupCard(title = dynamicStringResource(R.string.addon_settings_title)) {
+    SettingsGroupCard(title = stringResource(R.string.addon_settings_title)) {
         entries.forEachIndexed { index, entry ->
             if (index > 0) HorizontalDivider()
             key(entry.rawId) {
@@ -350,11 +350,11 @@ private fun LogServiceControlRow(
 ) {
     val statusColor = if (running) Color(0xFF2E7D32) else Color(0xFFC62828)
     val statusIcon = if (running) Icons.Filled.CheckCircle else Icons.Filled.Cancel
-    val statusText = dynamicStringResource(
+    val statusText = stringResource(
         if (running) R.string.sysui_log_service_status_running else R.string.sysui_log_service_status_stopped
     )
     val buttonIcon = if (running) Icons.Filled.Stop else Icons.Filled.PlayArrow
-    val buttonText = dynamicStringResource(
+    val buttonText = stringResource(
         if (running) R.string.sysui_log_service_stop else R.string.sysui_log_service_start
     )
 
@@ -366,12 +366,12 @@ private fun LogServiceControlRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = dynamicStringResource(R.string.sysui_log_service_enable_title),
+                text = stringResource(R.string.sysui_log_service_enable_title),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = dynamicStringResource(R.string.sysui_log_service_enable_summary),
+                text = stringResource(R.string.sysui_log_service_enable_summary),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

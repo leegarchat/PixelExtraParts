@@ -143,8 +143,8 @@ import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 
 
@@ -182,14 +182,14 @@ internal fun AppIconCurrentIconCard(app: InstalledIconApp, appliedBitmap: Bitmap
                     .padding(start = 14.dp)
             ) {
                 Text(
-                    text = dynamicStringResource(R.string.app_icons_current_icon_title),
+                    text = stringResource(R.string.app_icons_current_icon_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = app.appliedIconPackLabel?.let {
-                        dynamicStringResource(R.string.app_icons_applied_from_format, it)
-                    } ?: dynamicStringResource(R.string.app_icons_not_applied_to_app),
+                        stringResource(R.string.app_icons_applied_from_format, it)
+                    } ?: stringResource(R.string.app_icons_not_applied_to_app),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -255,20 +255,20 @@ internal fun AppIconChooserDialog(
     val appliedSource = iconMap.sources[app.packageName]
 
     AppIconsDialog(
-        title = dynamicStringResource(R.string.app_icons_choose_from_pack),
+        title = stringResource(R.string.app_icons_choose_from_pack),
         subtitle = app.label,
         onDismiss = onDismiss,
-        footer = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_close)) } }
+        footer = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_close)) } }
     ) {
         AppIconsSearchField(
             query = query,
-            hint = dynamicStringResource(R.string.app_icons_dialog_search_hint),
+            hint = stringResource(R.string.app_icons_dialog_search_hint),
             onQueryChange = { query = it }
         )
         Spacer(Modifier.height(12.dp))
         when {
             loading -> LoadingDialogContent()
-            filteredDetected.isEmpty() && filteredAll.isEmpty() -> EmptyStateText(dynamicStringResource(R.string.app_icons_no_pack_icons))
+            filteredDetected.isEmpty() && filteredAll.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_pack_icons))
             else -> LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -277,7 +277,7 @@ internal fun AppIconChooserDialog(
             ) {
                 if (filteredDetected.isNotEmpty()) {
                     item(key = "detected_header") {
-                        AppIconChooserSectionTitle(dynamicStringResource(R.string.app_icons_detected_alternatives_title))
+                        AppIconChooserSectionTitle(stringResource(R.string.app_icons_detected_alternatives_title))
                     }
                     items(filteredDetected, key = { "detected:${it.iconPackPackage}:${it.drawableName}" }) { item ->
                         AppIconChooserRow(
@@ -290,7 +290,7 @@ internal fun AppIconChooserDialog(
                 }
                 if (filteredAll.isNotEmpty()) {
                     item(key = "all_header") {
-                        AppIconChooserSectionTitle(dynamicStringResource(R.string.app_icons_all_pack_icons_title))
+                        AppIconChooserSectionTitle(stringResource(R.string.app_icons_all_pack_icons_title))
                     }
                     items(filteredAll, key = { "all:${it.iconPackPackage}:${it.drawableName}" }) { item ->
                         AppIconChooserRow(
@@ -412,9 +412,9 @@ private fun AppIconChooserRow(
             ) {
                 Text(
                     text = if (applied) {
-                        dynamicStringResource(R.string.app_icons_applied_button)
+                        stringResource(R.string.app_icons_applied_button)
                     } else {
-                        dynamicStringResource(R.string.btn_apply)
+                        stringResource(R.string.btn_apply)
                     },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -463,25 +463,25 @@ internal fun PartialApplyDialog(
     }
 
     AppIconsDialog(
-        title = dynamicStringResource(R.string.app_icons_supported_apps_title),
+        title = stringResource(R.string.app_icons_supported_apps_title),
         subtitle = pack.label,
         onDismiss = onDismiss,
         footer = {
-            TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
             Button(onClick = { onApply(selectedPackages) }) {
-                Text(dynamicStringResource(R.string.app_icons_apply_selected), maxLines = 1)
+                Text(stringResource(R.string.app_icons_apply_selected), maxLines = 1)
             }
         }
     ) {
         AppIconsSearchField(
             query = query,
-            hint = dynamicStringResource(R.string.app_icons_dialog_search_hint),
+            hint = stringResource(R.string.app_icons_dialog_search_hint),
             onQueryChange = { query = it }
         )
         Spacer(Modifier.height(12.dp))
         when {
             loading -> LoadingDialogContent()
-            visibleEntries.isEmpty() -> EmptyStateText(dynamicStringResource(R.string.app_icons_no_supported_apps))
+            visibleEntries.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_supported_apps))
             else -> LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -515,7 +515,7 @@ internal fun ApplyModeDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(dynamicStringResource(R.string.app_icons_apply_mode_title)) },
+        title = { Text(stringResource(R.string.app_icons_apply_mode_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
@@ -526,24 +526,24 @@ internal fun ApplyModeDialog(
                     overflow = TextOverflow.Ellipsis
                 )
                 ApplyModeButton(
-                    text = dynamicStringResource(R.string.app_icons_apply_mode_all_pack),
+                    text = stringResource(R.string.app_icons_apply_mode_all_pack),
                     onClick = { onApply(IconApplyMode.ALL_PACK) }
                 )
                 ApplyModeButton(
-                    text = dynamicStringResource(R.string.app_icons_apply_mode_system_only),
+                    text = stringResource(R.string.app_icons_apply_mode_system_only),
                     onClick = { onApply(IconApplyMode.SYSTEM_ONLY) }
                 )
                 ApplyModeButton(
-                    text = dynamicStringResource(R.string.app_icons_apply_mode_user_only),
+                    text = stringResource(R.string.app_icons_apply_mode_user_only),
                     onClick = { onApply(IconApplyMode.USER_ONLY) }
                 )
                 ApplyModeButton(
-                    text = dynamicStringResource(R.string.app_icons_apply_mode_installed_only),
+                    text = stringResource(R.string.app_icons_apply_mode_installed_only),
                     onClick = { onApply(IconApplyMode.INSTALLED_ONLY) }
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_cancel)) } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } }
     )
 }
 
@@ -566,10 +566,10 @@ internal fun IconApplyCompletedDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(dynamicStringResource(R.string.app_icons_apply_finished_title)) },
+        title = { Text(stringResource(R.string.app_icons_apply_finished_title)) },
         text = {
             Text(
-                text = dynamicStringResource(
+                text = stringResource(
                     R.string.app_icons_apply_finished_message_format,
                     result.applied,
                     result.removed,
@@ -580,7 +580,7 @@ internal fun IconApplyCompletedDialog(
         },
         confirmButton = {
             Button(onClick = onDismiss) {
-                Text(dynamicStringResource(R.string.btn_ok))
+                Text(stringResource(R.string.btn_ok))
             }
         },
         dismissButton = {
@@ -591,7 +591,7 @@ internal fun IconApplyCompletedDialog(
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             ) {
-                Text(dynamicStringResource(R.string.app_icons_reboot_system))
+                Text(stringResource(R.string.app_icons_reboot_system))
             }
         }
     )
@@ -627,20 +627,20 @@ internal fun PackPreviewDialog(pack: IconPackInfo, onDismiss: () -> Unit) {
     }
 
     AppIconsDialog(
-        title = dynamicStringResource(R.string.app_icons_pack_contents_title),
+        title = stringResource(R.string.app_icons_pack_contents_title),
         subtitle = pack.label,
         onDismiss = onDismiss,
-        footer = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_close)) } }
+        footer = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_close)) } }
     ) {
         AppIconsSearchField(
             query = query,
-            hint = dynamicStringResource(R.string.app_icons_dialog_search_hint),
+            hint = stringResource(R.string.app_icons_dialog_search_hint),
             onQueryChange = { query = it }
         )
         Spacer(Modifier.height(12.dp))
         when {
             loading -> LoadingDialogContent()
-            visibleItems.isEmpty() -> EmptyStateText(dynamicStringResource(R.string.app_icons_no_pack_icons))
+            visibleItems.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_pack_icons))
             else -> IconPreviewGrid(items = visibleItems, modifier = Modifier.weight(1f))
         }
     }
@@ -679,7 +679,7 @@ private fun AppIconDialog(
         title = app.label,
         subtitle = app.packageName,
         onDismiss = onDismiss,
-        footer = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_close)) } }
+        footer = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_close)) } }
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -703,14 +703,14 @@ private fun AppIconDialog(
                         .padding(start = 14.dp)
                 ) {
                     Text(
-                        text = dynamicStringResource(R.string.app_icons_current_icon_title),
+                        text = stringResource(R.string.app_icons_current_icon_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = app.appliedIconPackLabel?.let {
-                            dynamicStringResource(R.string.app_icons_applied_from_format, it)
-                        } ?: dynamicStringResource(R.string.app_icons_not_applied_to_app),
+                            stringResource(R.string.app_icons_applied_from_format, it)
+                        } ?: stringResource(R.string.app_icons_not_applied_to_app),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -728,7 +728,7 @@ private fun AppIconDialog(
             ) {
                 Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(dynamicStringResource(R.string.app_icons_restore_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(R.string.app_icons_restore_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
 
@@ -739,7 +739,7 @@ private fun AppIconDialog(
         ) {
             Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text(dynamicStringResource(R.string.app_icons_import_custom_icon), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.app_icons_import_custom_icon), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -755,7 +755,7 @@ private fun AppIconDialog(
 
         Spacer(Modifier.height(12.dp))
         Text(
-            text = dynamicStringResource(R.string.app_icons_available_icons_title),
+            text = stringResource(R.string.app_icons_available_icons_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold
@@ -764,7 +764,7 @@ private fun AppIconDialog(
 
         when {
             loading -> LoadingDialogContent()
-            candidates.isEmpty() -> EmptyStateText(dynamicStringResource(R.string.app_icons_no_app_candidates))
+            candidates.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_app_candidates))
             else -> LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -123,7 +123,8 @@ internal fun AddonSettingControl(
     allSettings: List<AddonSettingDef> = emptyList(),
     inheritedEnabled: Boolean = true,
     dependencyRevision: Int = 0,
-    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit = { _, _ -> }
+    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit = { _, _ -> },
+    highlightKey: String? = null
 ) {
     val context = LocalContext.current
     val dependencyState = resolveSettingDependencyState(context, addon, setting, allSettings)
@@ -135,18 +136,46 @@ internal fun AddonSettingControl(
             }
         }
     }
+    // Search highlight: flash the matched setting and scroll it into view (one-shot per key).
+    val isHighlightTarget = !highlightKey.isNullOrBlank() && setting.key == highlightKey
+    val bringIntoViewRequester = remember(setting.key, highlightKey) { BringIntoViewRequester() }
+    var highlightConsumed by rememberSaveable(setting.key, highlightKey) { mutableStateOf(false) }
+    var highlightFaded by rememberSaveable(setting.key, highlightKey) { mutableStateOf(false) }
+    val highlightColor by animateColorAsState(
+        targetValue = if (isHighlightTarget && !highlightFaded) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(durationMillis = 600),
+        label = "searchHighlight"
+    )
+    if (isHighlightTarget && !highlightConsumed) {
+        LaunchedEffect(setting.key, highlightKey) {
+            highlightConsumed = true
+            // Let navigation/initial composition settle before scrolling.
+            delay(350)
+            runCatching { bringIntoViewRequester.bringIntoView() }
+            delay(2600)
+            highlightFaded = true
+        }
+    }
     val effectiveModifier = if (setting.isImmersiveGroup()) modifier.fillMaxWidth() else modifier
     val interactionSource = remember { MutableInteractionSource() }
-    Box(modifier = effectiveModifier) {
+    Box(
+        modifier = effectiveModifier
+            .bringIntoViewRequester(bringIntoViewRequester)
+            .background(highlightColor, RoundedCornerShape(12.dp))
+    ) {
         val contentModifier = Modifier.alpha(if (enabled) 1f else 0.45f)
         if (setting.icon.isNotEmpty() && setting.type != SettingType.VISUAL && setting.type != SettingType.GROUP) {
             Row(modifier = contentModifier, verticalAlignment = Alignment.CenterVertically) {
                 SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
                 val innerMod = Modifier.weight(1f)
-                AddonSettingControlInner(setting, addon, innerMod, allSettings, enabled, dependencyRevision, onSettingChanged)
+                AddonSettingControlInner(setting, addon, innerMod, allSettings, enabled, dependencyRevision, onSettingChanged, highlightKey)
             }
         } else {
-            AddonSettingControlInner(setting, addon, contentModifier, allSettings, enabled, dependencyRevision, onSettingChanged)
+            AddonSettingControlInner(setting, addon, contentModifier, allSettings, enabled, dependencyRevision, onSettingChanged, highlightKey)
         }
         if (!enabled) {
             Box(
@@ -170,7 +199,8 @@ private fun AddonSettingControlInner(
     allSettings: List<AddonSettingDef> = emptyList(),
     inheritedEnabled: Boolean = true,
     dependencyRevision: Int = 0,
-    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit = { _, _ -> }
+    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit = { _, _ -> },
+    highlightKey: String? = null
 ) {
     when (setting.type) {
         SettingType.INT -> IntSliderSettingControl(setting, addon, modifier, onSettingChanged)
@@ -181,7 +211,7 @@ private fun AddonSettingControlInner(
         SettingType.FILE -> FileSettingControl(setting, addon, modifier, onSettingChanged)
         SettingType.APP_LIST -> AppListSettingControl(setting, addon, modifier, onSettingChanged)
         SettingType.COLOR -> ColorSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.GROUP -> GroupSettingControl(setting, addon, modifier, allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
+        SettingType.GROUP -> GroupSettingControl(setting, addon, modifier, allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
         SettingType.VISUAL -> VisualSettingControl(setting, addon, modifier)
         SettingType.COMMAND_BUTTON -> CommandButtonSettingControl(setting, addon, modifier)
         SettingType.TOGGLE, SettingType.SWITCH -> SwitchSettingControl(setting, addon, modifier, dependencyRevision, onSettingChanged)
@@ -477,7 +507,7 @@ private fun TileBindingControl(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    if (isBound) dynamicStringResource(R.string.addon_tile_slot, boundSlot) else if (setting.tileConfigurable) dynamicStringResource(R.string.addon_tile_configurable) else dynamicStringResource(R.string.addon_tile_not_added),
+                    if (isBound) stringResource(R.string.addon_tile_slot, boundSlot) else if (setting.tileConfigurable) stringResource(R.string.addon_tile_configurable) else stringResource(R.string.addon_tile_not_added),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isBound) accent else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -501,7 +531,7 @@ private fun TileBindingControl(
                 OutlinedTextField(
                     value = tileTitle,
                     onValueChange = { tileTitle = it },
-                    label = { Text(dynamicStringResource(R.string.addon_tile_name)) },
+                    label = { Text(stringResource(R.string.addon_tile_name)) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -515,7 +545,7 @@ private fun TileBindingControl(
                         value = selectedTarget?.label.orEmpty(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text(dynamicStringResource(R.string.addon_tile_setting)) },
+                        label = { Text(stringResource(R.string.addon_tile_setting)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = targetMenuExpanded) },
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
@@ -552,7 +582,7 @@ private fun TileBindingControl(
                             value = selectedActivityLabel,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text(dynamicStringResource(R.string.addon_tile_long_press)) },
+                            label = { Text(stringResource(R.string.addon_tile_long_press)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = activityMenuExpanded) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
@@ -604,7 +634,7 @@ private fun TileBindingControl(
                 ) {
                     Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(dynamicStringResource(R.string.addon_tile_add))
+                    Text(stringResource(R.string.addon_tile_add))
                 }
             }
         } else {
@@ -623,7 +653,7 @@ private fun TileBindingControl(
             ) {
                 Icon(Icons.Rounded.Link, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(dynamicStringResource(R.string.addon_tile_bind))
+                Text(stringResource(R.string.addon_tile_bind))
             }
         }
     }
@@ -815,7 +845,7 @@ private fun IntSliderSettingControl(
                 },
                 modifier = Modifier.size(28.dp)
             ) {
-                Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
+                Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
             }
             Spacer(Modifier.width(4.dp))
             Slider(
@@ -903,7 +933,7 @@ private fun FloatSliderSettingControl(
                 },
                 modifier = Modifier.size(28.dp)
             ) {
-                Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
+                Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
             }
             Spacer(Modifier.width(4.dp))
             Slider(

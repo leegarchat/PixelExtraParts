@@ -143,8 +143,8 @@ import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 
 
@@ -178,8 +178,8 @@ internal fun PerAppShapeSettingsCard(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ExpandableSectionHeaderContent(
-                title = dynamicStringResource(R.string.app_icons_per_app_shape_title),
-                subtitle = dynamicStringResource(R.string.app_icons_per_app_shape_summary),
+                title = stringResource(R.string.app_icons_per_app_shape_title),
+                subtitle = stringResource(R.string.app_icons_per_app_shape_summary),
                 icon = Icons.Rounded.Apps,
                 expanded = expanded,
                 onExpandChange = { expanded = it }
@@ -196,26 +196,26 @@ internal fun PerAppShapeSettingsCard(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     PerAppShapeAreaEditor(
-                        title = dynamicStringResource(R.string.app_icons_per_app_system_area),
+                        title = stringResource(R.string.app_icons_per_app_system_area),
                         config = overrides.system ?: IconShapeAreaConfig(),
                         onConfigChange = { onOverridesChange(overrides.copy(system = it)) }
                     )
                     PerAppShapeAreaEditor(
-                        title = dynamicStringResource(R.string.app_icons_per_app_notification_area),
+                        title = stringResource(R.string.app_icons_per_app_notification_area),
                         config = overrides.notification ?: IconShapeAreaConfig(),
                         onConfigChange = { onOverridesChange(overrides.copy(notification = it)) }
                     )
                     PerAppShapeAreaEditor(
-                        title = dynamicStringResource(R.string.app_icons_per_app_launcher_area),
+                        title = stringResource(R.string.app_icons_per_app_launcher_area),
                         config = overrides.launcher ?: IconShapeAreaConfig(),
                         onConfigChange = { onOverridesChange(overrides.copy(launcher = it)) }
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) {
-                            Text(dynamicStringResource(R.string.app_icons_reset_individual_settings), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.app_icons_reset_individual_settings), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                         Button(onClick = onSave, modifier = Modifier.weight(1f)) {
-                            Text(dynamicStringResource(R.string.app_icons_save_individual_settings), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.app_icons_save_individual_settings), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -246,21 +246,21 @@ private fun PerAppShapeAreaEditor(
             overflow = TextOverflow.Ellipsis
         )
         AppIconsSwitchRow(
-            title = dynamicStringResource(R.string.app_icons_per_app_stretch_shape),
-            summary = dynamicStringResource(R.string.app_icons_per_app_stretch_shape_summary),
+            title = stringResource(R.string.app_icons_per_app_stretch_shape),
+            summary = stringResource(R.string.app_icons_per_app_stretch_shape_summary),
             checked = config.stretchShape,
             enabled = true,
             onCheckedChange = { checked -> onConfigChange(config.copy(stretchShape = checked, removeShape = if (checked) false else config.removeShape)) }
         )
         AppIconsSwitchRow(
-            title = dynamicStringResource(R.string.app_icons_per_app_remove_shape),
-            summary = dynamicStringResource(R.string.app_icons_per_app_remove_shape_summary),
+            title = stringResource(R.string.app_icons_per_app_remove_shape),
+            summary = stringResource(R.string.app_icons_per_app_remove_shape_summary),
             checked = config.removeShape,
             enabled = true,
             onCheckedChange = { checked -> onConfigChange(config.copy(removeShape = checked, stretchShape = if (checked) false else config.stretchShape)) }
         )
         AppIconsScaleSliderRow(
-            title = dynamicStringResource(R.string.app_icons_per_app_shape_scale),
+            title = stringResource(R.string.app_icons_per_app_shape_scale),
             value = config.scalePercent,
             enabled = config.stretchShape && !config.removeShape,
             onValueChange = { value -> onConfigChange(config.copy(scalePercent = value)) }
@@ -365,9 +365,9 @@ internal fun AppIconCandidateRow(
             ) {
                 Text(
                     text = if (applied) {
-                        dynamicStringResource(R.string.app_icons_applied_button)
+                        stringResource(R.string.app_icons_applied_button)
                     } else {
-                        dynamicStringResource(R.string.btn_apply)
+                        stringResource(R.string.btn_apply)
                     },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -460,7 +460,7 @@ internal fun AppIconsDialog(
                         }
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, dynamicStringResource(R.string.btn_close))
+                        Icon(Icons.Rounded.Close, stringResource(R.string.btn_close))
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -542,7 +542,7 @@ internal fun AppIconsSearchField(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = dynamicStringResource(R.string.btn_close),
+                        contentDescription = stringResource(R.string.btn_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -640,8 +640,8 @@ internal fun BitmapIcon(bitmap: Bitmap?, size: Dp, fallback: ImageVector) {
 @Composable
 internal fun iconPackStatusText(status: IconPackApplyStatus): String {
     return when (status) {
-        IconPackApplyStatus.NOT_APPLIED -> dynamicStringResource(R.string.app_icons_status_not_applied)
-        IconPackApplyStatus.APPLIED_FULL -> dynamicStringResource(R.string.app_icons_status_full)
-        IconPackApplyStatus.APPLIED_PARTIAL -> dynamicStringResource(R.string.app_icons_status_partial)
+        IconPackApplyStatus.NOT_APPLIED -> stringResource(R.string.app_icons_status_not_applied)
+        IconPackApplyStatus.APPLIED_FULL -> stringResource(R.string.app_icons_status_full)
+        IconPackApplyStatus.APPLIED_PARTIAL -> stringResource(R.string.app_icons_status_partial)
     }
 }

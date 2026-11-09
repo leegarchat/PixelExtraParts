@@ -131,10 +131,10 @@ import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
+import androidx.compose.ui.res.stringResource
 
 private const val DEFAULT_CUSTOM_SHAPE_SIDES = 6
 private const val DEFAULT_CUSTOM_SHAPE_ROUNDNESS = 4.5f
@@ -467,7 +467,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Text(
-                        dynamicStringResource(R.string.icon_shape_title),
+                        stringResource(R.string.icon_shape_title),
                         fontWeight = FontWeight.Bold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -475,12 +475,12 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { scope.launch { refreshOptions() } }, enabled = !isBusy) {
-                        Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.app_icons_refresh))
+                        Icon(Icons.Rounded.Refresh, stringResource(R.string.app_icons_refresh))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -506,7 +506,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.icon_shape_custom_section)) {
+                    SettingsGroupCard(title = stringResource(R.string.icon_shape_custom_section)) {
                         CustomShapeBuilder(
                             mode = mode,
                             sides = sides,
@@ -542,7 +542,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 }
 
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.icon_shape_presets_section)) {
+                    SettingsGroupCard(title = stringResource(R.string.icon_shape_presets_section)) {
                         if (isLoading) {
                             Box(
                                 modifier = Modifier
@@ -656,12 +656,12 @@ private fun CustomShapeBuilder(
                     value = customName,
                     onValueChange = onNameChange,
                     singleLine = true,
-                    label = { Text(dynamicStringResource(R.string.icon_shape_custom_name)) },
+                    label = { Text(stringResource(R.string.icon_shape_custom_name)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(onClick = onCompileGenerated, enabled = !isBusy) {
-                    Text(dynamicStringResource(R.string.icon_shape_custom_apply))
+                    Text(stringResource(R.string.icon_shape_custom_apply))
                 }
             }
         }
@@ -669,24 +669,24 @@ private fun CustomShapeBuilder(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ShapeModeChip(
                 selected = mode == IconShapeOverlayManager.MODE_SUPERELLIPSE,
-                label = dynamicStringResource(R.string.icon_shape_mode_superellipse),
+                label = stringResource(R.string.icon_shape_mode_superellipse),
                 onClick = { onModeChange(IconShapeOverlayManager.MODE_SUPERELLIPSE) }
             )
             ShapeModeChip(
                 selected = mode == IconShapeOverlayManager.MODE_POLYGON,
-                label = dynamicStringResource(R.string.icon_shape_mode_polygon),
+                label = stringResource(R.string.icon_shape_mode_polygon),
                 onClick = { onModeChange(IconShapeOverlayManager.MODE_POLYGON) }
             )
             ShapeModeChip(
                 selected = mode == IconShapeOverlayManager.MODE_FLOWER,
-                label = dynamicStringResource(R.string.icon_shape_mode_flower),
+                label = stringResource(R.string.icon_shape_mode_flower),
                 onClick = { onModeChange(IconShapeOverlayManager.MODE_FLOWER) }
             )
         }
 
         if (mode == IconShapeOverlayManager.MODE_SUPERELLIPSE) {
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_roundness),
+                title = stringResource(R.string.icon_shape_roundness),
                 value = roundness,
                 valueRange = 1.5f..8f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_ROUNDNESS,
@@ -695,7 +695,7 @@ private fun CustomShapeBuilder(
             )
         } else {
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_sides),
+                title = stringResource(R.string.icon_shape_sides),
                 value = sides.toFloat(),
                 valueRange = 3f..12f,
                 steps = 8,
@@ -705,7 +705,7 @@ private fun CustomShapeBuilder(
             )
         }
         ShapeSlider(
-            title = dynamicStringResource(R.string.icon_shape_inset),
+            title = stringResource(R.string.icon_shape_inset),
             value = inset,
             valueRange = 0f..24f,
             defaultValue = DEFAULT_CUSTOM_SHAPE_INSET,
@@ -714,7 +714,7 @@ private fun CustomShapeBuilder(
         )
         if (mode == IconShapeOverlayManager.MODE_FLOWER) {
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_wave),
+                title = stringResource(R.string.icon_shape_wave),
                 value = wave,
                 valueRange = 0f..0.35f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_WAVE,
@@ -723,7 +723,7 @@ private fun CustomShapeBuilder(
             )
         }
         ShapeSlider(
-            title = dynamicStringResource(R.string.icon_shape_rotation),
+            title = stringResource(R.string.icon_shape_rotation),
             value = rotation,
             valueRange = -180f..180f,
             defaultValue = DEFAULT_CUSTOM_SHAPE_ROTATION,
@@ -732,7 +732,7 @@ private fun CustomShapeBuilder(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_scale_x),
+                title = stringResource(R.string.icon_shape_scale_x),
                 value = scaleX,
                 valueRange = 0.5f..1.5f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
@@ -741,7 +741,7 @@ private fun CustomShapeBuilder(
                 modifier = Modifier.weight(1f)
             )
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_scale_y),
+                title = stringResource(R.string.icon_shape_scale_y),
                 value = scaleY,
                 valueRange = 0.5f..1.5f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
@@ -752,7 +752,7 @@ private fun CustomShapeBuilder(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_offset_x),
+                title = stringResource(R.string.icon_shape_offset_x),
                 value = offsetX,
                 valueRange = -25f..25f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
@@ -761,7 +761,7 @@ private fun CustomShapeBuilder(
                 modifier = Modifier.weight(1f)
             )
             ShapeSlider(
-                title = dynamicStringResource(R.string.icon_shape_offset_y),
+                title = stringResource(R.string.icon_shape_offset_y),
                 value = offsetY,
                 valueRange = -25f..25f,
                 defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
@@ -777,14 +777,14 @@ private fun CustomShapeBuilder(
             OutlinedButton(onClick = onPickFile, enabled = !isBusy) {
                 Icon(Icons.Rounded.FileOpen, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(dynamicStringResource(R.string.icon_shape_import))
+                Text(stringResource(R.string.icon_shape_import))
             }
             Spacer(Modifier.width(8.dp))
             TextButton(
                 onClick = onCompileImported,
                 enabled = !isBusy && IconShapeOverlayManager.isValidPath(importedPath)
             ) {
-                Text(dynamicStringResource(R.string.icon_shape_import_apply))
+                Text(stringResource(R.string.icon_shape_import_apply))
             }
         }
         AnimatedVisibility(
@@ -845,7 +845,7 @@ private fun ShapeSlider(
                 ) {
                     Icon(
                         Icons.Rounded.Refresh,
-                        dynamicStringResource(R.string.anim_cd_reset),
+                        stringResource(R.string.anim_cd_reset),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -914,16 +914,16 @@ private fun ShapeOptionCard(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (option.active) {
-                    Icon(Icons.Rounded.Check, dynamicStringResource(R.string.icon_shape_active))
+                    Icon(Icons.Rounded.Check, stringResource(R.string.icon_shape_active))
                 } else if (onBuild != null) {
                     Button(onClick = onBuild, enabled = !isBusy) {
                         Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(dynamicStringResource(R.string.icon_shape_custom_apply))
+                        Text(stringResource(R.string.icon_shape_custom_apply))
                     }
                 } else {
                     TextButton(onClick = onApply, enabled = !isBusy) {
-                        Text(dynamicStringResource(R.string.icon_shape_apply))
+                        Text(stringResource(R.string.icon_shape_apply))
                     }
                 }
                 if (onDelete != null) {
@@ -931,7 +931,7 @@ private fun ShapeOptionCard(
                         IconButton(onClick = { showConfirmDelete = true }, enabled = !isBusy) {
                             Icon(
                                 Icons.Rounded.Delete,
-                                dynamicStringResource(R.string.icon_shape_delete),
+                                stringResource(R.string.icon_shape_delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -942,14 +942,14 @@ private fun ShapeOptionCard(
                         }, enabled = !isBusy) {
                             Icon(
                                 Icons.Rounded.Check,
-                                dynamicStringResource(R.string.icon_shape_delete_confirm),
+                                stringResource(R.string.icon_shape_delete_confirm),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
                         IconButton(onClick = { showConfirmDelete = false }, enabled = !isBusy) {
                             Icon(
                                 Icons.Rounded.Close,
-                                dynamicStringResource(R.string.anim_dialog_cancel),
+                                stringResource(R.string.anim_dialog_cancel),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -971,10 +971,10 @@ private fun ShapeOptionCard(
 @Composable
 private fun shapeSourceLabel(source: ShapeSource): String {
     return when (source) {
-        ShapeSource.DEFAULT -> dynamicStringResource(R.string.icon_shape_source_default)
-        ShapeSource.INSTALLED_OVERLAY -> dynamicStringResource(R.string.icon_shape_source_installed)
-        ShapeSource.BUILTIN_PRESET -> dynamicStringResource(R.string.icon_shape_source_builtin)
-        ShapeSource.CUSTOM_OVERLAY -> dynamicStringResource(R.string.icon_shape_source_custom)
+        ShapeSource.DEFAULT -> stringResource(R.string.icon_shape_source_default)
+        ShapeSource.INSTALLED_OVERLAY -> stringResource(R.string.icon_shape_source_installed)
+        ShapeSource.BUILTIN_PRESET -> stringResource(R.string.icon_shape_source_builtin)
+        ShapeSource.CUSTOM_OVERLAY -> stringResource(R.string.icon_shape_source_custom)
     }
 }
 

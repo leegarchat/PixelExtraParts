@@ -131,12 +131,10 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
 import java.text.Normalizer

@@ -56,7 +56,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import java.net.URL
 import androidx.compose.material.icons.rounded.Refresh
-import org.pixel.customparts.utils.dynamicStringResource
 
 @Composable
 fun ExpandableWarningCard(
@@ -382,7 +381,7 @@ fun SliderSettingFloat(
                         }
                 ) {
                     Text(
-                        text = dynamicStringResource(R.string.btn_default),
+                        text = stringResource(R.string.btn_default),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
@@ -647,7 +646,7 @@ fun RestartLauncherButton(
     ) {
         Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        Text(dynamicStringResource(R.string.btn_restart_launcher))
+        Text(stringResource(R.string.btn_restart_launcher))
     }
 }
 
@@ -673,7 +672,7 @@ fun FloatInputDialog(
         text = {
             Column {
                 Text(
-                    text = dynamicStringResource(R.string.common_range_format, rangeStart.toInt(), rangeEnd.toInt()),
+                    text = stringResource(R.string.common_range_format, rangeStart.toInt(), rangeEnd.toInt()),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -684,7 +683,7 @@ fun FloatInputDialog(
                         val num = it.toFloatOrNull()
                         isError = num == null || num < rangeStart || num > rangeEnd
                     },
-                    label = { Text(dynamicStringResource(R.string.common_input_label)) },
+                    label = { Text(stringResource(R.string.common_input_label)) },
                     isError = isError,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -696,7 +695,7 @@ fun FloatInputDialog(
         confirmButton = {
             Row {
                 if (onDefault != null) {
-                    TextButton(onClick = onDefault) { Text(dynamicStringResource(R.string.btn_default)) }
+                    TextButton(onClick = onDefault) { Text(stringResource(R.string.btn_default)) }
                 }
                 Button(
                     onClick = {
@@ -707,11 +706,11 @@ fun FloatInputDialog(
                             isError = true
                         }
                     }
-                ) { Text(dynamicStringResource(R.string.btn_apply)) }
+                ) { Text(stringResource(R.string.btn_apply)) }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.btn_cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     )
@@ -897,7 +896,7 @@ fun InfoDialog(
                             }
                             
                             if (isError) {
-                                Text(dynamicStringResource(R.string.status_error), color = Color.Red)
+                                Text(stringResource(R.string.status_error), color = Color.Red)
                             }
 
                             if (isLoading) {

@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -136,12 +136,12 @@ internal fun AddonSettingsActions(
             OutlinedButton(onClick = onImport, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Rounded.FileOpen, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(dynamicStringResource(R.string.addon_settings_import))
+                Text(stringResource(R.string.addon_settings_import))
             }
             OutlinedButton(onClick = { showExportDialog = true }, modifier = Modifier.weight(1f)) {
                 Icon(Icons.Rounded.SaveAlt, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(dynamicStringResource(R.string.addon_settings_export))
+                Text(stringResource(R.string.addon_settings_export))
             }
         }
         if (addon.updateUrl.isNotBlank()) {
@@ -182,7 +182,7 @@ private fun ExportChoiceDialog(
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    dynamicStringResource(R.string.addon_settings_export),
+                    stringResource(R.string.addon_settings_export),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -196,8 +196,8 @@ private fun ExportChoiceDialog(
                     Icon(Icons.Rounded.SaveAlt, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(dynamicStringResource(R.string.addon_export_settings_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(dynamicStringResource(R.string.addon_export_settings_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.addon_export_settings_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.addon_export_settings_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -211,14 +211,14 @@ private fun ExportChoiceDialog(
                     Icon(Icons.Rounded.Extension, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(dynamicStringResource(R.string.addon_export_module_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(dynamicStringResource(R.string.addon_export_module_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.addon_export_module_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.addon_export_module_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.addon_btn_cancel)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.addon_btn_cancel)) }
                 }
             }
         }
@@ -269,10 +269,10 @@ private fun AddonUpdateButton(addon: AddonUiModel, onRefresh: () -> Unit) {
             Spacer(Modifier.width(8.dp))
             Text(
                 when {
-                    updating -> dynamicStringResource(R.string.addon_update_installing)
-                    checking -> dynamicStringResource(R.string.addon_update_checking)
-                    updateInfo != null -> dynamicStringResource(R.string.addon_update_install)
-                    else -> dynamicStringResource(R.string.addon_update_check)
+                    updating -> stringResource(R.string.addon_update_installing)
+                    checking -> stringResource(R.string.addon_update_checking)
+                    updateInfo != null -> stringResource(R.string.addon_update_install)
+                    else -> stringResource(R.string.addon_update_check)
                 }
             )
         }
@@ -473,7 +473,7 @@ internal fun ManualIntInputDialog(
         title = { Text(title) },
         text = {
             Column {
-                Text(dynamicStringResource(R.string.addon_range_format, min.toString(), max.toString()), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.addon_range_format, min.toString(), max.toString()), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = text,
@@ -494,15 +494,15 @@ internal fun ManualIntInputDialog(
             Row {
                 TextButton(onClick = {
                     onConfirm(defaultValue)
-                }) { Text(dynamicStringResource(R.string.btn_default)) }
+                }) { Text(stringResource(R.string.btn_default)) }
                 Button(onClick = {
                     val n = text.toIntOrNull()
                     if (n != null && n in min..max) onConfirm(n)
                     else isError = true
-                }) { Text(dynamicStringResource(R.string.btn_apply)) }
+                }) { Text(stringResource(R.string.btn_apply)) }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.addon_btn_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.addon_btn_cancel)) } },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     )
 }
@@ -526,7 +526,7 @@ internal fun ManualFloatInputDialog(
         title = { Text(title) },
         text = {
             Column {
-                Text(dynamicStringResource(R.string.addon_range_format, min.toString(), max.toString()), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.addon_range_format, min.toString(), max.toString()), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = text,
@@ -547,15 +547,15 @@ internal fun ManualFloatInputDialog(
             Row {
                 TextButton(onClick = {
                     onConfirm(defaultValue)
-                }) { Text(dynamicStringResource(R.string.btn_default)) }
+                }) { Text(stringResource(R.string.btn_default)) }
                 Button(onClick = {
                     val n = text.toFloatOrNull()
                     if (n != null && n >= min && n <= max) onConfirm(n)
                     else isError = true
-                }) { Text(dynamicStringResource(R.string.btn_apply)) }
+                }) { Text(stringResource(R.string.btn_apply)) }
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.addon_btn_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.addon_btn_cancel)) } },
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     )
 }

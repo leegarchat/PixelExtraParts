@@ -143,8 +143,8 @@ import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
-import org.pixel.customparts.utils.dynamicStringResource
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 internal data class AppIconModuleFlags(
     val moduleEnabled: Boolean,
@@ -212,10 +212,10 @@ internal fun AppIconsAddonInjectedSettings(
     onIconShapeClick: () -> Unit
 ) {
     val context = LocalContext.current
-    SettingsGroupCard(title = dynamicStringResource(R.string.app_icons_advanced_settings_title)) {
+    SettingsGroupCard(title = stringResource(R.string.app_icons_advanced_settings_title)) {
         AppIconsNavigationRow(
-            title = dynamicStringResource(R.string.icon_shape_title),
-            summary = dynamicStringResource(R.string.icon_shape_summary),
+            title = stringResource(R.string.icon_shape_title),
+            summary = stringResource(R.string.icon_shape_summary),
             onClick = onIconShapeClick
         )
         if (entries.isNotEmpty()) HorizontalDivider()
@@ -292,8 +292,8 @@ internal fun AppIconsModuleSwitch(
         ) {
             if (showHardcodedControls) {
                 AppIconsSwitchRow(
-                    title = dynamicStringResource(R.string.app_icons_module_enabled_title),
-                    summary = dynamicStringResource(R.string.app_icons_module_enabled_summary),
+                    title = stringResource(R.string.app_icons_module_enabled_title),
+                    summary = stringResource(R.string.app_icons_module_enabled_summary),
                     checked = checked,
                     enabled = true,
                     onCheckedChange = onCheckedChange
@@ -301,8 +301,8 @@ internal fun AppIconsModuleSwitch(
             }
             if (showHardcodedControls && showLauncherControls) {
                 AppIconsSwitchRow(
-                    title = dynamicStringResource(R.string.app_icons_launcher_only_title),
-                    summary = dynamicStringResource(R.string.app_icons_launcher_only_summary),
+                    title = stringResource(R.string.app_icons_launcher_only_title),
+                    summary = stringResource(R.string.app_icons_launcher_only_summary),
                     checked = checked && launcherOnlyChecked,
                     enabled = checked,
                     onCheckedChange = onLauncherOnlyChange
@@ -310,8 +310,8 @@ internal fun AppIconsModuleSwitch(
             }
             if (showHardcodedControls) {
                 ExpandableSectionHeaderContent(
-                    title = dynamicStringResource(R.string.app_icons_advanced_settings_title),
-                    subtitle = dynamicStringResource(R.string.app_icons_advanced_settings_summary),
+                    title = stringResource(R.string.app_icons_advanced_settings_title),
+                    subtitle = stringResource(R.string.app_icons_advanced_settings_summary),
                     icon = Icons.Rounded.Apps,
                     expanded = advancedExpanded,
                     onExpandChange = onAdvancedExpandedChange
@@ -323,82 +323,82 @@ internal fun AppIconsModuleSwitch(
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                     AppIconsNavigationRow(
-                        title = dynamicStringResource(R.string.icon_shape_title),
-                        summary = dynamicStringResource(R.string.icon_shape_summary),
+                        title = stringResource(R.string.icon_shape_title),
+                        summary = stringResource(R.string.icon_shape_summary),
                         onClick = onIconShapeClick
                     )
                     HorizontalDivider()
                     AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_system_stretch_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_system_stretch_shape_summary),
+                        title = stringResource(R.string.app_icons_system_stretch_shape_title),
+                        summary = stringResource(R.string.app_icons_system_stretch_shape_summary),
                         checked = systemOptionsEnabled && systemStretchShapeChecked,
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onSystemStretchShapeChange
                     )
                     if (systemStretchShapeChecked) {
                         AppIconsScaleSliderRow(
-                            title = dynamicStringResource(R.string.app_icons_system_shape_scale_title),
+                            title = stringResource(R.string.app_icons_system_shape_scale_title),
                             value = systemShapeScalePercent,
                             enabled = systemOptionsEnabled,
                             onValueChange = onSystemShapeScaleChange
                         )
                     }
                     AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_system_remove_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_system_remove_shape_summary),
+                        title = stringResource(R.string.app_icons_system_remove_shape_title),
+                        summary = stringResource(R.string.app_icons_system_remove_shape_summary),
                         checked = systemOptionsEnabled && systemRemoveShapeChecked,
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onSystemRemoveShapeChange
                     )
                     AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_notification_stretch_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_notification_stretch_shape_summary),
+                        title = stringResource(R.string.app_icons_notification_stretch_shape_title),
+                        summary = stringResource(R.string.app_icons_notification_stretch_shape_summary),
                         checked = systemOptionsEnabled && notificationStretchShapeChecked,
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onNotificationStretchShapeChange
                     )
                     if (notificationStretchShapeChecked) {
                         AppIconsScaleSliderRow(
-                            title = dynamicStringResource(R.string.app_icons_notification_shape_scale_title),
+                            title = stringResource(R.string.app_icons_notification_shape_scale_title),
                             value = notificationShapeScalePercent,
                             enabled = systemOptionsEnabled,
                             onValueChange = onNotificationShapeScaleChange
                         )
                     }
                     AppIconsSwitchRow(
-                        title = dynamicStringResource(R.string.app_icons_notification_remove_shape_title),
-                        summary = dynamicStringResource(R.string.app_icons_notification_remove_shape_summary),
+                        title = stringResource(R.string.app_icons_notification_remove_shape_title),
+                        summary = stringResource(R.string.app_icons_notification_remove_shape_summary),
                         checked = systemOptionsEnabled && notificationRemoveShapeChecked,
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onNotificationRemoveShapeChange
                     )
                     if (showLauncherControls) {
                         AppIconsSwitchRow(
-                            title = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_title),
-                            summary = dynamicStringResource(R.string.app_icons_launcher_stretch_shape_summary),
+                            title = stringResource(R.string.app_icons_launcher_stretch_shape_title),
+                            summary = stringResource(R.string.app_icons_launcher_stretch_shape_summary),
                             checked = launcherOptionsEnabled && launcherStretchShapeChecked,
                             enabled = launcherOptionsEnabled,
                             onCheckedChange = onLauncherStretchShapeChange
                         )
                         if (launcherStretchShapeChecked) {
                             AppIconsScaleSliderRow(
-                                title = dynamicStringResource(R.string.app_icons_launcher_shape_scale_title),
+                                title = stringResource(R.string.app_icons_launcher_shape_scale_title),
                                 value = launcherShapeScalePercent,
                                 enabled = launcherOptionsEnabled,
                                 onValueChange = onLauncherShapeScaleChange
                             )
                         }
                         AppIconsSwitchRow(
-                            title = dynamicStringResource(R.string.app_icons_launcher_remove_shape_title),
-                            summary = dynamicStringResource(R.string.app_icons_launcher_remove_shape_summary),
+                            title = stringResource(R.string.app_icons_launcher_remove_shape_title),
+                            summary = stringResource(R.string.app_icons_launcher_remove_shape_summary),
                             checked = launcherOptionsEnabled && launcherRemoveShapeChecked,
                             enabled = launcherOptionsEnabled,
                             onCheckedChange = onLauncherRemoveShapeChange
                         )
                     }
                     AppIconsTintControlRow(
-                        title = dynamicStringResource(R.string.app_icons_shape_background_tint_title),
-                        summary = dynamicStringResource(R.string.app_icons_shape_background_tint_summary),
+                        title = stringResource(R.string.app_icons_shape_background_tint_title),
+                        summary = stringResource(R.string.app_icons_shape_background_tint_summary),
                         mode = backgroundTintMode,
                         color = backgroundTintColor,
                         enabled = checked,
@@ -406,8 +406,8 @@ internal fun AppIconsModuleSwitch(
                         onColorChange = onBackgroundTintColorChange
                     )
                     AppIconsTintControlRow(
-                        title = dynamicStringResource(R.string.app_icons_shape_foreground_tint_title),
-                        summary = dynamicStringResource(R.string.app_icons_shape_foreground_tint_summary),
+                        title = stringResource(R.string.app_icons_shape_foreground_tint_title),
+                        summary = stringResource(R.string.app_icons_shape_foreground_tint_summary),
                         mode = foregroundTintMode,
                         color = foregroundTintColor,
                         enabled = checked,
@@ -560,19 +560,19 @@ private fun AppIconsTintControlRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AppIconsTintModeButton(
-                text = dynamicStringResource(R.string.app_icons_tint_mode_off),
+                text = stringResource(R.string.app_icons_tint_mode_off),
                 selected = mode == APP_ICON_TINT_MODE_OFF,
                 enabled = enabled,
                 onClick = { onModeChange(APP_ICON_TINT_MODE_OFF) }
             )
             AppIconsTintModeButton(
-                text = dynamicStringResource(R.string.app_icons_tint_mode_auto),
+                text = stringResource(R.string.app_icons_tint_mode_auto),
                 selected = mode == APP_ICON_TINT_MODE_AUTO,
                 enabled = enabled,
                 onClick = { onModeChange(APP_ICON_TINT_MODE_AUTO) }
             )
             AppIconsTintModeButton(
-                text = dynamicStringResource(R.string.app_icons_tint_mode_custom),
+                text = stringResource(R.string.app_icons_tint_mode_custom),
                 selected = mode == APP_ICON_TINT_MODE_CUSTOM,
                 enabled = enabled,
                 onClick = { onModeChange(APP_ICON_TINT_MODE_CUSTOM) }
@@ -633,11 +633,11 @@ internal fun AppIconsScaleSliderRow(
         enabled = enabled,
         onValueChange = { onValueChange(normalizeShapeScale(it)) },
         onDefault = { onValueChange(IconPackManager.DEFAULT_SHAPE_SCALE_PERCENT) },
-        valueText = dynamicStringResource(R.string.app_icons_shape_scale_value_format, value),
+        valueText = stringResource(R.string.app_icons_shape_scale_value_format, value),
         showDefaultButton = true
     )
     Text(
-        text = dynamicStringResource(R.string.app_icons_shape_scale_summary),
+        text = stringResource(R.string.app_icons_shape_scale_summary),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
         maxLines = 2,
@@ -667,7 +667,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
                 }
                 Text(
                     text = if (progress.completed) {
-                        dynamicStringResource(R.string.app_icons_progress_completed)
+                        stringResource(R.string.app_icons_progress_completed)
                     } else {
                         progress.label
                     },
@@ -678,7 +678,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = dynamicStringResource(R.string.app_icons_progress_percent_format, progress.percent),
+                    text = stringResource(R.string.app_icons_progress_percent_format, progress.percent),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -688,7 +688,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = dynamicStringResource(
+                text = stringResource(
                     R.string.app_icons_progress_counts_format,
                     progress.processed,
                     progress.total,
@@ -723,8 +723,8 @@ internal fun IconPacksBlock(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         ExpandableSectionHeader(
-            title = dynamicStringResource(R.string.app_icons_packs_section),
-            subtitle = dynamicStringResource(R.string.app_icons_pack_count_format, packs.size),
+            title = stringResource(R.string.app_icons_packs_section),
+            subtitle = stringResource(R.string.app_icons_pack_count_format, packs.size),
             icon = Icons.Rounded.Apps,
             expanded = expanded,
             onExpandChange = onExpandChange
@@ -740,7 +740,7 @@ internal fun IconPacksBlock(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (packs.isEmpty()) {
-                    EmptyStateText(dynamicStringResource(R.string.app_icons_no_icon_packs))
+                    EmptyStateText(stringResource(R.string.app_icons_no_icon_packs))
                 } else {
                     packs.forEach { pack ->
                         IconPackCard(
@@ -884,7 +884,7 @@ private fun IconPackCard(
                         text = if (pack.installed) {
                             iconPackStatusText(pack.status)
                         } else {
-                            dynamicStringResource(R.string.app_icons_pack_missing_status)
+                            stringResource(R.string.app_icons_pack_missing_status)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (pack.installed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
@@ -905,7 +905,7 @@ private fun IconPackCard(
             }
 
             Text(
-                text = dynamicStringResource(
+                text = stringResource(
                     R.string.app_icons_supported_count_format,
                     pack.supportedPackageCount,
                     pack.supportedIconCount,
@@ -925,13 +925,13 @@ private fun IconPackCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = dynamicStringResource(R.string.app_icons_requires_update),
+                        text = stringResource(R.string.app_icons_requires_update),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.weight(1f)
                     )
                     TextButton(onClick = onApplyUpdate, enabled = !busy) {
-                        Text(dynamicStringResource(R.string.app_icons_apply_update), maxLines = 1)
+                        Text(stringResource(R.string.app_icons_apply_update), maxLines = 1)
                     }
                 }
             }
@@ -944,7 +944,7 @@ private fun IconPackCard(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     if (!pack.installed) {
                         Text(
-                            text = dynamicStringResource(R.string.app_icons_pack_missing_message),
+                            text = stringResource(R.string.app_icons_pack_missing_message),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             modifier = Modifier
@@ -962,7 +962,7 @@ private fun IconPackCard(
                         ) {
                             Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(dynamicStringResource(R.string.app_icons_apply_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.app_icons_apply_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     OutlinedButton(
@@ -972,7 +972,7 @@ private fun IconPackCard(
                     ) {
                         Icon(Icons.Rounded.Search, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_apply_partial), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.app_icons_apply_partial), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     if (pack.installed) {
                         OutlinedButton(
@@ -982,7 +982,7 @@ private fun IconPackCard(
                         ) {
                             Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(dynamicStringResource(R.string.app_icons_view_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.app_icons_view_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     OutlinedButton(
@@ -992,7 +992,7 @@ private fun IconPackCard(
                     ) {
                         Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_cancel_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.app_icons_cancel_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
@@ -1109,8 +1109,8 @@ internal fun InstalledAppCard(
                     )
                     Text(
                         text = app.appliedIconPackLabel?.let {
-                            dynamicStringResource(R.string.app_icons_applied_from_format, it)
-                        } ?: dynamicStringResource(R.string.app_icons_not_applied_to_app),
+                            stringResource(R.string.app_icons_applied_from_format, it)
+                        } ?: stringResource(R.string.app_icons_not_applied_to_app),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (app.appliedIconPackLabel != null) {
                             MaterialTheme.colorScheme.primary
@@ -1151,7 +1151,7 @@ internal fun InstalledAppCard(
                         ) {
                             Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text(dynamicStringResource(R.string.app_icons_restore_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.app_icons_restore_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
 
@@ -1162,7 +1162,7 @@ internal fun InstalledAppCard(
                     ) {
                         Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_import_custom_icon), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.app_icons_import_custom_icon), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
                     OutlinedButton(
@@ -1172,7 +1172,7 @@ internal fun InstalledAppCard(
                     ) {
                         Icon(Icons.Rounded.Search, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.app_icons_choose_from_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.app_icons_choose_from_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
                     PerAppShapeSettingsCard(
@@ -1186,7 +1186,7 @@ internal fun InstalledAppCard(
                     )
 
                     Text(
-                        text = dynamicStringResource(R.string.app_icons_available_icons_title),
+                        text = stringResource(R.string.app_icons_available_icons_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
@@ -1194,7 +1194,7 @@ internal fun InstalledAppCard(
 
                     when {
                         loading -> LoadingDialogContent()
-                        candidates.isEmpty() -> EmptyStateText(dynamicStringResource(R.string.app_icons_no_app_candidates))
+                        candidates.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_app_candidates))
                         else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             val appliedSource = iconMap.sources[app.packageName]
                             candidates.forEach { candidate ->

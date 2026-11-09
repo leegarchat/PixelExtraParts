@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -151,7 +151,7 @@ internal fun StringSettingControl(
                         writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, setting.defaultString)
                         onSettingChanged(setting, null)
                     }, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.btn_default), Modifier.size(16.dp))
+                        Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp))
                     }
                 }
             }
@@ -311,9 +311,9 @@ internal fun FileSettingControl(
     val scope = rememberCoroutineScope()
     val currentPath = readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: ""
     var filePath by remember { mutableStateOf(currentPath) }
-    val notSetLabel = dynamicStringResource(R.string.addon_file_not_set)
-    val fileSavedMsg = dynamicStringResource(R.string.addon_file_saved)
-    val fileCopyFailedMsg = dynamicStringResource(R.string.addon_file_copy_failed)
+    val notSetLabel = stringResource(R.string.addon_file_not_set)
+    val fileSavedMsg = stringResource(R.string.addon_file_saved)
+    val fileCopyFailedMsg = stringResource(R.string.addon_file_copy_failed)
     val fileName = if (filePath.isNotEmpty()) File(filePath).name else notSetLabel
 
     // System addons: writable data in /data/pixelparts/system_addons_data/{id}/
@@ -445,7 +445,7 @@ internal fun AppListSettingControl(
         }, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(dynamicStringResource(R.string.addon_apps_selected, selected.size))
+            Text(stringResource(R.string.addon_apps_selected, selected.size))
         }
         if (selected.isNotEmpty() && setting.showSelected) {
             Spacer(Modifier.height(8.dp))
@@ -541,7 +541,7 @@ internal fun ColorSettingControl(
             FilledTonalButton(onClick = { showPicker = true }) {
                 Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text(dynamicStringResource(R.string.addon_color_pick))
+                Text(stringResource(R.string.addon_color_pick))
             }
         }
     }
@@ -564,6 +564,13 @@ internal fun ColorSettingControl(
 
 // ---------- GROUP ----------
 
+/** True when this setting or any nested child carries [key]. Used to auto-reveal search highlights. */
+internal fun AddonSettingDef.containsSettingKey(key: String?): Boolean {
+    if (key.isNullOrBlank()) return false
+    if (this.key == key) return true
+    return children.any { it.containsSettingKey(key) }
+}
+
 @Composable
 internal fun GroupSettingControl(
     setting: AddonSettingDef,
@@ -572,8 +579,10 @@ internal fun GroupSettingControl(
     allSettings: List<AddonSettingDef>,
     inheritedEnabled: Boolean,
     dependencyRevision: Int,
-    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
+    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit,
+    highlightKey: String? = null
 ) {
+    val containsHighlight = remember(setting, highlightKey) { setting.containsSettingKey(highlightKey) && setting.key != highlightKey }
     // Inline mode: no expandable container, just title + children in place.
     if (setting.groupMode == GroupMode.INLINE) {
         Column(modifier = modifier.fillMaxWidth()) {
@@ -598,14 +607,14 @@ internal fun GroupSettingControl(
                 )
             }
             setting.children.forEach { child ->
-                AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
+                AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
             }
         }
         return
     }
 
     if (setting.groupMode == GroupMode.IMMERSIVE_EXPAND) {
-        var expanded by rememberSaveable(setting.key) { mutableStateOf(setting.defaultExpanded) }
+        var expanded by rememberSaveable(setting.key) { mutableStateOf(setting.defaultExpanded || containsHighlight) }
         val containerColor = groupContainerColor(
             setting = setting,
             fallback = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -651,7 +660,7 @@ internal fun GroupSettingControl(
                 ) {
                     Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
                         setting.children.forEach { child ->
-                            AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
+                            AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
                         }
                     }
                 }
@@ -660,8 +669,8 @@ internal fun GroupSettingControl(
         return
     }
 
-    var expanded by remember { mutableStateOf(false) }
-    var showDialog by remember { mutableStateOf(false) }
+    var expanded by remember(setting.key) { mutableStateOf(containsHighlight) }
+    var showDialog by remember(setting.key) { mutableStateOf(containsHighlight && setting.groupMode != GroupMode.EXPANDABLE) }
     val openAction = {
         if (setting.groupMode == GroupMode.EXPANDABLE) expanded = !expanded else showDialog = true
     }
@@ -705,7 +714,7 @@ internal fun GroupSettingControl(
             ) {
                 Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
                     setting.children.forEach { child ->
-                        AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
+                        AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
                     }
                 }
             }
@@ -713,7 +722,7 @@ internal fun GroupSettingControl(
     }
 
     if (showDialog) {
-        GroupDialog(setting = setting, addon = addon, allSettings = allSettings, inheritedEnabled = inheritedEnabled, dependencyRevision = dependencyRevision, onDismiss = { showDialog = false }, onSettingChanged = onSettingChanged)
+        GroupDialog(setting = setting, addon = addon, allSettings = allSettings, inheritedEnabled = inheritedEnabled, dependencyRevision = dependencyRevision, onDismiss = { showDialog = false }, onSettingChanged = onSettingChanged, highlightKey = highlightKey)
     }
 }
 
@@ -725,7 +734,8 @@ private fun GroupDialog(
     inheritedEnabled: Boolean,
     dependencyRevision: Int,
     onDismiss: () -> Unit,
-    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
+    onSettingChanged: (AddonSettingDef, Boolean?) -> Unit,
+    highlightKey: String? = null
 ) {
     val fullScreen = setting.groupMode == GroupMode.FULLSCREEN
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = !fullScreen)) {
@@ -742,7 +752,7 @@ private fun GroupDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (setting.closeButtonPosition == CloseButtonPosition.START) {
-                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, dynamicStringResource(R.string.btn_close)) }
+                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         SettingTitleText(setting, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)
@@ -751,7 +761,7 @@ private fun GroupDialog(
                         }
                     }
                     if (setting.closeButtonPosition == CloseButtonPosition.END) {
-                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, dynamicStringResource(R.string.btn_close)) }
+                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -761,7 +771,7 @@ private fun GroupDialog(
                         .verticalScroll(rememberScrollState())
                 ) {
                     setting.children.forEach { child ->
-                        AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged)
+                        AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
                     }
                 }
             }

@@ -87,10 +87,10 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -632,9 +632,9 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.anim_transition_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.anim_transition_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back)) }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back)) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
@@ -676,12 +676,12 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = dynamicStringResource(R.string.anim_predictive_back_title),
+                                    text = stringResource(R.string.anim_predictive_back_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = dynamicStringResource(R.string.anim_predictive_back_desc),
+                                    text = stringResource(R.string.anim_predictive_back_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -715,7 +715,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                         Column(modifier = Modifier.padding(20.dp)) {
                             Text(
                                 text = String.format(
-                                    dynamicStringResource(R.string.anim_current_open),
+                                    stringResource(R.string.anim_current_open),
                                     modeDisplayName(context, currentOpenMode)
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -724,7 +724,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = String.format(
-                                    dynamicStringResource(R.string.anim_current_close),
+                                    stringResource(R.string.anim_current_close),
                                     modeDisplayName(context, currentCloseMode)
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -743,7 +743,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                     ),
                                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                                 ) {
-                                    Text(dynamicStringResource(R.string.anim_builtin_disabled))
+                                    Text(stringResource(R.string.anim_builtin_disabled))
                                 }
                             }
                         }
@@ -755,7 +755,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 // ═══════════════════════════════════════════════════════
                 item {
                     Text(
-                        text = dynamicStringResource(R.string.anim_builtin_title),
+                        text = stringResource(R.string.anim_builtin_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
@@ -782,19 +782,19 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = dynamicStringResource(R.string.anim_no_animation_title),
+                                        text = stringResource(R.string.anim_no_animation_title),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                     Text(
-                                        text = dynamicStringResource(R.string.anim_no_animation_desc),
+                                        text = stringResource(R.string.anim_no_animation_desc),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp
                                     )
                                     val noAnimLabels = buildList {
-                                        if (currentOpenMode == MODE_NO_ANIMATION) add(dynamicStringResource(R.string.anim_preview_open))
-                                        if (currentCloseMode == MODE_NO_ANIMATION) add(dynamicStringResource(R.string.anim_preview_close))
+                                        if (currentOpenMode == MODE_NO_ANIMATION) add(stringResource(R.string.anim_preview_open))
+                                        if (currentCloseMode == MODE_NO_ANIMATION) add(stringResource(R.string.anim_preview_close))
                                     }
                                     if (noAnimLabels.isNotEmpty()) {
                                         Text(
@@ -818,7 +818,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        dynamicStringResource(R.string.anim_apply_both),
+                                        stringResource(R.string.anim_apply_both),
                                         style = MaterialTheme.typography.labelSmall,
                                         maxLines = 1
                                     )
@@ -829,7 +829,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        dynamicStringResource(R.string.anim_apply_open),
+                                        stringResource(R.string.anim_apply_open),
                                         style = MaterialTheme.typography.labelSmall,
                                         maxLines = 1
                                     )
@@ -840,7 +840,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        dynamicStringResource(R.string.anim_apply_close),
+                                        stringResource(R.string.anim_apply_close),
                                         style = MaterialTheme.typography.labelSmall,
                                         maxLines = 1
                                     )
@@ -866,7 +866,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 // ═══════════════════════════════════════════════════════
                 item {
                     Text(
-                        text = dynamicStringResource(R.string.anim_theme_installed_title),
+                        text = stringResource(R.string.anim_theme_installed_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -882,7 +882,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             )
                         ) {
                             Text(
-                                text = dynamicStringResource(R.string.anim_theme_none_installed),
+                                text = stringResource(R.string.anim_theme_none_installed),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
@@ -916,13 +916,13 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 // Section: Create Theme
                 // ═══════════════════════════════════════════════════════
                 item {
-                    SettingsGroupCard(title = dynamicStringResource(R.string.anim_theme_create_title)) {
+                    SettingsGroupCard(title = stringResource(R.string.anim_theme_create_title)) {
                         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                             // Style name
                             OutlinedTextField(
                                 value = styleName,
                                 onValueChange = { styleName = filterThemeNameInput(it) },
-                                label = { Text(dynamicStringResource(R.string.anim_theme_style_name)) },
+                                label = { Text(stringResource(R.string.anim_theme_style_name)) },
                                 placeholder = { Text("e.g. bouncy slide") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -939,13 +939,13 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                 FilterChip(
                                     selected = !useXmlInput,
                                     onClick = { useXmlInput = false },
-                                    label = { Text(dynamicStringResource(R.string.anim_theme_input_mode_file)) }
+                                    label = { Text(stringResource(R.string.anim_theme_input_mode_file)) }
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 FilterChip(
                                     selected = useXmlInput,
                                     onClick = { useXmlInput = true },
-                                    label = { Text(dynamicStringResource(R.string.anim_theme_input_mode_xml)) }
+                                    label = { Text(stringResource(R.string.anim_theme_input_mode_xml)) }
                                 )
                             }
 
@@ -954,25 +954,25 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             if (useXmlInput) {
                                 // XML text inputs
                                 XmlInputField(
-                                    label = dynamicStringResource(R.string.anim_theme_open_enter),
+                                    label = stringResource(R.string.anim_theme_open_enter),
                                     value = openEnterXml,
                                     onValueChange = { openEnterXml = it },
                                     required = true
                                 )
                                 XmlInputField(
-                                    label = dynamicStringResource(R.string.anim_theme_open_exit),
+                                    label = stringResource(R.string.anim_theme_open_exit),
                                     value = openExitXml,
                                     onValueChange = { openExitXml = it },
                                     required = true
                                 )
                                 XmlInputField(
-                                    label = dynamicStringResource(R.string.anim_theme_close_enter),
+                                    label = stringResource(R.string.anim_theme_close_enter),
                                     value = closeEnterXml,
                                     onValueChange = { closeEnterXml = it },
                                     required = false
                                 )
                                 XmlInputField(
-                                    label = dynamicStringResource(R.string.anim_theme_close_exit),
+                                    label = stringResource(R.string.anim_theme_close_exit),
                                     value = closeExitXml,
                                     onValueChange = { closeExitXml = it },
                                     required = false
@@ -980,22 +980,22 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                             } else {
                                 // File pickers
                                 FilePickerRow(
-                                    label = dynamicStringResource(R.string.anim_theme_open_enter),
+                                    label = stringResource(R.string.anim_theme_open_enter),
                                     uri = openEnterUri, required = true,
                                     onClick = { openEnterPicker.launch("text/xml") }
                                 )
                                 FilePickerRow(
-                                    label = dynamicStringResource(R.string.anim_theme_open_exit),
+                                    label = stringResource(R.string.anim_theme_open_exit),
                                     uri = openExitUri, required = true,
                                     onClick = { openExitPicker.launch("text/xml") }
                                 )
                                 FilePickerRow(
-                                    label = dynamicStringResource(R.string.anim_theme_close_enter),
+                                    label = stringResource(R.string.anim_theme_close_enter),
                                     uri = closeEnterUri, required = false,
                                     onClick = { closeEnterPicker.launch("text/xml") }
                                 )
                                 FilePickerRow(
-                                    label = dynamicStringResource(R.string.anim_theme_close_exit),
+                                    label = stringResource(R.string.anim_theme_close_exit),
                                     uri = closeExitUri, required = false,
                                     onClick = { closeExitPicker.launch("text/xml") }
                                 )
@@ -1019,7 +1019,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                                 }
                                 Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text(dynamicStringResource(R.string.anim_theme_compile_btn))
+                                Text(stringResource(R.string.anim_theme_compile_btn))
                             }
 
                             if (compileError != null) {
@@ -1037,7 +1037,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 // ── Compile Log ──
                 if (compileLog.isNotEmpty()) {
                     item {
-                        SettingsGroupCard(title = dynamicStringResource(R.string.anim_theme_log_title)) {
+                        SettingsGroupCard(title = stringResource(R.string.anim_theme_log_title)) {
                             Column(
                                 modifier = Modifier
                                     .padding(horizontal = 20.dp, vertical = 8.dp)
@@ -1083,7 +1083,7 @@ fun ActivityTransitionScreen(onBack: () -> Unit) {
                 // ═══════════════════════════════════════════════════════
                 item {
                     Text(
-                        text = dynamicStringResource(R.string.anim_constructor_title),
+                        text = stringResource(R.string.anim_constructor_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)

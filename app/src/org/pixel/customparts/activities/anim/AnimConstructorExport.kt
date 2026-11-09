@@ -87,10 +87,10 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ internal fun ConstructorExportButton(
                     OutlinedTextField(
                         value = buildThemeName,
                         onValueChange = { buildThemeName = filterThemeNameInput(it) },
-                        label = { Text(dynamicStringResource(R.string.anim_constructor_style_name)) },
+                        label = { Text(stringResource(R.string.anim_constructor_style_name)) },
                         placeholder = { Text("e.g. my animation") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -142,7 +142,7 @@ internal fun ConstructorExportButton(
                     ) {
                         Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(dynamicStringResource(R.string.anim_constructor_build_theme))
+                        Text(stringResource(R.string.anim_constructor_build_theme))
                     }
                 }
             }
@@ -153,7 +153,7 @@ internal fun ConstructorExportButton(
             ) {
                 Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (showBuildInput) dynamicStringResource(R.string.anim_constructor_hide) else dynamicStringResource(R.string.anim_constructor_build_theme))
+                Text(if (showBuildInput) stringResource(R.string.anim_constructor_hide) else stringResource(R.string.anim_constructor_build_theme))
             }
 
             Spacer(Modifier.height(8.dp))
@@ -165,7 +165,7 @@ internal fun ConstructorExportButton(
             ) {
                 Icon(Icons.Rounded.Code, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(if (showXml) dynamicStringResource(R.string.anim_constructor_hide_xml) else dynamicStringResource(R.string.anim_constructor_show_xml))
+                Text(if (showXml) stringResource(R.string.anim_constructor_hide_xml) else stringResource(R.string.anim_constructor_show_xml))
             }
 
             AnimatedVisibility(
@@ -196,7 +196,7 @@ internal fun ConstructorExportButton(
                                 modifier = Modifier.size(28.dp)
                             ) {
                                 Icon(
-                                    Icons.Rounded.ContentCopy, dynamicStringResource(R.string.anim_cd_copy),
+                                    Icons.Rounded.ContentCopy, stringResource(R.string.anim_cd_copy),
                                     modifier = Modifier.size(16.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

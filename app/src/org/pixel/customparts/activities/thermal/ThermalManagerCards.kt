@@ -131,16 +131,15 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.RemoteStringsManager
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
 import org.pixel.customparts.utils.ThermalProfileMap
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import java.io.File
 import java.text.DecimalFormat
 import java.text.Normalizer
 import java.util.Locale
+import androidx.compose.ui.res.stringResource
 
 private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
 private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
@@ -197,9 +196,9 @@ internal fun ProfileConfigSectionCard(
                 )
                 Text(
                     text = if (expanded) {
-                        dynamicStringResource(R.string.thermal_manager_saved_count, configs.size)
+                        stringResource(R.string.thermal_manager_saved_count, configs.size)
                     } else {
-                        dynamicStringResource(R.string.thermal_manager_profiles_collapsed)
+                        stringResource(R.string.thermal_manager_profiles_collapsed)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -209,7 +208,7 @@ internal fun ProfileConfigSectionCard(
                 IconButton(onClick = importAction) {
                     Icon(
                         Icons.Rounded.UploadFile,
-                        contentDescription = dynamicStringResource(R.string.thermal_manager_import),
+                        contentDescription = stringResource(R.string.thermal_manager_import),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -249,7 +248,7 @@ internal fun ProfileConfigSectionCard(
                             TextButton(onClick = createAction) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text(dynamicStringResource(R.string.thermal_manager_create_config))
+                                Text(stringResource(R.string.thermal_manager_create_config))
                             }
                         }
                     }
@@ -318,7 +317,7 @@ private fun SavedConfigRow(
         }
         Box {
             IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Rounded.MoreVert, dynamicStringResource(R.string.thermal_manager_actions))
+                Icon(Icons.Rounded.MoreVert, stringResource(R.string.thermal_manager_actions))
             }
             DropdownMenu(
                 expanded = menuExpanded,
@@ -329,7 +328,7 @@ private fun SavedConfigRow(
                 shadowElevation = 8.dp
             ) {
                 DropdownMenuItem(
-                    text = { Text(dynamicStringResource(R.string.thermal_manager_create_from)) },
+                    text = { Text(stringResource(R.string.thermal_manager_create_from)) },
                     leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
@@ -337,7 +336,7 @@ private fun SavedConfigRow(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text(dynamicStringResource(R.string.thermal_manager_export)) },
+                    text = { Text(stringResource(R.string.thermal_manager_export)) },
                     leadingIcon = { Icon(Icons.Rounded.Download, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
@@ -345,7 +344,7 @@ private fun SavedConfigRow(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text(dynamicStringResource(R.string.thermal_manager_edit)) },
+                    text = { Text(stringResource(R.string.thermal_manager_edit)) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                     enabled = !config.locked,
                     onClick = {
@@ -354,7 +353,7 @@ private fun SavedConfigRow(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text(dynamicStringResource(R.string.thermal_manager_delete)) },
+                    text = { Text(stringResource(R.string.thermal_manager_delete)) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                     enabled = !config.locked,
                     onClick = {
@@ -393,7 +392,7 @@ internal fun GlobalProfileCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = dynamicStringResource(R.string.thermal_manager_global_profile),
+                text = stringResource(R.string.thermal_manager_global_profile),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold,
@@ -419,7 +418,7 @@ internal fun GlobalProfileCard(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.Add,
-                        contentDescription = dynamicStringResource(R.string.thermal_manager_create_profile_short),
+                        contentDescription = stringResource(R.string.thermal_manager_create_profile_short),
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -464,7 +463,7 @@ internal fun ThermalTileQueueCard(
     onMoveDown: (Int) -> Unit,
     onRemove: (Int) -> Unit
 ) {
-    SettingsGroupCard(title = dynamicStringResource(R.string.thermal_manager_tile_queue)) {
+    SettingsGroupCard(title = stringResource(R.string.thermal_manager_tile_queue)) {
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -474,7 +473,7 @@ internal fun ThermalTileQueueCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = dynamicStringResource(
+                    text = stringResource(
                         R.string.thermal_manager_tile_queue_count,
                         queue.size,
                         ThermalProfileController.MAX_TILE_QUEUE_SIZE
@@ -492,7 +491,7 @@ internal fun ThermalTileQueueCard(
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        text = dynamicStringResource(R.string.thermal_manager_tile_queue_add),
+                        text = stringResource(R.string.thermal_manager_tile_queue_add),
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -502,7 +501,7 @@ internal fun ThermalTileQueueCard(
 
             if (queue.isEmpty()) {
                 Text(
-                    text = dynamicStringResource(R.string.thermal_manager_tile_queue_empty),
+                    text = stringResource(R.string.thermal_manager_tile_queue_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
@@ -575,7 +574,7 @@ private fun ThermalTileQueueRow(
             ) {
                 Icon(
                     Icons.Rounded.ExpandLess,
-                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_move_up),
+                    contentDescription = stringResource(R.string.thermal_manager_tile_queue_move_up),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -586,7 +585,7 @@ private fun ThermalTileQueueRow(
             ) {
                 Icon(
                     Icons.Rounded.ExpandMore,
-                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_move_down),
+                    contentDescription = stringResource(R.string.thermal_manager_tile_queue_move_down),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -596,7 +595,7 @@ private fun ThermalTileQueueRow(
             ) {
                 Icon(
                     Icons.Rounded.Delete,
-                    contentDescription = dynamicStringResource(R.string.thermal_manager_tile_queue_remove),
+                    contentDescription = stringResource(R.string.thermal_manager_tile_queue_remove),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(19.dp)
                 )
@@ -620,7 +619,7 @@ private fun ProfileChoiceDetails(
             choice.fileName?.takeIf { it.isNotBlank() }?.let { fileName ->
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = dynamicStringResource(R.string.thermal_manager_profile_file, fileName),
+                    text = stringResource(R.string.thermal_manager_profile_file, fileName),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -631,7 +630,7 @@ private fun ProfileChoiceDetails(
         if (showPath) {
             choice.propertyValue?.takeIf { it.startsWith('/') }?.let { path ->
                 Text(
-                    text = dynamicStringResource(R.string.thermal_manager_profile_path, path),
+                    text = stringResource(R.string.thermal_manager_profile_path, path),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -655,9 +654,9 @@ internal fun ProfileTypeBadge(choice: ThermalConfigChoice) {
     ) {
         Text(
             text = if (isSystem) {
-                dynamicStringResource(R.string.thermal_manager_profile_system)
+                stringResource(R.string.thermal_manager_profile_system)
             } else {
-                dynamicStringResource(R.string.thermal_manager_profile_user)
+                stringResource(R.string.thermal_manager_profile_user)
             },
             style = MaterialTheme.typography.labelSmall,
             color = if (isSystem) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,

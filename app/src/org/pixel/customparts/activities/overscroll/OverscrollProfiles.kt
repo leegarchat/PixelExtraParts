@@ -34,7 +34,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.ui.SettingsGroupCard
-import org.pixel.customparts.utils.dynamicStringResource
 
 
 @Composable
@@ -62,7 +61,7 @@ fun ProfilesSection(
     }
 
     SettingsGroupCard(
-        title = dynamicStringResource(R.string.os_group_profiles),
+        title = stringResource(R.string.os_group_profiles),
     ) {
         Column(
             modifier = Modifier
@@ -82,7 +81,7 @@ fun ProfilesSection(
                 ) {
                     Icon(Icons.Outlined.FileDownload, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(dynamicStringResource(R.string.os_prof_btn_import))
+                    Text(stringResource(R.string.os_prof_btn_import))
                 }
                 Button(
                     onClick = { exportLauncher.launch("overscroll_settings.json") },
@@ -91,7 +90,7 @@ fun ProfilesSection(
                 ) {
                     Icon(Icons.Outlined.FileUpload, null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(dynamicStringResource(R.string.os_prof_btn_export))
+                    Text(stringResource(R.string.os_prof_btn_export))
                 }
             }
             // Row 2: Save
@@ -102,7 +101,7 @@ fun ProfilesSection(
             ) {
                 Icon(Icons.Default.Save, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(dynamicStringResource(R.string.os_prof_btn_save))
+                Text(stringResource(R.string.os_prof_btn_save))
             }
             // Row 3: Online Configs
             Button(
@@ -115,14 +114,14 @@ fun ProfilesSection(
             ) {
                 Icon(Icons.Default.CloudDownload, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(dynamicStringResource(R.string.os_prof_btn_network))
+                Text(stringResource(R.string.os_prof_btn_network))
             }
         }
         
         if (profiles.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
             Text(
-                dynamicStringResource(R.string.os_prof_header_list),
+                stringResource(R.string.os_prof_header_list),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -180,14 +179,14 @@ fun ProfilesSection(
                                 exit = shrinkVertically(animationSpec = tween(300)) + fadeOut(animationSpec = tween(300))
                             ) {
                                 Text(
-                                    text = dynamicStringResource(R.string.os_prof_item_active),
+                                    text = stringResource(R.string.os_prof_item_active),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = contentColor.copy(alpha = 0.8f)
                                 )
                             }
                             AnimatedVisibility(visible = !isActive) {
                                 Text(
-                                    text = dynamicStringResource(R.string.os_prof_item_tap),
+                                    text = stringResource(R.string.os_prof_item_tap),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = contentColor.copy(alpha = 0.5f)
                                 )
@@ -198,7 +197,7 @@ fun ProfilesSection(
                             if (isActive) {
                                 Icon(
                                     Icons.Default.Check, 
-                                    dynamicStringResource(R.string.status_active), 
+                                    stringResource(R.string.status_active), 
                                     tint = contentColor,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -216,7 +215,7 @@ fun ProfilesSection(
                             ) {
                                 Icon(
                                     Icons.Default.Delete, 
-                                    dynamicStringResource(R.string.os_prof_delete_desc), 
+                                    stringResource(R.string.os_prof_delete_desc), 
                                     tint = if (isActive) contentColor.copy(alpha = 0.7f) else MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -234,12 +233,12 @@ fun ProfilesSection(
         var profileName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showSaveProfileDialog = false },
-            title = { Text(dynamicStringResource(R.string.os_prof_dialog_title)) },
+            title = { Text(stringResource(R.string.os_prof_dialog_title)) },
             text = {
                 OutlinedTextField(
                     value = profileName, 
                     onValueChange = { profileName = it },
-                    label = { Text(dynamicStringResource(R.string.os_prof_dialog_hint)) }
+                    label = { Text(stringResource(R.string.os_prof_dialog_hint)) }
                 )
             },
             confirmButton = {
@@ -251,9 +250,9 @@ fun ProfilesSection(
                             showSaveProfileDialog = false
                         }
                     }
-                }) { Text(dynamicStringResource(R.string.btn_save)) }
+                }) { Text(stringResource(R.string.btn_save)) }
             },
-            dismissButton = { TextButton(onClick = { showSaveProfileDialog = false }) { Text(dynamicStringResource(R.string.btn_cancel)) } }
+            dismissButton = { TextButton(onClick = { showSaveProfileDialog = false }) { Text(stringResource(R.string.btn_cancel)) } }
         )
     }
 
@@ -302,7 +301,7 @@ private fun NetworkConfigsDialog(
 
     AlertDialog(
         onDismissRequest = { if (applyingConfig == null) onDismiss() },
-        title = { Text(dynamicStringResource(R.string.os_net_dialog_title)) },
+        title = { Text(stringResource(R.string.os_net_dialog_title)) },
         text = {
             Box(
                 modifier = Modifier
@@ -317,14 +316,14 @@ private fun NetworkConfigsDialog(
                     }
                     isError -> {
                         Text(
-                            dynamicStringResource(R.string.os_net_error),
+                            stringResource(R.string.os_net_error),
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
                     configs.isEmpty() -> {
                         Text(
-                            dynamicStringResource(R.string.os_net_empty),
+                            stringResource(R.string.os_net_empty),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -398,7 +397,7 @@ private fun NetworkConfigsDialog(
                 onClick = onDismiss,
                 enabled = applyingConfig == null
             ) {
-                Text(dynamicStringResource(R.string.btn_cancel))
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )

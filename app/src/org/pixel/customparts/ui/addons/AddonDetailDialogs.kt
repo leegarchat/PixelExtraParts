@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -239,16 +239,16 @@ internal fun AddonDetailDialog(
 
                 // Scope mode
                 Text(
-                    dynamicStringResource(R.string.addon_target_scope),
+                    stringResource(R.string.addon_target_scope),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(8.dp))
 
                 val scopeLabels = listOf(
-                    dynamicStringResource(R.string.addon_scope_default),
-                    dynamicStringResource(R.string.addon_scope_custom),
-                    dynamicStringResource(R.string.addon_scope_merge)
+                    stringResource(R.string.addon_scope_default),
+                    stringResource(R.string.addon_scope_custom),
+                    stringResource(R.string.addon_scope_merge)
                 )
                 scopeLabels.forEachIndexed { index, label ->
                     Row(
@@ -271,7 +271,7 @@ internal fun AddonDetailDialog(
                 if (addon.defaultTargets.isNotEmpty() && (scopeMode == 0 || scopeMode == 2)) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        dynamicStringResource(R.string.addon_targets_default),
+                        stringResource(R.string.addon_targets_default),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -297,7 +297,7 @@ internal fun AddonDetailDialog(
                             Spacer(Modifier.weight(1f))
                             if (pkg in BUILTIN_WHITELIST) {
                                 Text(
-                                    dynamicStringResource(R.string.addon_builtin_badge),
+                                    stringResource(R.string.addon_builtin_badge),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -310,13 +310,13 @@ internal fun AddonDetailDialog(
                 if (scopeMode == 1 || scopeMode == 2) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        dynamicStringResource(R.string.addon_targets_custom),
+                        stringResource(R.string.addon_targets_custom),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (customTargets.isNotEmpty()) {
                         Text(
-                            dynamicStringResource(R.string.addon_apps_selected, customTargets.size),
+                            stringResource(R.string.addon_apps_selected, customTargets.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -331,7 +331,7 @@ internal fun AddonDetailDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text(dynamicStringResource(R.string.addon_select_apps))
+                        Text(stringResource(R.string.addon_select_apps))
                     }
 
                     // Chips for selected custom targets
@@ -373,7 +373,7 @@ internal fun AddonDetailDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.addon_btn_cancel)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.addon_btn_cancel)) }
                     Spacer(Modifier.width(8.dp))
                     Button(onClick = {
                         onSave(
@@ -383,7 +383,7 @@ internal fun AddonDetailDialog(
                                 customTargets = customTargets
                             )
                         )
-                    }) { Text(dynamicStringResource(R.string.addon_btn_save)) }
+                    }) { Text(stringResource(R.string.addon_btn_save)) }
                 }
             }
         }
@@ -469,18 +469,18 @@ internal fun AppPickerDialog(
                 TopAppBar(
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.btn_close))
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.btn_close))
                         }
                     },
                     title = {
                         Column {
                             Text(
-                                dynamicStringResource(R.string.addon_select_apps),
+                                stringResource(R.string.addon_select_apps),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                dynamicStringResource(R.string.addon_selected_count, selected.size),
+                                stringResource(R.string.addon_selected_count, selected.size),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -501,10 +501,10 @@ internal fun AppPickerDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(onClick = onDismiss) { Text(dynamicStringResource(R.string.addon_btn_cancel)) }
+                        OutlinedButton(onClick = onDismiss) { Text(stringResource(R.string.addon_btn_cancel)) }
                         Spacer(Modifier.width(12.dp))
                         Button(onClick = { onConfirm(selected) }) {
-                            Text(dynamicStringResource(R.string.addon_confirm_count, selected.size))
+                            Text(stringResource(R.string.addon_confirm_count, selected.size))
                         }
                     }
                 }
@@ -544,13 +544,13 @@ internal fun AppPickerDialog(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        dynamicStringResource(R.string.addon_show_system),
+                                        stringResource(R.string.addon_show_system),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
                                     Text(
-                                        dynamicStringResource(R.string.addon_show_system_desc),
+                                        stringResource(R.string.addon_show_system_desc),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1
@@ -581,13 +581,13 @@ internal fun AppPickerDialog(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        dynamicStringResource(R.string.addon_launchable_only),
+                                        stringResource(R.string.addon_launchable_only),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1
                                     )
                                     Text(
-                                        dynamicStringResource(R.string.addon_launchable_only_desc),
+                                        stringResource(R.string.addon_launchable_only_desc),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1
@@ -629,7 +629,7 @@ internal fun AppPickerDialog(
                                 ) {
                                     if (searchQuery.isEmpty()) {
                                         Text(
-                                            dynamicStringResource(R.string.addon_search_apps),
+                                            stringResource(R.string.addon_search_apps),
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1
@@ -719,7 +719,7 @@ internal fun AppPickerDialog(
                                                 shape = RoundedCornerShape(4.dp)
                                             ) {
                                                 Text(
-                                                    dynamicStringResource(R.string.addon_default_target_badge),
+                                                    stringResource(R.string.addon_default_target_badge),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -733,7 +733,7 @@ internal fun AppPickerDialog(
                                                 shape = RoundedCornerShape(4.dp)
                                             ) {
                                                 Text(
-                                                    dynamicStringResource(R.string.launcher_hidden_apps_system_badge),
+                                                    stringResource(R.string.launcher_hidden_apps_system_badge),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -768,8 +768,8 @@ internal fun AppPickerDialog(
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                             ) {
                                 Text(
-                                    if (searchQuery.isNotEmpty()) dynamicStringResource(R.string.addon_no_apps_match, searchQuery)
-                                    else dynamicStringResource(R.string.addon_no_apps_available),
+                                    if (searchQuery.isNotEmpty()) stringResource(R.string.addon_no_apps_match, searchQuery)
+                                    else stringResource(R.string.addon_no_apps_available),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(20.dp)

@@ -87,10 +87,10 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.filterThemeNameInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 
 // ── Constants ───────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ internal fun AnimConstructorBlock(
                     Tab(
                         selected = selectedTab == i,
                         onClick = { onTabSelected(i) },
-                        text = { Text(dynamicStringResource(labelRes), style = MaterialTheme.typography.labelMedium, maxLines = 1) }
+                        text = { Text(stringResource(labelRes), style = MaterialTheme.typography.labelMedium, maxLines = 1) }
                     )
                 }
             }
@@ -153,7 +153,7 @@ internal fun ParamEditor(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // ── Translate ──
-        Text(dynamicStringResource(R.string.anim_param_translate), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_translate), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("fromX %", params.translateFromX, -100f, 100f, 0f) {
             onParamsChange(params.copy(translateFromX = it))
@@ -171,7 +171,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Scale ──
-        Text(dynamicStringResource(R.string.anim_param_scale), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_scale), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("fromX", params.scaleFromX, 0f, 3f, 1f) {
             onParamsChange(params.copy(scaleFromX = it))
@@ -189,7 +189,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Alpha ──
-        Text(dynamicStringResource(R.string.anim_param_alpha), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_alpha), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("from", params.alphaFrom, 0f, 1f, 1f) {
             onParamsChange(params.copy(alphaFrom = it))
@@ -201,7 +201,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Rotate ──
-        Text(dynamicStringResource(R.string.anim_param_rotate), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_rotate), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("from °", params.rotateFrom, -360f, 360f, 0f) {
             onParamsChange(params.copy(rotateFrom = it))
@@ -213,7 +213,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Pivot ──
-        Text(dynamicStringResource(R.string.anim_param_pivot), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_pivot), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("X %", params.pivotX, 0f, 100f, 50f) {
             onParamsChange(params.copy(pivotX = it))
@@ -225,7 +225,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Timing ──
-        Text(dynamicStringResource(R.string.anim_param_timing), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_timing), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         ParamSlider("duration ms", params.duration.toFloat(), 50f, 2000f, 350f) {
             onParamsChange(params.copy(duration = it.toLong()))
@@ -237,7 +237,7 @@ internal fun ParamEditor(
         Spacer(Modifier.height(4.dp))
 
         // ── Interpolator ──
-        Text(dynamicStringResource(R.string.anim_param_interpolator), style = MaterialTheme.typography.labelMedium,
+        Text(stringResource(R.string.anim_param_interpolator), style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         InterpolatorSelector(
             selectedIndex = params.interpolatorIndex,
@@ -290,7 +290,7 @@ private fun ParamSlider(
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
-                    Icons.Rounded.Refresh, dynamicStringResource(R.string.anim_cd_reset),
+                    Icons.Rounded.Refresh, stringResource(R.string.anim_cd_reset),
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -330,7 +330,7 @@ private fun ParamSlider(
                 }) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showInputDialog = false }) { Text(dynamicStringResource(R.string.anim_dialog_cancel)) }
+                TextButton(onClick = { showInputDialog = false }) { Text(stringResource(R.string.anim_dialog_cancel)) }
             }
         )
     }
@@ -387,7 +387,7 @@ internal fun ConstructorPreview(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = dynamicStringResource(R.string.anim_constructor_preview),
+                text = stringResource(R.string.anim_constructor_preview),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold
             )
@@ -399,7 +399,7 @@ internal fun ConstructorPreview(
             ) {
                 // Open preview
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(dynamicStringResource(R.string.anim_preview_open), style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.anim_preview_open), style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Card(
@@ -425,7 +425,7 @@ internal fun ConstructorPreview(
 
                 // Close preview
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(dynamicStringResource(R.string.anim_preview_close), style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.anim_preview_close), style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(4.dp))
                     Card(

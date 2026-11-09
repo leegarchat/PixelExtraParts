@@ -82,7 +82,7 @@ import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SaturationController
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 class SaturationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -140,10 +140,10 @@ private fun SaturationScreen(onBack: () -> Unit) {
         floatingActionButton = { RebootBubble() },
         topBar = {
             TopAppBar(
-                title = { Text(dynamicStringResource(R.string.saturation_title), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.saturation_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, dynamicStringResource(R.string.nav_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -174,7 +174,7 @@ private fun SaturationScreen(onBack: () -> Unit) {
 
                 item {
                     SettingsGroupCard(
-                        title = dynamicStringResource(R.string.saturation_title),
+                        title = stringResource(R.string.saturation_title),
                     ) {
                         SaturationControls(
                             enabled = enabled,
@@ -213,13 +213,13 @@ private fun SaturationScreen(onBack: () -> Unit) {
                     ) {
                         Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.size(8.dp))
-                        Text(dynamicStringResource(R.string.saturation_add_tile))
+                        Text(stringResource(R.string.saturation_add_tile))
                     }
                 }
 
                 item {
                     Text(
-                        text = dynamicStringResource(R.string.saturation_footer_summary),
+                        text = stringResource(R.string.saturation_footer_summary),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 8.dp)
@@ -251,14 +251,14 @@ private fun SaturationControls(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         GenericSwitchRow(
-            title = dynamicStringResource(R.string.saturation_enable_title),
-            summary = dynamicStringResource(R.string.saturation_enable_summary),
+            title = stringResource(R.string.saturation_enable_title),
+            summary = stringResource(R.string.saturation_enable_summary),
             checked = enabled,
             onCheckedChange = onEnabledChange
         )
 
         SliderSetting(
-            title = dynamicStringResource(R.string.saturation_level_title),
+            title = stringResource(R.string.saturation_level_title),
             value = percent,
             range = SaturationController.MIN_PERCENT..SaturationController.MAX_PERCENT,
             unit = "%",
@@ -298,7 +298,7 @@ private fun SaturationPreviewCard(percent: Int) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = dynamicStringResource(R.string.saturation_preview_title),
+                text = stringResource(R.string.saturation_preview_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.SemiBold
@@ -313,7 +313,7 @@ private fun SaturationPreviewCard(percent: Int) {
             ) {
                 Image(
                     painter = painterResource(images[page]),
-                    contentDescription = dynamicStringResource(R.string.saturation_preview_content_description),
+                    contentDescription = stringResource(R.string.saturation_preview_content_description),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )

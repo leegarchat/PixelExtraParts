@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import org.pixel.customparts.utils.LauncherIconController
 import org.pixel.customparts.utils.restartSystemUI
-import org.pixel.customparts.utils.dynamicStringResource
+import androidx.compose.ui.res.stringResource
 
 val REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING = 96.dp
 
@@ -162,7 +162,7 @@ fun RebootBubble(
                         if (launcherIconAvailable) {
                             StaggeredSwitchMenuItem(
                                 icon = Icons.Rounded.Apps,
-                                label = dynamicStringResource(R.string.bubble_show_desktop_icon),
+                                label = stringResource(R.string.bubble_show_desktop_icon),
                                 checked = launcherIconEnabled,
                                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -194,7 +194,7 @@ fun RebootBubble(
                         }
                         StaggeredMenuItem(
                             icon = Icons.Rounded.Home,
-                            label = dynamicStringResource(R.string.reboot_launcher),
+                            label = stringResource(R.string.reboot_launcher),
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             delayMs = actionDelayBase + (extraActions.size * 50),
@@ -205,7 +205,7 @@ fun RebootBubble(
                         )
                         StaggeredMenuItem(
                             icon = Icons.Rounded.SettingsApplications,
-                            label = dynamicStringResource(R.string.reboot_systemui),
+                            label = stringResource(R.string.reboot_systemui),
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             delayMs = actionDelayBase + 50 + (extraActions.size * 50),
@@ -216,7 +216,7 @@ fun RebootBubble(
                         )
                         StaggeredMenuItem(
                             icon = Icons.Rounded.RestartAlt,
-                            label = dynamicStringResource(R.string.reboot_system),
+                            label = stringResource(R.string.reboot_system),
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                             delayMs = actionDelayBase + 100 + (extraActions.size * 50),
@@ -247,7 +247,7 @@ fun RebootBubble(
                             )
                             Spacer(Modifier.width(10.dp))
                             Text(
-                                text = dynamicStringResource(R.string.btn_close),
+                                text = stringResource(R.string.btn_close),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -289,7 +289,7 @@ fun RebootBubble(
             },
             title = {
                 Text(
-                    dynamicStringResource(
+                    stringResource(
                         if (action == RebootAction.SYSTEM) R.string.reboot_confirm_system_title
                         else R.string.reboot_confirm_sysui_title
                     )
@@ -297,7 +297,7 @@ fun RebootBubble(
             },
             text = {
                 Text(
-                    dynamicStringResource(
+                    stringResource(
                         if (action == RebootAction.SYSTEM) R.string.reboot_confirm_system_msg
                         else R.string.reboot_confirm_sysui_msg
                     )
@@ -319,12 +319,12 @@ fun RebootBubble(
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text(dynamicStringResource(R.string.btn_confirm))
+                    Text(stringResource(R.string.btn_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { confirmAction = null }) {
-                    Text(dynamicStringResource(R.string.btn_cancel))
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )

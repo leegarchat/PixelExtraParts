@@ -99,8 +99,8 @@ import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
-import org.pixel.customparts.utils.dynamicStringResource
 import org.pixel.customparts.utils.runShellCommandForResult
+import androidx.compose.ui.res.stringResource
 
 private const val TAG = "AddonManagerUI"
 private const val ADDON_DIR = "/data/pixelparts/addons"
@@ -152,8 +152,8 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         }
     }
 
-    val importSuccessMsg = dynamicStringResource(R.string.addon_import_success)
-    val importFailedMsg = dynamicStringResource(R.string.addon_import_failed)
+    val importSuccessMsg = stringResource(R.string.addon_import_success)
+    val importFailedMsg = stringResource(R.string.addon_import_failed)
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -185,24 +185,24 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    dynamicStringResource(R.string.addon_title),
+                    stringResource(R.string.addon_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    dynamicStringResource(R.string.addon_count, userAddons.size),
+                    stringResource(R.string.addon_count, userAddons.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    dynamicStringResource(R.string.addon_active_count, activeCount, addons.size),
+                    stringResource(R.string.addon_active_count, activeCount, addons.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
             IconButton(onClick = { refreshAddons() }) {
-                Icon(Icons.Rounded.Refresh, dynamicStringResource(R.string.menu_refresh), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Rounded.Refresh, stringResource(R.string.menu_refresh), tint = MaterialTheme.colorScheme.primary)
             }
         }
 
@@ -228,13 +228,13 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        dynamicStringResource(R.string.addon_import),
+                        stringResource(R.string.addon_import),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        dynamicStringResource(R.string.addon_import_desc),
+                        stringResource(R.string.addon_import_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
@@ -252,10 +252,10 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         // TEMPORARY: APK-modules tab hidden behind ApkModulesGate (code kept).
         TabRow(selectedTabIndex = modulesTab) {
             Tab(selected = modulesTab == 0, onClick = { modulesTab = 0 },
-                text = { Text(dynamicStringResource(R.string.addon_tab_jars)) })
+                text = { Text(stringResource(R.string.addon_tab_jars)) })
             if (ApkModulesGate.ENABLED) {
                 Tab(selected = modulesTab == 1, onClick = { modulesTab = 1 },
-                    text = { Text(dynamicStringResource(R.string.addon_tab_modules)) })
+                    text = { Text(stringResource(R.string.addon_tab_modules)) })
             }
         }
 
@@ -326,7 +326,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                dynamicStringResource(R.string.addon_safe_mode_title),
+                                stringResource(R.string.addon_safe_mode_title),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onErrorContainer
@@ -334,7 +334,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            dynamicStringResource(R.string.addon_safe_mode_desc),
+                            stringResource(R.string.addon_safe_mode_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                         )
@@ -349,7 +349,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                                 contentColor = MaterialTheme.colorScheme.onError
                             )
                         ) {
-                            Text(dynamicStringResource(R.string.addon_safe_mode_exit))
+                            Text(stringResource(R.string.addon_safe_mode_exit))
                         }
                     }
                 }
@@ -357,12 +357,12 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
             }
 
             // === System addons section ===
-            SectionHeader(dynamicStringResource(R.string.addon_section_system))
+            SectionHeader(stringResource(R.string.addon_section_system))
 
             if (systemAddons.isEmpty()) {
                 EmptySectionCard(
-                    title = dynamicStringResource(R.string.addon_system_empty_title),
-                    description = dynamicStringResource(R.string.addon_system_empty_desc)
+                    title = stringResource(R.string.addon_system_empty_title),
+                    description = stringResource(R.string.addon_system_empty_desc)
                 )
             } else {
                 for (addon in systemAddons) {
@@ -406,12 +406,12 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
             Spacer(Modifier.height(16.dp))
 
             // === User addons section ===
-            SectionHeader(dynamicStringResource(R.string.addon_section_user))
+            SectionHeader(stringResource(R.string.addon_section_user))
 
             if (userAddons.isEmpty()) {
                 EmptySectionCard(
-                    title = dynamicStringResource(R.string.addon_user_empty_title),
-                    description = dynamicStringResource(R.string.addon_user_empty_desc)
+                    title = stringResource(R.string.addon_user_empty_title),
+                    description = stringResource(R.string.addon_user_empty_desc)
                 )
             } else {
                 for (addon in userAddons) {
@@ -499,10 +499,10 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = null },
             icon = { Icon(Icons.Rounded.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text(dynamicStringResource(R.string.addon_delete_title)) },
+            title = { Text(stringResource(R.string.addon_delete_title)) },
             text = {
                 Text(
-                    dynamicStringResource(
+                    stringResource(
                         if (addon.hasDataOverride) R.string.addon_delete_data_update_confirm else R.string.addon_delete_confirm,
                         addon.name
                     )
@@ -520,10 +520,10 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
-                ) { Text(dynamicStringResource(R.string.addon_btn_remove)) }
+                ) { Text(stringResource(R.string.addon_btn_remove)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = null }) { Text(dynamicStringResource(R.string.addon_btn_cancel)) }
+                TextButton(onClick = { showDeleteDialog = null }) { Text(stringResource(R.string.addon_btn_cancel)) }
             }
         )
     }
@@ -865,10 +865,10 @@ private fun AddonCardHeader(
                     )
                 } else {
                 val scopeLabel = when (addon.scopeMode) {
-                    0 -> dynamicStringResource(R.string.addon_scope_label_default)
-                    1 -> dynamicStringResource(R.string.addon_scope_label_custom)
-                    2 -> dynamicStringResource(R.string.addon_scope_label_merge)
-                    else -> dynamicStringResource(R.string.addon_scope_label_default)
+                    0 -> stringResource(R.string.addon_scope_label_default)
+                    1 -> stringResource(R.string.addon_scope_label_custom)
+                    2 -> stringResource(R.string.addon_scope_label_merge)
+                    else -> stringResource(R.string.addon_scope_label_default)
                 }
 
                 SuggestionChip(
@@ -886,7 +886,7 @@ private fun AddonCardHeader(
                     if (!isSystem || addon.hasDataOverride) {
                         IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                             Icon(
-                                Icons.Outlined.Delete, dynamicStringResource(R.string.addon_btn_remove),
+                                Icons.Outlined.Delete, stringResource(R.string.addon_btn_remove),
                                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                                 modifier = Modifier.size(18.dp)
                             )
@@ -904,7 +904,7 @@ private fun AddonCardSettings(
     onRefresh: () -> Unit
 ) {
             val context = LocalContext.current
-            val importFailedMsg = dynamicStringResource(R.string.addon_import_failed)
+            val importFailedMsg = stringResource(R.string.addon_import_failed)
             var settingsRevision by remember(addon.id) { mutableIntStateOf(0) }
             val allSettings = remember(addon.settings) { flattenSettings(addon.settings) }
             fun onSettingChanged(setting: AddonSettingDef, booleanValue: Boolean?) {
@@ -962,7 +962,7 @@ private fun AddonCardSettings(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            dynamicStringResource(R.string.addon_no_inline_settings_hint),
+                            stringResource(R.string.addon_no_inline_settings_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
@@ -1050,7 +1050,7 @@ private fun AddonCardSettings(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            dynamicStringResource(R.string.addon_no_inline_settings_hint),
+                            stringResource(R.string.addon_no_inline_settings_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                         )
@@ -1084,7 +1084,7 @@ private fun AddonCardSettings(
                     val settingCategories = remember(addon.settings) { buildAddonSettingCategories(addon.settings) }
                     settingCategories.forEachIndexed { categoryIndex, category ->
                         val categoryTitle = category.title.ifBlank {
-                            if (settingCategories.size == 1) dynamicStringResource(R.string.addon_settings_title) else ""
+                            if (settingCategories.size == 1) stringResource(R.string.addon_settings_title) else ""
                         }
                         if (categoryTitle.isNotBlank()) {
                             Text(

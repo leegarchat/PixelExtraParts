@@ -62,8 +62,6 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import org.pixel.customparts.utils.ThermalProfileController
-import org.pixel.customparts.utils.dynamicStringResource
-import org.pixel.customparts.utils.RemoteStringsManager
 
 class ThermalActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,7 +114,7 @@ fun ThermalScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(dynamicStringResource(R.string.thermal_title),
+                    Text(stringResource(R.string.thermal_title),
                     fontWeight = FontWeight.Bold) 
                 },
                 navigationIcon = {
@@ -147,14 +145,14 @@ fun ThermalScreen(onBack: () -> Unit) {
             
             item {
                 ExpandableWarningCard(
-                    title = dynamicStringResource(R.string.thermal_info_title),
-                    text = dynamicStringResource(R.string.thermal_info_summary)
+                    title = stringResource(R.string.thermal_info_title),
+                    text = stringResource(R.string.thermal_info_summary)
                 )
             }
 
             item {
                 ThermalSection(
-                    title = dynamicStringResource(R.string.thermal_sec_battery),
+                    title = stringResource(R.string.thermal_sec_battery),
                     icon = Icons.Rounded.BatteryStd,
                     currentMode = batteryProfile,
                     modes = ThermalManager.getModes(),
@@ -173,7 +171,7 @@ fun ThermalScreen(onBack: () -> Unit) {
 
             item {
                 ThermalSection(
-                    title = dynamicStringResource(R.string.thermal_sec_soc),
+                    title = stringResource(R.string.thermal_sec_soc),
                     icon = Icons.Rounded.Memory,
                     currentMode = socProfile,
                     modes = ThermalManager.getModes(),
@@ -206,9 +204,9 @@ fun ThermalScreen(onBack: () -> Unit) {
 
     if (showRebootDialog) {
         val msg = if (isRiskyConfig) {
-            dynamicStringResource(R.string.thermal_dialog_risk_msg)
+            stringResource(R.string.thermal_dialog_risk_msg)
         } else {
-            dynamicStringResource(R.string.thermal_dialog_safe_msg)
+            stringResource(R.string.thermal_dialog_safe_msg)
         }
 
         Dialog(onDismissRequest = { showRebootDialog = false }) {
@@ -238,7 +236,7 @@ fun ThermalScreen(onBack: () -> Unit) {
                     Spacer(Modifier.height(16.dp))
                     
                     Text(
-                        text = dynamicStringResource(R.string.thermal_dialog_reboot_title),
+                        text = stringResource(R.string.thermal_dialog_reboot_title),
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurface
@@ -260,7 +258,7 @@ fun ThermalScreen(onBack: () -> Unit) {
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showRebootDialog = false }) {
-                            Text(dynamicStringResource(R.string.btn_ok))
+                            Text(stringResource(R.string.btn_ok))
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(
@@ -272,7 +270,7 @@ fun ThermalScreen(onBack: () -> Unit) {
                                 containerColor = MaterialTheme.colorScheme.error
                             )
                         ) {
-                            Text(dynamicStringResource(R.string.btn_reboot))
+                            Text(stringResource(R.string.btn_reboot))
                         }
                     }
                 }
@@ -412,7 +410,7 @@ fun ThermalSection(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = dynamicStringResource(mode.labelRes),
+                        text = stringResource(mode.labelRes),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight(weightVal)
                         ),
@@ -516,7 +514,7 @@ object ThermalManager {
             MODE_OFF -> R.string.thermal_desc_bat_off
             else -> R.string.thermal_desc_bat_stock
         }
-        return dynamicStringResource(resId)
+        return stringResource(resId)
     }
 
     @Composable
@@ -529,7 +527,7 @@ object ThermalManager {
             MODE_OFF -> R.string.thermal_desc_soc_off
             else -> R.string.thermal_desc_soc_stock
         }
-        return dynamicStringResource(resId)
+        return stringResource(resId)
     }
 
     fun onBoot(context: Context) {

@@ -27,7 +27,6 @@ import org.pixel.customparts.R
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.activities.AutoHbmActivity
 import org.pixel.customparts.utils.AutoHbmController
-import org.pixel.customparts.utils.RemoteStringsManager
 
 class AutoHbmService : Service(), SensorEventListener {
     private var sensorManager: SensorManager? = null
@@ -796,7 +795,7 @@ class AutoHbmService : Service(), SensorEventListener {
     }
 
     private fun showToast(messageRes: Int) {
-        val message = RemoteStringsManager.getString(applicationContext, messageRes)
+        val message = applicationContext.getString(messageRes)
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
         }
