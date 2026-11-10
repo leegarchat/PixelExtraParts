@@ -52,6 +52,21 @@
                     "categoryDescription": "Count and total blink time."
                 },
                 {
+                    "key": "flashnotify_tile",
+                    "title": "Notification flash tile",
+                    "description": "Add a Quick Settings tile to toggle notification flashes.",
+                    "type": "tile",
+                    "tileConfigurable": true,
+                    "targets": [
+                        {
+                            "key": "flashnotify_enabled",
+                            "label": "Flash notify",
+                            "mode": "toggle",
+                            "pageId": "flash-notify"
+                        }
+                    ]
+                },
+                {
                     "key": "flashnotify_count",
                     "title": "Flash count",
                     "description": "How many times the torch blinks per notification.",
@@ -106,6 +121,21 @@
                     "category": "flashnotify_calls",
                     "categoryTitle": "SIM calls",
                     "categoryDescription": "Burst: N blinks, pause, repeat until answered."
+                },
+                {
+                    "key": "flashnotify_calls_tile",
+                    "title": "SIM calls tile",
+                    "description": "Add a Quick Settings tile to toggle SIM call flashes.",
+                    "type": "tile",
+                    "tileConfigurable": true,
+                    "targets": [
+                        {
+                            "key": "flashnotify_calls_enabled",
+                            "label": "SIM calls",
+                            "mode": "toggle",
+                            "pageId": "flash-notify"
+                        }
+                    ]
                 },
                 {
                     "key": "flashnotify_sim_blink_ms",
@@ -197,6 +227,21 @@
                     "category": "flashnotify_voip",
                     "categoryTitle": "Messenger calls",
                     "categoryDescription": "Burst: N blinks, pause, repeat until hangup."
+                },
+                {
+                    "key": "flashnotify_voip_tile",
+                    "title": "VoIP calls tile",
+                    "description": "Add a Quick Settings tile to toggle messenger call flashes.",
+                    "type": "tile",
+                    "tileConfigurable": true,
+                    "targets": [
+                        {
+                            "key": "flashnotify_voip_enabled",
+                            "label": "VoIP calls",
+                            "mode": "toggle",
+                            "pageId": "flash-notify"
+                        }
+                    ]
                 },
                 {
                     "key": "flashnotify_voip_blink_ms",
@@ -465,6 +510,11 @@
                             "description": "Главный выключатель. При включении системная вспышка камеры отключается сама. Действует сразу."
                         },
                         {
+                            "key": "flashnotify_tile",
+                            "title": "Тайл вспышек",
+                            "description": "Добавить тайл быстрых настроек для вспышек уведомлений."
+                        },
+                        {
                             "key": "flashnotify_count",
                             "title": "Число вспышек",
                             "description": "Сколько раз мигнет фонарик на уведомление (до 50)."
@@ -488,6 +538,11 @@
                             "key": "flashnotify_calls_enabled",
                             "title": "Мигать на SIM-звонки",
                             "description": "Повторять серии пока идет сотовый звонок. Только SIM — для мессенджеров тумблер ниже. Если пользуетесь вспышкой на звонок из Evolver — оставьте что-то одно."
+                        },
+                        {
+                            "key": "flashnotify_calls_tile",
+                            "title": "Тайл SIM-звонков",
+                            "description": "Добавить тайл быстрых настроек для вспышек SIM-звонков."
                         },
                         {
                             "key": "flashnotify_sim_blink_ms",
@@ -550,6 +605,11 @@
                             "key": "flashnotify_voip_enabled",
                             "title": "Мигать на звонки мессенджеров",
                             "description": "Повторять серии пока активен VoIP-звонок (следит за уведомлением о звонке). Останавливается когда уведомление уходит."
+                        },
+                        {
+                            "key": "flashnotify_voip_tile",
+                            "title": "Тайл VoIP-звонков",
+                            "description": "Добавить тайл быстрых настроек для вспышек звонков мессенджеров."
                         },
                         {
                             "key": "flashnotify_voip_blink_ms",
