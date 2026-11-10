@@ -58,9 +58,11 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.utils.AutoLockController
 import androidx.compose.ui.res.stringResource
 
@@ -139,7 +141,7 @@ private fun AutoLockScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(blurState = blurState) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -248,6 +250,9 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                 blurState = blurState
+            )
+            TopBarUnderDim(
+                topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

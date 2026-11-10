@@ -5,6 +5,9 @@ import android.graphics.RenderNode
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,6 +15,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -43,6 +47,7 @@ import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 
 /*
  * Single shared full-screen blur RenderNode: the RenderEffect is applied
@@ -200,7 +205,7 @@ fun TopBarBlurOverlay(
     var region by remember { mutableStateOf(Rect.Zero) }
 
     Box(
-        modifier = modifier.height(topBarHeight)
+        modifier = modifier.height(topBarHeight).zIndex(2f)
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && blurRadius > 0.5f) {
             Box(
@@ -312,6 +317,54 @@ fun BottomBlurBar(
 }
 
 /**
+ * Gradient dim seated directly BELOW the header, never over it.
+ *
+ * Smooths the seam between the clean frosted header and the morph-scrimmed list:
+ * a scrim-token gradient, darkest at the header edge and fading to transparent
+ * below. Peak alpha follows the morph modal: 0 when closed (the composable bails
+ * out and adds no layer), up to [maxPeakAlpha] when the scrim is fully up, so the
+ * modal scrim + this veil never stack into mud.
+ * Only reads [LocalSliderMorphHost]: morph keys/recording/logic are untouched.
+ * z = 1.5f: above the modal scrim (1f), below the header (2f) and TopStatusVeil
+ * (3f). No input handling: taps fall through to the scrim catcher underneath.
+ */
+@Composable
+fun TopBarUnderDim(
+    topBarHeight: Dp,
+    modifier: Modifier = Modifier,
+    blendHeight: Dp = 56.dp,
+    maxPeakAlpha: Float = 0.20f,
+) {
+    val morphOpen = LocalSliderMorphHost.current?.request != null
+    val peak by animateFloatAsState(
+        targetValue = if (morphOpen) maxPeakAlpha else 0f,
+        animationSpec = tween(
+            durationMillis = if (morphOpen) 240 else 220,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "TopBarUnderDim",
+    )
+    if (peak <= 0.003f) return
+    val scrim = MaterialTheme.colorScheme.scrim
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = topBarHeight)
+            .height(blendHeight)
+            .zIndex(1.5f)
+            .background(
+                Brush.verticalGradient(
+                    colorStops = arrayOf(
+                        0.0f to scrim.copy(alpha = peak),
+                        0.55f to scrim.copy(alpha = peak * 0.45f),
+                        1.0f to scrim.copy(alpha = 0f),
+                    ),
+                ),
+            ),
+    )
+}
+
+/**
  * Micro-gradient veil at the top edge (status-bar zone).
  * Hides blur softness at content edges where there is no sampling data.
  * Alpha bottom-up: 0 → 20 → 40 → 100. Color = content background (dark/light per theme).
@@ -327,6 +380,7 @@ fun TopStatusVeil(
         modifier = modifier
             .fillMaxWidth()
             .height(veilHeight)
+            .zIndex(3f)
             .background(
                 Brush.verticalGradient(
                     colorStops = arrayOf(

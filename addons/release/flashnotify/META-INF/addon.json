@@ -76,6 +76,27 @@
                     "category": "flashnotify_blink"
                 },
                 {
+                    "key": "flashnotify_total_ms",
+                    "title": "Total blink time",
+                    "description": "Overall time the blinking lasts. Split evenly into on/off phases.",
+                    "type": "int",
+                    "provider": "global",
+                    "default": 1200,
+                    "min": 50,
+                    "max": 10000,
+                    "step": 100,
+                    "unit": "ms",
+                    "category": "flashnotify_blink"
+                },
+                {
+                    "key": "flashnotify_test",
+                    "title": "Test blink",
+                    "description": "Fires one blink with current count and time, no notification needed.",
+                    "type": "button",
+                    "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST",
+                    "showOutput": true
+                },
+                {
                     "key": "flashnotify_calls_enabled",
                     "title": "Blink on SIM calls",
                     "description": "Repeat bursts while a cellular call rings. SIM calls only — messenger calls have their own toggle below. If you use the Evolver flash-on-call, turn one of them off.",
@@ -420,27 +441,6 @@
                     "provider": "global",
                     "default": true,
                     "category": "flashnotify_cats"
-                },
-                {
-                    "key": "flashnotify_total_ms",
-                    "title": "Total blink time",
-                    "description": "Overall time the blinking lasts. Split evenly into on/off phases.",
-                    "type": "int",
-                    "provider": "global",
-                    "default": 1200,
-                    "min": 50,
-                    "max": 10000,
-                    "step": 100,
-                    "unit": "ms",
-                    "category": "flashnotify_blink"
-                },
-                {
-                    "key": "flashnotify_test",
-                    "title": "Test blink",
-                    "description": "Fires one blink with current count and time, no notification needed.",
-                    "type": "button",
-                    "command": "am broadcast -a org.pixel.customparts.addon.flashnotify.TEST",
-                    "showOutput": true
                 }
             ]
         }
@@ -473,6 +473,16 @@
                             "key": "flashnotify_strength",
                             "title": "Яркость фонарика",
                             "description": "Та же шкала, что у системного слайдера (макс. 45 на Pixel 8)."
+                        },
+                        {
+                            "key": "flashnotify_total_ms",
+                            "title": "Общее время",
+                            "description": "Сколько всего длится мигание. Делится поровну на вкл/выкл фазы."
+                        },
+                        {
+                            "key": "flashnotify_test",
+                            "title": "Проверка",
+                            "description": "Один проход мигания с текущими настройками, без уведомлений."
                         },
                         {
                             "key": "flashnotify_calls_enabled",
@@ -687,16 +697,6 @@
                             "key": "flashnotify_cat_none",
                             "title": "Без категории",
                             "description": "Мигать на уведомления без категории."
-                        },
-                        {
-                            "key": "flashnotify_total_ms",
-                            "title": "Общее время",
-                            "description": "Сколько всего длится мигание. Делится поровну на вкл/выкл фазы."
-                        },
-                        {
-                            "key": "flashnotify_test",
-                            "title": "Проверка",
-                            "description": "Один проход мигания с текущими настройками, без уведомлений."
                         }
                     ]
                 }

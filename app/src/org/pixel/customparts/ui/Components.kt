@@ -2,41 +2,46 @@ package org.pixel.customparts.ui
 
 import android.net.Uri
 import android.widget.VideoView
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -44,22 +49,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
-import org.pixel.customparts.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.pixel.customparts.R
 import java.io.File
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import java.net.URL
-import androidx.compose.material.icons.rounded.Refresh
+import kotlin.math.abs
+
+private val LeadingFloatRegex = Regex("""-?\d+(?:[.,]\d+)?""")
 
 @Composable
 fun ExpandableWarningCard(
@@ -207,12 +214,7 @@ fun SliderSetting(
     showDefaultButton: Boolean = true,
     inputRange: IntRange? = null,
     defaultValue: Int? = null,
-    // Kept for source compatibility; the layout is now unified (value readout
-    // is always below-right), so this flag no longer changes anything.
     showValueBelow: Boolean = false,
-    // Pre-formatted default value shown in the reset capsule as
-    // "Default (<defaultValueText>)". Uses the exact same formatting as
-    // valueText of the readout; null keeps the plain "Default" label.
     defaultValueText: String? = null
 ) {
     SliderSettingFloat(
@@ -257,18 +259,37 @@ fun SliderSettingFloat(
     inputRange: ClosedFloatingPointRange<Float>? = null,
     stepSize: Float = if (isInteger) 1f else 0.01f,
     defaultValue: Float? = null,
-    // Kept for source compatibility; the layout is now unified (value readout
-    // is always below-right), so this flag no longer changes anything.
     showValueBelow: Boolean = false,
-    // Pre-formatted default value shown in the reset capsule as
-    // "Default (<defaultValueText>)". Uses the exact same formatting as
-    // valueText of the readout; null keeps the plain "Default" label.
     defaultValueText: String? = null
 ) {
     var showManualInput by remember { mutableStateOf(false) }
+    var activeSessionId by remember { mutableLongStateOf(0L) }
     val haptics = LocalHapticFeedback.current
-    // Disabled rows keep enabled colors, dim to 0.42 (DESIGN_GUIDELINES §6.5).
+    val morphHost = LocalSliderMorphHost.current
+    val density = LocalDensity.current
+
+    var containerRect by remember { mutableStateOf(Rect.Zero) }
+    var trackRect by remember { mutableStateOf(Rect.Zero) }
+    var readoutRect by remember { mutableStateOf(Rect.Zero) }
+
+    val latestSessionId by rememberUpdatedState(activeSessionId)
+    LaunchedEffect(morphHost?.request?.sessionId, activeSessionId) {
+        val currentReqId = morphHost?.request?.sessionId
+        if (showManualInput && morphHost != null && activeSessionId != 0L && currentReqId != activeSessionId) {
+            showManualInput = false
+        }
+    }
+    DisposableEffect(morphHost) {
+        onDispose {
+            if (latestSessionId != 0L) {
+                morphHost?.closeById(latestSessionId)
+            }
+        }
+    }
+
     val contentAlpha = if (enabled) 1f else 0.42f
+    val rowHidden = showManualInput && morphHost != null
+    val rowEnabled = enabled && !rowHidden
 
     val formattedValue = valueText ?: if (isInteger) {
         "${value.toInt()} $unit"
@@ -276,37 +297,172 @@ fun SliderSettingFloat(
         String.format("%.2f %s", value, unit)
     }
 
-    // Reset badge appears once the drift off default exceeds a small epsilon:
-    // 0.5% of the range span, but at most half a step (so any real step always
-    // counts) and never below float noise. Reset itself always lands exactly
-    // on the default value.
     val resetThreshold = minOf(
         (range.endInclusive - range.start) * 0.005f,
         stepSize * 0.5f
     ).coerceAtLeast(1e-6f)
+
+    // Resolve default value: explicit defaultValue -> parsed from defaultValueText -> captured on reset.
+    val parsedTextDefault = remember(defaultValueText) {
+        defaultValueText?.let {
+            LeadingFloatRegex.find(it)?.value?.replace(',', '.')?.toFloatOrNull()
+        }
+    }
+    var capturedDefault by remember { mutableStateOf<Float?>(null) }
+    var awaitingResetCapture by remember { mutableStateOf(false) }
+    LaunchedEffect(value, awaitingResetCapture) {
+        if (awaitingResetCapture) {
+            capturedDefault = value
+            awaitingResetCapture = false
+        }
+    }
+    val effectiveDefaultValue = defaultValue ?: parsedTextDefault ?: capturedDefault
+
     val showResetBadge = showDefaultButton &&
-        (defaultValue == null || kotlin.math.abs(value - defaultValue) >= resetThreshold)
+        (effectiveDefaultValue == null || abs(value - effectiveDefaultValue) >= resetThreshold)
+
+    val dialogRange = inputRange ?: range
+    val morphResetText = if (defaultValueText.isNullOrEmpty()) {
+        stringResource(R.string.btn_default)
+    } else {
+        stringResource(R.string.btn_default_with_value, defaultValueText)
+    }
+
+    val sliderFraction = if (range.endInclusive > range.start) {
+        ((value.coerceIn(range.start, range.endInclusive) - range.start) /
+            (range.endInclusive - range.start)).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    fun triggerDefaultReset() {
+        awaitingResetCapture = true
+        onDefault()
+        // If value was already equal to default, capture immediately as well.
+        capturedDefault = value
+    }
+
+    fun openManualInput() {
+        // 16.dp / 8.dp mirror the modal input field's own paddings (shared layout
+        // constants, not screen-specific); the flight itself is fully measured.
+        val textPadStartPx = with(density) { 16.dp.toPx() }
+        val textOffsetYFromCenterPx = with(density) { 8.dp.toPx() }
+        val flyDyPx = if (trackRect.height > 1f && readoutRect.height > 1f) {
+            (readoutRect.center.y - (trackRect.center.y + textOffsetYFromCenterPx))
+                .coerceAtLeast(0f)
+        } else {
+            0f
+        }
+        val flyDxPx = if (trackRect.width > 1f && readoutRect.width > 1f) {
+            (trackRect.left + textPadStartPx) - readoutRect.left
+        } else {
+            0f
+        }
+        val sessionId = System.nanoTime()
+        activeSessionId = sessionId
+        showManualInput = true
+        morphHost?.open(
+            SliderMorphRequest(
+                title = title,
+                initialValue = value,
+                rangeStart = dialogRange.start,
+                rangeEnd = dialogRange.endInclusive,
+                visualRangeStart = range.start,
+                visualRangeEnd = range.endInclusive,
+                unit = unit,
+                isInteger = isInteger,
+                stepSize = stepSize,
+                formattedValue = formattedValue,
+                showResetBadge = showResetBadge,
+                resetText = morphResetText,
+                sourceInRoot = containerRect,
+                valueFlyDyPx = flyDyPx,
+                valueFlyDxPx = flyDxPx,
+                sliderFraction = sliderFraction,
+                initialTrackHeightPx = trackRect.height,
+                defaultValue = effectiveDefaultValue,
+                resetThreshold = resetThreshold,
+                showDefaultButton = showDefaultButton,
+                showInfoIcon = onInfoClick != null && infoText != null,
+                sourceBoundsProvider = { containerRect },
+                sessionId = sessionId,
+                onConfirm = {
+                    onValueChange(it)
+                    onValueChangeFinished?.invoke()
+                    showManualInput = false
+                },
+                onDefault = {
+                    triggerDefaultReset()
+                    onValueChangeFinished?.invoke()
+                    showManualInput = false
+                },
+                onDismiss = { showManualInput = false }
+            )
+        )
+    }
+
+    if (showManualInput && morphHost == null) {
+        SliderInlineManualInput(
+            title = title,
+            value = value,
+            range = inputRange ?: range,
+            unit = unit,
+            isInteger = isInteger,
+            stepSize = stepSize,
+            formattedValue = formattedValue,
+            showResetBadge = showResetBadge,
+            defaultValueText = defaultValueText,
+            sliderFraction = sliderFraction,
+            defaultValue = effectiveDefaultValue,
+            resetThreshold = resetThreshold,
+            showDefaultButton = showDefaultButton,
+            onConfirm = {
+                onValueChange(it)
+                onValueChangeFinished?.invoke()
+                showManualInput = false
+            },
+            onDefault = {
+                triggerDefaultReset()
+                onValueChangeFinished?.invoke()
+                showManualInput = false
+            },
+            onDismiss = { showManualInput = false }
+        )
+        return
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled) { showManualInput = true }
+            .onPlaced {
+                val r = it.boundsInRoot()
+                if (r.width > 1f && r.height > 1f) containerRect = r
+            }
+            .onGloballyPositioned {
+                val r = it.boundsInRoot()
+                if (r.width > 1f && r.height > 1f) containerRect = r
+            }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = rowEnabled
+            ) { openManualInput() }
             .padding(horizontal = 20.dp, vertical = 12.dp)
+            .alpha(if (rowHidden) 0f else 1f)
     ) {
-        // Row 1: title only — single line, shrink-to-fit, never above base size
-        // (DESIGN_GUIDELINES §6.5).
         SliderTitleText(
             title = title,
-            modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(contentAlpha)
         )
 
         Spacer(Modifier.height(10.dp))
 
-        // Row 2: slider with step buttons: [−] [slider] [+]
         Row(verticalAlignment = Alignment.CenterVertically) {
             ExpressiveStepButton(
                 symbol = "−",
-                enabled = enabled && value > range.start,
+                enabled = rowEnabled && value > range.start,
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     val newValue = (value - stepSize).coerceIn(range.start, range.endInclusive)
@@ -324,7 +480,6 @@ fun SliderSettingFloat(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTickColor = Color.Transparent,
                 inactiveTickColor = Color.Transparent,
-                // Disabled state keeps enabled colors; the row dims via alpha instead.
                 disabledThumbColor = MaterialTheme.colorScheme.primary,
                 disabledActiveTrackColor = MaterialTheme.colorScheme.primary,
                 disabledInactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -335,9 +490,19 @@ fun SliderSettingFloat(
                 value = value.coerceIn(range.start, range.endInclusive),
                 onValueChange = onValueChange,
                 valueRange = range,
-                enabled = enabled,
+                enabled = rowEnabled,
                 colors = sliderColors,
-                modifier = Modifier.weight(1f).alpha(contentAlpha),
+                modifier = Modifier
+                    .weight(1f)
+                    .alpha(contentAlpha)
+                    .onPlaced {
+                        val r = it.boundsInRoot()
+                        if (r.width > 1f && r.height > 1f) trackRect = r
+                    }
+                    .onGloballyPositioned {
+                        val r = it.boundsInRoot()
+                        if (r.width > 1f && r.height > 1f) trackRect = r
+                    },
                 onValueChangeFinished = onValueChangeFinished,
                 thumb = {
                     Box(
@@ -354,7 +519,7 @@ fun SliderSettingFloat(
 
             ExpressiveStepButton(
                 symbol = "+",
-                enabled = enabled && value < range.endInclusive,
+                enabled = rowEnabled && value < range.endInclusive,
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     val newValue = (value + stepSize).coerceIn(range.start, range.endInclusive)
@@ -367,10 +532,6 @@ fun SliderSettingFloat(
 
         Spacer(Modifier.height(10.dp))
 
-        // Row 3: (i) [reset] <spacer> <value> (DESIGN_GUIDELINES §6.5).
-        // The value readout keeps the exact formatted string, rendered as plain text.
-        // Fixed height: the reset capsule is taller than the plain readout, so the
-        // row reserves its slot up front and never jumps when the badge appears.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -379,6 +540,7 @@ fun SliderSettingFloat(
             if (onInfoClick != null && infoText != null) {
                 IconButton(
                     onClick = { onInfoClick(title, infoText, videoResName) },
+                    enabled = rowEnabled,
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
@@ -396,13 +558,15 @@ fun SliderSettingFloat(
                 } else {
                     stringResource(R.string.btn_default_with_value, defaultValueText)
                 }
+                val resetBg = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f))
-                        .clickable(enabled = enabled) {
+                        .background(resetBg)
+                        .border(1.dp, resetBg.edgeOutline(), CircleShape)
+                        .clickable(enabled = rowEnabled) {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onDefault()
+                            triggerDefaultReset()
                             onValueChangeFinished?.invoke()
                         }
                 ) {
@@ -423,44 +587,23 @@ fun SliderSettingFloat(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
-                textAlign = TextAlign.End
+                textAlign = TextAlign.End,
+                modifier = Modifier
+                    .onPlaced {
+                        val r = it.boundsInRoot()
+                        if (r.width > 1f && r.height > 1f) readoutRect = r
+                    }
+                    .onGloballyPositioned {
+                        val r = it.boundsInRoot()
+                        if (r.width > 1f && r.height > 1f) readoutRect = r
+                    }
             )
         }
     }
-
-    if (showManualInput) {
-        val dialogRange = inputRange ?: range
-        FloatInputDialog(
-            title = title,
-            initialValue = value,
-            rangeStart = dialogRange.start,
-            rangeEnd = dialogRange.endInclusive,
-            unit = unit,
-            isInteger = isInteger,
-            onDismiss = { showManualInput = false },
-            onConfirm = { 
-                onValueChange(it)
-                onValueChangeFinished?.invoke()
-                showManualInput = false 
-            },
-            onDefault = {
-                onDefault()
-                showManualInput = false
-            }
-        )
-    }
 }
 
-/**
- * Single-line slider title with shrink-to-fit (DESIGN_GUIDELINES §6.5).
- * Manual onTextLayout shrink loop on purpose: the firmware Soong build links
- * platform Compose libs that predate the TextAutoSize API, so this works on
- * every Compose version. The base titleMedium size is the ceiling — the text
- * only shrinks (0.5sp per overflow pass, floor 70% of base, min 10sp) and
- * short titles stay exactly at base size. Never ellipsized, maxLines = 1.
- */
 @Composable
-private fun SliderTitleText(
+internal fun SliderTitleText(
     title: String,
     modifier: Modifier = Modifier
 ) {
@@ -486,11 +629,13 @@ private fun SliderTitleText(
 }
 
 @Composable
-private fun ExpressiveStepButton(
+internal fun ExpressiveStepButton(
     symbol: String,
     enabled: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    size: Dp = 38.dp,
+    corner: Dp = 12.dp
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -513,13 +658,14 @@ private fun ExpressiveStepButton(
 
     Box(
         modifier = modifier
-            .size(38.dp)
+            .size(size)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(corner))
             .background(bgColor)
+            .border(1.dp, bgColor.edgeOutline(), RoundedCornerShape(corner))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -537,20 +683,6 @@ private fun ExpressiveStepButton(
     }
 }
 
-/**
- * Target Row weights for the horizontal segmented group (DESIGN_GUIDELINES §6.1).
- *
- * Formula (all in px, from parent constraints + memoized text widths):
- * avail = total - gap * (n - 1); equal = avail / n.
- * If the selected need (Bold label + side padding) fits into equal,
- * every weight stays 1f, i.e. exactly the old equal layout.
- * Otherwise deficit = need - equal is borrowed from neighbors proportionally to
- * each neighbor shrinkable headroom (equal - min), where min is the measured
- * width of the first 4 chars + "…" in Medium plus side padding, never a fixed dp.
- * If the deficit exceeds the total headroom, neighbors clamp at their minimums
- * and the selected segment takes the remainder (its text still Ellipsizes).
- * Returned weights are normalized so the all-equal case is exactly 1f.
- */
 private fun segmentTargetWeights(
     textMeasurer: TextMeasurer,
     options: List<String>,
@@ -584,8 +716,6 @@ private fun segmentTargetWeights(
         if (i == selectedIndex) equal + take
         else equal - take * (shrinkable[i] / totalShrinkable)
     }
-    // Aggressive second tier: if the selected label still doesn't fit,
-    // squeeze neighbours down to a 2-letter minimum before giving up.
     if (finalPx[selectedIndex] < selectedNeed) {
         val tightMins = options.map { label ->
             minFor(label, idleStyle, segmentSidePaddingPx, textMeasurer, 2)
@@ -628,8 +758,6 @@ fun RadioSelectionGroup(
     infoText: String? = null,
     videoResName: String? = null,
     onInfoClick: ((String, String, String?) -> Unit)? = null,
-    // Horizontal segmented mode (DESIGN_GUIDELINES §6.1) is the default.
-    // Pass vertical = true for the legacy vertical radio list.
     vertical: Boolean = false
 ) {
     val contentAlpha = if (enabled) 1f else 0.4f
@@ -669,9 +797,6 @@ fun RadioSelectionGroup(
         Spacer(Modifier.height(8.dp))
 
         if (!vertical) {
-            // Dynamic segment resize (DESIGN_GUIDELINES §6.1): equal shares while
-            // the selected label fits, otherwise the selected segment borrows width
-            // from its neighbors down to their measured minimums.
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -684,16 +809,9 @@ fun RadioSelectionGroup(
                 val idleStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
                 val segmentGapPx = with(density) { 6.dp.toPx() }
                 val segmentSidePaddingPx = with(density) { 8.dp.toPx() * 2f }
-                // Fixed headroom over the measured width: TextMeasurer
-                // systematically underestimates the real Text layout by a few
-                // glyphs, which used to end in a pointless "…" for 1-2 missing
-                // letters. The buffer makes borderline labels fit in full.
                 val selectedExtraPx = with(density) { 12.dp.toPx() }
                 val availablePx = with(density) { maxWidth.toPx() }
 
-                // Pure function of parent constraints + memoized text widths, so there
-                // is no onSizeChanged/onTextLayout feedback and no per-frame remeasure
-                // while the weight springs below settle.
                 val targetWeights = remember(
                     textMeasurer, options, selectedIndex, selectedStyle, idleStyle,
                     density, availablePx, segmentGapPx, segmentSidePaddingPx,
@@ -884,69 +1002,95 @@ fun RestartLauncherButton(
 }
 
 @Composable
-fun FloatInputDialog(
+private fun SliderInlineManualInput(
     title: String,
-    initialValue: Float,
-    rangeStart: Float,
-    rangeEnd: Float,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
     unit: String,
     isInteger: Boolean,
-    onDismiss: () -> Unit,
+    stepSize: Float,
+    formattedValue: String,
+    showResetBadge: Boolean,
+    defaultValueText: String?,
+    sliderFraction: Float = 0f,
+    defaultValue: Float? = null,
+    resetThreshold: Float = (stepSize * 0.5f).coerceAtLeast(1e-6f),
+    showDefaultButton: Boolean = true,
     onConfirm: (Float) -> Unit,
-    onDefault: (() -> Unit)? = null
+    onDefault: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    val initText = if (isInteger) initialValue.toInt().toString() else initialValue.toString()
-    var text by remember { mutableStateOf(initText) }
-    var isError by remember { mutableStateOf(false) }
+    val morphAnim = remember { Animatable(0f) }
+    var closing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column {
-                Text(
-                    text = stringResource(R.string.common_range_format, rangeStart.toInt(), rangeEnd.toInt()),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+    LaunchedEffect(Unit) {
+        morphAnim.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                stiffness = 250f,
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                visibilityThreshold = 0.002f
+            )
+        )
+    }
+
+    fun closeAnimated(commit: () -> Unit) {
+        if (closing) return
+        closing = true
+        scope.launch {
+            morphAnim.stop()
+            try {
+                morphAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        stiffness = 500f,
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        visibilityThreshold = 0.01f
+                    )
                 )
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = {
-                        text = it
-                        val num = it.toFloatOrNull()
-                        isError = num == null || num < rangeStart || num > rangeEnd
-                    },
-                    label = { Text(stringResource(R.string.common_input_label)) },
-                    isError = isError,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    suffix = { Text(unit) },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            } finally {
+                commit()
             }
-        },
-        confirmButton = {
-            Row {
-                if (onDefault != null) {
-                    TextButton(onClick = onDefault) { Text(stringResource(R.string.btn_default)) }
-                }
-                Button(
-                    onClick = {
-                        val num = text.toFloatOrNull()
-                        if (num != null && num >= rangeStart && num <= rangeEnd) {
-                            onConfirm(num)
-                        } else {
-                            isError = true
-                        }
-                    }
-                ) { Text(stringResource(R.string.btn_apply)) }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-    )
+        }
+    }
+
+    BackHandler(enabled = !closing) { closeAnimated(onDismiss) }
+
+    val resetText = if (defaultValueText.isNullOrEmpty()) {
+        stringResource(R.string.btn_default)
+    } else {
+        stringResource(R.string.btn_default_with_value, defaultValueText)
+    }
+
+    Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        SliderMorphEditorContent(
+            request = SliderMorphRequest(
+                title = title,
+                initialValue = value,
+                rangeStart = range.start,
+                rangeEnd = range.endInclusive,
+                unit = unit,
+                isInteger = isInteger,
+                stepSize = stepSize,
+                formattedValue = formattedValue,
+                showResetBadge = showResetBadge,
+                resetText = resetText,
+                sourceInRoot = Rect.Zero,
+                valueFlyDyPx = 0f,
+                sliderFraction = sliderFraction,
+                defaultValue = defaultValue,
+                resetThreshold = resetThreshold,
+                showDefaultButton = showDefaultButton,
+                onConfirm = onConfirm,
+                onDefault = onDefault,
+                onDismiss = onDismiss
+            ),
+            morphT = morphAnim.value.coerceIn(0f, 1f),
+            closing = closing,
+            closeAnimated = ::closeAnimated
+        )
+    }
 }
 
 @Composable
@@ -1025,7 +1169,6 @@ fun InfoDialog(
                             
                             val webUrl = "$rawBase/$repo/refs/heads/$branch$videoPrefix$videoResName$videoSuffix"
                             
-                            
                             val resId = context.resources.getIdentifier(videoResName, "raw", context.packageName)
                             if (resId != 0) {
                                 currentUri = Uri.parse("android.resource://${context.packageName}/$resId")
@@ -1036,7 +1179,6 @@ fun InfoDialog(
 
                             isNetworkSource = true
                             
-                            // System_ext app: cache videos on external cache when available.
                             val extCache = context.externalCacheDir
                             val targetDir = extCache ?: context.cacheDir
                             
@@ -1050,7 +1192,7 @@ fun InfoDialog(
                                     if (!fileExists || fileLength == 0L || reloadKey > 0) {
                                         if (fileExists) cacheFile.delete()
 
-                                        val url = java.net.URL(webUrl)
+                                        val url = URL(webUrl)
                                         val connection = url.openConnection() as java.net.HttpURLConnection
                                         connection.connectTimeout = 15000
                                         connection.readTimeout = 15000
@@ -1121,7 +1263,7 @@ fun InfoDialog(
                                     },
                                     update = { videoView ->
                                         if (currentUri != null && !videoView.isPlaying) {
-                                                videoView.setVideoURI(currentUri)
+                                            videoView.setVideoURI(currentUri)
                                         }
                                     },
                                     modifier = Modifier.matchParentSize()
@@ -1150,7 +1292,7 @@ fun InfoDialog(
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Icon(
-                                                imageVector = androidx.compose.material.icons.Icons.Default.Refresh,
+                                                imageVector = Icons.Default.Refresh,
                                                 contentDescription = "Refresh",
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                                 modifier = Modifier.size(24.dp)
@@ -1269,6 +1411,3 @@ fun ExpandableSettingsGroupCard(
         }
     }
 }
-
-
-

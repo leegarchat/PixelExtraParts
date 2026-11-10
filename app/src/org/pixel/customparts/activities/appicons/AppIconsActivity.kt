@@ -134,6 +134,7 @@ import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.addons.AddonMainEntry
 import org.pixel.customparts.ui.addons.AddonMainEntryRow
@@ -142,6 +143,7 @@ import org.pixel.customparts.ui.addons.scanAddonActivityEntries
 import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.utils.SettingsCompat
 import java.util.Locale
 import androidx.compose.ui.res.stringResource
@@ -476,7 +478,7 @@ fun AppIconsScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(blurState = blurState) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -796,6 +798,9 @@ fun AppIconsScreen(onBack: () -> Unit) {
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
                 blurState = blurState
+            )
+            TopBarUnderDim(
+                topBarHeight = innerPadding.calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

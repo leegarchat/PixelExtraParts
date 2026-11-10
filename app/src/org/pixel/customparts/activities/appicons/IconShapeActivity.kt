@@ -127,9 +127,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.statusBars
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.utils.SettingsCompat
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -490,7 +492,7 @@ private fun IconShapeScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(blurState = blurState) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -582,6 +584,9 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                     .align(Alignment.TopCenter),
                 blurState = blurState,
                 topBarHeight = innerPadding.calculateTopPadding()
+            )
+            TopBarUnderDim(
+                topBarHeight = innerPadding.calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

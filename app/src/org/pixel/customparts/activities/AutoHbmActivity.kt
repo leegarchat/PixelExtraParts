@@ -82,9 +82,11 @@ import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSetting
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.edgeOutline
+import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.utils.AutoHbmController
 import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.utils.TileUtils
@@ -211,7 +213,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(blurState = blurState) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -509,6 +511,9 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                 topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
                 blurState = blurState
             )
+            TopBarUnderDim(
+                topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+            )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
                 veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
@@ -599,7 +604,6 @@ private fun AutoHbmLuxCard(
                 )
             }
 
-            HorizontalDivider()
 
             SliderSetting(
                 title = stringResource(R.string.auto_hbm_check_interval_title),

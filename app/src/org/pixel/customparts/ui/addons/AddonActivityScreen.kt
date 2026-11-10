@@ -48,9 +48,11 @@ import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
+import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.SliderMorphRoot
 import androidx.compose.ui.res.stringResource
 
 // =====================================================================
@@ -173,7 +175,7 @@ fun AddonPageScreen(
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(blurState = blurState) {
             if (isLoading || !initialNavigationDone) {
                 Box(
                     modifier = Modifier
@@ -214,6 +216,9 @@ fun AddonPageScreen(
                 modifier = Modifier.fillMaxWidth(),
                 topBarHeight = innerPadding.calculateTopPadding(),
                 blurState = blurState
+            )
+            TopBarUnderDim(
+                topBarHeight = innerPadding.calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
