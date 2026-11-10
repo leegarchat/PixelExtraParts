@@ -55,6 +55,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
@@ -98,6 +100,12 @@ private class CoordsRef(var value: LayoutCoordinates? = null)
 class SliderMorphHostState {
     var request by mutableStateOf<SliderMorphRequest?>(null)
         private set
+    /**
+     * Eased 0..1 flight progress of the currently open morph (0 when idle).
+     * Published by [SliderMorphOverlay] every frame; screens read it to drive
+     * header effects (tint boost) at exactly the modal expand speed.
+     */
+    var morphProgress by mutableStateOf(0f)
 
     fun open(request: SliderMorphRequest) {
         this.request = request
@@ -161,14 +169,32 @@ data class SliderMorphRequest(
 @Composable
 fun SliderMorphRoot(
     blurState: GraphicsLayerRecordingState? = null,
+    host: SliderMorphHostState = rememberSliderMorphHostState(),
+    /**
+     * Optional second recorder: when the morph is open it bakes scroll+modal
+     * layers so the header can stay frosted over the flying card. The modal's
+     * own mask keeps reading [blurState] (scroll only) by design.
+     */
+    morphBlurState: GraphicsLayerRecordingState? = null,
+    morphBackgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val host = rememberSliderMorphHostState()
     var rootRect by remember { mutableStateOf(Rect.Zero) }
+    val morphOpen = host.request != null
     CompositionLocalProvider(LocalSliderMorphHost provides host) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .then(
+                    if (morphOpen && morphBlurState != null) {
+                        Modifier.recordLayer(
+                            state = morphBlurState,
+                            backgroundColor = morphBackgroundColor
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
                 .onPlaced { rootRect = it.boundsInRoot() }
                 .onGloballyPositioned { rootRect = it.boundsInRoot() }
         ) {
@@ -323,22 +349,15 @@ fun SliderMorphOverlay(
         closeAnimated(req.onDismiss)
     }
 
-    // Early scroll release: at ~80% of the close path (morphT < 0.2) the card
-    // is visually docked and the scrim is long gone, so the overlay is removed
-    // and the list scrolls again while the last 20% settles underneath.
-    // commit()/host.close() are idempotent (state sets + null-out), the
-    // animateTo finally below re-fires them harmlessly as a fallback.
-    LaunchedEffect(closing) {
-        if (closing) {
-            snapshotFlow { morphAnim.value }.first { it < 0.2f }
-            pendingCommit?.invoke()
-            host.close(req)
-        }
-    }
+    // (Early scroll release watcher lives next to the docking math below: it
+    // needs the live source/host centers to gate on the residual offset.)
 
     // The raw spring is fastest at t=0; smooth both ends so detach and landing are soft.
     val rawT = morphAnim.value.coerceIn(0f, 1f)
     val morphT = sstep(rawT, 0f, 1f)
+    // Publish the flight progress for header effects (tint boost, second blur
+    // cutout gating) so they run at exactly the modal expand speed.
+    host.morphProgress = morphT
 
     // Dim, rounding, tint and outline switch on mid-flight, not at the start.
     val scrimAlpha = 0.42f * sstep(morphT, 0.45f, 0.92f)
@@ -469,15 +488,75 @@ fun SliderMorphOverlay(
                 0f
             }
 
+            // Early scroll release: once the card is visually settled (rawT < 0.2:
+            // scrim/blur/outline long gone, title back at 1x, track intact) the
+            // overlay is removed and the list scrolls again while the tail
+            // settles underneath. commit()/host.close() are idempotent (state
+            // sets + null-out), the animateTo finally re-fires them as fallback.
+            //
+            // Two gates, not one: rawT < 0.2 alone still leaves the card ~3% of
+            // the center distance off the source (flightProgress ~= 0.033 there:
+            // ~16px for a 500px-off-center half-hidden row, plus 22% card bg).
+            // Fully visible rows never notice (dist ~= 0), but edge rows would
+            // snap visibly off the source. So release only once the remaining
+            // offset is sub-pixel too (flight * dist < 1.5px): center rows
+            // release exactly as before, edge rows a few frames later, docked.
+            LaunchedEffect(closing) {
+                if (closing) {
+                    val distPx = (targetHost.center - src.center).getDistance()
+                    snapshotFlow { morphAnim.value }.first { raw ->
+                        if (raw >= 0.7f) return@first false
+                        val mt = sstep(raw, 0f, 1f)
+                        sstep(mt, 0f, 0.96f) * distPx < 1.5f
+                    }
+                    pendingCommit?.invoke()
+                    host.close(req)
+                }
+            }
+
+            // Clip viewport = recorded scroll bounds (fallback: host rect).
+            // A half-scrolled row must start/land half-clipped like the source.
+            val clipViewport = blurState?.contentBounds
+                ?.takeIf { it.width > 1f && it.height > 1f }
+                ?: targetHost
+
             Box(
                 modifier = Modifier
                     .width(cardWidth)
                     .onPlaced { flightCoordsRef.value = it }
+                    // Order matters: graphicsLayer OUTSIDE drawWithContent, so the
+                    // clip below is recorded inside the translated layer and travels
+                    // with the pixels. The reverse order clips in the untranslated
+                    // layout space (Box Center position): the window then stays
+                    // glued to the screen center while the card flies to src, i.e.
+                    // a ~card-sized center window instead of the source viewport.
                     .graphicsLayer {
                         translationX = dx
                         translationY = dy
                         scaleX = cardScale
                         scaleY = cardScale
+                    }
+                    .drawWithContent {
+                        if (clipViewport.width > 1f && flightProgress < 0.999f) {
+                            val w = size.width
+                            val h = size.height
+                            // Visual card rect in root: layer translation already
+                            // docks its center on src.center at flight = 0, so the
+                            // local frame maps 1:1 onto the source rect here.
+                            val rL = src.center.x - w / 2f
+                            val rT = src.center.y - h / 2f
+                            val keep = 1f - flightProgress
+                            clipRect(
+                                left = (clipViewport.left - rL).coerceIn(0f, w) * keep,
+                                top = (clipViewport.top - rT).coerceIn(0f, h) * keep,
+                                right = w - (w - (clipViewport.right - rL).coerceIn(0f, w)) * keep,
+                                bottom = h - (h - (clipViewport.bottom - rT).coerceIn(0f, h)) * keep
+                            ) {
+                                this@drawWithContent.drawContent()
+                            }
+                        } else {
+                            drawContent()
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -1035,14 +1114,19 @@ internal fun SliderMorphEditorContent(
                 if (req.formattedValue.isNotEmpty()) {
                     // Split readout: number and unit suffix fly independently ONLY
                     // when they are two separate parts (number token + non-empty
-                    // rest). Number lands at the field text start (left), unit at
-                    // the unit label (right); otherwise the old single text.
+                    // rest). The exact gap between them (space or nothing: "500 lx"
+                    // vs "90°") is preserved so the pair matches the source string
+                    // pixel-for-pixel at flight = 0. Number lands at the field
+                    // text start (left), unit at the unit label (right); otherwise
+                    // the old single text.
                     val splitMatch = remember(exitReadoutText) {
                         ReadoutLeadingNum.find(exitReadoutText)
                     }
-                    val splitSuffix = splitMatch
-                        ?.let { exitReadoutText.substring(it.range.last + 1).trim() }
+                    val splitAfter = splitMatch
+                        ?.let { exitReadoutText.substring(it.range.last + 1) }
                         .orEmpty()
+                    val splitGap = splitAfter.takeWhile { it.isWhitespace() }
+                    val splitSuffix = splitAfter.drop(splitGap.length)
                     val flightStyle = MaterialTheme.typography.labelLarge
                     val flightColor = MaterialTheme.colorScheme.primary
                     val flightFade = 1f - sstep(morphT, 0.30f, 0.56f)
@@ -1089,7 +1173,7 @@ internal fun SliderMorphEditorContent(
                                 softWrap = false
                             )
                             Text(
-                                text = " " + splitSuffix,
+                                text = splitGap + splitSuffix,
                                 style = flightStyle,
                                 fontWeight = FontWeight.Bold,
                                 color = flightColor,

@@ -58,6 +58,7 @@ import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.rememberSliderMorphHostState
 import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.utils.TileUtils
 
@@ -138,6 +139,10 @@ private fun OverscrollScreen(onBack: () -> Unit) {
     }
 
     val blurState = rememberGraphicsLayerRecordingState()
+    // Morph-time header blur (scroll+modal) + hoisted morph host so the header
+    // tint boost runs at exactly the modal expand speed.
+    val morphBlurState = rememberGraphicsLayerRecordingState()
+    val morphHost = rememberSliderMorphHostState()
     val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     Scaffold(
@@ -179,7 +184,17 @@ private fun OverscrollScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        SliderMorphRoot(blurState = blurState) {
+        // Parent for the header overlays: they must stay OUTSIDE SliderMorphRoot.
+        // The morph-time header blur (node B) is baked from the Root's subtree —
+        // if the header drawing node B lived inside it, node B would reference
+        // itself (infinite RenderNode recursion = RenderThread SIGSEGV).
+        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(
+            host = morphHost,
+            blurState = blurState,
+            morphBlurState = morphBlurState,
+            morphBackgroundColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier
@@ -856,14 +871,18 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 }
                 }
             }
-        }
+        } // end LazyColumn
+        } // end SliderMorphRoot content — header below stays outside the recorded subtree
 
         TopBarBlurOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
             topBarHeight = innerPadding.calculateTopPadding(),
-            blurState = blurState
+            blurState = blurState,
+            morphBlurState = morphBlurState,
+            morphActive = morphHost.request != null,
+            tintBoost = 0.25f * morphHost.morphProgress
         )
         TopStatusVeil(
             backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

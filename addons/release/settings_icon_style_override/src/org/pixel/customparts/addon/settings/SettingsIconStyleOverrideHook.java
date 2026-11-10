@@ -592,7 +592,7 @@ public class SettingsIconStyleOverrideHook implements IAddonHook {
 
     private static boolean isRestoreStockIconsEnabled(Context context) {
         if (context == null) {
-            return false;
+            return true;
         }
         try {
             return Settings.Global.getInt(

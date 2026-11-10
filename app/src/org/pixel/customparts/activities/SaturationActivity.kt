@@ -82,6 +82,7 @@ import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.ui.SliderMorphRoot
+import org.pixel.customparts.ui.rememberSliderMorphHostState
 import org.pixel.customparts.utils.SaturationController
 import org.pixel.customparts.utils.TileUtils
 import androidx.compose.ui.res.stringResource
@@ -119,6 +120,10 @@ private fun SaturationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val blurState = rememberGraphicsLayerRecordingState()
+    // Morph-time header blur (scroll+modal) + hoisted morph host so the header
+    // tint boost runs at exactly the modal expand speed.
+    val morphBlurState = rememberGraphicsLayerRecordingState()
+    val morphHost = rememberSliderMorphHostState()
     val listState = rememberLazyListState()
 
     var enabled by remember { mutableStateOf(SaturationController.isEnabled(context)) }
@@ -155,7 +160,16 @@ private fun SaturationScreen(onBack: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        SliderMorphRoot(blurState = blurState) {
+        // Parent for the header overlays: they must stay OUTSIDE SliderMorphRoot.
+        // The morph-time header blur is baked from the Root's subtree — a header
+        // reading it from inside would reference itself (RenderNode cycle = SIGSEGV).
+        Box(modifier = Modifier.fillMaxSize()) {
+        SliderMorphRoot(
+            host = morphHost,
+            blurState = blurState,
+            morphBlurState = morphBlurState,
+            morphBackgroundColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -229,16 +243,23 @@ private fun SaturationScreen(onBack: () -> Unit) {
                 }
             }
 
-            TopBarBlurOverlay(
-                modifier = Modifier.fillMaxWidth(),
-                topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                blurState = blurState
-            )
-            TopStatusVeil(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
+        } // end SliderMorphRoot content — header below stays outside the recorded subtree
+
+        TopBarBlurOverlay(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
+            topBarHeight = 64.dp + WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+            blurState = blurState,
+            morphBlurState = morphBlurState,
+            morphActive = morphHost.request != null,
+            tintBoost = 0.25f * morphHost.morphProgress
+        )
+        TopStatusVeil(
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
+            modifier = Modifier.fillMaxWidth()
+        )
         }
     }
 }

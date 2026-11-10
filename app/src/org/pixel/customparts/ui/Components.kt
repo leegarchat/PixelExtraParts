@@ -36,12 +36,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -237,6 +239,23 @@ fun SliderSetting(
         showValueBelow = showValueBelow,
         defaultValueText = defaultValueText
     )
+}
+
+/**
+ * Root-space bounds of a layout WITHOUT ancestor clipping.
+ *
+ * boundsInRoot() intersects with every clipping ancestor (localBoundingBoxOf
+ * with clipBounds = true): for a row half-scrolled out of a LazyColumn it
+ * returns the VISIBLE fragment, whose center sits (full - visible)/2 away
+ * from the true one. The morph docks card centers onto source centers, so
+ * that offset becomes a jump for edge rows (fully visible rows are
+ * unaffected: clipped == full there). The origin position is a pure matrix
+ * transform (never clipped) and size is the layout's own IntSize — together
+ * they reconstruct the true rect.
+ */
+private fun LayoutCoordinates.unclippedBoundsInRoot(): Rect {
+    val s = size
+    return Rect(positionInRoot(), Size(s.width.toFloat(), s.height.toFloat()))
 }
 
 @Composable
@@ -443,11 +462,11 @@ fun SliderSettingFloat(
         modifier = Modifier
             .fillMaxWidth()
             .onPlaced {
-                val r = it.boundsInRoot()
+                val r = it.unclippedBoundsInRoot()
                 if (r.width > 1f && r.height > 1f) containerRect = r
             }
             .onGloballyPositioned {
-                val r = it.boundsInRoot()
+                val r = it.unclippedBoundsInRoot()
                 if (r.width > 1f && r.height > 1f) containerRect = r
             }
             .clickable(
@@ -504,11 +523,11 @@ fun SliderSettingFloat(
                     .weight(1f)
                     .alpha(contentAlpha)
                     .onPlaced {
-                        val r = it.boundsInRoot()
+                        val r = it.unclippedBoundsInRoot()
                         if (r.width > 1f && r.height > 1f) trackRect = r
                     }
                     .onGloballyPositioned {
-                        val r = it.boundsInRoot()
+                        val r = it.unclippedBoundsInRoot()
                         if (r.width > 1f && r.height > 1f) trackRect = r
                     },
                 onValueChangeFinished = onValueChangeFinished,
@@ -598,11 +617,11 @@ fun SliderSettingFloat(
                 textAlign = TextAlign.End,
                 modifier = Modifier
                     .onPlaced {
-                        val r = it.boundsInRoot()
+                        val r = it.unclippedBoundsInRoot()
                         if (r.width > 1f && r.height > 1f) readoutRect = r
                     }
                     .onGloballyPositioned {
-                        val r = it.boundsInRoot()
+                        val r = it.unclippedBoundsInRoot()
                         if (r.width > 1f && r.height > 1f) readoutRect = r
                     }
             )

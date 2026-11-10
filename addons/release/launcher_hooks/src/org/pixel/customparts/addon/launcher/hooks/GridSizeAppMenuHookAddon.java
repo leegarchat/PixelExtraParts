@@ -141,7 +141,7 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
     private void applyAllAppsSettingsToBuilder(Object builder) {
         Context context = getContextFromBuilder(builder);
         if (context == null || !isSettingEnabled(context, KEY_MENU_ENABLE)) return;
-        int menuCols = getIntSetting(context, KEY_MENU_COLS, 0);
+        int menuCols = getIntSetting(context, KEY_MENU_COLS, 5);
         if (menuCols <= 0) return;
         try {
             Object invariantProfile = XposedHelpers.getObjectField(builder, "mInv");
@@ -179,7 +179,7 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
                     
                     if (!isSettingEnabled(context, KEY_MENU_ENABLE)) return;
                     
-                    int cols = getIntSetting(context, KEY_MENU_COLS, 0);
+                    int cols = getIntSetting(context, KEY_MENU_COLS, 5);
                     if (cols > 0) {
                         try {
                             XposedHelpers.setIntField(appsList, "mNumAppsPerRowAllApps", cols);
@@ -247,7 +247,7 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
 
     private void applyMenuGridSettingsToIDP(Object idp, Context context) {
         if (!isSettingEnabled(context, KEY_MENU_ENABLE)) return;
-        int menuCols = getIntSetting(context, KEY_MENU_COLS, 0);
+        int menuCols = getIntSetting(context, KEY_MENU_COLS, 5);
         if (menuCols > 0) {
             try {
                 XposedHelpers.setIntField(idp, "numAllAppsColumns", menuCols);
@@ -262,7 +262,7 @@ public class GridSizeAppMenuHookAddon extends BaseLauncherHook {
     private void applyAllAppsSettings(Object deviceProfile, Context context) {
         if (!isSettingEnabled(context, KEY_MENU_ENABLE)) return;
         
-        int menuCols = getIntSetting(context, KEY_MENU_COLS, 0);
+        int menuCols = getIntSetting(context, KEY_MENU_COLS, 5);
         int rowHeightRaw = getIntSetting(context, KEY_MENU_ROW_HEIGHT, 100);
         
         if (menuCols > 0) {

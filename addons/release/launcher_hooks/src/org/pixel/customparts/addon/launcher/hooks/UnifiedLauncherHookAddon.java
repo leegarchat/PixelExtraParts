@@ -165,8 +165,8 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
                 
                 if (context != null) {
                     if (isSettingEnabled(context, KEY_HOME_ENABLE)) {
-                        int homeCols = getIntSetting(context, KEY_HOME_COLS, 0);
-                        int homeRows = getIntSetting(context, KEY_HOME_ROWS, 0);
+                        int homeCols = getIntSetting(context, KEY_HOME_COLS, 5);
+                        int homeRows = getIntSetting(context, KEY_HOME_ROWS, 6);
                         if (homeCols > 0) {
                             try {
                                 XposedHelpers.setIntField(idp, "numColumns", homeCols);
@@ -233,8 +233,8 @@ public class UnifiedLauncherHookAddon extends BaseLauncherHook {
         }
 
         if (isSettingEnabled(context, KEY_HOME_ENABLE)) {
-            int homeCols = getIntSetting(context, KEY_HOME_COLS, 0);
-            int homeRows = getIntSetting(context, KEY_HOME_ROWS, 0);
+            int homeCols = getIntSetting(context, KEY_HOME_COLS, 5);
+            int homeRows = getIntSetting(context, KEY_HOME_ROWS, 6);
             if (homeCols > 0 && invariantProfile != null) {
                 try {
                     XposedHelpers.setIntField(invariantProfile, "numColumns", homeCols);

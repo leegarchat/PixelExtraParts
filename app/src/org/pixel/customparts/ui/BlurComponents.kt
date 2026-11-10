@@ -59,6 +59,12 @@ class GraphicsLayerRecordingState(
     val sharedBlurNode: RenderNode? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) RenderNode("SharedFullScreenBlur") else null
     var lastAppliedBlurRadius: Float = -1f
+    /**
+     * Scroll container bounds in root (captured by [recordLayer]).
+     * The morph overlay uses it as the clip viewport so a half-hidden row
+     * starts/lands clipped exactly like the source instead of popping whole.
+     */
+    var contentBounds by mutableStateOf(Rect.Zero)
 }
 
 @Composable
@@ -78,7 +84,11 @@ fun Modifier.recordLayer(
 ): Modifier = composed {
     val canvasHolder = remember { CanvasHolder() }
 
-    this.drawWithContent {
+    this.onPlaced {
+            val b = it.boundsInRoot()
+            if (b.width > 1f && b.height > 1f) state.contentBounds = b
+        }
+        .drawWithContent {
         val w = size.width.toInt()
         val h = size.height.toInt()
         if (w > 0 && h > 0) {
@@ -196,8 +206,18 @@ fun TopBarBlurOverlay(
     topBarHeight: Dp,
     blurState: GraphicsLayerRecordingState,
     blurRadius: Float = 40f,
+    /**
+     * Second recorder (scroll+modal, baked by [SliderMorphRoot] while the morph
+     * is open). When [morphActive], a cutout of it is drawn over the base stack
+     * so the header stays frosted over the flying card, plus [tintBoost].
+     */
+    morphBlurState: GraphicsLayerRecordingState? = null,
+    morphActive: Boolean = false,
+    /** Extra dim alpha, expected to be driven by morph progress (same speed). */
+    tintBoost: Float = 0f,
 ) {
     val surfaceColor = MaterialTheme.colorScheme.surfaceContainer
+    val scrim = MaterialTheme.colorScheme.scrim
     val veilAlpha = frostedVeilAlpha(blurRadius = blurRadius, minVeilAlpha = 0.58f)
     var region by remember { mutableStateOf(Rect.Zero) }
 
@@ -231,6 +251,34 @@ fun TopBarBlurOverlay(
                     .matchParentSize()
                     .background(surfaceColor.copy(alpha = veilAlpha))
             )
+
+            if (morphActive && morphBlurState != null) {
+                // Temporary morph-time blur: scroll + modal layers.
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer {
+                            clip = true
+                        }
+                        .renderLayerAt(
+                            state = morphBlurState,
+                            regionProvider = { region },
+                        )
+                )
+                // Base veil first (the default tint, never reset), boost on top.
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(surfaceColor.copy(alpha = veilAlpha))
+                )
+                if (tintBoost > 0.003f) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(scrim.copy(alpha = tintBoost.coerceIn(0f, 1f)))
+                    )
+                }
+            }
         } else {
             Box(
                 modifier = Modifier
