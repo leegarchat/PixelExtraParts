@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.pixel.customparts"
     android:sharedUserId="android.uid.system"
-    android:versionCode="110"
-    android:versionName="1.1.0">
+    android:versionCode="111"
+    android:versionName="1.1.1">
 
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
