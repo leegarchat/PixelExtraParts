@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -277,8 +279,10 @@ private fun AddonPageContent(
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    categories.forEach { category ->
-                        key("category_${category.key}") {
+                    categories.forEachIndexed { categoryIndex, category ->
+                        // Index in the key: sequential manifest-order runs may repeat
+                        // the same category key (e.g. two "__default" blocks).
+                        key("category_${categoryIndex}_${category.key}") {
                             AddonPageSettingsCategoryCard(
                                 category = category,
                                 addon = addonUiModel,
@@ -376,48 +380,48 @@ private fun AddonPageSettingsCategoryCard(
     highlightSettingKey: String? = null,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            if (category.title.isNotBlank()) {
-                Text(
-                    text = category.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                )
-            }
-            if (category.description.isNotBlank()) {
-                Text(
-                    text = category.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                )
-            }
-            category.settings.forEach { setting ->
+    if (category.title.isBlank() && category.description.isBlank()) {
+        // Uncategorized runs get the same card background as titled groups —
+        // otherwise bare rows (buttons, preset switches) hang without a card.
+        SettingsGroupCard(title = "") {
+            category.settings.forEachIndexed { index, setting ->
+                if (index > 0) HorizontalDivider()
                 key(setting.key) {
-                    val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    } else {
-                        Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                    }
                     AddonSettingControl(
                         setting = setting,
                         addon = addon,
-                        modifier = settingModifier,
+                        modifier = addonGroupItemModifier(setting),
                         allSettings = allSettings,
                         dependencyRevision = dependencyRevision,
                         onSettingChanged = onSettingChanged,
                         highlightKey = highlightSettingKey
                     )
                 }
+            }
+        }
+        return
+    }
+    SettingsGroupCard(title = category.title.ifBlank { addon.name }) {
+        if (category.description.isNotBlank()) {
+            Text(
+                text = category.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+            )
+        }
+        category.settings.forEachIndexed { index, setting ->
+            if (index > 0) HorizontalDivider()
+            key(setting.key) {
+                AddonSettingControl(
+                    setting = setting,
+                    addon = addon,
+                    modifier = addonGroupItemModifier(setting),
+                    allSettings = allSettings,
+                    dependencyRevision = dependencyRevision,
+                    onSettingChanged = onSettingChanged,
+                    highlightKey = highlightSettingKey
+                )
             }
         }
     }
@@ -508,10 +512,14 @@ fun AddonMainEntryRow(
     modifier: Modifier = Modifier,
     iconContainerSize: Dp = 36.dp
 ) {
+    val haptics = LocalHapticFeedback.current
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
+            })
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -527,14 +535,16 @@ fun AddonMainEntryRow(
                 text = entry.title,
                 style = MaterialTheme.typography.titleMedium.withAddonTextSize(entry.titleSizeSp),
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             if (entry.subtitle.isNotEmpty()) {
                 Text(
                     text = entry.subtitle,
                     style = MaterialTheme.typography.bodyMedium.withAddonTextSize(entry.descriptionSizeSp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

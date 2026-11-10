@@ -645,7 +645,7 @@ private fun CustomShapeBuilder(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -891,7 +891,7 @@ private fun ShapeOptionCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = !isBusy && !option.active && onBuild == null) { onApply() }
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
             IconShapePreview(pathData = option.pathData, modifier = Modifier.size(56.dp), active = option.active)

@@ -36,6 +36,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -69,6 +70,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -97,6 +100,8 @@ import org.pixel.customparts.activities.AddonPageActivity
 import org.pixel.customparts.core.ApkModulesGate
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
+import org.pixel.customparts.ui.RadioSelectionGroup
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
@@ -121,9 +126,11 @@ internal fun StringSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     var value by remember {
         mutableStateOf(readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: setting.defaultString)
     }
@@ -133,7 +140,7 @@ internal fun StringSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = value,
             onValueChange = {
@@ -141,13 +148,15 @@ internal fun StringSettingControl(
                 writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, it)
                 onSettingChanged(setting, null)
             },
+            enabled = enabled,
             singleLine = true,
-            shape = RoundedCornerShape(10.dp),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
             textStyle = MaterialTheme.typography.bodyMedium,
             trailingIcon = {
                 if (value != setting.defaultString) {
                     IconButton(onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         value = setting.defaultString
                         writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, setting.defaultString)
                         onSettingChanged(setting, null)
@@ -168,58 +177,36 @@ internal fun SelectSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
     val options = resolveSelectOptions(setting, addon)
-    val currentValue = readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: setting.defaultString
-    var expanded by remember { mutableStateOf(false) }
-    var selectedValue by remember { mutableStateOf(currentValue) }
-    val selectedLabel = options.find { it.value == selectedValue }?.label ?: selectedValue
+    val stored = readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: setting.defaultString
+    var selectedValue by remember(setting.key) { mutableStateOf(stored) }
+    val selectedIndex = options.indexOfFirst { it.value == selectedValue }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingTitleText(setting)
+    // Shared segmented row (<=4 options) or its vertical radio-list variant.
+    // Haptics and highlight handling come from the shared component; its own
+    // disabled visuals (alpha + muted colors) match the main screens.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        RadioSelectionGroup(
+            title = setting.title,
+            options = options.map { it.label },
+            selectedIndex = selectedIndex,
+            enabled = enabled,
+            onSelect = { index ->
+                selectedValue = options[index].value
+                writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, options[index].value)
+                onSettingChanged(setting, null)
+            },
+            vertical = options.size > 4
+        )
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
-        }
-        Spacer(Modifier.height(4.dp))
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
-        ) {
-            OutlinedTextField(
-                value = selectedLabel,
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier
-                    .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                    .fillMaxWidth(),
-                textStyle = MaterialTheme.typography.bodyMedium
+            SettingDescriptionText(
+                setting,
+                modifier = Modifier.padding(top = 2.dp).alpha(if (enabled) 1f else 0.4f)
             )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label) },
-                        onClick = {
-                            selectedValue = option.value
-                            writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, option.value)
-                            onSettingChanged(setting, null)
-                            expanded = false
-                        },
-                        trailingIcon = {
-                            if (option.value == selectedValue) {
-                                Icon(Icons.Rounded.Check, null, Modifier.size(18.dp))
-                            }
-                        }
-                    )
-                }
-            }
         }
     }
 }
@@ -233,69 +220,35 @@ internal fun SelectButtonSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
     val options = resolveSelectOptions(setting, addon)
-    val currentValue = readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: setting.defaultString
-    var selectedValue by remember { mutableStateOf(currentValue) }
-    val accent = settingAccent(setting, addon)
+    val stored = readStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem) ?: setting.defaultString
+    var selectedValue by remember(setting.key) { mutableStateOf(stored) }
+    val selectedIndex = options.indexOfFirst { it.value == selectedValue }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        SettingTitleText(setting)
+    // Shared vertical radio list: secondaryContainer highlight, check icon,
+    // spring reveal and haptics come from the common component.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        RadioSelectionGroup(
+            title = setting.title,
+            options = options.map { it.label },
+            selectedIndex = selectedIndex,
+            enabled = enabled,
+            onSelect = { index ->
+                selectedValue = options[index].value
+                writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, options[index].value)
+                onSettingChanged(setting, null)
+            },
+            vertical = true
+        )
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
-        }
-        Spacer(Modifier.height(8.dp))
-
-        options.forEach { option ->
-            val isSelected = option.value == selectedValue
-            val rowBackgroundColor by animateColorAsState(
-                targetValue = if (isSelected) accent.copy(alpha = 0.15f) else Color.Transparent,
-                label = "selectBtnBg"
+            SettingDescriptionText(
+                setting,
+                modifier = Modifier.padding(top = 2.dp).alpha(if (enabled) 1f else 0.4f)
             )
-            val weightVal by animateIntAsState(
-                targetValue = if (isSelected) 700 else 400,
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                label = "selectBtnWeight"
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(rowBackgroundColor)
-                    .clickable {
-                        selectedValue = option.value
-                        writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, option.value)
-                        onSettingChanged(setting, null)
-                    }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = option.label,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight(weightVal)
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                AnimatedVisibility(
-                    visible = isSelected,
-                    modifier = Modifier.padding(start = 12.dp),
-                    enter = scaleIn() + fadeIn(),
-                    exit = scaleOut() + fadeOut()
-                ) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        null,
-                        tint = accent
-                    )
-                }
-            }
         }
     }
 }
@@ -307,6 +260,7 @@ internal fun FileSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
@@ -345,14 +299,15 @@ internal fun FileSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHighest.edgeOutline()),
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp)
@@ -380,8 +335,13 @@ internal fun FileSettingControl(
                 }
             }
             Spacer(Modifier.width(8.dp))
+            val fileHaptics = LocalHapticFeedback.current
             FilledTonalIconButton(
-                onClick = { filePicker.launch(setting.mimeType) },
+                onClick = {
+                    fileHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    filePicker.launch(setting.mimeType)
+                },
+                enabled = enabled,
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(Icons.Rounded.FolderOpen, null, Modifier.size(20.dp))
@@ -390,10 +350,12 @@ internal fun FileSettingControl(
                 Spacer(Modifier.width(4.dp))
                 IconButton(
                     onClick = {
+                        fileHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         filePath = ""
                         writeStoredString(context, setting, addon.id, addon.jarPath, addon.isSystem, "")
                         onSettingChanged(setting, null)
                     },
+                    enabled = enabled,
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(Icons.Rounded.Close, null, Modifier.size(16.dp),
@@ -420,6 +382,7 @@ internal fun AppListSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
@@ -437,14 +400,19 @@ internal fun AppListSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(12.dp))
+        val appListHaptics = LocalHapticFeedback.current
         FilledTonalButton(onClick = {
+            appListHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
             if (setting.appPickerMode == "activity" || setting.appPickerMode == "screen" || setting.appPickerMode == "activity_launchable" || setting.appPickerMode == "screen_launchable") {
                 activityPickerLauncher.launch(addonAppPickerIntent(context, addon, setting))
             } else {
                 showPicker = true
             }
-        }, modifier = Modifier.fillMaxWidth()) {
+        },
+        enabled = enabled,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer.edgeOutline()),
+        modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
             Text(stringResource(R.string.addon_apps_selected, selected.size))
@@ -460,6 +428,7 @@ internal fun AppListSettingControl(
                     InputChip(
                         selected = true,
                         onClick = {
+                            appListHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                             selected = selected - pkg
                             writeStoredArray(context, setting, addon.id, addon.jarPath, addon.isSystem, selected)
                             onSettingChanged(setting, null)
@@ -508,6 +477,7 @@ internal fun ColorSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
@@ -521,15 +491,16 @@ internal fun ColorSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val swatchColor = Color(colorInt)
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(colorInt))
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
-                    .clickable { showPicker = true }
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(swatchColor)
+                    .border(1.dp, swatchColor.edgeOutline(), RoundedCornerShape(12.dp))
+                    .clickable(enabled = enabled) { showPicker = true }
             )
             Spacer(Modifier.width(10.dp))
             Text(
@@ -540,7 +511,15 @@ internal fun ColorSettingControl(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            FilledTonalButton(onClick = { showPicker = true }) {
+            val colorHaptics = LocalHapticFeedback.current
+            FilledTonalButton(
+                onClick = {
+                    colorHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    showPicker = true
+                },
+                enabled = enabled,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer.edgeOutline())
+            ) {
                 Icon(Icons.Rounded.Palette, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(R.string.addon_color_pick))
@@ -587,6 +566,7 @@ internal fun GroupSettingControl(
     val containsHighlight = remember(setting, highlightKey) { setting.containsSettingKey(highlightKey) && setting.key != highlightKey }
     // Inline mode: no expandable container, just title + children in place.
     if (setting.groupMode == GroupMode.INLINE) {
+        val inlineDim = if (inheritedEnabled) 1f else 0.4f
         Column(modifier = modifier.fillMaxWidth()) {
             if (setting.title.isNotEmpty()) {
                 SettingTitleText(
@@ -596,7 +576,7 @@ internal fun GroupSettingControl(
                     color = parseOptionalColor(setting.accentColor) ?: parseOptionalColor(addon.accentColor) ?: MaterialTheme.colorScheme.primary,
                     maxLines = Int.MAX_VALUE,
                     overflow = TextOverflow.Clip,
-                    modifier = Modifier.padding(bottom = 2.dp)
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 2.dp).alpha(inlineDim)
                 )
             }
             if (setting.description.isNotEmpty()) {
@@ -605,11 +585,12 @@ internal fun GroupSettingControl(
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = Int.MAX_VALUE,
                     overflow = TextOverflow.Clip,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp, start = 20.dp, end = 20.dp, bottom = 12.dp).alpha(inlineDim)
                 )
             }
-            setting.children.forEach { child ->
-                AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
+            setting.children.forEachIndexed { index, child ->
+                if (index > 0) HorizontalDivider()
+                AddonSettingControl(child, addon, addonGroupChildModifier(child), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
             }
         }
         return
@@ -617,30 +598,38 @@ internal fun GroupSettingControl(
 
     if (setting.groupMode == GroupMode.IMMERSIVE_EXPAND) {
         var expanded by rememberSaveable(setting.key) { mutableStateOf(setting.defaultExpanded || containsHighlight) }
+        val groupHaptics = LocalHapticFeedback.current
+        // AddonExpandableGroupCard geometry (ExpandableGroupCard): 18.dp,
+        // surface container and adaptive edgeOutline.
         val containerColor = groupContainerColor(
             setting = setting,
-            fallback = MaterialTheme.colorScheme.surfaceContainerHigh,
-            fallbackAlpha = 0.68f
+            fallback = MaterialTheme.colorScheme.surface,
+            fallbackAlpha = 1f
         )
 
         Surface(
             color = containerColor,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
+            border = BorderStroke(1.dp, containerColor.edgeOutline()),
             modifier = modifier.fillMaxWidth()
         ) {
             Column {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { expanded = !expanded }
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                        .clickable {
+                            groupHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            expanded = !expanded
+                        }
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                        .alpha(if (inheritedEnabled) 1f else 0.4f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         SettingTitleText(
                             setting,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -661,9 +650,10 @@ internal fun GroupSettingControl(
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
-                        setting.children.forEach { child ->
-                            AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
+                    Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                        setting.children.forEachIndexed { index, child ->
+                            if (index > 0) HorizontalDivider()
+                            AddonSettingControl(child, addon, addonGroupChildModifier(child), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
                         }
                     }
                 }
@@ -674,19 +664,25 @@ internal fun GroupSettingControl(
 
     var expanded by remember(setting.key) { mutableStateOf(containsHighlight) }
     var showDialog by remember(setting.key) { mutableStateOf(containsHighlight && setting.groupMode != GroupMode.EXPANDABLE) }
+    val groupHaptics = LocalHapticFeedback.current
     val openAction = {
+        groupHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
         if (setting.groupMode == GroupMode.EXPANDABLE) expanded = !expanded else showDialog = true
     }
 
+    // CARD follows the shared SectionGroupCard geometry (24.dp, surface,
+    // edgeOutline); EXPANDABLE rows follow ExpandableGroupCard (18.dp).
     val containerColor = groupContainerColor(
         setting = setting,
-        fallback = MaterialTheme.colorScheme.surfaceContainerHigh,
-        fallbackAlpha = 0.65f
+        fallback = MaterialTheme.colorScheme.surface,
+        fallbackAlpha = 1f
     )
+    val groupShape = if (setting.groupMode == GroupMode.CARD) RoundedCornerShape(24.dp) else RoundedCornerShape(18.dp)
 
     Surface(
         color = containerColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = groupShape,
+        border = BorderStroke(1.dp, containerColor.edgeOutline()),
         modifier = modifier.fillMaxWidth()
     ) {
         Column {
@@ -694,12 +690,19 @@ internal fun GroupSettingControl(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { openAction() }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .alpha(if (inheritedEnabled) 1f else 0.4f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    SettingTitleText(setting, fontWeight = FontWeight.SemiBold)
+                    SettingTitleText(
+                        setting,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     if (setting.description.isNotEmpty()) {
                         SettingDescriptionText(setting)
                     }
@@ -716,9 +719,10 @@ internal fun GroupSettingControl(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 12.dp)) {
-                    setting.children.forEach { child ->
-                        AddonSettingControl(child, addon, Modifier.padding(bottom = 8.dp), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
+                Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                    setting.children.forEachIndexed { index, child ->
+                        if (index > 0) HorizontalDivider()
+                        AddonSettingControl(child, addon, addonGroupChildModifier(child), allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
                     }
                 }
             }
@@ -742,10 +746,13 @@ private fun GroupDialog(
     highlightKey: String? = null
 ) {
     val fullScreen = setting.groupMode == GroupMode.FULLSCREEN
+    val dialogHaptics = LocalHapticFeedback.current
+    val dialogShape = if (fullScreen) RoundedCornerShape(0.dp) else RoundedCornerShape(24.dp)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = !fullScreen)) {
         Surface(
-            shape = if (fullScreen) RoundedCornerShape(0.dp) else RoundedCornerShape(24.dp),
+            shape = dialogShape,
             color = MaterialTheme.colorScheme.surface,
+            border = if (fullScreen) null else BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline()),
             modifier = if (fullScreen) Modifier.fillMaxSize() else Modifier.fillMaxWidth()
         ) {
             Column(
@@ -756,7 +763,10 @@ private fun GroupDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (setting.closeButtonPosition == CloseButtonPosition.START) {
-                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
+                        IconButton(onClick = {
+                            dialogHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onDismiss()
+                        }) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
                     }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         SettingTitleText(setting, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)
@@ -765,7 +775,10 @@ private fun GroupDialog(
                         }
                     }
                     if (setting.closeButtonPosition == CloseButtonPosition.END) {
-                        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
+                        IconButton(onClick = {
+                            dialogHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onDismiss()
+                        }) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -818,7 +831,7 @@ internal fun VisualSettingControl(setting: AddonSettingDef, addon: AddonUiModel,
                     modifier = modifier
                         .fillMaxWidth()
                         .height(setting.sizeDp.coerceAtLeast(48).dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(14.dp))
                 )
             }
         }

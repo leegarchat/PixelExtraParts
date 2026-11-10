@@ -405,7 +405,7 @@ fun ThermalSection(
                             haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                             onModeSelect(mode.id)
                         }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 8.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -442,12 +442,11 @@ fun ThermalSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
                     .background(
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), 
                         RoundedCornerShape(12.dp)
                     )
-                    .padding(12.dp)
+                    .padding(8.dp)
             ) {
                 Text(
                     text = getDescription(currentMode),

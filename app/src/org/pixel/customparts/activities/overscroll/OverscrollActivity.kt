@@ -224,7 +224,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     stringResource(R.string.os_title_playground),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(start = 20.dp, bottom = 4.dp)
                 )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -278,6 +278,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -294,6 +295,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     )
 
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_physics_damping),
@@ -308,6 +311,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -323,6 +327,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_physics_res_exp),
@@ -336,6 +342,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = isMasterEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -431,6 +439,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_min_vel),
@@ -444,6 +454,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = isMasterEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -459,6 +471,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_lerp_idle),
@@ -472,6 +486,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = isMasterEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -487,6 +503,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_compose_scale),
@@ -500,6 +518,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = isMasterEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     val invertKey = OverscrollManager.KEY_INVERT_ANCHOR
                     var invert by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, invertKey, 1) == 1) }
@@ -567,7 +587,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         ),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = 20.dp)
                             .fillMaxWidth()
                             .border(
                                 1.dp,
@@ -576,7 +596,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                             )
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -640,6 +660,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onInfoClick = { t, s, v -> infoDialogTitle = t; infoDialogText = s; infoDialogVideo = v }
                     )
 
+                    HorizontalDivider()
+
                     val normSlidersEnabled = isMasterEnabled && normEnabled
 
                     OverscrollFloatSlider(
@@ -656,6 +678,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_norm_detect_mul),
@@ -669,6 +693,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = normSlidersEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -684,6 +710,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         onChange = onSettingChanged
                     )
 
+                    HorizontalDivider()
+
                     OverscrollFloatSlider(
                         context = context,
                         title = stringResource(R.string.os_lbl_norm_window),
@@ -697,6 +725,8 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                         enabled = normSlidersEnabled,
                         onChange = onSettingChanged
                     )
+
+                    HorizontalDivider()
 
                     OverscrollFloatSlider(
                         context = context,
@@ -729,7 +759,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Button(
@@ -773,7 +803,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                     Column(modifier = Modifier.alpha(if (isMasterEnabled) 1f else 0.5f)) {
                         appConfigs.forEachIndexed { index, app ->
                             key(app.pkg) {
-                                if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                if (index > 0) HorizontalDivider()
 
                                 AppConfigCard(
                                     context = context,
@@ -927,7 +957,7 @@ private fun ExpandableSettingsGroupCard(
                         haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         onExpandChange(!expanded)
                     }
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -955,7 +985,7 @@ private fun ExpandableSettingsGroupCard(
                 exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessLow)) + fadeOut()
             ) {
                 Column(
-                    modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 ) {
                     content()
                 }
@@ -1150,38 +1180,58 @@ private fun ScaleGroup(
             onInfoClick = onInfo
         )
 
+        HorizontalDivider()
+
         OverscrollFloatSlider(context, stringResource(R.string.os_lbl_scale_int), "${prefix}_intensity$suffix", 0f..10f, defIntensity,
             infoText = stringResource(R.string.os_desc_scale_intensity), video = "${prefix}_intensity", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+
+        HorizontalDivider()
 
         OverscrollFloatSlider(context, stringResource(R.string.os_lbl_scale_int_horiz), "${prefix}_intensity_horiz$suffix", 0f..10f, defIntensityHoriz,
             infoText = stringResource(R.string.os_desc_scale_int_horiz), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
 
+        HorizontalDivider()
+
         OverscrollFloatSlider(context, stringResource(R.string.os_lbl_scale_limit), "${prefix}_limit_min$suffix", 0.1f..10f, defLimitMin,
             infoText = stringResource(R.string.os_desc_scale_limit), video = "${prefix}_intensity_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+
+        HorizontalDivider()
 
         val anchorTitle = stringResource(R.string.os_desc_anchor)
 
         when (prefix) {
             "overscroll_scale" -> {
+                HorizontalDivider()
+
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_y), "overscroll_scale_anchor_y$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_scale_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+                HorizontalDivider()
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_scale_anchor_x_horiz$suffix", 0f..1f, 0.5f,
                     infoText = stringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_scale_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_h_scale" -> {
+                HorizontalDivider()
+
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_x), "overscroll_h_scale_anchor_x$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_h_scale_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+                HorizontalDivider()
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_h_scale_anchor_y_horiz$suffix", 0f..1f, 0.5f,
                     infoText = stringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_h_scale_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }
             "overscroll_zoom" -> {
+                HorizontalDivider()
+
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_x), "overscroll_zoom_anchor_x$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_x", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+                HorizontalDivider()
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_y), "overscroll_zoom_anchor_y$suffix", 0f..1f, 0.5f,
                     infoText = anchorTitle, video = "overscroll_zoom_anchor_y", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
 
+                HorizontalDivider()
+
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_x_horiz), "overscroll_zoom_anchor_x_horiz$suffix", 0f..1f, 0.5f,
                     infoText = stringResource(R.string.os_desc_anchor_x_horiz), video = "overscroll_zoom_anchor_x_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
+                HorizontalDivider()
                 OverscrollFloatSlider(context, stringResource(R.string.os_lbl_anchor_y_horiz), "overscroll_zoom_anchor_y_horiz$suffix", 0f..1f, 0.5f,
                     infoText = stringResource(R.string.os_desc_anchor_y_horiz), video = "overscroll_zoom_anchor_y_horiz", onInfo = onInfo, refreshKey = refreshKey, enabled = areSlidersActive, onChange = onChange)
             }

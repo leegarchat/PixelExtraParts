@@ -36,6 +36,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -68,6 +69,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +99,10 @@ import org.pixel.customparts.activities.AddonPageActivity
 import org.pixel.customparts.core.ApkModulesGate
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
+import org.pixel.customparts.ui.GenericSwitchRow
+import org.pixel.customparts.ui.SliderSetting
+import org.pixel.customparts.ui.SliderSettingFloat
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
@@ -110,6 +117,59 @@ private const val INJECT_PREFIX = "pixel_extra_parts_inject_package_"
 private const val SAFE_MODE_SETTING = "pixel_addon_safe_mode"
 private const val IGNORED_PACKAGE = "android" // system_server — can't hook reliably
 private const val DYNAMIC_ADDON_TILE_COUNT = 40
+
+/**
+ * Settings that paint their own horizontal insets through the shared components
+ * (sliders, switch rows, checkboxes, radio groups) and therefore ignore the
+ * incoming outer modifier. They must not receive an extra outer horizontal
+ * inset on top, otherwise the two stack (~40.dp) and squeeze the content.
+ * Bare custom rows rely on the passed modifier for their single inset instead.
+ */
+internal fun AddonSettingDef.isSelfPaddedControl(): Boolean {
+    return type == SettingType.INT ||
+        type == SettingType.FLOAT ||
+        type == SettingType.TOGGLE ||
+        type == SettingType.SWITCH ||
+        type == SettingType.CHECKBOX ||
+        type == SettingType.SELECT ||
+        type == SettingType.SELECT_BUTTON
+}
+
+/**
+ * Per-item modifier for settings rendered inside a group card/category:
+ * a single horizontal inset (20.dp, like the slider rows) for bare rows,
+ * vertical rhythm only for rows that already own their horizontal insets.
+ */
+internal fun addonGroupItemModifier(setting: AddonSettingDef): Modifier {
+    if (setting.type == SettingType.GROUP) {
+        // Nested cards span the full card width; inline groups behave like bare rows.
+        return if (setting.groupMode == GroupMode.INLINE) {
+            Modifier.padding(vertical = 4.dp)
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        }
+    }
+    return if (setting.isSelfPaddedControl()) {
+        Modifier.padding(vertical = 4.dp)
+    } else {
+        Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+    }
+}
+
+/**
+ * Per-child modifier inside (expandable) group containers, which own no
+ * horizontal inset themselves: bare rows take the single 20.dp inset here,
+ * self-padded rows keep only the vertical rhythm.
+ */
+internal fun addonGroupChildModifier(setting: AddonSettingDef): Modifier {
+    return if (setting.isSelfPaddedControl()) {
+        Modifier.padding(bottom = 8.dp)
+    } else {
+        Modifier.padding(start = 20.dp, end = 20.dp, bottom = 8.dp)
+    }
+}
 
 // =====================================================================
 // Data model
@@ -167,10 +227,20 @@ internal fun AddonSettingControl(
             .bringIntoViewRequester(bringIntoViewRequester)
             .background(highlightColor, RoundedCornerShape(12.dp))
     ) {
-        val contentModifier = Modifier.alpha(if (enabled) 1f else 0.45f)
+        // Single-dimming rule: rows with native disabled visuals (sliders,
+        // switches, checkboxes, radio groups) and group headers dim themselves
+        // via enabled = false; every other row is dimmed once by this wrapper.
+        // Group subtrees recurse, so the wrapper never dims a group itself.
+        val selfDims = setting.isSelfPaddedControl() || setting.type == SettingType.GROUP
+        val contentModifier = if (!enabled && !selfDims) Modifier.alpha(0.45f) else Modifier
         if (setting.icon.isNotEmpty() && setting.type != SettingType.VISUAL && setting.type != SettingType.GROUP) {
             Row(modifier = contentModifier, verticalAlignment = Alignment.CenterVertically) {
-                SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
+                val iconModifier = if (enabled || !selfDims) {
+                    Modifier.padding(end = 12.dp)
+                } else {
+                    Modifier.padding(end = 12.dp).alpha(0.4f)
+                }
+                SettingIcon(setting, addon, iconModifier)
                 val innerMod = Modifier.weight(1f)
                 AddonSettingControlInner(setting, addon, innerMod, allSettings, enabled, dependencyRevision, onSettingChanged, highlightKey)
             }
@@ -203,20 +273,20 @@ private fun AddonSettingControlInner(
     highlightKey: String? = null
 ) {
     when (setting.type) {
-        SettingType.INT -> IntSliderSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.FLOAT -> FloatSliderSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.STRING -> StringSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.SELECT -> SelectSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.SELECT_BUTTON -> SelectButtonSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.FILE -> FileSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.APP_LIST -> AppListSettingControl(setting, addon, modifier, onSettingChanged)
-        SettingType.COLOR -> ColorSettingControl(setting, addon, modifier, onSettingChanged)
+        SettingType.INT -> IntSliderSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.FLOAT -> FloatSliderSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.STRING -> StringSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.SELECT -> SelectSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.SELECT_BUTTON -> SelectButtonSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.FILE -> FileSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.APP_LIST -> AppListSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
+        SettingType.COLOR -> ColorSettingControl(setting, addon, modifier, inheritedEnabled, onSettingChanged)
         SettingType.GROUP -> GroupSettingControl(setting, addon, modifier, allSettings, inheritedEnabled, dependencyRevision, onSettingChanged, highlightKey)
         SettingType.VISUAL -> VisualSettingControl(setting, addon, modifier)
-        SettingType.COMMAND_BUTTON -> CommandButtonSettingControl(setting, addon, modifier)
-        SettingType.TOGGLE, SettingType.SWITCH -> SwitchSettingControl(setting, addon, modifier, dependencyRevision, onSettingChanged)
-        SettingType.CHECKBOX -> CheckboxSettingControl(setting, addon, modifier, dependencyRevision, onSettingChanged)
-        SettingType.TILE -> TileBindingControl(setting, addon, modifier)
+        SettingType.COMMAND_BUTTON -> CommandButtonSettingControl(setting, addon, modifier, inheritedEnabled)
+        SettingType.TOGGLE, SettingType.SWITCH -> SwitchSettingControl(setting, addon, modifier, dependencyRevision, inheritedEnabled, onSettingChanged)
+        SettingType.CHECKBOX -> CheckboxSettingControl(setting, addon, modifier, dependencyRevision, inheritedEnabled, onSettingChanged)
+        SettingType.TILE -> TileBindingControl(setting, addon, modifier, inheritedEnabled)
     }
 }
 
@@ -226,10 +296,12 @@ private fun AddonSettingControlInner(
 private fun CommandButtonSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
-    modifier: Modifier
+    modifier: Modifier,
+    enabled: Boolean = true
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
     val accent = settingAccent(setting, addon)
     val command = setting.command.ifBlank { setting.commandOn }
     val binderActions = setting.binderOn
@@ -238,10 +310,11 @@ private fun CommandButtonSettingControl(
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting, modifier = Modifier.padding(bottom = 8.dp))
+            SettingDescriptionText(setting, modifier = Modifier.padding(bottom = 12.dp))
         }
         Button(
             onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                 if ((command.isBlank() && binderActions.isEmpty()) || running) return@Button
                 running = true
                 if (setting.showOutput) output = ""
@@ -257,8 +330,9 @@ private fun CommandButtonSettingControl(
                     running = false
                 }
             },
-            enabled = (command.isNotBlank() || binderActions.isNotEmpty()) && !running,
+            enabled = (command.isNotBlank() || binderActions.isNotEmpty()) && !running && enabled,
             colors = ButtonDefaults.buttonColors(containerColor = accent),
+            border = BorderStroke(1.dp, accent.edgeOutline()),
             modifier = Modifier.fillMaxWidth()
         ) {
             if (running) {
@@ -295,7 +369,8 @@ private fun CommandOutputPanel(
             modifier = modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceContainerHighest,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHighest.edgeOutline())
         ) {
             Column(modifier = Modifier.padding(10.dp)) {
                 if (running) {
@@ -325,10 +400,10 @@ private fun SwitchSettingControl(
     addon: AddonUiModel,
     modifier: Modifier,
     dependencyRevision: Int,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
-    val accent = settingAccent(setting, addon)
     val defaultVal = if (setting.defaultBool) 1 else setting.defaultInt
     var checked by remember(setting.key, dependencyRevision) {
         mutableStateOf(readStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, defaultVal) != 0)
@@ -361,33 +436,18 @@ private fun SwitchSettingControl(
         }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = !commandRunning) { updateChecked(!checked) }
-                .padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingTitleText(setting)
-                if (setting.description.isNotEmpty()) {
-                    SettingDescriptionText(setting)
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Switch(
-                checked = checked,
-                onCheckedChange = { updateChecked(it) },
-                enabled = !commandRunning,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = accent,
-                    checkedTrackColor = accent.copy(alpha = 0.45f)
-                )
-            )
-        }
+    // Shared row owns its own 20.dp/8.dp insets, so the incoming category
+    // padding is intentionally not applied here to avoid a double inset.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        GenericSwitchRow(
+            title = setting.title,
+            summary = setting.description.ifBlank { null },
+            checked = checked,
+            enabled = enabled && !commandRunning,
+            onCheckedChange = { updateChecked(it) }
+        )
         if (setting.showOutput && (setting.commandOn.isNotBlank() || setting.commandOff.isNotBlank() || setting.binderOn.isNotEmpty() || setting.binderOff.isNotEmpty())) {
-            CommandOutputPanel(output = commandOutput, running = commandRunning, modifier = Modifier.padding(top = 4.dp))
+            CommandOutputPanel(output = commandOutput, running = commandRunning, modifier = Modifier.padding(top = 12.dp))
         }
     }
 }
@@ -400,9 +460,11 @@ private fun CheckboxSettingControl(
     addon: AddonUiModel,
     modifier: Modifier,
     dependencyRevision: Int,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val accent = settingAccent(setting, addon)
     val defaultVal = if (setting.defaultBool) 1 else setting.defaultInt
     var checked by remember(setting.key, dependencyRevision) {
@@ -410,29 +472,46 @@ private fun CheckboxSettingControl(
     }
 
     fun updateChecked(newChecked: Boolean) {
+        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
         checked = newChecked
         writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, if (newChecked) 1 else 0)
         applySettingsAssignments(context, if (newChecked) setting.settingsOn else setting.settingsOff)
         onSettingChanged(setting, newChecked)
     }
 
+    // Same tokens as the shared GenericSwitchRow: horizontal 20.dp / vertical
+    // 8.dp insets, 12.dp control gap, 2.dp title-to-summary gap, bodyLarge /
+    // bodySmall text pair. The incoming category padding is not applied here
+    // to avoid a double inset.
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clickable { updateChecked(!checked) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clickable(enabled = enabled) { updateChecked(!checked) }
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .alpha(if (enabled) 1f else 0.4f),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Checkbox(
             checked = checked,
             onCheckedChange = { updateChecked(it) },
+            enabled = enabled,
             colors = CheckboxDefaults.colors(checkedColor = accent)
         )
-        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            SettingTitleText(setting)
+            Text(
+                text = setting.title,
+                style = MaterialTheme.typography.bodyLarge.withAddonTextSize(setting.titleSizeSp),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             if (setting.description.isNotEmpty()) {
-                SettingDescriptionText(setting)
+                Text(
+                    text = setting.description,
+                    style = MaterialTheme.typography.bodySmall.withAddonTextSize(setting.descriptionSizeSp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -445,9 +524,11 @@ private fun CheckboxSettingControl(
 private fun TileBindingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
-    modifier: Modifier
+    modifier: Modifier,
+    enabled: Boolean = true
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val accent = settingAccent(setting, addon)
     val targets = remember(setting) {
         setting.tileTargets.ifEmpty {
@@ -488,7 +569,10 @@ private fun TileBindingControl(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = setting.tileConfigurable && !isBound) { configExpanded = !configExpanded }
+                .clickable(enabled = enabled && setting.tileConfigurable && !isBound) {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    configExpanded = !configExpanded
+                }
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -502,15 +586,17 @@ private fun TileBindingControl(
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     setting.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.bodyLarge.withAddonTextSize(setting.titleSizeSp),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     if (isBound) stringResource(R.string.addon_tile_slot, boundSlot) else if (setting.tileConfigurable) stringResource(R.string.addon_tile_configurable) else stringResource(R.string.addon_tile_not_added),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (isBound) accent else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isBound) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             if (setting.tileConfigurable && !isBound) {
@@ -522,7 +608,7 @@ private fun TileBindingControl(
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
         AnimatedVisibility(
             visible = setting.tileConfigurable && !isBound && configExpanded,
@@ -535,7 +621,7 @@ private fun TileBindingControl(
                     onValueChange = { tileTitle = it },
                     label = { Text(stringResource(R.string.addon_tile_name)) },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -549,7 +635,7 @@ private fun TileBindingControl(
                         readOnly = true,
                         label = { Text(stringResource(R.string.addon_tile_setting)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = targetMenuExpanded) },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                             .fillMaxWidth()
@@ -586,7 +672,7 @@ private fun TileBindingControl(
                             readOnly = true,
                             label = { Text(stringResource(R.string.addon_tile_long_press)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = activityMenuExpanded) },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth()
@@ -621,17 +707,24 @@ private fun TileBindingControl(
             ) {
                 OutlinedButton(
                     onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                         unbindTileSlot(context, boundSlot)
                         boundSlot = 0
                         configExpanded = false
                     },
+                    enabled = enabled,
                     contentPadding = PaddingValues(horizontal = 12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.edgeOutline())
                 ) {
                     Icon(Icons.Rounded.Close, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
                 FilledTonalButton(
-                    onClick = { requestAddDynamicTile(context, boundSlot, readTileSlotLabel(context, boundSlot, tileLabel)) },
+                    onClick = {
+                        haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        requestAddDynamicTile(context, boundSlot, readTileSlotLabel(context, boundSlot, tileLabel))
+                    },
+                    enabled = enabled,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer.edgeOutline()),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
@@ -642,6 +735,7 @@ private fun TileBindingControl(
         } else {
             FilledTonalButton(
                 onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                     val slot = findFreeTileSlot(context)
                     val target = selectedTarget
                     if (slot > 0 && target != null) {
@@ -650,7 +744,8 @@ private fun TileBindingControl(
                         configExpanded = false
                     }
                 },
-                enabled = selectedTarget != null,
+                enabled = enabled && selectedTarget != null,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer.edgeOutline()),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Rounded.Link, null, modifier = Modifier.size(18.dp))
@@ -806,87 +901,37 @@ private fun IntSliderSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
-    val accent = settingAccent(setting, addon)
-    var value by remember {
+    var value by remember(setting.key) {
         mutableIntStateOf(readStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, setting.defaultInt))
     }
-    var showManualInput by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier
-        .fillMaxWidth()
-        .clickable { showManualInput = true }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingTitleText(setting)
-                if (setting.description.isNotEmpty()) {
-                    SettingDescriptionText(setting)
-                }
-            }
-            TextButton(onClick = { showManualInput = true }, modifier = Modifier.padding(start = 12.dp)) {
-                Text(
-                    "$value${if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""}",
-                    fontWeight = FontWeight.Bold,
-                    color = accent
-                )
-            }
+    // Shared slider owns title shrink, [-] slider [+], reset capsule, the
+    // manual-input dialog and its own disabled visuals (alpha + muted colors,
+    // like on the main screens), so enabled is passed straight through.
+    SliderSetting(
+        title = setting.title,
+        value = value,
+        range = setting.min.toInt()..setting.max.toInt(),
+        unit = setting.unit,
+        enabled = enabled,
+        onValueChange = { value = it },
+        onDefault = {
+            value = setting.defaultInt
+            writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
+            onSettingChanged(setting, null)
+        },
+        valueText = "$value${if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""}",
+        defaultValue = setting.defaultInt,
+        defaultValueText = "${setting.defaultInt}${if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""}",
+        onValueChangeFinished = {
+            writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
+            onSettingChanged(setting, null)
         }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = {
-                    value = setting.defaultInt
-                    writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
-                    onSettingChanged(setting, null)
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
-            }
-            Spacer(Modifier.width(8.dp))
-            Slider(
-                value = value.toFloat(),
-                onValueChange = { value = it.toInt() },
-                valueRange = setting.min..setting.max,
-                steps = if (setting.step > 1f) ((setting.max - setting.min) / setting.step).toInt() - 1 else 0,
-                onValueChangeFinished = {
-                    writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
-                    onSettingChanged(setting, null)
-                },
-                colors = SliderDefaults.colors(
-                    thumbColor = accent,
-                    activeTrackColor = accent
-                ),
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-
-    if (showManualInput) {
-        ManualIntInputDialog(
-            title = setting.title,
-            currentValue = value,
-            min = setting.min.toInt(),
-            max = setting.max.toInt(),
-            unit = setting.unit,
-            defaultValue = setting.defaultInt,
-            onDismiss = { showManualInput = false },
-            onConfirm = { newVal ->
-                value = newVal
-                writeStoredInt(context, setting, addon.id, addon.jarPath, addon.isSystem, newVal)
-                onSettingChanged(setting, null)
-                showManualInput = false
-            }
-        )
-    }
+    )
 }
 
 // ---------- FLOAT SLIDER ----------
@@ -896,86 +941,38 @@ private fun FloatSliderSettingControl(
     setting: AddonSettingDef,
     addon: AddonUiModel,
     modifier: Modifier,
+    enabled: Boolean = true,
     onSettingChanged: (AddonSettingDef, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
-    val accent = settingAccent(setting, addon)
-    var value by remember {
+    var value by remember(setting.key) {
         mutableFloatStateOf(readStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, setting.defaultFloat))
     }
-    var showManualInput by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier
-        .fillMaxWidth()
-        .clickable { showManualInput = true }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SettingTitleText(setting)
-                if (setting.description.isNotEmpty()) {
-                    SettingDescriptionText(setting)
-                }
-            }
-            TextButton(onClick = { showManualInput = true }, modifier = Modifier.padding(start = 12.dp)) {
-                Text(
-                    String.format("%.2f%s", value, if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""),
-                    fontWeight = FontWeight.Bold,
-                    color = accent
-                )
-            }
+    // Shared slider owns title shrink, [-] slider [+], reset capsule, the
+    // manual-input dialog and its own disabled visuals (alpha + muted colors,
+    // like on the main screens), so enabled is passed straight through.
+    SliderSettingFloat(
+        title = setting.title,
+        value = value,
+        range = setting.min..setting.max,
+        unit = setting.unit,
+        enabled = enabled,
+        onValueChange = { value = it },
+        onDefault = {
+            value = setting.defaultFloat
+            writeStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
+            onSettingChanged(setting, null)
+        },
+        valueText = String.format("%.2f%s", value, if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""),
+        stepSize = setting.step,
+        defaultValue = setting.defaultFloat,
+        defaultValueText = String.format("%.2f%s", setting.defaultFloat, if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""),
+        onValueChangeFinished = {
+            writeStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
+            onSettingChanged(setting, null)
         }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = {
-                    value = setting.defaultFloat
-                    writeStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
-                    onSettingChanged(setting, null)
-                },
-                modifier = Modifier.size(28.dp)
-            ) {
-                Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
-            }
-            Spacer(Modifier.width(8.dp))
-            Slider(
-                value = value,
-                onValueChange = { value = it },
-                valueRange = setting.min..setting.max,
-                onValueChangeFinished = {
-                    writeStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, value)
-                    onSettingChanged(setting, null)
-                },
-                colors = SliderDefaults.colors(
-                    thumbColor = accent,
-                    activeTrackColor = accent
-                ),
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-
-    if (showManualInput) {
-        ManualFloatInputDialog(
-            title = setting.title,
-            currentValue = value,
-            min = setting.min,
-            max = setting.max,
-            unit = setting.unit,
-            defaultValue = setting.defaultFloat,
-            onDismiss = { showManualInput = false },
-            onConfirm = { newVal ->
-                value = newVal
-                writeStoredFloat(context, setting, addon.id, addon.jarPath, addon.isSystem, newVal)
-                onSettingChanged(setting, null)
-                showManualInput = false
-            }
-        )
-    }
+    )
 }
 
 // ---------- STRING INPUT ----------

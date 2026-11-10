@@ -113,7 +113,7 @@ internal fun ConstructorExportButton(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             // ── Build theme ──
             AnimatedVisibility(
                 visible = showBuildInput,

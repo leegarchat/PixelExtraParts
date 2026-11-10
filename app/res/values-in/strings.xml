@@ -343,6 +343,7 @@
     <string name="settings_homepage_pixel_parts_summary">Peningkatan tambahan untuk Pixel Anda</string>
     <string name="btn_apply">Terapkan</string>
     <string name="btn_default">Default</string>
+    <string name="btn_default_with_value">Default (%1$s)</string>
     <string name="btn_close">Tutup</string>
     <string name="btn_exit">Keluar</string>
     <string name="btn_restart">Restart</string>

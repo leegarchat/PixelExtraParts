@@ -715,6 +715,7 @@
     <string name="settings_homepage_pixel_parts_summary">Additional improvements to your Pixel</string>
     <string name="btn_apply">Apply</string>
     <string name="btn_default">Default</string>
+    <string name="btn_default_with_value">Default (%1$s)</string>
     <string name="btn_close">Close</string>
     <string name="btn_exit">Exit</string>
     <string name="btn_restart">Restart</string>

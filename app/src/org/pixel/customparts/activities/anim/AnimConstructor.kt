@@ -113,7 +113,7 @@ internal fun AnimConstructorBlock(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             // Tab row
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedTab,
@@ -383,7 +383,7 @@ internal fun ConstructorPreview(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(

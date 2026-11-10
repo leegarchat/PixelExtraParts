@@ -300,6 +300,7 @@ internal fun AppIconsModuleSwitch(
                 )
             }
             if (showHardcodedControls && showLauncherControls) {
+                HorizontalDivider()
                 AppIconsSwitchRow(
                     title = stringResource(R.string.app_icons_launcher_only_title),
                     summary = stringResource(R.string.app_icons_launcher_only_summary),
@@ -336,6 +337,7 @@ internal fun AppIconsModuleSwitch(
                         onCheckedChange = onSystemStretchShapeChange
                     )
                     if (systemStretchShapeChecked) {
+                        HorizontalDivider()
                         AppIconsScaleSliderRow(
                             title = stringResource(R.string.app_icons_system_shape_scale_title),
                             value = systemShapeScalePercent,
@@ -343,6 +345,7 @@ internal fun AppIconsModuleSwitch(
                             onValueChange = onSystemShapeScaleChange
                         )
                     }
+                    HorizontalDivider()
                     AppIconsSwitchRow(
                         title = stringResource(R.string.app_icons_system_remove_shape_title),
                         summary = stringResource(R.string.app_icons_system_remove_shape_summary),
@@ -350,6 +353,7 @@ internal fun AppIconsModuleSwitch(
                         enabled = systemOptionsEnabled,
                         onCheckedChange = onSystemRemoveShapeChange
                     )
+                    HorizontalDivider()
                     AppIconsSwitchRow(
                         title = stringResource(R.string.app_icons_notification_stretch_shape_title),
                         summary = stringResource(R.string.app_icons_notification_stretch_shape_summary),
@@ -358,6 +362,7 @@ internal fun AppIconsModuleSwitch(
                         onCheckedChange = onNotificationStretchShapeChange
                     )
                     if (notificationStretchShapeChecked) {
+                        HorizontalDivider()
                         AppIconsScaleSliderRow(
                             title = stringResource(R.string.app_icons_notification_shape_scale_title),
                             value = notificationShapeScalePercent,
@@ -365,6 +370,7 @@ internal fun AppIconsModuleSwitch(
                             onValueChange = onNotificationShapeScaleChange
                         )
                     }
+                    HorizontalDivider()
                     AppIconsSwitchRow(
                         title = stringResource(R.string.app_icons_notification_remove_shape_title),
                         summary = stringResource(R.string.app_icons_notification_remove_shape_summary),
@@ -373,6 +379,7 @@ internal fun AppIconsModuleSwitch(
                         onCheckedChange = onNotificationRemoveShapeChange
                     )
                     if (showLauncherControls) {
+                        HorizontalDivider()
                         AppIconsSwitchRow(
                             title = stringResource(R.string.app_icons_launcher_stretch_shape_title),
                             summary = stringResource(R.string.app_icons_launcher_stretch_shape_summary),
@@ -381,6 +388,7 @@ internal fun AppIconsModuleSwitch(
                             onCheckedChange = onLauncherStretchShapeChange
                         )
                         if (launcherStretchShapeChecked) {
+                            HorizontalDivider()
                             AppIconsScaleSliderRow(
                                 title = stringResource(R.string.app_icons_launcher_shape_scale_title),
                                 value = launcherShapeScalePercent,
@@ -388,6 +396,7 @@ internal fun AppIconsModuleSwitch(
                                 onValueChange = onLauncherShapeScaleChange
                             )
                         }
+                        HorizontalDivider()
                         AppIconsSwitchRow(
                             title = stringResource(R.string.app_icons_launcher_remove_shape_title),
                             summary = stringResource(R.string.app_icons_launcher_remove_shape_summary),
@@ -396,6 +405,7 @@ internal fun AppIconsModuleSwitch(
                             onCheckedChange = onLauncherRemoveShapeChange
                         )
                     }
+                    HorizontalDivider()
                     AppIconsTintControlRow(
                         title = stringResource(R.string.app_icons_shape_background_tint_title),
                         summary = stringResource(R.string.app_icons_shape_background_tint_summary),
@@ -405,6 +415,7 @@ internal fun AppIconsModuleSwitch(
                         onModeChange = onBackgroundTintModeChange,
                         onColorChange = onBackgroundTintColorChange
                     )
+                    HorizontalDivider()
                     AppIconsTintControlRow(
                         title = stringResource(R.string.app_icons_shape_foreground_tint_title),
                         summary = stringResource(R.string.app_icons_shape_foreground_tint_summary),
@@ -433,7 +444,7 @@ internal fun AppIconsSwitchRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -471,7 +482,7 @@ private fun AppIconsNavigationRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
@@ -520,7 +531,7 @@ private fun AppIconsTintControlRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -649,7 +660,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -785,7 +796,7 @@ internal fun ExpandableSectionHeaderContent(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onExpandChange(!expanded) }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
@@ -846,7 +857,7 @@ private fun IconPackCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1007,7 +1018,7 @@ internal fun AppIconsFilterSwitchRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -1081,7 +1092,7 @@ internal fun InstalledAppCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DrawableIcon(drawable = app.icon, size = 42.dp, fallback = Icons.Rounded.Apps)

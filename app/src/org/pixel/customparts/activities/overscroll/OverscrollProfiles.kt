@@ -66,7 +66,7 @@ fun ProfilesSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Row 1: Import + Export
@@ -124,7 +124,7 @@ fun ProfilesSection(
                 stringResource(R.string.os_prof_header_list),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
             )
             
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -161,7 +161,7 @@ fun ProfilesSection(
                                     onProfileLoaded()
                                 }
                             }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                            .padding(horizontal = 4.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -360,7 +360,7 @@ private fun NetworkConfigsDialog(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                                            .padding(horizontal = 20.dp, vertical = 14.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {

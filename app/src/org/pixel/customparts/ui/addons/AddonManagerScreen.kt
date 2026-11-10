@@ -1102,19 +1102,15 @@ private fun AddonCardSettings(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        for (setting in category.settings) {
+                        for ((settingIndex, setting) in category.settings.withIndex()) {
+                            if (settingIndex > 0) {
+                                HorizontalDivider()
+                            }
                             key(setting.key) {
-                                val settingModifier = if (setting.type == SettingType.GROUP && setting.groupMode != GroupMode.INLINE) {
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 8.dp)
-                                } else {
-                                    Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                                }
                                 AddonSettingControl(
                                     setting = setting,
                                     addon = addon,
-                                    modifier = settingModifier,
+                                    modifier = addonGroupItemModifier(setting),
                                     allSettings = allSettings,
                                     dependencyRevision = settingsRevision,
                                     onSettingChanged = ::onSettingChanged

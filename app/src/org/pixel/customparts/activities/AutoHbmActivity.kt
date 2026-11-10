@@ -43,6 +43,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -276,6 +277,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         GenericSwitchRow(
                             title = stringResource(R.string.auto_hbm_permanent_title),
                             summary = stringResource(R.string.auto_hbm_permanent_summary),
@@ -290,6 +293,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 maxBrightness = AutoHbmController.readMaxBrightness() ?: maxBrightness
                             }
                         )
+
+                        HorizontalDivider()
 
                         GenericSwitchRow(
                             title = stringResource(R.string.auto_hbm_brightness_lock_title),
@@ -307,12 +312,14 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 text = stringResource(R.string.auto_hbm_auto_disabled_in_permanent),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp)
                             )
                         }
 
                         val autoSettingsEnabled = autoModeEnabled && supported
                         val rampSettingsEnabled = enabled && supported
+
+                        HorizontalDivider()
 
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_threshold_title),
@@ -332,6 +339,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_enable_time_title),
                             value = enableTime,
@@ -349,6 +358,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 AutoHbmController.setEnableTime(context, enableTime)
                             }
                         )
+
+                        HorizontalDivider()
 
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_disable_time_title),
@@ -368,6 +379,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         GenericSwitchRow(
                             title = stringResource(R.string.auto_hbm_smooth_ramp_title),
                             summary = stringResource(R.string.auto_hbm_smooth_ramp_summary),
@@ -380,6 +393,7 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                         )
 
                         if (smoothRampEnabled) {
+                            HorizontalDivider()
                             SliderSetting(
                                 title = stringResource(R.string.auto_hbm_ramp_time_title),
                                 value = rampTimeMs,
@@ -399,6 +413,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             )
                         }
 
+                        HorizontalDivider()
+
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_max_active_time_title),
                             value = maxActiveTime,
@@ -417,6 +433,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_cooldown_time_title),
                             value = cooldownTime,
@@ -434,6 +452,8 @@ private fun AutoHbmScreen(onBack: () -> Unit) {
                                 AutoHbmController.setCooldownTime(context, cooldownTime)
                             }
                         )
+
+                        HorizontalDivider()
 
                         SliderSetting(
                             title = stringResource(R.string.auto_hbm_temperature_limit_title),
@@ -578,6 +598,8 @@ private fun AutoHbmLuxCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            HorizontalDivider()
 
             SliderSetting(
                 title = stringResource(R.string.auto_hbm_check_interval_title),

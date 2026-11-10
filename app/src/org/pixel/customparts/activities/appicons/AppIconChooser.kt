@@ -168,7 +168,7 @@ internal fun AppIconCurrentIconCard(app: InstalledIconApp, appliedBitmap: Bitmap
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (appliedBitmap != null) {
@@ -379,7 +379,7 @@ private fun AppIconChooserRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             PreviewIcon(item.iconPackPackage, item.drawableName, 42.dp)
@@ -687,7 +687,7 @@ private fun AppIconDialog(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (appliedBitmap != null) {

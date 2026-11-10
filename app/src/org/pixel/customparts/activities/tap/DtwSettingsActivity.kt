@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -177,6 +178,8 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         SliderSetting(
                             title = stringResource(R.string.dtw_tap_count_title),
                             value = tapCount,
@@ -194,6 +197,8 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                                 SettingsCompat.putInt(context, SettingsKeys.DTW_TAP_COUNT, tapCount)
                             }
                         )
+
+                        HorizontalDivider()
 
                         SliderSetting(
                             title = stringResource(R.string.dtw_timeout_title),
@@ -213,6 +218,8 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         GenericSwitchRow(
                             title = stringResource(R.string.dtw_coordinate_check_title),
                             summary = stringResource(R.string.dtw_coordinate_check_summary),
@@ -225,9 +232,13 @@ private fun DtwSettingsScreen(onBack: () -> Unit) {
                         )
 
                         if (coordinateCheck) {
+                            HorizontalDivider()
+
                             DtwCoordinatePreview(
                                 maxDistance = maxDistance
                             )
+
+                            HorizontalDivider()
 
                             SliderSetting(
                                 title = stringResource(R.string.dtw_max_distance_title),
@@ -297,14 +308,13 @@ private fun DtwCoordinatePreview(maxDistance: Int) {
                 1.dp,
                 MaterialTheme.colorScheme.surfaceContainerHighest.edgeOutline(),
                 RoundedCornerShape(20.dp)
-            )
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
                 text = stringResource(R.string.dtw_coordinate_preview_title),
                 style = MaterialTheme.typography.titleSmall,

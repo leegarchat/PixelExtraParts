@@ -95,7 +95,7 @@ fun ExpandableWarningCard(
         Column(
             modifier = Modifier
                 .clickable { expanded = !expanded }
-                .padding(16.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.Warning, null, tint = contentColor)
@@ -138,6 +138,7 @@ fun GenericSwitchRow(
     onInfoClick: ((String, String, String?) -> Unit)? = null
 ) {
     val contentAlpha = if (enabled) 1f else 0.4f
+    val haptics = LocalHapticFeedback.current
 
     Row(
         modifier = Modifier
@@ -180,7 +181,10 @@ fun GenericSwitchRow(
         Switch(
             checked = checked,
             enabled = enabled,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onCheckedChange(it)
+            },
             modifier = Modifier.alpha(contentAlpha)
         )
     }
@@ -205,7 +209,11 @@ fun SliderSetting(
     defaultValue: Int? = null,
     // Kept for source compatibility; the layout is now unified (value readout
     // is always below-right), so this flag no longer changes anything.
-    showValueBelow: Boolean = false
+    showValueBelow: Boolean = false,
+    // Pre-formatted default value shown in the reset capsule as
+    // "Default (<defaultValueText>)". Uses the exact same formatting as
+    // valueText of the readout; null keeps the plain "Default" label.
+    defaultValueText: String? = null
 ) {
     SliderSettingFloat(
         title = title,
@@ -225,7 +233,8 @@ fun SliderSetting(
         inputRange = inputRange?.let { it.first.toFloat()..it.last.toFloat() },
         stepSize = 1f,
         defaultValue = defaultValue?.toFloat(),
-        showValueBelow = showValueBelow
+        showValueBelow = showValueBelow,
+        defaultValueText = defaultValueText
     )
 }
 
@@ -250,7 +259,11 @@ fun SliderSettingFloat(
     defaultValue: Float? = null,
     // Kept for source compatibility; the layout is now unified (value readout
     // is always below-right), so this flag no longer changes anything.
-    showValueBelow: Boolean = false
+    showValueBelow: Boolean = false,
+    // Pre-formatted default value shown in the reset capsule as
+    // "Default (<defaultValueText>)". Uses the exact same formatting as
+    // valueText of the readout; null keeps the plain "Default" label.
+    defaultValueText: String? = null
 ) {
     var showManualInput by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
@@ -263,10 +276,14 @@ fun SliderSettingFloat(
         String.format("%.2f %s", value, unit)
     }
 
-    // Reset badge appears once the value drifts >= 2% of the range span
-    // off the default (DESIGN_GUIDELINES §6.5). Without a known default
-    // the badge keeps the historical always-visible behaviour.
-    val resetThreshold = ((range.endInclusive - range.start) * 0.02f).coerceAtLeast(1e-6f)
+    // Reset badge appears once the drift off default exceeds a small epsilon:
+    // 0.5% of the range span, but at most half a step (so any real step always
+    // counts) and never below float noise. Reset itself always lands exactly
+    // on the default value.
+    val resetThreshold = minOf(
+        (range.endInclusive - range.start) * 0.005f,
+        stepSize * 0.5f
+    ).coerceAtLeast(1e-6f)
     val showResetBadge = showDefaultButton &&
         (defaultValue == null || kotlin.math.abs(value - defaultValue) >= resetThreshold)
 
@@ -352,10 +369,12 @@ fun SliderSettingFloat(
 
         // Row 3: (i) [reset] <spacer> <value> (DESIGN_GUIDELINES §6.5).
         // The value readout keeps the exact formatted string, rendered as plain text.
+        // Fixed height: the reset capsule is taller than the plain readout, so the
+        // row reserves its slot up front and never jumps when the badge appears.
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
+            modifier = Modifier.fillMaxWidth().height(32.dp).alpha(contentAlpha)
         ) {
             if (onInfoClick != null && infoText != null) {
                 IconButton(
@@ -372,6 +391,11 @@ fun SliderSettingFloat(
             }
 
             if (showResetBadge) {
+                val resetText = if (defaultValueText.isNullOrEmpty()) {
+                    stringResource(R.string.btn_default)
+                } else {
+                    stringResource(R.string.btn_default_with_value, defaultValueText)
+                }
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
@@ -383,7 +407,7 @@ fun SliderSettingFloat(
                         }
                 ) {
                     Text(
-                        text = stringResource(R.string.btn_default),
+                        text = resetText,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
@@ -651,7 +675,7 @@ fun RadioSelectionGroup(
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 20.dp)
                     .alpha(contentAlpha)
             ) {
                 val density = LocalDensity.current
@@ -773,7 +797,7 @@ fun RadioSelectionGroup(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 2.dp)
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(backgroundColor)
                         .clickable(enabled = enabled) { onSelect(index) }
@@ -826,13 +850,15 @@ fun SettingsGroupCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
-            Text(
-                text = title,
-                style = titleStyle,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).alpha(if (enabled) 1f else 0.5f)
-            )
+            if (title.isNotBlank()) {
+                Text(
+                    text = title,
+                    style = titleStyle,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp).alpha(if (enabled) 1f else 0.5f)
+                )
+            }
             content()
         }
     }
@@ -1172,7 +1198,7 @@ fun StrongDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
         color = MaterialTheme.colorScheme.outlineVariant,
         thickness = 1.dp,
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = modifier.padding(horizontal = 20.dp, vertical = 8.dp)
     )
 }
 
@@ -1212,7 +1238,7 @@ fun ExpandableSettingsGroupCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onExpandChange(!expanded) }
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1236,7 +1262,7 @@ fun ExpandableSettingsGroupCard(
                 enter = expandVertically(animationSpec = tween(240, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
                 exit = shrinkVertically(animationSpec = tween(200, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
             ) {
-                Column(modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 16.dp)) {
+                Column(modifier = Modifier.padding(bottom = 16.dp)) {
                     content()
                 }
             }

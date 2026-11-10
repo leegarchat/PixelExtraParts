@@ -716,6 +716,7 @@
     <string name="settings_homepage_pixel_parts_summary">Дополнительные улучшения для вашего Pixel</string>
     <string name="btn_apply">Применить</string>
     <string name="btn_default">По умолчанию</string>
+    <string name="btn_default_with_value">По умолчанию (%1$s)</string>
     <string name="btn_close">Закрыть</string>
     <string name="btn_exit">Выход</string>
     <string name="btn_restart">Перезапуск</string>

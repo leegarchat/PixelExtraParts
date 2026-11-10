@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -175,6 +176,8 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                             }
                         )
 
+                        HorizontalDivider()
+
                         GenericSwitchRow(
                             title = stringResource(R.string.auto_lock_blocker_only_title),
                             summary = stringResource(R.string.auto_lock_blocker_only_summary),
@@ -190,6 +193,8 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                                 )
                             }
                         )
+
+                        HorizontalDivider()
 
                         GenericSwitchRow(
                             title = stringResource(R.string.auto_lock_pause_media_title),
@@ -233,7 +238,7 @@ private fun AutoLockScreen(onBack: () -> Unit) {
                             text = stringResource(R.string.auto_lock_timeout_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                         )
                     }
                 }

@@ -185,7 +185,7 @@ internal fun ProfileConfigSectionCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onExpandedChange(!expanded) }
-                .padding(start = 16.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+                .padding(start = 20.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -236,7 +236,7 @@ internal fun ProfileConfigSectionCard(
             Column {
                 if (configs.isEmpty()) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
@@ -284,7 +284,7 @@ private fun SavedConfigRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -429,7 +429,7 @@ internal fun GlobalProfileCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -464,7 +464,7 @@ internal fun ThermalTileQueueCard(
 ) {
     SettingsGroupCard(title = stringResource(R.string.thermal_manager_tile_queue)) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
@@ -503,7 +503,7 @@ internal fun ThermalTileQueueCard(
                     text = stringResource(R.string.thermal_manager_tile_queue_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp)
+                    modifier = Modifier.padding(vertical = 6.dp)
                 )
             } else {
                 queue.forEachIndexed { index, configId ->

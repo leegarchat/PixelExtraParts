@@ -354,7 +354,7 @@ fun DonateTargetCard(config: DonateCardConfig, state: TargetState, onRefresh: ()
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh.edgeOutline()),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.tertiaryContainer),

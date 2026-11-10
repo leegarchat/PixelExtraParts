@@ -281,7 +281,7 @@ private fun MagnifierSection() {
             sizeScale = sizeScale,
             shape = shape,
             offsetY = offsetY,
-            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)
+            modifier = Modifier.padding(horizontal = 20.dp).padding(top = 12.dp)
         )
 
         OutlinedTextField(
@@ -289,7 +289,7 @@ private fun MagnifierSection() {
             onValueChange = { sampleText = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 8.dp),
             singleLine = true
         )
     }

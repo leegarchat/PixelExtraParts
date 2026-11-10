@@ -194,7 +194,7 @@ internal fun PerAppShapeSettingsCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     PerAppShapeAreaEditor(
@@ -243,7 +243,7 @@ private fun PerAppShapeAreaEditor(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -254,6 +254,7 @@ private fun PerAppShapeAreaEditor(
             enabled = true,
             onCheckedChange = { checked -> onConfigChange(config.copy(stretchShape = checked, removeShape = if (checked) false else config.removeShape)) }
         )
+        HorizontalDivider()
         AppIconsSwitchRow(
             title = stringResource(R.string.app_icons_per_app_remove_shape),
             summary = stringResource(R.string.app_icons_per_app_remove_shape_summary),
@@ -261,6 +262,7 @@ private fun PerAppShapeAreaEditor(
             enabled = true,
             onCheckedChange = { checked -> onConfigChange(config.copy(removeShape = checked, stretchShape = if (checked) false else config.stretchShape)) }
         )
+        HorizontalDivider()
         AppIconsScaleSliderRow(
             title = stringResource(R.string.app_icons_per_app_shape_scale),
             value = config.scalePercent,
@@ -292,7 +294,7 @@ internal fun SelectableIconEntryRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             PreviewIcon(entry.iconPackPackage, entry.drawableName, 42.dp)
@@ -337,7 +339,7 @@ internal fun AppIconCandidateRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             PreviewIcon(candidate.iconPackPackage, candidate.drawableName, 42.dp)
@@ -443,7 +445,7 @@ internal fun AppIconsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
@@ -502,7 +504,7 @@ internal fun AppIconsSearchField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .padding(horizontal = 14.dp),
+                .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

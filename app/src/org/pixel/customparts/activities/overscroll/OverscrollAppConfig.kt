@@ -68,7 +68,7 @@ fun AppConfigCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 20.dp, vertical = 16.dp)
             .alpha(contentAlpha) 
     ) {
         Row(

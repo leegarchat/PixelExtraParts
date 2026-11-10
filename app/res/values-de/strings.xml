@@ -343,6 +343,7 @@
     <string name="settings_homepage_pixel_parts_summary">Zusätzliche Verbesserungen für dein Pixel</string>
     <string name="btn_apply">Anwenden</string>
     <string name="btn_default">Standard</string>
+    <string name="btn_default_with_value">Standard (%1$s)</string>
     <string name="btn_close">Schließen</string>
     <string name="btn_exit">Beenden</string>
     <string name="btn_restart">Neustart</string>

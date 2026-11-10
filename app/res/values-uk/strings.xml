@@ -343,6 +343,7 @@
     <string name="settings_homepage_pixel_parts_summary">Додаткові покращення для вашого Pixel</string>
     <string name="btn_apply">Застосувати</string>
     <string name="btn_default">За замовчуванням</string>
+    <string name="btn_default_with_value">За замовчуванням (%1$s)</string>
     <string name="btn_close">Закрити</string>
     <string name="btn_exit">Вийти</string>
     <string name="btn_restart">Перезапуск</string>

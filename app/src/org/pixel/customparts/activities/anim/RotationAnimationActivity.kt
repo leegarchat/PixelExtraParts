@@ -903,7 +903,7 @@ private fun RotationConstructorBlock(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             PrimaryTabRow(selectedTabIndex = selectedTab, containerColor = Color.Transparent) {
                 ROTATION_CONSTRUCTOR_TAB_LABELS.forEachIndexed { index, labelRes ->
                     Tab(
@@ -936,7 +936,7 @@ private fun RotationConstructorPreview(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -980,7 +980,7 @@ private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             AnimatedVisibility(
                 visible = showBuildInput,
                 enter = expandVertically() + fadeIn(),

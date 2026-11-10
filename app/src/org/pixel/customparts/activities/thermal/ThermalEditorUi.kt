@@ -170,7 +170,7 @@ internal fun EditorHeaderCard(
 ) {
     SettingsGroupCard(title = stringResource(R.string.thermal_manager_editor_title)) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
@@ -278,7 +278,7 @@ internal fun ThermalParamTreeCard(
 ) {
     SettingsGroupCard(title = stringResource(R.string.thermal_manager_editor_tree_title)) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ThermalCompactSearchField(
@@ -289,8 +289,7 @@ internal fun ThermalParamTreeCard(
             Text(
                 text = stringResource(R.string.thermal_manager_search_count, visibleCount, totalCount),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -299,7 +298,7 @@ internal fun ThermalParamTreeCard(
                 text = stringResource(R.string.thermal_manager_editor_tree_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
         } else {
             Column(modifier = Modifier.padding(bottom = 6.dp)) {
@@ -335,7 +334,7 @@ private fun ThermalTreeNodeRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggleNode(node.id) }
-                .padding(start = (12 + depth * 14).dp, end = 10.dp, top = 7.dp, bottom = 7.dp),
+                .padding(start = (20 + depth * 14).dp, end = 10.dp, top = 7.dp, bottom = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(

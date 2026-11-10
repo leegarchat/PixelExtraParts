@@ -425,7 +425,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                         ) {
                             Text(
                                 text = stringResource(R.string.thermal_manager_apps_loading),
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -439,7 +439,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                         ) {
                             Text(
                                 text = stringResource(R.string.thermal_manager_apps_empty),
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -452,7 +452,7 @@ private fun ThermalConfigManagerScreen(onBack: () -> Unit) {
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
                             )
                         }
 
@@ -881,7 +881,7 @@ private fun ThermalConfigEditorScreen(openCreateProfile: Boolean, onBack: () -> 
                         ) {
                             Text(
                                 text = stringResource(R.string.thermal_manager_loading),
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

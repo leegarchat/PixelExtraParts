@@ -40,6 +40,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -222,7 +223,7 @@ private fun SaturationScreen(onBack: () -> Unit) {
                         text = stringResource(R.string.saturation_footer_summary),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp)
                     )
                 }
             }
@@ -256,6 +257,8 @@ private fun SaturationControls(
             checked = enabled,
             onCheckedChange = onEnabledChange
         )
+
+        HorizontalDivider()
 
         SliderSetting(
             title = stringResource(R.string.saturation_level_title),
@@ -296,7 +299,7 @@ private fun SaturationPreviewCard(percent: Int) {
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
                 text = stringResource(R.string.saturation_preview_title),
                 style = MaterialTheme.typography.titleMedium,

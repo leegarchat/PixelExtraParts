@@ -376,23 +376,29 @@ internal fun buildAddonSettingCategories(settings: List<AddonSettingDef>): List<
         return listOf(AddonSettingCategory(key = "", title = "", description = "", settings = settings))
     }
 
-    val categories = linkedMapOf<String, AddonSettingCategoryBuilder>()
+    // Sequential runs in strict manifest order: settings are grouped only while
+    // the category key stays the same. Merging by key would drag an uncategorized
+    // trailing setting (e.g. a final "button" with no category) into the first
+    // "__default" bucket at the top; separate runs keep every block in place.
+    val runs = mutableListOf<AddonSettingCategoryBuilder>()
     settings.forEach { setting ->
         val rawCategory = setting.category.trim()
         val key = rawCategory.ifBlank { "__default" }
-        val category = categories.getOrPut(key) {
-            AddonSettingCategoryBuilder(
+        val current = runs.lastOrNull()
+        if (current != null && current.key == key) {
+            if (current.title.isBlank() && setting.categoryTitle.isNotBlank()) current.title = setting.categoryTitle
+            if (current.description.isBlank() && setting.categoryDescription.isNotBlank()) current.description = setting.categoryDescription
+            current.settings += setting
+        } else {
+            runs += AddonSettingCategoryBuilder(
                 key = key,
                 title = setting.categoryTitle.ifBlank { rawCategory.toAddonCategoryTitle() },
                 description = setting.categoryDescription
-            )
+            ).also { it.settings += setting }
         }
-        if (category.title.isBlank() && setting.categoryTitle.isNotBlank()) category.title = setting.categoryTitle
-        if (category.description.isBlank() && setting.categoryDescription.isNotBlank()) category.description = setting.categoryDescription
-        category.settings += setting
     }
 
-    return categories.values.map { category ->
+    return runs.map { category ->
         AddonSettingCategory(
             key = category.key,
             title = category.title,

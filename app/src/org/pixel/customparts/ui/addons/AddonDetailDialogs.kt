@@ -36,6 +36,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -68,6 +69,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +99,8 @@ import org.pixel.customparts.activities.AddonPageActivity
 import org.pixel.customparts.core.ApkModulesGate
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
+import org.pixel.customparts.ui.RadioSelectionGroup
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.HookKeyCompat
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.TileUtils
@@ -126,6 +131,7 @@ internal fun AddonDetailDialog(
     var scopeMode by remember { mutableIntStateOf(addon.scopeMode) }
     var customTargets by remember { mutableStateOf(addon.customTargets) }
     var showAppPicker by remember { mutableStateOf(false) }
+    val detailHaptics = LocalHapticFeedback.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -134,6 +140,7 @@ internal fun AddonDetailDialog(
         Card(
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline()),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -237,35 +244,19 @@ internal fun AddonDetailDialog(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-                // Scope mode
-                Text(
-                    stringResource(R.string.addon_target_scope),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(8.dp))
-
+                // Scope mode (shared vertical radio list with haptics).
                 val scopeLabels = listOf(
                     stringResource(R.string.addon_scope_default),
                     stringResource(R.string.addon_scope_custom),
                     stringResource(R.string.addon_scope_merge)
                 )
-                scopeLabels.forEachIndexed { index, label ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { scopeMode = index }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = scopeMode == index,
-                            onClick = { scopeMode = index }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+                RadioSelectionGroup(
+                    title = stringResource(R.string.addon_target_scope),
+                    options = scopeLabels,
+                    selectedIndex = scopeMode,
+                    onSelect = { scopeMode = it },
+                    vertical = true
+                )
 
                 // Default targets (read-only)
                 if (addon.defaultTargets.isNotEmpty() && (scopeMode == 0 || scopeMode == 2)) {
@@ -323,7 +314,11 @@ internal fun AddonDetailDialog(
                     }
                     Spacer(Modifier.height(8.dp))
                     FilledTonalButton(
-                        onClick = { showAppPicker = true },
+                        onClick = {
+                            detailHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            showAppPicker = true
+                        },
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer.edgeOutline()),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(
@@ -345,7 +340,10 @@ internal fun AddonDetailDialog(
                             for (pkg in customTargets.sorted()) {
                                 InputChip(
                                     selected = true,
-                                    onClick = { customTargets = customTargets - pkg },
+                                    onClick = {
+                                        detailHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                        customTargets = customTargets - pkg
+                                    },
                                     label = {
                                         Text(
                                             pkg.substringAfterLast("."),
@@ -425,6 +423,7 @@ internal fun AppPickerDialog(
     var showSystemApps by remember { mutableStateOf(false) }
     var launchableOnly by remember { mutableStateOf(launchableOnlyDefault) }
     val initiallyPinnedPackages = remember(selectedPackages, defaultTargets) { selectedPackages + defaultTargets }
+    val pickerHaptics = LocalHapticFeedback.current
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -532,9 +531,13 @@ internal fun AppPickerDialog(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { showSystemApps = !showSystemApps },
+                                .clickable {
+                                    pickerHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    showSystemApps = !showSystemApps
+                                },
                             shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline())
                         ) {
                             Row(
                                 modifier = Modifier
@@ -558,7 +561,10 @@ internal fun AppPickerDialog(
                                 }
                                 Switch(
                                     checked = showSystemApps,
-                                    onCheckedChange = { showSystemApps = it },
+                                    onCheckedChange = {
+                                        pickerHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                        showSystemApps = it
+                                    },
                                     modifier = Modifier.padding(start = 12.dp)
                                 )
                             }
@@ -569,9 +575,13 @@ internal fun AppPickerDialog(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { launchableOnly = !launchableOnly },
+                                .clickable {
+                                    pickerHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    launchableOnly = !launchableOnly
+                                },
                             shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline())
                         ) {
                             Row(
                                 modifier = Modifier
@@ -595,7 +605,10 @@ internal fun AppPickerDialog(
                                 }
                                 Switch(
                                     checked = launchableOnly,
-                                    onCheckedChange = { launchableOnly = it },
+                                    onCheckedChange = {
+                                        pickerHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                        launchableOnly = it
+                                    },
                                     modifier = Modifier.padding(start = 12.dp)
                                 )
                             }
@@ -607,7 +620,8 @@ internal fun AppPickerDialog(
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(18.dp),
-                            color = MaterialTheme.colorScheme.surface
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.surface.edgeOutline())
                         ) {
                             Row(
                                 modifier = Modifier
@@ -666,6 +680,7 @@ internal fun AppPickerDialog(
                                 .clip(RoundedCornerShape(18.dp))
                                 .clickable {
                                     if (!isDefault) {
+                                        pickerHaptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                                         selected = if (isChecked) selected - app.packageName
                                         else selected + app.packageName
                                     }
