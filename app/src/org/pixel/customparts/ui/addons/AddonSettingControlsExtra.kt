@@ -51,6 +51,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.InsertDriveFile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.*
@@ -130,7 +131,7 @@ internal fun StringSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
@@ -179,7 +180,7 @@ internal fun SelectSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(4.dp))
 
@@ -194,7 +195,7 @@ internal fun SelectSettingControl(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth(),
                 textStyle = MaterialTheme.typography.bodyMedium
             )
@@ -243,7 +244,7 @@ internal fun SelectButtonSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(8.dp))
 
@@ -284,6 +285,7 @@ internal fun SelectButtonSettingControl(
 
                 AnimatedVisibility(
                     visible = isSelected,
+                    modifier = Modifier.padding(start = 12.dp),
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
                 ) {
@@ -341,7 +343,7 @@ internal fun FileSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(4.dp))
         Row(
@@ -362,7 +364,7 @@ internal fun FileSettingControl(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        Icons.Rounded.InsertDriveFile, null,
+                        Icons.AutoMirrored.Rounded.InsertDriveFile, null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -433,7 +435,7 @@ internal fun AppListSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(6.dp))
         FilledTonalButton(onClick = {
@@ -517,7 +519,7 @@ internal fun ColorSettingControl(
     Column(modifier = modifier.fillMaxWidth()) {
         SettingTitleText(setting)
         if (setting.description.isNotEmpty()) {
-            SettingDescriptionText(setting)
+            SettingDescriptionText(setting, modifier = Modifier.padding(top = 2.dp))
         }
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -603,7 +605,7 @@ internal fun GroupSettingControl(
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = Int.MAX_VALUE,
                     overflow = TextOverflow.Clip,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
                 )
             }
             setting.children.forEach { child ->
@@ -635,7 +637,7 @@ internal fun GroupSettingControl(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         SettingTitleText(
                             setting,
                             style = MaterialTheme.typography.bodyLarge,
@@ -650,7 +652,8 @@ internal fun GroupSettingControl(
                     Icon(
                         if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
                 AnimatedVisibility(
@@ -694,8 +697,8 @@ internal fun GroupSettingControl(
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SettingIcon(setting, addon, Modifier.padding(end = 8.dp))
-                Column(modifier = Modifier.weight(1f)) {
+                SettingIcon(setting, addon, Modifier.padding(end = 12.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     SettingTitleText(setting, fontWeight = FontWeight.SemiBold)
                     if (setting.description.isNotEmpty()) {
                         SettingDescriptionText(setting)
@@ -704,7 +707,8 @@ internal fun GroupSettingControl(
                 Icon(
                     if (setting.groupMode == GroupMode.EXPANDABLE && expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ChevronRight,
                     null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
             AnimatedVisibility(
@@ -754,7 +758,7 @@ private fun GroupDialog(
                     if (setting.closeButtonPosition == CloseButtonPosition.START) {
                         IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(R.string.btn_close)) }
                     }
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         SettingTitleText(setting, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)
                         if (setting.description.isNotEmpty()) {
                             SettingDescriptionText(setting, maxLines = Int.MAX_VALUE, overflow = TextOverflow.Clip)

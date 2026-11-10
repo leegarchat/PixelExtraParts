@@ -51,6 +51,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.rounded.*
@@ -250,7 +251,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
 
         // === Tabs: JAR addons / APK modules ===
         // TEMPORARY: APK-modules tab hidden behind ApkModulesGate (code kept).
-        TabRow(selectedTabIndex = modulesTab) {
+        PrimaryTabRow(selectedTabIndex = modulesTab) {
             Tab(selected = modulesTab == 0, onClick = { modulesTab = 0 },
                 text = { Text(stringResource(R.string.addon_tab_jars)) })
             if (ApkModulesGate.ENABLED) {
@@ -1000,7 +1001,7 @@ private fun AddonCardSettings(
                                 color = accent
                             )
                             Icon(
-                                Icons.Filled.OpenInNew,
+                                Icons.AutoMirrored.Filled.OpenInNew,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                                 tint = accent.copy(alpha = 0.7f)

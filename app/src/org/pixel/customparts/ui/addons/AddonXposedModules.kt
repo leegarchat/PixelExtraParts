@@ -271,7 +271,7 @@ internal fun XposedModulesSection(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(mod.label, style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold)
                         Text(mod.packageName, style = MaterialTheme.typography.bodySmall,
@@ -286,7 +286,8 @@ internal fun XposedModulesSection(
                         }
                     }
                     Switch(checked = mod.enabled,
-                        onCheckedChange = { onToggleModule(mod.id, it) })
+                        onCheckedChange = { onToggleModule(mod.id, it) },
+                        modifier = Modifier.padding(start = 12.dp))
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {

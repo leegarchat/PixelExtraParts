@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -31,11 +32,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,12 +48,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.pixel.customparts.R
+import org.pixel.customparts.MainMenuNavigationRow
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import java.net.HttpURLConnection
@@ -301,17 +306,16 @@ fun DonateScreen(onBack: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                 if (data.mainDonate != null) item { MainDonateCard(data.mainDonate) }
-                if (!data.urlsHeader.isNullOrEmpty()) {
+                if (data.urls.isNotEmpty()) {
                     item {
-                        Text(
-                            text = getLocalizedText(data.urlsHeader),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                        )
+                        SettingsGroupCard(title = getLocalizedText(data.urlsHeader)) {
+                            data.urls.forEachIndexed { index, link ->
+                                if (index > 0) HorizontalDivider()
+                                LinkCard(link)
+                            }
+                        }
                     }
                 }
-                items(data.urls) { link -> LinkCard(link) }
                 if (data.progress.isNotEmpty()) {
                     item { Spacer(Modifier.height(8.dp)) }
                     items(data.progress) { config ->
@@ -347,6 +351,7 @@ fun DonateTargetCard(config: DonateCardConfig, state: TargetState, onRefresh: ()
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.surfaceContainerHigh.edgeOutline()),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -473,7 +478,8 @@ fun MainDonateCard(info: MainDonateInfo) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.edgeOutline())
     ) {
         Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(IconMapper.getIcon(info.iconKey), null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -499,23 +505,19 @@ fun MainDonateCard(info: MainDonateInfo) {
 @Composable
 fun LinkCard(link: SocialLink) {
     val context = LocalContext.current
-    Card(
-        onClick = { openUrl(context, link.url) },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(IconMapper.getIcon(link.iconKey), null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = getLocalizedText(link.title), style = MaterialTheme.typography.titleMedium)
-                val subtitle = getLocalizedText(link.subtitle)
-                if (subtitle.isNotEmpty()) Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.rotate(180f).size(16.dp), tint = MaterialTheme.colorScheme.outline)
+    val haptics = LocalHapticFeedback.current
+    MainMenuNavigationRow(
+        title = getLocalizedText(link.title),
+        subtitle = getLocalizedText(link.subtitle),
+        icon = IconMapper.getIcon(link.iconKey),
+        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        trailingIcon = Icons.AutoMirrored.Rounded.OpenInNew,
+        onClick = {
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            openUrl(context, link.url)
         }
-    }
+    )
 }
 
 

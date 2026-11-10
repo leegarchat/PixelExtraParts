@@ -296,7 +296,7 @@ private fun SavedConfigRow(
                 overflow = TextOverflow.Ellipsis
             )
             Row(
-                modifier = Modifier.padding(top = 3.dp),
+                modifier = Modifier.padding(top = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -315,7 +315,7 @@ private fun SavedConfigRow(
                 )
             }
         }
-        Box {
+        Box(modifier = Modifier.padding(start = 12.dp)) {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Rounded.MoreVert, stringResource(R.string.thermal_manager_actions))
             }
@@ -435,7 +435,7 @@ internal fun GlobalProfileCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(end = 10.dp)
+                    .padding(end = 12.dp)
             ) {
                 Text(
                     text = profileChoiceTitle(selectedChoice),
@@ -447,8 +447,7 @@ internal fun GlobalProfileCard(
             Icon(
                 Icons.Rounded.ExpandMore,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 8.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -557,7 +556,7 @@ private fun ThermalTileQueueRow(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.width(28.dp)
             )
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                 Text(
                     text = profileChoiceTitle(choice),
                     style = MaterialTheme.typography.titleSmall,

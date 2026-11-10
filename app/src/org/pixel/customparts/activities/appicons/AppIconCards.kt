@@ -676,7 +676,7 @@ internal fun ApplyProgressCard(progress: IconApplyProgress) {
                 )
             }
             LinearProgressIndicator(
-                progress = progressValue,
+                progress = { progressValue },
                 modifier = Modifier.fillMaxWidth()
             )
             Text(

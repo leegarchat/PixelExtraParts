@@ -944,7 +944,7 @@ private fun ExpandableSettingsGroupCard(
                 Icon(
                     imageVector = Icons.Rounded.ExpandMore,
                     contentDescription = null,
-                    modifier = Modifier.rotate(rotation),
+                    modifier = Modifier.padding(start = 8.dp).rotate(rotation),
                     tint = if (enabled) contentColor else contentColor.copy(alpha = 0.5f)
                 )
             }
@@ -989,7 +989,7 @@ private fun MasterSwitchCard(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(if (isChecked) stringResource(R.string.os_status_active) else stringResource(R.string.os_status_disabled), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -1001,7 +1001,8 @@ private fun MasterSwitchCard(
                 onCheckedChange = {
                     haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
                     onCheckedChange(it)
-                }
+                },
+                modifier = Modifier.padding(start = 12.dp)
             )
 
         }

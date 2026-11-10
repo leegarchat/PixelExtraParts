@@ -366,10 +366,10 @@ private fun SwitchSettingControl(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = !commandRunning) { updateChecked(!checked) }
-                .padding(vertical = 4.dp),
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingTitleText(setting)
                 if (setting.description.isNotEmpty()) {
                     SettingDescriptionText(setting)
@@ -420,7 +420,7 @@ private fun CheckboxSettingControl(
         modifier = modifier
             .fillMaxWidth()
             .clickable { updateChecked(!checked) }
-            .padding(vertical = 4.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(
@@ -428,8 +428,8 @@ private fun CheckboxSettingControl(
             onCheckedChange = { updateChecked(it) },
             colors = CheckboxDefaults.colors(checkedColor = accent)
         )
-        Spacer(Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             SettingTitleText(setting)
             if (setting.description.isNotEmpty()) {
                 SettingDescriptionText(setting)
@@ -488,7 +488,8 @@ private fun TileBindingControl(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = setting.tileConfigurable && !isBound) { configExpanded = !configExpanded },
+                .clickable(enabled = setting.tileConfigurable && !isBound) { configExpanded = !configExpanded }
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -497,8 +498,8 @@ private fun TileBindingControl(
                 modifier = Modifier.size(20.dp),
                 tint = accent
             )
-            Spacer(Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     setting.title,
                     style = MaterialTheme.typography.bodyMedium,
@@ -516,7 +517,8 @@ private fun TileBindingControl(
                 Icon(
                     if (configExpanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
         }
@@ -549,7 +551,7 @@ private fun TileBindingControl(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = targetMenuExpanded) },
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                             .fillMaxWidth()
                     )
                     ExposedDropdownMenu(
@@ -586,7 +588,7 @@ private fun TileBindingControl(
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = activityMenuExpanded) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
-                                .menuAnchor()
+                                .menuAnchor(androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth()
                         )
                         ExposedDropdownMenu(
@@ -821,13 +823,13 @@ private fun IntSliderSettingControl(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingTitleText(setting)
                 if (setting.description.isNotEmpty()) {
                     SettingDescriptionText(setting)
                 }
             }
-            TextButton(onClick = { showManualInput = true }) {
+            TextButton(onClick = { showManualInput = true }, modifier = Modifier.padding(start = 12.dp)) {
                 Text(
                     "$value${if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""}",
                     fontWeight = FontWeight.Bold,
@@ -835,6 +837,8 @@ private fun IntSliderSettingControl(
                 )
             }
         }
+
+        Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
@@ -847,7 +851,7 @@ private fun IntSliderSettingControl(
             ) {
                 Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
             }
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
             Slider(
                 value = value.toFloat(),
                 onValueChange = { value = it.toInt() },
@@ -909,13 +913,13 @@ private fun FloatSliderSettingControl(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SettingTitleText(setting)
                 if (setting.description.isNotEmpty()) {
                     SettingDescriptionText(setting)
                 }
             }
-            TextButton(onClick = { showManualInput = true }) {
+            TextButton(onClick = { showManualInput = true }, modifier = Modifier.padding(start = 12.dp)) {
                 Text(
                     String.format("%.2f%s", value, if (setting.unit.isNotEmpty()) " ${setting.unit}" else ""),
                     fontWeight = FontWeight.Bold,
@@ -923,6 +927,8 @@ private fun FloatSliderSettingControl(
                 )
             }
         }
+
+        Spacer(Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
@@ -935,7 +941,7 @@ private fun FloatSliderSettingControl(
             ) {
                 Icon(Icons.Rounded.Refresh, stringResource(R.string.btn_default), Modifier.size(16.dp), tint = accent)
             }
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(8.dp))
             Slider(
                 value = value,
                 onValueChange = { value = it },

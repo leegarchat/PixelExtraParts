@@ -324,6 +324,7 @@
 
     <string name="sysui_gesture_bar_title">Полоска жестов</string>
     <string name="sysui_gesture_bar_subtitle">Размер, цвет и область жеста Home</string>
+    <string name="sysui_visual_title">Визуальное</string>
     <string name="sysui_log_service_title">Фоновое логирование</string>
     <string name="sysui_log_service_enable_title">Логировать в фоне</string>
     <string name="sysui_log_service_enable_summary">Запускает сервис Pixel Extra Parts и сохраняет логи в /sdcard/PixelExtraPartsLogs/Дата</string>

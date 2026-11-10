@@ -320,6 +320,7 @@
 
     <string name="sysui_shade_title">Shade Settings</string>
     <string name="sysui_shade_subtitle">Compact media player and scrim</string>
+    <string name="sysui_visual_title">Visual</string>
 
     <string name="sysui_gesture_bar_title">Gesture Bar</string>
     <string name="sysui_gesture_bar_subtitle">Home handle size, color, and gesture area</string>

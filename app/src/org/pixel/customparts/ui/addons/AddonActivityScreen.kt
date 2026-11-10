@@ -520,7 +520,8 @@ fun AddonMainEntryRow(
         Column(
             modifier = Modifier
                 .padding(start = 16.dp)
-                .weight(1f)
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
                 text = entry.title,
@@ -541,7 +542,8 @@ fun AddonMainEntryRow(
         Icon(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 8.dp)
         )
     }
 }

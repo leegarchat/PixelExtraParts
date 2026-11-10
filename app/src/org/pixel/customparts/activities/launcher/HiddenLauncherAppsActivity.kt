@@ -16,7 +16,6 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,7 +44,6 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,6 +55,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,12 +69,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
+import org.pixel.customparts.MainMenuNavigationRow
+import org.pixel.customparts.ui.edgeOutline
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -338,12 +338,14 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
 
 @Composable
 private fun RestartWarningCard() {
+    val containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.24f)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.24f)
-        )
+            containerColor = containerColor
+        ),
+        border = BorderStroke(1.dp, containerColor.edgeOutline())
     ) {
         Text(
             text = stringResource(R.string.launcher_hidden_apps_restart_warning),
@@ -359,20 +361,22 @@ private fun SystemAppsFilterRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val containerColor = MaterialTheme.colorScheme.surface
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onCheckedChange(!checked) },
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, containerColor.edgeOutline())
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = stringResource(R.string.launcher_hidden_apps_system_title),
                     style = MaterialTheme.typography.bodyMedium,
@@ -403,10 +407,12 @@ private fun CompactSearchField(
     query: String,
     onQueryChange: (String) -> Unit
 ) {
+    val containerColor = MaterialTheme.colorScheme.surface
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface
+        color = containerColor,
+        border = BorderStroke(1.dp, containerColor.edgeOutline())
     ) {
         Row(
             modifier = Modifier
@@ -473,78 +479,39 @@ private fun HiddenLauncherAppRow(
     checked: Boolean,
     onToggle: () -> Unit
 ) {
+    val containerColor = if (app.isSystem) {
+        MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.14f else 0.07f)
+    } else if (checked) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onToggle),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (app.isSystem) {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.14f else 0.07f)
-            } else if (checked) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+            containerColor = containerColor
+        ),
+        border = BorderStroke(1.dp, containerColor.edgeOutline())
+    ) {
+        MainMenuNavigationRow(
+            title = app.label,
+            subtitle = app.packageName,
+            icon = Icons.Rounded.Apps,
+            iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = onToggle,
+            checked = checked,
+            appIcon = app.icon,
+            subtitlePrefix = if (app.isSystem) {
+                {
+                    SystemAppBadge()
+                    Spacer(Modifier.width(6.dp))
+                }
             } else {
-                MaterialTheme.colorScheme.surface
+                null
             }
         )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (app.icon != null) {
-                Image(
-                    bitmap = app.icon.toBitmap().asImageBitmap(),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape)
-                )
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = app.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(
-                    modifier = Modifier.padding(top = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (app.isSystem) {
-                        SystemAppBadge()
-                        Spacer(Modifier.width(6.dp))
-                    }
-
-                    Text(
-                        text = app.packageName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Checkbox(
-                checked = checked,
-                onCheckedChange = null,
-                modifier = Modifier.padding(start = 12.dp)
-            )
-        }
     }
 }
 

@@ -23,6 +23,7 @@
 
     <string name="sysui_shade_title">Panel Notifikasi</string>
     <string name="sysui_shade_subtitle">Pemutar kompak dan scrim</string>
+    <string name="sysui_visual_title">Visual</string>
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Kaca Pembesar Teks</string>

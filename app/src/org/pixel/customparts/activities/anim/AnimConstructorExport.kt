@@ -88,8 +88,7 @@ import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.AnimThemeCompiler
 import org.pixel.customparts.utils.PixelPartsTileRefresher
 import org.pixel.customparts.utils.filterThemeNameInput
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 
 // ── Constants ───────────────────────────────────────────────────────
@@ -105,7 +104,8 @@ internal fun ConstructorExportButton(
     var showXml by remember { mutableStateOf(false) }
     var showBuildInput by remember { mutableStateOf(false) }
     var buildThemeName by remember { mutableStateOf("") }
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -191,7 +191,13 @@ internal fun ConstructorExportButton(
                                 fontFamily = FontFamily.Monospace)
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(animParamsToXml(p)))
+                                    scope.launch {
+                                        clipboard.setClipEntry(
+                                            androidx.compose.ui.platform.ClipEntry(
+                                                android.content.ClipData.newPlainText("xml", animParamsToXml(p))
+                                            )
+                                        )
+                                    }
                                 },
                                 modifier = Modifier.size(28.dp)
                             ) {

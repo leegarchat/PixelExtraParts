@@ -184,6 +184,38 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                 }
 
                 item {
+                    SettingsGroupCard(title = stringResource(R.string.sysui_visual_title)) {
+                        SystemUIStaticNavigationRow(
+                            title = stringResource(R.string.magnifier_section_title),
+                            subtitle = stringResource(R.string.magnifier_enable_summary),
+                            onClick = {
+                                context.startActivity(Intent(context, MagnifierSettingsActivity::class.java))
+                            }
+                        )
+
+                        HorizontalDivider()
+
+                        SystemUIStaticNavigationRow(
+                            title = stringResource(R.string.anim_transition_title),
+                            subtitle = stringResource(R.string.anim_transition_subtitle),
+                            onClick = {
+                                context.startActivity(Intent(context, ActivityTransitionActivity::class.java))
+                            }
+                        )
+
+                        HorizontalDivider()
+
+                        SystemUIStaticNavigationRow(
+                            title = stringResource(R.string.rotation_anim_title),
+                            subtitle = stringResource(R.string.rotation_anim_subtitle),
+                            onClick = {
+                                context.startActivity(Intent(context, RotationAnimationActivity::class.java))
+                            }
+                        )
+                    }
+                }
+
+                item {
                     SettingsGroupCard(title = stringResource(R.string.sysui_log_service_title)) {
                         LogServiceControlRow(
                             running = logServiceRunning,
@@ -230,42 +262,6 @@ fun SystemUISettingsScreen(onBack: () -> Unit) {
                             onCheckedChange = { checked ->
                                 crashLogEnabled = checked
                                 PixelPartsLogController.setCrashesEnabled(context, checked)
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.magnifier_section_title)) {
-                        SystemUIStaticNavigationRow(
-                            title = stringResource(R.string.magnifier_section_title),
-                            subtitle = stringResource(R.string.magnifier_enable_summary),
-                            onClick = {
-                                context.startActivity(Intent(context, MagnifierSettingsActivity::class.java))
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.anim_transition_title)) {
-                        SystemUIStaticNavigationRow(
-                            title = stringResource(R.string.anim_transition_title),
-                            subtitle = stringResource(R.string.anim_transition_subtitle),
-                            onClick = {
-                                context.startActivity(Intent(context, ActivityTransitionActivity::class.java))
-                            }
-                        )
-                    }
-                }
-
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.rotation_anim_title)) {
-                        SystemUIStaticNavigationRow(
-                            title = stringResource(R.string.rotation_anim_title),
-                            subtitle = stringResource(R.string.rotation_anim_subtitle),
-                            onClick = {
-                                context.startActivity(Intent(context, RotationAnimationActivity::class.java))
                             }
                         )
                     }

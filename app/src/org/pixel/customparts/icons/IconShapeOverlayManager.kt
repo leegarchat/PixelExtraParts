@@ -309,6 +309,7 @@ object IconShapeOverlayManager {
                 return CompileResult(false, log = log, error = "Unable to disable old fabricated overlay")
             }
 
+            @Suppress("DEPRECATION")
             val overlay = FabricatedOverlay.Builder(
                 context.packageName,
                 FABRICATED_OVERLAY_NAME,

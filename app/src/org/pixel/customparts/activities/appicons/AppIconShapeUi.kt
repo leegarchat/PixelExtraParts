@@ -71,6 +71,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -141,6 +142,7 @@ import org.pixel.customparts.ui.addons.flattenSettings
 import org.pixel.customparts.ui.addons.scanAddonActivityEntries
 import org.pixel.customparts.ui.performRebootSystem
 import org.pixel.customparts.ui.recordLayer
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
 import org.pixel.customparts.utils.SettingsCompat
 import java.util.Locale
@@ -297,7 +299,8 @@ internal fun SelectableIconEntryRow(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 12.dp)
+                    .padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = entry.label,
@@ -314,7 +317,7 @@ internal fun SelectableIconEntryRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+            Checkbox(checked = checked, onCheckedChange = onCheckedChange, modifier = Modifier.padding(start = 12.dp))
         }
     }
 }
@@ -341,7 +344,8 @@ internal fun AppIconCandidateRow(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 12.dp)
+                    .padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = candidate.iconPackLabel,
@@ -361,6 +365,7 @@ internal fun AppIconCandidateRow(
             Button(
                 onClick = onApply,
                 enabled = !applied && !busy,
+                modifier = Modifier.padding(start = 12.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
@@ -567,10 +572,12 @@ internal fun LoadingDialogContent() {
 
 @Composable
 internal fun EmptyStateText(text: String) {
+    val containerColor = MaterialTheme.colorScheme.surface
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, containerColor.edgeOutline())
     ) {
         Text(
             text = text,

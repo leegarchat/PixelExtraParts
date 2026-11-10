@@ -38,6 +38,7 @@ class AutoLockService : Service() {
     @Volatile private var running = false
 
     // Global input monitor — detects ALL input events (touch, volume, keys, mouse, gamepad)
+    @Suppress("DEPRECATION")
     private var inputMonitor: android.view.InputMonitor? = null
     private var inputEventReceiver: InputEventReceiver? = null
 
@@ -94,7 +95,7 @@ class AutoLockService : Service() {
             if (!running) return
             when (intent.action) {
                 ACTION_HARDWARE_INPUT -> {
-                    val keyCode = intent.getParcelableExtra<android.view.KeyEvent>(Intent.EXTRA_KEY_EVENT)
+                    val keyCode = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, android.view.KeyEvent::class.java)
                         ?.keyCode ?: -1
                     Log.d(TAG, "[AutoLock] Hardware key detected: keyCode=$keyCode")
                     resetTimer()
@@ -204,6 +205,7 @@ class AutoLockService : Service() {
     // Input Monitor — global listener for ALL input events
     // =====================================================================
 
+    @Suppress("DEPRECATION")
     private fun createInputMonitor() {
         if (inputMonitor != null) return
         try {

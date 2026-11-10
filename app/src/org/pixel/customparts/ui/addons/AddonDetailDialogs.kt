@@ -542,7 +542,7 @@ internal fun AppPickerDialog(
                                     .padding(horizontal = 14.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         stringResource(R.string.addon_show_system),
                                         style = MaterialTheme.typography.bodyMedium,
@@ -579,7 +579,7 @@ internal fun AppPickerDialog(
                                     .padding(horizontal = 14.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         stringResource(R.string.addon_launchable_only),
                                         style = MaterialTheme.typography.bodyMedium,

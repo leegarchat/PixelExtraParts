@@ -1068,6 +1068,7 @@ object IconPackManager {
             invalidateSelf()
         }
 
+        @Deprecated("Required Drawable override, called by framework")
         override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
         override fun getIntrinsicWidth(): Int = drawable.intrinsicWidth

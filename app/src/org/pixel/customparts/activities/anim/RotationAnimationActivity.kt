@@ -904,7 +904,7 @@ private fun RotationConstructorBlock(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(Modifier.padding(16.dp)) {
-            TabRow(selectedTabIndex = selectedTab, containerColor = Color.Transparent) {
+            PrimaryTabRow(selectedTabIndex = selectedTab, containerColor = Color.Transparent) {
                 ROTATION_CONSTRUCTOR_TAB_LABELS.forEachIndexed { index, labelRes ->
                     Tab(
                         selected = selectedTab == index,
@@ -1324,7 +1324,7 @@ internal fun AnimationCompileDialog(
                             )
                             Spacer(Modifier.size(16.dp))
                             LinearProgressIndicator(
-                                progress = animatedProgress,
+                                progress = { animatedProgress },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

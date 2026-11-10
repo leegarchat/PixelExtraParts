@@ -357,7 +357,8 @@ private fun ThermalTreeNodeRow(
             Text(
                 text = node.leafCount.toString(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
 
@@ -444,6 +445,7 @@ private fun ThermalTreeParamRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
+        Spacer(Modifier.width(8.dp))
         IconButton(onClick = onInfoClick, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Rounded.Info,

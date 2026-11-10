@@ -4,11 +4,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -29,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -37,7 +40,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -1165,7 +1170,17 @@ fun MainMenuNavigationRow(
     icon: ImageVector,
     iconContainerColor: Color,
     iconContentColor: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailingIcon: ImageVector = Icons.Default.ChevronRight,
+    // Когда checked != null — вместо шеврона рисуется Checkbox (вариант с выбором,
+    // напр. «Скрыть приложения из списка»), выделение задаёт родительский Card.
+    checked: Boolean? = null,
+    // Когда задан — вместо круглого контейнера с ImageVector рисуется битмап
+    // самого приложения как есть (его собственная shape), с фолбэком на icon.
+    appIcon: Drawable? = null,
+    appIconSize: Dp = 40.dp,
+    // Опциональный префикс строки summary (напр. бейдж системного приложения).
+    subtitlePrefix: (@Composable RowScope.() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -1174,19 +1189,56 @@ fun MainMenuNavigationRow(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(iconContainerColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = iconContentColor
-            )
+        if (appIcon != null) {
+            val bitmap = remember(appIcon) {
+                runCatching {
+                    appIcon.toBitmap(
+                        width = (appIcon.intrinsicWidth
+                            .takeIf { it > 0 } ?: 160)
+                            .coerceAtMost(320),
+                        height = (appIcon.intrinsicHeight
+                            .takeIf { it > 0 } ?: 160)
+                            .coerceAtMost(320)
+                    )
+                }.getOrNull()
+            }
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.size(appIconSize)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(appIconSize)
+                        .clip(CircleShape)
+                        .background(iconContainerColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(appIconSize * 0.52f),
+                        tint = iconContentColor
+                    )
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(iconContainerColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = iconContentColor
+                )
+            }
         }
 
         Column(
@@ -1200,18 +1252,44 @@ fun MainMenuNavigationRow(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
+            if (subtitle.isNotEmpty() || subtitlePrefix != null) {
+                if (subtitlePrefix != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        subtitlePrefix()
+                        if (subtitle.isNotEmpty()) {
+                            Text(
+                                text = subtitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
         }
 
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (checked != null) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = null,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        } else {
+            Icon(
+                imageVector = trailingIcon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

@@ -23,6 +23,7 @@
 
     <string name="sysui_shade_title">Панель сповіщень</string>
     <string name="sysui_shade_subtitle">Компактний плеєр та скрім</string>
+    <string name="sysui_visual_title">Візуальне</string>
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Текстова лупа</string>

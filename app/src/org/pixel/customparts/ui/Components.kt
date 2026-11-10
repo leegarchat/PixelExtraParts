@@ -138,10 +138,11 @@ fun GenericSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(modifier = Modifier.weight(1f).alpha(contentAlpha)) {
+        Column(modifier = Modifier.weight(1f).alpha(contentAlpha), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
@@ -170,7 +171,6 @@ fun GenericSwitchRow(
                     modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(Modifier.width(12.dp))
         }
 
         Switch(
@@ -279,7 +279,7 @@ fun SliderSettingFloat(
             modifier = Modifier.fillMaxWidth().alpha(contentAlpha)
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Row 2: slider with step buttons: [−] [slider] [+]
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -344,7 +344,7 @@ fun SliderSettingFloat(
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Row 3: (i) [reset] <spacer> <value> (DESIGN_GUIDELINES §6.5).
         // The value readout keeps the exact formatted string, rendered as plain text.
@@ -518,9 +518,13 @@ fun RadioSelectionGroup(
     enabled: Boolean = true,
     infoText: String? = null,
     videoResName: String? = null,
-    onInfoClick: ((String, String, String?) -> Unit)? = null
+    onInfoClick: ((String, String, String?) -> Unit)? = null,
+    // Horizontal segmented mode (DESIGN_GUIDELINES §6.1) is the default.
+    // Pass vertical = true for the legacy vertical radio list.
+    vertical: Boolean = false
 ) {
     val contentAlpha = if (enabled) 1f else 0.4f
+    val haptics = LocalHapticFeedback.current
 
     Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp)) {
         Row(
@@ -536,8 +540,9 @@ fun RadioSelectionGroup(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).alpha(contentAlpha)
             )
-            
+
             if (onInfoClick != null && infoText != null) {
+                Spacer(Modifier.width(8.dp))
                 IconButton(
                     onClick = { onInfoClick(title, infoText, videoResName) },
                     modifier = Modifier.size(24.dp)
@@ -554,48 +559,128 @@ fun RadioSelectionGroup(
 
         Spacer(Modifier.height(8.dp))
 
-        options.forEachIndexed { index, label ->
-            val isSelected = index == selectedIndex
-            val targetContainerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
-            val backgroundColor by animateColorAsState(
-                targetContainerColor,
-                animationSpec = tween(200, easing = FastOutSlowInEasing),
-                label = "bg"
-            )
-
+        if (!vertical) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 2.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(backgroundColor)
-                    .clickable(enabled = enabled) { onSelect(index) }
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp)
                     .alpha(contentAlpha),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                AnimatedVisibility(
-                    visible = isSelected,
-                    enter = scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
-                    exit = scaleOut(animationSpec = tween(160, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                options.forEachIndexed { index, label ->
+                    val isSelected = index == selectedIndex
+                    val cornerRadius by animateDpAsState(
+                        targetValue = if (isSelected) 28.dp else 12.dp,
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessMedium,
+                            dampingRatio = Spring.DampingRatioNoBouncy
+                        ),
+                        label = "SegmentCorner"
                     )
+                    val bgColor by animateColorAsState(
+                        targetValue = if (isSelected) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        },
+                        animationSpec = tween(200),
+                        label = "SegmentBg"
+                    )
+                    val contentColor by animateColorAsState(
+                        targetValue = if (isSelected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        animationSpec = tween(200),
+                        label = "SegmentContent"
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .clip(RoundedCornerShape(cornerRadius))
+                            .background(bgColor)
+                            .border(1.dp, bgColor.edgeOutline(), RoundedCornerShape(cornerRadius))
+                            .clickable(enabled = enabled) {
+                                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                onSelect(index)
+                            }
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AnimatedVisibility(
+                            visible = isSelected,
+                            enter = fadeIn(tween(160)) + expandHorizontally(),
+                            exit = fadeOut(tween(120)) + shrinkHorizontally()
+                        ) {
+                            Text(
+                                text = "✓ ",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = contentColor
+                            )
+                        }
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        } else {
+            options.forEachIndexed { index, label ->
+                val isSelected = index == selectedIndex
+                val targetContainerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                val backgroundColor by animateColorAsState(
+                    targetContainerColor,
+                    animationSpec = tween(200, easing = FastOutSlowInEasing),
+                    label = "bg"
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(backgroundColor)
+                        .clickable(enabled = enabled) { onSelect(index) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .alpha(contentAlpha),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    AnimatedVisibility(
+                        visible = isSelected,
+                        modifier = Modifier.padding(start = 12.dp),
+                        enter = scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) + fadeIn(tween(180)),
+                        exit = scaleOut(animationSpec = tween(160, easing = FastOutSlowInEasing)) + fadeOut(tween(140))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -1017,7 +1102,7 @@ fun ExpandableSettingsGroupCard(
                 Icon(
                     imageVector = Icons.Rounded.ExpandMore,
                     contentDescription = null,
-                    modifier = Modifier.rotate(rotation),
+                    modifier = Modifier.padding(start = 8.dp).rotate(rotation),
                     tint = if (enabled) contentColor else contentColor.copy(alpha = 0.5f)
                 )
             }

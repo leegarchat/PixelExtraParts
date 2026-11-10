@@ -275,6 +275,15 @@ private fun MagnifierSection() {
 
         HorizontalDivider()
 
+        MagnifierPreviewCard(
+            sampleText = sampleText,
+            zoom = zoom,
+            sizeScale = sizeScale,
+            shape = shape,
+            offsetY = offsetY,
+            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 12.dp)
+        )
+
         OutlinedTextField(
             value = sampleText,
             onValueChange = { sampleText = it },
@@ -282,15 +291,6 @@ private fun MagnifierSection() {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             singleLine = true
-        )
-
-        MagnifierPreviewCard(
-            sampleText = sampleText,
-            zoom = zoom,
-            sizeScale = sizeScale,
-            shape = shape,
-            offsetY = offsetY,
-            modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 12.dp)
         )
     }
 }

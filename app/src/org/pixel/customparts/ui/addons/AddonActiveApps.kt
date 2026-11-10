@@ -143,7 +143,7 @@ internal fun ActiveAppsSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         stringResource(R.string.addon_active_apps_title),
                         style = MaterialTheme.typography.titleSmall,
@@ -156,6 +156,7 @@ internal fun ActiveAppsSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                Spacer(Modifier.width(8.dp))
                 Icon(
                     if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     null,
@@ -242,7 +243,7 @@ private fun ActiveAppRow(
 
             Spacer(Modifier.width(10.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     appLabel,
                     style = MaterialTheme.typography.bodyMedium,
@@ -256,6 +257,8 @@ private fun ActiveAppRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            Spacer(Modifier.width(8.dp))
 
             Icon(
                 if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,

@@ -23,6 +23,7 @@
 
     <string name="sysui_shade_title">Benachrichtigungsleiste</string>
     <string name="sysui_shade_subtitle">Kompakter Player und Scrim</string>
+    <string name="sysui_visual_title">Visuell</string>
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Textlupe</string>

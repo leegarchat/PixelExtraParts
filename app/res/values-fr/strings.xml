@@ -23,6 +23,7 @@
 
     <string name="sysui_shade_title">Panneau de notification</string>
     <string name="sysui_shade_subtitle">Lecteur compact et scrim</string>
+    <string name="sysui_visual_title">Visuel</string>
 
     <!-- Magnifier (text loupe) -->
     <string name="magnifier_section_title">Loupe de texte</string>

@@ -87,11 +87,12 @@ fun AppConfigCard(
             
             Spacer(Modifier.width(12.dp))
             
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(appName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(item.pkg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             
+            Spacer(Modifier.width(12.dp))
             IconButton(onClick = onDelete, enabled = enabled) {
                 Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error)
             }
@@ -102,7 +103,7 @@ fun AppConfigCard(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.os_app_filter), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(12.dp))
                 Switch(
                     checked = item.filter,
                     enabled = enabled, 
@@ -114,7 +115,7 @@ fun AppConfigCard(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.os_app_ignore), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error, maxLines = 1)
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(12.dp))
                 Switch(
                     checked = item.ignore,
                     enabled = enabled,

@@ -561,7 +561,7 @@ private fun AutoHbmLuxCard(
                 }
 
                 LinearProgressIndicator(
-                    progress = progress,
+                    progress = { progress },
                     modifier = Modifier.fillMaxWidth()
                 )
 

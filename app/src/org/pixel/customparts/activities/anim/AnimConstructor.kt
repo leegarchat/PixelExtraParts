@@ -115,7 +115,7 @@ internal fun AnimConstructorBlock(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Tab row
-            ScrollableTabRow(
+            PrimaryScrollableTabRow(
                 selectedTabIndex = selectedTab,
                 edgePadding = 0.dp,
                 containerColor = Color.Transparent,

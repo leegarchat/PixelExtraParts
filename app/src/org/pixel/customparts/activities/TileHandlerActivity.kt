@@ -34,7 +34,7 @@ class TileHandlerActivity : Activity() {
     }
 
     private fun resolvePreferencesIntent(source: Intent): Intent {
-        val tile = source.getParcelableExtra(Intent.EXTRA_COMPONENT_NAME) as? ComponentName
+        val tile = source.getParcelableExtra(Intent.EXTRA_COMPONENT_NAME, ComponentName::class.java)
 
         // Handle dynamic addon tiles (DynamicAddonTile01..40)
         val className = tile?.className ?: ""

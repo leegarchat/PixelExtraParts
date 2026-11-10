@@ -419,6 +419,7 @@ fun ThermalSection(
                     
                     AnimatedVisibility(
                         visible = isSelected,
+                        modifier = Modifier.padding(start = 12.dp),
                         enter = scaleIn(
                             animationSpec = spring(
                                 stiffness = Spring.StiffnessMedium,

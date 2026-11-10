@@ -16,6 +16,7 @@ object AnimThemeSigner {
     private const val TAG = "AnimThemeSigner"
     private const val KEY_ALIAS = "AnimThemeSignerKey"
 
+    @Suppress("DEPRECATION")
     fun sign(context: Context, unsigned: File, signed: File): Boolean {
         return try {
             val (privateKey, cert) = getOrCreateKeyPair()
