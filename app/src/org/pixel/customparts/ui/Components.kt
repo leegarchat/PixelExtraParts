@@ -38,9 +38,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -509,6 +513,87 @@ private fun ExpressiveStepButton(
     }
 }
 
+/**
+ * Target Row weights for the horizontal segmented group (DESIGN_GUIDELINES §6.1).
+ *
+ * Formula (all in px, from parent constraints + memoized text widths):
+ * avail = total - gap * (n - 1); equal = avail / n.
+ * If the selected need (Bold label + side padding) fits into equal,
+ * every weight stays 1f, i.e. exactly the old equal layout.
+ * Otherwise deficit = need - equal is borrowed from neighbors proportionally to
+ * each neighbor shrinkable headroom (equal - min), where min is the measured
+ * width of the first 4 chars + "…" in Medium plus side padding, never a fixed dp.
+ * If the deficit exceeds the total headroom, neighbors clamp at their minimums
+ * and the selected segment takes the remainder (its text still Ellipsizes).
+ * Returned weights are normalized so the all-equal case is exactly 1f.
+ */
+private fun segmentTargetWeights(
+    textMeasurer: TextMeasurer,
+    options: List<String>,
+    selectedIndex: Int,
+    selectedStyle: TextStyle,
+    idleStyle: TextStyle,
+    segmentGapPx: Float,
+    segmentSidePaddingPx: Float,
+    selectedExtraPx: Float,
+    availablePx: Float
+): List<Float> {
+    val n = options.size
+    if (n == 0) return emptyList()
+    if (selectedIndex !in options.indices) return List(n) { 1f }
+    val forSegments = (availablePx - segmentGapPx * (n - 1)).coerceAtLeast(0f)
+    if (forSegments <= 0f) return List(n) { 1f }
+    val equal = forSegments / n
+    val selectedNeed = textMeasurer.measure(
+        text = AnnotatedString(options[selectedIndex]),
+        style = selectedStyle
+    ).size.width.toFloat() + segmentSidePaddingPx + selectedExtraPx
+    if (selectedNeed <= equal) return List(n) { 1f }
+    val minWidths = options.map { label ->
+        minFor(label, idleStyle, segmentSidePaddingPx, textMeasurer, 4)
+    }
+    val shrinkable = minWidths.map { (equal - it).coerceAtLeast(0f) }
+    val totalShrinkable = shrinkable.sum()
+    if (totalShrinkable <= 0f) return List(n) { 1f }
+    var take = minOf(selectedNeed - equal, totalShrinkable)
+    var finalPx = List(n) { i ->
+        if (i == selectedIndex) equal + take
+        else equal - take * (shrinkable[i] / totalShrinkable)
+    }
+    // Aggressive second tier: if the selected label still doesn't fit,
+    // squeeze neighbours down to a 2-letter minimum before giving up.
+    if (finalPx[selectedIndex] < selectedNeed) {
+        val tightMins = options.map { label ->
+            minFor(label, idleStyle, segmentSidePaddingPx, textMeasurer, 2)
+        }
+        val tightShrinkable = tightMins.map { (equal - it).coerceAtLeast(0f) }
+        val tightTotal = tightShrinkable.sum()
+        if (tightTotal > 0f) {
+            take = minOf(selectedNeed - equal, tightTotal)
+            finalPx = List(n) { i ->
+                if (i == selectedIndex) equal + take
+                else equal - take * (tightShrinkable[i] / tightTotal)
+            }
+        }
+    }
+    val sum = finalPx.sum().coerceAtLeast(1e-6f)
+    return finalPx.map { it / sum * n }
+}
+
+private fun minFor(
+    label: String,
+    idleStyle: TextStyle,
+    segmentSidePaddingPx: Float,
+    textMeasurer: TextMeasurer,
+    chars: Int
+): Float {
+    val probe = if (label.length > chars) label.take(chars) + "…" else label
+    return textMeasurer.measure(
+        text = AnnotatedString(probe),
+        style = idleStyle
+    ).size.width.toFloat() + segmentSidePaddingPx
+}
+
 @Composable
 fun RadioSelectionGroup(
     title: String,
@@ -560,79 +645,118 @@ fun RadioSelectionGroup(
         Spacer(Modifier.height(8.dp))
 
         if (!vertical) {
-            Row(
+            // Dynamic segment resize (DESIGN_GUIDELINES §6.1): equal shares while
+            // the selected label fits, otherwise the selected segment borrows width
+            // from its neighbors down to their measured minimums.
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
-                    .alpha(contentAlpha),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .alpha(contentAlpha)
             ) {
-                options.forEachIndexed { index, label ->
-                    val isSelected = index == selectedIndex
-                    val cornerRadius by animateDpAsState(
-                        targetValue = if (isSelected) 28.dp else 12.dp,
+                val density = LocalDensity.current
+                val textMeasurer = rememberTextMeasurer()
+                val selectedStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                val idleStyle = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Medium)
+                val segmentGapPx = with(density) { 6.dp.toPx() }
+                val segmentSidePaddingPx = with(density) { 8.dp.toPx() * 2f }
+                // Fixed headroom over the measured width: TextMeasurer
+                // systematically underestimates the real Text layout by a few
+                // glyphs, which used to end in a pointless "…" for 1-2 missing
+                // letters. The buffer makes borderline labels fit in full.
+                val selectedExtraPx = with(density) { 12.dp.toPx() }
+                val availablePx = with(density) { maxWidth.toPx() }
+
+                // Pure function of parent constraints + memoized text widths, so there
+                // is no onSizeChanged/onTextLayout feedback and no per-frame remeasure
+                // while the weight springs below settle.
+                val targetWeights = remember(
+                    textMeasurer, options, selectedIndex, selectedStyle, idleStyle,
+                    density, availablePx, segmentGapPx, segmentSidePaddingPx,
+                    selectedExtraPx
+                ) {
+                    segmentTargetWeights(
+                        textMeasurer = textMeasurer,
+                        options = options,
+                        selectedIndex = selectedIndex,
+                        selectedStyle = selectedStyle,
+                        idleStyle = idleStyle,
+                        segmentGapPx = segmentGapPx,
+                        segmentSidePaddingPx = segmentSidePaddingPx,
+                        selectedExtraPx = selectedExtraPx,
+                        availablePx = availablePx
+                    )
+                }
+                val animatedWeights = targetWeights.map { target ->
+                    animateFloatAsState(
+                        targetValue = target,
                         animationSpec = spring(
                             stiffness = Spring.StiffnessMedium,
                             dampingRatio = Spring.DampingRatioNoBouncy
                         ),
-                        label = "SegmentCorner"
-                    )
-                    val bgColor by animateColorAsState(
-                        targetValue = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHighest
-                        },
-                        animationSpec = tween(200),
-                        label = "SegmentBg"
-                    )
-                    val contentColor by animateColorAsState(
-                        targetValue = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        animationSpec = tween(200),
-                        label = "SegmentContent"
-                    )
+                        label = "SegmentWeight"
+                    ).value
+                }
 
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(46.dp)
-                            .clip(RoundedCornerShape(cornerRadius))
-                            .background(bgColor)
-                            .border(1.dp, bgColor.edgeOutline(), RoundedCornerShape(cornerRadius))
-                            .clickable(enabled = enabled) {
-                                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                onSelect(index)
-                            }
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AnimatedVisibility(
-                            visible = isSelected,
-                            enter = fadeIn(tween(160)) + expandHorizontally(),
-                            exit = fadeOut(tween(120)) + shrinkHorizontally()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    options.forEachIndexed { index, label ->
+                        val isSelected = index == selectedIndex
+                        val cornerRadius by animateDpAsState(
+                            targetValue = if (isSelected) 28.dp else 12.dp,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMedium,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            ),
+                            label = "SegmentCorner"
+                        )
+                        val bgColor by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceContainerHighest
+                            },
+                            animationSpec = tween(200),
+                            label = "SegmentBg"
+                        )
+                        val contentColor by animateColorAsState(
+                            targetValue = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            animationSpec = tween(200),
+                            label = "SegmentContent"
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .weight(animatedWeights.getOrElse(index) { 1f }.coerceAtLeast(0.01f))
+                                .height(46.dp)
+                                .clip(RoundedCornerShape(cornerRadius))
+                                .background(bgColor)
+                                .border(1.dp, bgColor.edgeOutline(), RoundedCornerShape(cornerRadius))
+                                .clickable(enabled = enabled) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                    onSelect(index)
+                                }
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "✓ ",
+                                text = label,
                                 style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = contentColor
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = contentColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
                             )
                         }
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = contentColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
                     }
                 }
             }

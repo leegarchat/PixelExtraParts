@@ -46,6 +46,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +85,7 @@ import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.SettingsGroupCard
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.statusBars
@@ -275,46 +277,41 @@ fun HiddenLauncherAppsScreen(onBack: () -> Unit) {
 
                     else -> {
                         item {
-                            Text(
-                                text = stringResource(R.string.launcher_hidden_apps_list_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        items(visibleApps, key = { it.packageName }) { app ->
-                            val checked = hiddenPackages.contains(app.packageName)
-                            HiddenLauncherAppRow(
-                                app = app,
-                                checked = checked,
-                                onToggle = {
-                                    val nextChecked = !checked
-                                    hiddenPackages = if (nextChecked) {
-                                        hiddenPackages + app.packageName
-                                    } else {
-                                        hiddenPackages - app.packageName
-                                    }
-                                    scope.launch {
-                                        val applied = setPackageHidden(context, app.packageName, nextChecked)
-                                        if (!applied) {
+                            SettingsGroupCard(title = stringResource(R.string.launcher_hidden_apps_list_title)) {
+                                visibleApps.forEachIndexed { index, app ->
+                                    if (index > 0) HorizontalDivider()
+                                    val checked = hiddenPackages.contains(app.packageName)
+                                    HiddenLauncherAppRow(
+                                        app = app,
+                                        checked = checked,
+                                        onToggle = {
+                                            val nextChecked = !checked
                                             hiddenPackages = if (nextChecked) {
-                                                hiddenPackages - app.packageName
-                                            } else {
                                                 hiddenPackages + app.packageName
+                                            } else {
+                                                hiddenPackages - app.packageName
                                             }
-                                            Toast.makeText(
-                                                context,
-                                                context.getString(R.string.launcher_hidden_apps_apply_error),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        } else {
-                                            needsRestart = true
+                                            scope.launch {
+                                                val applied = setPackageHidden(context, app.packageName, nextChecked)
+                                                if (!applied) {
+                                                    hiddenPackages = if (nextChecked) {
+                                                        hiddenPackages - app.packageName
+                                                    } else {
+                                                        hiddenPackages + app.packageName
+                                                    }
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.launcher_hidden_apps_apply_error),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    needsRestart = true
+                                                }
+                                            }
                                         }
-                                    }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
@@ -479,40 +476,24 @@ private fun HiddenLauncherAppRow(
     checked: Boolean,
     onToggle: () -> Unit
 ) {
-    val containerColor = if (app.isSystem) {
-        MaterialTheme.colorScheme.errorContainer.copy(alpha = if (checked) 0.14f else 0.07f)
-    } else if (checked) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        ),
-        border = BorderStroke(1.dp, containerColor.edgeOutline())
-    ) {
-        MainMenuNavigationRow(
-            title = app.label,
-            subtitle = app.packageName,
-            icon = Icons.Rounded.Apps,
-            iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            onClick = onToggle,
-            checked = checked,
-            appIcon = app.icon,
-            subtitlePrefix = if (app.isSystem) {
-                {
-                    SystemAppBadge()
-                    Spacer(Modifier.width(6.dp))
-                }
-            } else {
-                null
+    MainMenuNavigationRow(
+        title = app.label,
+        subtitle = app.packageName,
+        icon = Icons.Rounded.Apps,
+        iconContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        iconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        onClick = onToggle,
+        checked = checked,
+        appIcon = app.icon,
+        subtitlePrefix = if (app.isSystem) {
+            {
+                SystemAppBadge()
+                Spacer(Modifier.width(6.dp))
             }
-        )
-    }
+        } else {
+            null
+        }
+    )
 }
 
 @Composable
