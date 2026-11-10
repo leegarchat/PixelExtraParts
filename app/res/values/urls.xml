@@ -5,10 +5,10 @@
     <string name="url_github_repo" translatable="false">leegarchat/PixelExtraParts</string>
     <string name="url_github_branch" translatable="false">lineage-24.0</string>
     <!-- Leading-slash path parts, appended as base + "/refs/heads/" + branch + path. -->
-    <string name="url_donate_page_path" translatable="false">/donate_page.json</string>
+    <string name="url_donate_page_path" translatable="false">/app/donate_page.json</string>
     <string name="url_video_sample_path_prefix" translatable="false">/VideoSample/</string>
     <string name="url_video_sample_path_suffix" translatable="false">.mp4</string>
     <!-- GitHub contents API: base + "/repos/" + repo + path + "?ref=" + branch. -->
     <string name="url_github_api_base" translatable="false">https://api.github.com</string>
-    <string name="url_overscroll_contents_path" translatable="false">/contents/overscroll.configs</string>
+    <string name="url_overscroll_contents_path" translatable="false">/contents/app/overscroll.configs</string>
 </resources>
