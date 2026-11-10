@@ -164,7 +164,7 @@
       * The host view should always {@link android.view.View#invalidate()} after this
       * and draw the results accordingly.
       *
-@@ -334,67 +416,138 @@
+@@ -334,67 +416,178 @@
       * @param deltaDistance Change in distance since the last call. Values may be 0 (no change) to
       *                      1.f (full length of the view) or negative values to express change
       *                      back toward the edge reached to initiate the effect.
@@ -185,7 +185,6 @@
 -        mTargetDisplacement = displacement;
 -        if (mState == STATE_PULL_DECAY && now - mStartTime < mDuration
 -                && edgeEffectBehavior == TYPE_GLOW) {
--            return;
 +
 +        // ── Custom bounce logic ──
 +        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, true);
@@ -201,6 +200,43 @@
 +        float correctedDelta = (Math.abs(cfgScale) > 0.001f) ? deltaDistance / cfgScale : deltaDistance;
 +        if (Math.abs(correctedDelta) < EdgeEffectBounceHelper.MICRO_DELTA_EPS) {
 +            correctedDelta = 0f;
++        }
++
++        // Release path (legacy direct onPull callers: ListView etc.): finger
++        // moving back toward the edge must go 1:1 with raw deltaDistance — no
++        // norm (0.33x), no inputSmooth, no direction damping — otherwise the
++        // effect deflates 3-6x slower than the finger and Compose locks up.
++        // (onPullDistance callers with delta < 0 never reach here: they are
++        // handled 1:1 in onPullDistance itself.)
++        float releaseSize = Math.max(Math.abs(mHeight), Math.abs(mWidth));
++        if (releaseSize < 1f) releaseSize = mCustomScreenHeight;
++        float releaseTranslation = mCustomSpring.mValue;
++        boolean isReleasingPull = (deltaDistance < 0f && releaseTranslation > 0f)
++                || (deltaDistance > 0f && releaseTranslation < 0f);
++        if (isReleasingPull) {
++            mState = STATE_PULL;
++            mCustomSpring.cancel();
++            mCustomSpring.mVelocity = 0f;
++
++            float rawMove = deltaDistance * releaseSize;
++            float nextTranslation = releaseTranslation + rawMove;
++            if ((releaseTranslation > 0f && nextTranslation <= 0f)
++                    || (releaseTranslation < 0f && nextTranslation >= 0f)) {
++                nextTranslation = 0f;
++            }
++
++            mCustomSpring.mValue = nextTranslation;
++            mDistance = Math.abs(nextTranslation) / releaseSize;
++            mCustomLastDelta = deltaDistance;
++
++            if (mDistance == 0f) {
++                mState = STATE_IDLE;
++                mCustomSpring.mValue = 0f;
++                mCustomSpring.mVelocity = 0f;
++                mCustomFirstTouch = true;
++                mCustomLastDelta = 0f;
++            }
+             return;
          }
 -        if (mState != STATE_PULL) {
 -            if (edgeEffectBehavior == TYPE_STRETCH) {
@@ -243,10 +279,13 @@
 +
          mState = STATE_PULL;
 +        mCustomSpring.cancel();
++        mCustomSpring.mVelocity = 0f;
  
 -        mStartTime = now;
 -        mDuration = PULL_TIME;
-+        float currentTranslation = mCustomSpring.mValue;
++        // Stretch (mDistance) is always >= 0: realign the spring sign on catch
++        // so the pull never inverts.
++        float currentTranslation = Math.abs(mCustomSpring.mValue);
  
 -        mPullDistance += deltaDistance;
 -        if (edgeEffectBehavior == TYPE_STRETCH) {
@@ -339,7 +378,7 @@
       * This will update the state of the current visual effect and its associated animation.
       * The host view should always {@link android.view.View#invalidate()} after this
       * and draw the results accordingly. This works similarly to {@link #onPull(float, float)},
-@@ -418,31 +571,36 @@
+@@ -418,31 +611,73 @@
       *                      back toward the edge reached to initiate the effect.
       * @param displacement The displacement from the starting side of the effect of the point
       *                     initiating the pull. In the case of touch this is the finger position.
@@ -350,24 +389,34 @@
      public float onPullDistance(float deltaDistance, float displacement) {
 -        int edgeEffectBehavior = getCurrentEdgeEffectBehavior();
 -        if (edgeEffectBehavior == TYPE_NONE) {
--            return 0f;
--        }
++        if (!isBounceEnabled()) {
++            // ── Original AOSP logic ──
++            return onPullDistanceOriginal(deltaDistance, displacement);
++        }
++
++        // ── Custom bounce logic ──
++        if (mCustomSpring == null) return 0f;
++
++        // Idle ACTION_DOWN probe from RecyclerView/NestedScrollView: delta 0
++        // must not cancel the recede spring nor flip to STATE_PULL.
++        if (deltaDistance == 0f) {
+             return 0f;
+         }
 -        float finalDistance = Math.max(0f, deltaDistance + mDistance);
 -        float delta = finalDistance - mDistance;
 -        if (delta == 0f && mDistance == 0f) {
 -            return 0f; // No pull, don't do anything.
-+        if (!isBounceEnabled()) {
-+            // ── Original AOSP logic ──
-+            return onPullDistanceOriginal(deltaDistance, displacement);
++
++        // Catching a mid-flight animation (not STATE_PULL): resync signs and
++        // drop the first-touch filter, otherwise directionChanged eats the finger.
++        if (mState != STATE_PULL) {
++            mCustomFirstTouch = true;
++            mCustomLastDelta = 0f;
          }
  
 -        if (mState != STATE_PULL && mState != STATE_PULL_DECAY && edgeEffectBehavior == TYPE_GLOW) {
 -            // Catch the edge glow in the middle of an animation.
 -            mPullDistance = mDistance;
--            mState = STATE_PULL;
-+        // ── Custom bounce logic ──
-+        if (mCustomSpring == null) return 0f;
-+
 +        float effectiveSize = Math.max(Math.abs(mHeight), Math.abs(mWidth));
 +        if (effectiveSize < 1f) effectiveSize = mCustomScreenHeight;
 +
@@ -377,9 +426,33 @@
 +
 +        if (delta == 0f && currentDistance == 0f) {
 +            return 0f;
++        }
++
++        // Backward finger (releasing overscroll, delta < 0) goes 1:1 with the
++        // finger: no normalizers/filters or the list sticks in Compose.
++        if (delta < 0f) {
+             mState = STATE_PULL;
++            mCustomSpring.cancel();
++            mCustomSpring.mVelocity = 0f;
++
++            float sign = mCustomSpring.mValue >= 0f ? 1f : -1f;
++            float nextVal = Math.max(0f, Math.abs(mCustomSpring.mValue) + (delta * effectiveSize));
++            mCustomSpring.mValue = nextVal * sign;
++            mDistance = nextVal / effectiveSize;
++
++            if (mDistance <= 0.0001f) {
++                mDistance = 0f;
++                mCustomSpring.mValue = 0f;
++                mState = STATE_IDLE;
++                mCustomFirstTouch = true;
++                mCustomLastDelta = 0f;
++            }
++            // Report what was actually eaten (post-clamp) so the remainder
++            // goes straight to scrolling the list.
++            return mDistance - currentDistance;
          }
 +
-+        // Delegate to our onPull logic
++        // Forward pull (delta > 0): full custom physics and resistance
          onPull(delta, displacement);
          return delta;
      }
@@ -388,7 +461,7 @@
       * Returns the pull distance needed to be released to remove the showing effect.
       * It is determined by the {@link #onPull(float, float)} <code>deltaDistance</code> and
       * any animating values, including from {@link #onAbsorb(int)} and {@link #onRelease()}.
-@@ -458,77 +616,109 @@
+@@ -458,77 +693,118 @@
  
      /**
       * Call when the object is released after being pulled.
@@ -517,6 +590,10 @@
 +            float minVal = cache.minVal;
 +
 +            float velocityPx = velocity * flingMult;
++            // Inward fling (negative) must never drive the single-sided spring
++            // to the wrong side: clamp to a plain recede instead of resetting,
++            // so a mid-stretch absorb decays naturally without a visual pop.
++            if (velocityPx < 0f) velocityPx = 0f;
 +            if (flingMult > 1.0f) stiffness /= flingMult;
 +
 +            float maxVel = mCustomScreenHeight * 10f;
@@ -530,6 +607,11 @@
 +        mCustomTargetFingerX = 0.5f;
 +        mCustomLastDelta = 0f;
 +        mCustomFirstTouch = true;
++        // Sync mDistance with the spring right away: during STATE_RECEDE it may
++        // oscillate through 0 while draw() runs later.
++        float absorbEffectiveSize = Math.max(Math.abs(mHeight), Math.abs(mWidth));
++        if (absorbEffectiveSize < 1f) absorbEffectiveSize = mCustomScreenHeight;
++        mDistance = Math.abs(mCustomSpring != null ? mCustomSpring.mValue : 0f) / absorbEffectiveSize;
      }
  
      /**
@@ -538,7 +620,7 @@
       * @param color Color in argb
       */
      public void setColor(@ColorInt int color) {
-@@ -580,16 +770,341 @@
+@@ -580,16 +856,341 @@
       * 1.f of height. The effect will only be visible on a
       * hardware canvas, e.g. {@link RenderNode#beginRecording()}.
       *
@@ -880,7 +962,7 @@
              final float centerX = mBounds.centerX();
              final float centerY = mBounds.height() - mRadius;
  
-@@ -692,16 +1207,17 @@
+@@ -692,16 +1293,17 @@
       * Return the maximum height that the edge effect will be drawn at given the original
       * {@link #setSize(int, int) input size}.
       * @return The maximum height of the edge effect
@@ -898,7 +980,7 @@
  
          mGlowAlpha = mGlowAlphaStart + (mGlowAlphaFinish - mGlowAlphaStart) * interp;
          mGlowScaleY = mGlowScaleYStart + (mGlowScaleYFinish - mGlowScaleYStart) * interp;
-@@ -831,9 +1347,191 @@
+@@ -831,9 +1433,191 @@
      private float dampStretchVector(float normalizedVec) {
          float sign = normalizedVec > 0 ? 1f : -1f;
          float overscroll = Math.abs(normalizedVec);

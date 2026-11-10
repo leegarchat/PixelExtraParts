@@ -602,9 +602,24 @@ public final class EdgeEffectBounceHelper {
             }
 
             mVelocity += force * dt;
+            float prevValue = mValue;
             mValue += mVelocity * dt;
 
             if (Float.isNaN(mValue) || Float.isInfinite(mValue)) {
+                mValue = mTargetValue;
+                mVelocity = 0;
+                cancel();
+                return;
+            }
+
+            // Never cross 0 to the wrong side on the way back (AOSP
+            // isAtEquilibrium): otherwise abs(mValue) re-grows mDistance and
+            // re-locks Compose scrolling for another oscillation cycle.
+            // Only when settling to 0 — a non-zero target may legitimately
+            // be crossed mid-flight.
+            if (mTargetValue == 0f
+                    && ((prevValue > 0f && mValue <= 0f)
+                        || (prevValue < 0f && mValue >= 0f))) {
                 mValue = mTargetValue;
                 mVelocity = 0;
                 cancel();
