@@ -60,10 +60,19 @@ No checked-in patches against the tree, no `patches/` directory. Upstream trees
 (`frameworks/base`, `hardware/google/pixel/thermal`) stay vanilla; PEP ships
 diffs and applies them at build time:
 
-1. `device.mk` runs `soong/weave/weave_apply.py --manifest soong/weave/manifest.json`
-   **before** Soong parses file lists. The applicator reads live vanilla files,
-   applies `soong/weave/specs/*.patch` (unified diffs), writes results into
-   `soong/weave_gen/` (git-ignored, 39 manifest entries).
+1. `device.mk` runs `soong/weave/weave_apply.py --manifest soong/weave/manifest.json
+   --rom <rom> --sdk <sdk>` **before** Soong parses file lists. The applicator
+   reads live vanilla files, applies `soong/weave/specs/*.patch` (unified diffs),
+   writes results into `soong/weave_gen/` (git-ignored, 39 manifest entries).
+   The target ROM is detected from vendor make variables
+   (`EVO_BUILD_TYPE`→evo, `CR_VERSION`→crdroid, `RISING_VERSION`→rising,
+   `LINEAGE_VERSION`→lineage, else aosp; `PEP_TARGET_ROM=<rom>` overrides).
+   Files whose context drifts per vendor tree carry variants under
+   `soong/weave/specs/<rom>/<rel>.patch` (manifest `"fallbacks"`, optional);
+   `--rom` tries the whole chain strictly — ROM variant, then the shared aosp
+   variant, then the default (evo) spec — unknown ROMs walk `[<rom>, aosp]`.
+   Any total miss (or a non-A17 tree: specs are SDK-37-anchored) fails loudly
+   with the tried variants, the first missing context line, and a regen hint.
 2. The Soong plugin (`soong/weave_mutator.go`, `bootstrap_go_package
    soong-pixelparts-plugin`) hooks target modules by **name** and swaps sources:
    - `framework-minus-apex` (+ `-headers`) ← `:pixelparts_weave_framework` + `:pixelparts_framework_helpers`
@@ -94,6 +103,13 @@ spec (regenerate the diff against the new vanilla), do not force it.
    (`pixelparts_weave_framework`, `pixelparts_weave_settingslib`,
    `pixelparts_weave_services_core`, `pixelparts_weave_services_impl`,
    or `pixelparts_weave_thermal`).
+
+If the file's context differs per vendor ROM (the applicator rejects it on a
+non-EvoX tree), add a re-anchored variant with identical `+` lines as
+`soong/weave/specs/<rom>/<same-relative-path>.patch` and register it in the
+entry's `"fallbacks": {"<rom>": "<variant path>"}` (the shared AOSP-context
+variant also serves as `"aosp"` for unknown ROMs). Verify with
+`weave_apply.py --rom <rom>` against that tree: expect `PEP_WEAVE_OK`.
 
 ## 4. Thermal (`thermal_hal/`)
 

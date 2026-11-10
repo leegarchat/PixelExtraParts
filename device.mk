@@ -74,7 +74,38 @@ BUILD_BROKEN_PLUGIN_VALIDATION += soong-pixelparts-plugin
 # Regenerates soong/weave_gen/ (git-ignored) from live vanilla sources +
 # soong/weave/specs/*.patch BEFORE Soong parses file lists. Fails the build
 # loudly on spec drift (never silent). Idempotent: writes only on change.
-PEP_WEAVE_RES := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/weave_apply.py --top $(shell pwd) --manifest $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/manifest.json 2>&1)
+#
+# Multi-ROM: vendor trees drift around the same PEP insertions, so divergent
+# files carry per-ROM variants under soong/weave/specs/<rom>/<rel>.patch
+# (see manifest "fallbacks"). The target ROM is detected from vendor make
+# variables (PEP_TARGET_ROM=<rom> wins as a manual override); weave_apply.py
+# then tries the whole chain for --rom strictly (no fuzz): the ROM-specific
+# variant first, the shared aosp variant next, the default (evo) spec last.
+# Unknown ROMs walk [<rom>, aosp, default] and fail loudly if nothing matches.
+ifdef PEP_TARGET_ROM
+PEP_ROM := $(strip $(PEP_TARGET_ROM))
+else ifdef EVO_BUILD_TYPE
+PEP_ROM := evo
+else ifdef CR_VERSION
+PEP_ROM := crdroid
+else ifdef RISING_VERSION
+PEP_ROM := rising
+else ifdef LINEAGE_VERSION
+PEP_ROM := lineage
+else
+PEP_ROM := aosp
+endif
+# Version gate: weave specs are anchored on Android 17 (SDK 37). Non-A17
+# trees (AOSPA, Rising16, ...) are not covered — fail loudly here when the
+# platform version is already known (weave_apply.py re-checks the live tree
+# itself, so an empty PLATFORM_SDK_VERSION at this point is not fatal).
+PEP_EXPECTED_SDK := 37
+ifneq ($(strip $(PLATFORM_SDK_VERSION)),)
+ifneq ($(strip $(PLATFORM_SDK_VERSION)),$(PEP_EXPECTED_SDK))
+$(error PixelExtraParts weave supports Android 17 (SDK $(PEP_EXPECTED_SDK)) only: PLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION) rom=$(PEP_ROM). AOSPA/Rising16 trees are not covered.)
+endif
+endif
+PEP_WEAVE_RES := $(shell python3 $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/weave_apply.py --top $(shell pwd) --manifest $(PIXEL_EXTRA_PARTS_PATH)/soong/weave/manifest.json --rom $(PEP_ROM) --sdk '$(PLATFORM_SDK_VERSION)' 2>&1)
 ifneq ($(filter PEP_WEAVE_ERROR%,$(PEP_WEAVE_RES)),)
 $(error PixelExtraParts weave regen failed: fix the spec drift below, then rebuild. $(PEP_WEAVE_RES))
 endif

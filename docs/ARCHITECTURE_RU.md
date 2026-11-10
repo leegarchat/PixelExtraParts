@@ -60,10 +60,20 @@ privileged, `system_ext`): `app/src/**/*.kt|java`, `app/res`, static-библи�
 (`frameworks/base`, `hardware/google/pixel/thermal`) остаются ванилью; PEP
 везёт диффы и накатывает их во время сборки:
 
-1. `device.mk` запускает `soong/weave/weave_apply.py --manifest soong/weave/manifest.json`
-   **до** разбора file-листов Soong. Аппликатор читает живую ваниль, накатывает
-   `soong/weave/specs/*.patch` (unified diffs), пишет результат в
-   `soong/weave_gen/` (в git-игноре, 39 записей манифеста).
+1. `device.mk` запускает `soong/weave/weave_apply.py --manifest soong/weave/manifest.json
+   --rom <rom> --sdk <sdk>` **до** разбора file-листов Soong. Аппликатор
+   читает живую ваниль, накатывает `soong/weave/specs/*.patch` (unified diffs),
+   пишет результат в `soong/weave_gen/` (в git-игноре, 39 записей манифеста).
+   Целевой ROM детектится по вендорным make-переменным
+   (`EVO_BUILD_TYPE`→evo, `CR_VERSION`→crdroid, `RISING_VERSION`→rising,
+   `LINEAGE_VERSION`→lineage, иначе aosp; `PEP_TARGET_ROM=<rom>` — ручной
+   оверрайд). Файлы, чей контекст плывёт между вендорами, несут варианты
+   `soong/weave/specs/<rom>/<rel>.patch` (опциональное поле манифеста
+   `"fallbacks"`); `--rom` пробует всю цепочку строго — сначала ROM-вариант,
+   потом общий aosp-вариант, потом дефолтный (evo) спек; неизвестные ROM
+   идут по `[<rom>, aosp]`. Любой полный промах (или не-A17 дерево: спеки
+   заякорены на SDK 37) роняет сборку громко — со списком перепробованных
+   вариантов, первой ненайденной строкой контекста и подсказкой перегенерации.
 2. Soong-плагин (`soong/weave_mutator.go`, `bootstrap_go_package
    soong-pixelparts-plugin`) цепляет целевые модули по **имени** и подменяет исходники:
    - `framework-minus-apex` (+ `-headers`) ← `:pixelparts_weave_framework` + `:pixelparts_framework_helpers`
@@ -94,6 +104,13 @@ privileged, `system_ext`): `app/src/**/*.kt|java`, `app/res`, static-библи�
    (`pixelparts_weave_framework`, `pixelparts_weave_settingslib`,
    `pixelparts_weave_services_core`, `pixelparts_weave_services_impl`
    или `pixelparts_weave_thermal`).
+
+Если контекст файла плывёт между вендорными ROM (аппликатор реджектит его
+на не-EvoX дереве), добавь ре-якоренный вариант с идентичными `+`-строками
+как `soong/weave/specs/<rom>/<тот-же-относительный-путь>.patch` и
+зарегистрируй в `"fallbacks": {"<rom>": "<путь варианта>"}` записи
+(AOSP-вариант заодно служит `"aosp"` для неизвестных ROM). Проверь
+`weave_apply.py --rom <rom>` на том дереве: жди `PEP_WEAVE_OK`.
 
 ## 4. Thermal (`thermal_hal/`)
 

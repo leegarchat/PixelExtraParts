@@ -45,7 +45,11 @@
     "rel": "frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
     "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java.patch",
     "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java",
-    "type": "patch"
+    "type": "patch",
+    "fallbacks": {
+      "lineage": "packages/apps/PixelExtraParts/soong/weave/specs/lineage/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java.patch",
+      "aosp": "packages/apps/PixelExtraParts/soong/weave/specs/lineage/frameworks/base/core/java/android/content/pm/LauncherActivityInfo.java.patch"
+    }
   },
   {
     "rel": "frameworks/base/services/core/java/com/android/server/pm/PackageInstallerService.java",
@@ -87,7 +91,10 @@
     "rel": "frameworks/base/services/java/com/android/server/SystemServer.java",
     "spec": "packages/apps/PixelExtraParts/soong/weave/specs/frameworks/base/services/java/com/android/server/SystemServer.java.patch",
     "out": "packages/apps/PixelExtraParts/soong/weave_gen/frameworks/base/services/java/com/android/server/SystemServer.java",
-    "type": "patch"
+    "type": "patch",
+    "fallbacks": {
+      "aosp": "packages/apps/PixelExtraParts/soong/weave/specs/aosp/frameworks/base/services/java/com/android/server/SystemServer.java.patch"
+    }
   },
   {
     "rel": "hardware/google/pixel/thermal/Thermal.cpp",
