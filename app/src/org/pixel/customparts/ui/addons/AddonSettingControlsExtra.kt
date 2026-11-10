@@ -205,7 +205,7 @@ internal fun SelectSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(
                 setting,
-                modifier = Modifier.padding(top = 2.dp).alpha(if (enabled) 1f else 0.4f)
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp).alpha(if (enabled) 1f else 0.4f)
             )
         }
     }
@@ -247,7 +247,7 @@ internal fun SelectButtonSettingControl(
         if (setting.description.isNotEmpty()) {
             SettingDescriptionText(
                 setting,
-                modifier = Modifier.padding(top = 2.dp).alpha(if (enabled) 1f else 0.4f)
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp).alpha(if (enabled) 1f else 0.4f)
             )
         }
     }
