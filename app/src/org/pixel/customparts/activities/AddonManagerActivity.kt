@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.statusBars
 import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -112,9 +111,6 @@ fun AddonManagerScreen(onBack: () -> Unit) {
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
                 blurState = blurState
-            )
-            TopBarUnderDim(
-                topBarHeight = innerPadding.calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

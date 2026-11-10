@@ -84,6 +84,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.launch
 import org.pixel.customparts.R
 import java.util.Locale
@@ -151,6 +153,9 @@ data class SliderMorphRequest(
     val showInfoIcon: Boolean = false,
     val sourceBoundsProvider: () -> Rect = { sourceInRoot },
     val sessionId: Long = System.nanoTime(),
+    val sourceActiveTrackColor: Color? = null,
+    val sourceInactiveTrackColor: Color? = null,
+    val sourceThumbColor: Color? = null,
 )
 
 @Composable
@@ -256,6 +261,9 @@ fun SliderMorphOverlay(
 
     val morphAnim = remember(req.sessionId) { Animatable(0f) }
     var closing by remember(req.sessionId) { mutableStateOf(false) }
+    // The commit behind the running close (dismiss vs confirm): the early
+    // scroll-release watcher below must fire the same one.
+    var pendingCommit by remember(req.sessionId) { mutableStateOf<(() -> Unit)?>(null) }
     val hostCoordsRef = remember(req.sessionId) { CoordsRef() }
     val cardCoordsRef = remember(req.sessionId) { CoordsRef() }
     // Layout size of the flight card wrapper (transform-independent IntSize).
@@ -271,7 +279,7 @@ fun SliderMorphOverlay(
             morphAnim.animateTo(
                 targetValue = 1f,
                 animationSpec = spring(
-                    stiffness = 250f,
+                    stiffness = 100f,
                     dampingRatio = Spring.DampingRatioNoBouncy,
                     visibilityThreshold = 0.002f
                 )
@@ -282,6 +290,7 @@ fun SliderMorphOverlay(
     fun closeAnimated(commit: () -> Unit) {
         if (closing) return
         closing = true
+        pendingCommit = commit
         // Stop a still-running enter spring first: concurrent animateTo calls on
         // one Animatable serialize on its mutex and would stall the exit.
         focusManager.clearFocus(force = true)
@@ -290,14 +299,17 @@ fun SliderMorphOverlay(
             morphAnim.stop()
             try {
                 // Stiff close with a coarse threshold: the sstep easing flattens
-                // the visual tail, so a fine threshold only adds ~200ms of dead
-                // overlay time blocking list scroll after everything is in place.
+                // the visual tail, so a fine threshold only adds dead overlay
+                // time blocking list scroll after everything is in place.
+                // Threshold is deliberately coarse relative to stiffness 150:
+                // the last percents are visually frozen, commit early and let
+                // the row take over instantly — no micro-bounce tail.
                 morphAnim.animateTo(
                     targetValue = 0f,
                     animationSpec = spring(
-                        stiffness = 500f,
+                        stiffness = 150f,
                         dampingRatio = Spring.DampingRatioNoBouncy,
-                        visibilityThreshold = 0.01f
+                        visibilityThreshold = 0.05f
                     )
                 )
             } finally {
@@ -311,14 +323,32 @@ fun SliderMorphOverlay(
         closeAnimated(req.onDismiss)
     }
 
+    // Early scroll release: at ~80% of the close path (morphT < 0.2) the card
+    // is visually docked and the scrim is long gone, so the overlay is removed
+    // and the list scrolls again while the last 20% settles underneath.
+    // commit()/host.close() are idempotent (state sets + null-out), the
+    // animateTo finally below re-fires them harmlessly as a fallback.
+    LaunchedEffect(closing) {
+        if (closing) {
+            snapshotFlow { morphAnim.value }.first { it < 0.2f }
+            pendingCommit?.invoke()
+            host.close(req)
+        }
+    }
+
     // The raw spring is fastest at t=0; smooth both ends so detach and landing are soft.
     val rawT = morphAnim.value.coerceIn(0f, 1f)
     val morphT = sstep(rawT, 0f, 1f)
 
     // Dim, rounding, tint and outline switch on mid-flight, not at the start.
     val scrimAlpha = 0.42f * sstep(morphT, 0.45f, 0.92f)
+    // Underlay starts fully transparent at t=0 and fades in early in flight.
+    val cardBgAlpha = sstep(morphT, 0.0f, 0.35f)
+    // Blur mask stays hidden almost until the end and fades in gradually:
+    // a late but LONG window so it blends with the flight instead of popping.
+    val blurReveal = sstep(morphT, 0.55f, 0.97f)
     val cornerProgress = sstep(morphT, 0.40f, 0.88f)
-    val modalCorner = lerp(48.dp, 22.dp, cornerProgress)
+    val modalCorner = lerp(24.dp, 22.dp, cornerProgress)
     val modalShape = RoundedCornerShape(modalCorner)
     val outlineAlpha = sstep(morphT, 0.65f, 0.96f)
     val cardBorderColor = containerColor.edgeOutline().let {
@@ -468,13 +498,16 @@ fun SliderMorphOverlay(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .background(containerColor)
+                            .background(containerColor.copy(alpha = cardBgAlpha))
                     )
                     if (blurState != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
-                                .graphicsLayer { clip = true }
+                                .graphicsLayer {
+                                    clip = true
+                                    alpha = blurReveal
+                                }
                                 .onPlaced { cardCoordsRef.value = it }
                                 .onGloballyPositioned { cardCoordsRef.value = it }
                                 .sliderMorphBlurMask(
@@ -489,7 +522,7 @@ fun SliderMorphOverlay(
                                 .matchParentSize()
                                 .background(
                                     containerColor.copy(
-                                        alpha = lerp(1f, 0.62f, sstep(morphT, 0.45f, 0.92f))
+                                        alpha = lerp(1f, 0.62f, sstep(morphT, 0.45f, 0.92f)) * cardBgAlpha
                                     )
                                 )
                         )
@@ -597,6 +630,11 @@ internal fun SliderMorphEditorContent(
     // dismiss paths (the row behind is unchanged) — no snap at the end.
     var confirmedNum by remember(req.sessionId) { mutableStateOf<Float?>(null) }
     var exitSliderValue by remember(req.sessionId) { mutableStateOf<Float?>(null) }
+    // Measured targets for the split readout flight: number flies to the field
+    // text start (left), unit suffix to the unit label (right). Root coords on
+    // both ends, so card-level transforms cancel out in the difference.
+    var unitBounds by remember(req.sessionId) { mutableStateOf<Rect?>(null) }
+    var flyOriginBounds by remember(req.sessionId) { mutableStateOf<Rect?>(null) }
     LaunchedEffect(closing) {
         if (closing && exitSliderValue == null) {
             exitSliderValue = confirmedNum ?: req.initialValue
@@ -658,11 +696,12 @@ internal fun SliderMorphEditorContent(
     }
 
     // Reset capsule visibility is purely draft-driven (no stale open-time snapshot):
-    // with no known default it compares against the start value.
+    // with no known default it compares against the start value. Strict exact
+    // comparison — no epsilon: any float difference must show the reset button.
     val isDraftModified = if (req.defaultValue != null) {
-        abs(draftNum - req.defaultValue) >= req.resetThreshold
+        draftNum != req.defaultValue
     } else {
-        abs(draftNum - req.initialValue) >= req.resetThreshold
+        draftNum != req.initialValue
     }
     val shouldShowReset = req.showDefaultButton && isDraftModified
     val resetReveal by animateFloatAsState(
@@ -675,9 +714,11 @@ internal fun SliderMorphEditorContent(
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        // 1. Title stays Title.
+        // 1. Title stays Title, growing 1x -> 2x with the flight.
         SliderTitleText(
             title = req.title,
+            growProgress = sstep(morphT, 0.05f, 0.75f),
+            maxGrow = 2f,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -746,14 +787,14 @@ internal fun SliderMorphEditorContent(
                     (with(density) { slotHDp.toPx() - fieldBoxH.toPx() } / 2f).coerceAtLeast(0f)
                 val collapseScaleY = (1f - 0.82f * trackW).coerceAtLeast(0.01f)
                 val sliderColors = SliderDefaults.colors(
-                    activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = req.sourceActiveTrackColor ?: MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = req.sourceInactiveTrackColor ?: MaterialTheme.colorScheme.surfaceContainerHighest,
+                    thumbColor = req.sourceThumbColor ?: MaterialTheme.colorScheme.primary,
                     activeTickColor = Color.Transparent,
                     inactiveTickColor = Color.Transparent,
-                    disabledThumbColor = MaterialTheme.colorScheme.primary,
-                    disabledActiveTrackColor = MaterialTheme.colorScheme.primary,
-                    disabledInactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    disabledThumbColor = req.sourceThumbColor ?: MaterialTheme.colorScheme.primary,
+                    disabledActiveTrackColor = req.sourceActiveTrackColor ?: MaterialTheme.colorScheme.primary,
+                    disabledInactiveTrackColor = req.sourceInactiveTrackColor ?: MaterialTheme.colorScheme.surfaceContainerHighest,
                     disabledActiveTickColor = Color.Transparent,
                     disabledInactiveTickColor = Color.Transparent
                 )
@@ -777,7 +818,7 @@ internal fun SliderMorphEditorContent(
                                 .width(8.dp)
                                 .height(28.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
+                                .background(req.sourceThumbColor ?: MaterialTheme.colorScheme.primary)
                         )
                     }
                 )
@@ -867,7 +908,11 @@ internal fun SliderMorphEditorContent(
                                     text = req.unit,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
+                                    maxLines = 1,
+                                    modifier = Modifier.onPlaced { coords ->
+                                        val b = coords.boundsInRoot()
+                                        if (b.width > 1f && b.height > 1f) unitBounds = b
+                                    }
                                 )
                             }
                         }
@@ -988,19 +1033,89 @@ internal fun SliderMorphEditorContent(
                     formatExitReadout(req.formattedValue, c, req.isInteger, req.unit)
                 }
                 if (req.formattedValue.isNotEmpty()) {
-                    Text(
-                        text = exitReadoutText,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.graphicsLayer {
-                            translationX = req.valueFlyDxPx * flyW
-                            translationY = -req.valueFlyDyPx * flyW
-                            alpha = 1f - sstep(morphT, 0.30f, 0.56f)
+                    // Split readout: number and unit suffix fly independently ONLY
+                    // when they are two separate parts (number token + non-empty
+                    // rest). Number lands at the field text start (left), unit at
+                    // the unit label (right); otherwise the old single text.
+                    val splitMatch = remember(exitReadoutText) {
+                        ReadoutLeadingNum.find(exitReadoutText)
+                    }
+                    val splitSuffix = splitMatch
+                        ?.let { exitReadoutText.substring(it.range.last + 1).trim() }
+                        .orEmpty()
+                    val flightStyle = MaterialTheme.typography.labelLarge
+                    val flightColor = MaterialTheme.colorScheme.primary
+                    val flightFade = 1f - sstep(morphT, 0.30f, 0.56f)
+                    if (splitMatch != null && splitSuffix.isNotEmpty()) {
+                        val numberPart = splitMatch.value
+                        val numTx = req.valueFlyDxPx * flyW
+                        val numTy = -req.valueFlyDyPx * flyW
+                        // Absolute unit target from live measurements; falls back
+                        // to the number vector until both rects are known.
+                        val unitAbsTx = if (unitBounds != null && flyOriginBounds != null) {
+                            (unitBounds!!.left - flyOriginBounds!!.left) * flyW
+                        } else {
+                            numTx
                         }
-                    )
+                        val unitAbsTy = if (unitBounds != null && flyOriginBounds != null) {
+                            (unitBounds!!.center.y - flyOriginBounds!!.center.y) * flyW
+                        } else {
+                            numTy
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .onPlaced { coords ->
+                                    // Freeze the origin at zero flight: boundsInRoot
+                                    // includes the live translation, re-capturing
+                                    // mid-flight would feed it back into itself.
+                                    if (flyW < 0.01f) {
+                                        val b = coords.boundsInRoot()
+                                        if (b.width > 1f && b.height > 1f) flyOriginBounds = b
+                                    }
+                                }
+                                .graphicsLayer {
+                                    translationX = numTx
+                                    translationY = numTy
+                                    alpha = flightFade
+                                }
+                        ) {
+                            Text(
+                                text = numberPart,
+                                style = flightStyle,
+                                fontWeight = FontWeight.Bold,
+                                color = flightColor,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                            Text(
+                                text = " " + splitSuffix,
+                                style = flightStyle,
+                                fontWeight = FontWeight.Bold,
+                                color = flightColor,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.graphicsLayer {
+                                    translationX = unitAbsTx - numTx
+                                    translationY = unitAbsTy - numTy
+                                }
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = exitReadoutText,
+                            style = flightStyle,
+                            fontWeight = FontWeight.Bold,
+                            color = flightColor,
+                            maxLines = 1,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.graphicsLayer {
+                                translationX = req.valueFlyDxPx * flyW
+                                translationY = -req.valueFlyDyPx * flyW
+                                alpha = flightFade
+                            }
+                        )
+                    }
                 }
 
                 // Cancel button unfolding in place of the readout.
@@ -1050,8 +1165,11 @@ internal fun SliderMorphEditorContent(
             contentAlignment = Alignment.BottomCenter
         ) {
             Button(
-                onClick = { tryApply() },
-                enabled = !closing && morphT > 0.6f,
+                // Clicks gated manually: flipping M3 `enabled` would snap the
+                // button to disabled (gray) colors mid-fade on close/apply.
+                // Colors stay primary through the whole flight this way.
+                onClick = { if (!closing && morphT > 0.6f) tryApply() },
+                enabled = true,
                 shape = RoundedCornerShape(18.dp),
                 border = BorderStroke(1.dp, applyBorderColor),
                 colors = ButtonDefaults.buttonColors(
@@ -1062,9 +1180,11 @@ internal fun SliderMorphEditorContent(
                     .fillMaxWidth()
                     .height(50.dp)
                     .graphicsLayer {
+                        // Float up from below like the reset capsule unfolds
+                        // from the side: rise + fade on the raw applyW.
                         scaleY = 0.72f + 0.28f * applyW
-                        alpha = sstep(applyW, 0.05f, 0.65f)
-                        translationY = (1f - applyW) * 8f * dpPx
+                        alpha = sstep(applyW, 0.02f, 0.55f)
+                        translationY = (1f - applyW) * 28f * dpPx
                     }
             ) {
                 Text(

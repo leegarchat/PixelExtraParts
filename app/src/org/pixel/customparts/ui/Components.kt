@@ -64,7 +64,6 @@ import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
 import java.io.File
 import java.net.URL
-import kotlin.math.abs
 
 private val LeadingFloatRegex = Regex("""-?\d+(?:[.,]\d+)?""")
 
@@ -319,7 +318,7 @@ fun SliderSettingFloat(
     val effectiveDefaultValue = defaultValue ?: parsedTextDefault ?: capturedDefault
 
     val showResetBadge = showDefaultButton &&
-        (effectiveDefaultValue == null || abs(value - effectiveDefaultValue) >= resetThreshold)
+        (effectiveDefaultValue == null || value != effectiveDefaultValue)
 
     val dialogRange = inputRange ?: range
     val morphResetText = if (defaultValueText.isNullOrEmpty()) {
@@ -341,6 +340,12 @@ fun SliderSettingFloat(
         // If value was already equal to default, capture immediately as well.
         capturedDefault = value
     }
+
+    // Snapshot of the row slider's actual track/thumb colors in this theme.
+    // Read here (composable scope): openManualInput() below is a plain fun and
+    // cannot invoke @Composable reads like MaterialTheme.
+    val morphSliderActive = MaterialTheme.colorScheme.primary
+    val morphSliderInactive = MaterialTheme.colorScheme.surfaceContainerHighest
 
     fun openManualInput() {
         // 16.dp / 8.dp mirror the modal input field's own paddings (shared layout
@@ -386,6 +391,9 @@ fun SliderSettingFloat(
                 showInfoIcon = onInfoClick != null && infoText != null,
                 sourceBoundsProvider = { containerRect },
                 sessionId = sessionId,
+                sourceActiveTrackColor = morphSliderActive,
+                sourceInactiveTrackColor = morphSliderInactive,
+                sourceThumbColor = morphSliderActive,
                 onConfirm = {
                     onValueChange(it)
                     onValueChangeFinished?.invoke()
@@ -605,23 +613,33 @@ fun SliderSettingFloat(
 @Composable
 internal fun SliderTitleText(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    growProgress: Float = 0f,
+    maxGrow: Float = 2f
 ) {
     val baseStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
     val baseSizeSp = baseStyle.fontSize.value
     val minSizeSp = (baseSizeSp * 0.7f).coerceAtLeast(10f)
-    var style by remember(title) { mutableStateOf(baseStyle) }
+    // Size at morph start: the exact number to return to on close.
+    // Never derived by dividing the fitted size back (fit may have lowered
+    // it mid-flight, e.g. 24 -> 48 -> fit 36; close must land on 24,
+    // not 36 / 2). Immutable snapshot, keyed on title only.
+    val startSizeSp = remember(title) { baseSizeSp }
+    var shrinkSp by remember(title) { mutableStateOf(0f) }
+    // Fit-corrected size at full open; live: shrink keeps adjusting it.
+    val fittedOpenSp = (baseSizeSp * maxGrow - shrinkSp).coerceAtLeast(minSizeSp)
+    val sizeSp = (startSizeSp + (fittedOpenSp - startSizeSp) * growProgress.coerceIn(0f, 1f))
+        .coerceAtLeast(minSizeSp)
     Text(
         text = title,
-        style = style,
+        style = baseStyle.copy(fontSize = sizeSp.sp),
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Clip,
         onTextLayout = { result ->
-            val currentSp = style.fontSize.value
-            if (result.hasVisualOverflow && currentSp > minSizeSp) {
-                style = style.copy(fontSize = (currentSp - 0.5f).coerceAtLeast(minSizeSp).sp)
+            if (result.hasVisualOverflow && sizeSp > minSizeSp) {
+                shrinkSp += 0.5f
             }
         },
         modifier = modifier
@@ -1082,6 +1100,9 @@ private fun SliderInlineManualInput(
                 defaultValue = defaultValue,
                 resetThreshold = resetThreshold,
                 showDefaultButton = showDefaultButton,
+                sourceActiveTrackColor = MaterialTheme.colorScheme.primary,
+                sourceInactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                sourceThumbColor = MaterialTheme.colorScheme.primary,
                 onConfirm = onConfirm,
                 onDefault = onDefault,
                 onDismiss = onDismiss

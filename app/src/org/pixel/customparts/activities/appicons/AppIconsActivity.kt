@@ -134,7 +134,6 @@ import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSettingFloat
 import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.addons.AddonMainEntry
 import org.pixel.customparts.ui.addons.AddonMainEntryRow
@@ -161,7 +160,7 @@ private const val DEFAULT_SHAPE_BACKGROUND_TINT_COLOR = 0x00000000
 private const val DEFAULT_SHAPE_FOREGROUND_TINT_COLOR = -0x1
 
 private fun readAppIconModuleFlags(context: Context): AppIconModuleFlags {
-    val frameworkEnabled = SettingsCompat.isEnabled(context, SettingsKeys.APP_ICONS_ENABLED, true)
+    val frameworkEnabled = SettingsCompat.isEnabled(context, SettingsKeys.APP_ICONS_ENABLED, false)
     val launcherHookEnabled = SettingsCompat.isEnabled(
         context,
         SettingsKeys.APP_ICONS_LAUNCHER_ENABLED,
@@ -798,9 +797,6 @@ fun AppIconsScreen(onBack: () -> Unit) {
                     .align(Alignment.TopCenter),
                 topBarHeight = innerPadding.calculateTopPadding(),
                 blurState = blurState
-            )
-            TopBarUnderDim(
-                topBarHeight = innerPadding.calculateTopPadding(),
             )
             TopStatusVeil(
                 backgroundColor = MaterialTheme.colorScheme.surfaceContainer,

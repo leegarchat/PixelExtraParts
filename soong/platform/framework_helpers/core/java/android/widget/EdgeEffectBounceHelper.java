@@ -113,7 +113,7 @@ public final class EdgeEffectBounceHelper {
             return false;
         }
         try {
-            if (getIntSetting(context, KEY_ENABLED, 1) != 1) {
+            if (getIntSetting(context, KEY_ENABLED, 0) != 1) {
                 return false;
             }
             if (cfgIgnore) {

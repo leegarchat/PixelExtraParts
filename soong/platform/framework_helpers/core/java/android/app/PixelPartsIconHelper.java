@@ -166,7 +166,7 @@ public final class PixelPartsIconHelper {
 
     private static boolean arePixelPartsIconsEnabled(@NonNull Context context) {
         return Settings.Global.getInt(
-                context.getContentResolver(), PIXEL_PARTS_ICON_ENABLED_SETTING, 1) != 0;
+                context.getContentResolver(), PIXEL_PARTS_ICON_ENABLED_SETTING, 0) != 0;
     }
 
     private static void loadPixelPartsIconMapLocked() {

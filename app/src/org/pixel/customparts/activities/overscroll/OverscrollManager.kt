@@ -86,7 +86,7 @@ object OverscrollManager {
     val KEY_NORM_RAMP get() = "overscroll_norm_ramp$SUFFIX"
     val KEY_NORM_DETECT_MODE get() = "overscroll_norm_detect_mode$SUFFIX"
 
-    fun isMasterEnabled(context: Context) = Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1) == 1
+    fun isMasterEnabled(context: Context) = Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 0) == 1
     
     suspend fun setMasterEnabled(context: Context, enabled: Boolean) = withContext(Dispatchers.IO) {
         Settings.Global.putInt(context.contentResolver, KEY_ENABLED, if (enabled) 1 else 0)
@@ -185,7 +185,7 @@ object OverscrollManager {
         // Ключи в JSON хранятся БЕЗ суффикса _lsplant/_pine/_xposed — кросс-платформенный формат.
         // Для чтения из Settings.Global используем полный ключ (с суффиксом),
         // а для записи в JSON — stripSuffix(key).
-        json.put(stripSuffix(KEY_ENABLED), Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 1))
+        json.put(stripSuffix(KEY_ENABLED), Settings.Global.getInt(context.contentResolver, KEY_ENABLED, 0))
         json.put(stripSuffix(KEY_LOGGING), Settings.Global.getInt(context.contentResolver, KEY_LOGGING, 0))
         json.put(stripSuffix(KEY_INVERT_ANCHOR), Settings.Global.getInt(context.contentResolver, KEY_INVERT_ANCHOR, 1))
         json.put(stripSuffix(KEY_PACKAGES_CONFIG), Settings.Global.getString(context.contentResolver, KEY_PACKAGES_CONFIG) ?: "")
@@ -204,7 +204,7 @@ object OverscrollManager {
         for (k in modeKeys) json.put(stripSuffix(k), Settings.Global.getInt(context.contentResolver, k, 0))
 
         // Delta normalization int keys (normEnabled, normDetectMode are true ints)
-        json.put(stripSuffix(KEY_NORM_ENABLED), Settings.Global.getInt(context.contentResolver, KEY_NORM_ENABLED, 1))
+        json.put(stripSuffix(KEY_NORM_ENABLED), Settings.Global.getInt(context.contentResolver, KEY_NORM_ENABLED, 0))
         json.put(stripSuffix(KEY_NORM_DETECT_MODE), Settings.Global.getInt(context.contentResolver, KEY_NORM_DETECT_MODE, 1))
         // normWindow and normRamp stored as float (UI slider), hook reads via getFloatSetting
         json.put(stripSuffix(KEY_NORM_WINDOW), Settings.Global.getFloat(context.contentResolver, KEY_NORM_WINDOW, 2f).toDouble())
@@ -267,7 +267,7 @@ object OverscrollManager {
 
     suspend fun resetAll(context: Context) = withContext(Dispatchers.IO) {
         val cr = context.contentResolver
-        Settings.Global.putInt(cr, KEY_ENABLED, 1)
+        Settings.Global.putInt(cr, KEY_ENABLED, 0)
         Settings.Global.putInt(cr, KEY_LOGGING, 0)
         Settings.Global.putString(cr, KEY_ACTIVE_PROFILE, null)
         Settings.Global.putInt(cr, KEY_INVERT_ANCHOR, 1)
@@ -307,8 +307,8 @@ object OverscrollManager {
         Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_Y, 0.5f)
         Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_X_HORIZ, 0.5f)
         Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f)
-        // Delta normalization
-        Settings.Global.putInt(cr, KEY_NORM_ENABLED, 1)
+        // Delta normalization (stock: off)
+        Settings.Global.putInt(cr, KEY_NORM_ENABLED, 0)
         Settings.Global.putFloat(cr, KEY_NORM_REF_DELTA, 9.9999f)
         Settings.Global.putFloat(cr, KEY_NORM_DETECT_MUL, 0f)
         Settings.Global.putFloat(cr, KEY_NORM_FACTOR, 0.33f)

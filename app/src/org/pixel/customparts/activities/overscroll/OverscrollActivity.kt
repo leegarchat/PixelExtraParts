@@ -55,7 +55,6 @@ import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.TopBarUnderDim
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
@@ -578,7 +577,7 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 ) {
                     // Master switch — styled card (mini version of MasterSwitchCard)
                     val normEnabledKey = OverscrollManager.KEY_NORM_ENABLED
-                    var normEnabled by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, normEnabledKey, 1) == 1) }
+                    var normEnabled by remember(refreshKey) { mutableStateOf(Settings.Global.getInt(context.contentResolver, normEnabledKey, 0) == 1) }
                     val normEnabledTitle = stringResource(R.string.os_lbl_norm_enabled)
                     val normEnabledDesc = stringResource(R.string.os_desc_norm_enabled)
                     val normCardColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
@@ -865,9 +864,6 @@ private fun OverscrollScreen(onBack: () -> Unit) {
                 .align(Alignment.TopCenter),
             topBarHeight = innerPadding.calculateTopPadding(),
             blurState = blurState
-        )
-        TopBarUnderDim(
-            topBarHeight = innerPadding.calculateTopPadding(),
         )
         TopStatusVeil(
             backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
