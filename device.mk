@@ -30,6 +30,7 @@ PRODUCT_PACKAGES += \
     PixelCustomPartsSystem \
     init.pixelextraparts.rc \
     android.hardware.thermal-service.pixel.pep \
+    thermal_symlinks_pep \
     ambient_extend_hook_addon \
     gcam_photo_torch_addon \
     icon_manager_settings_addon \
@@ -120,10 +121,22 @@ SYSTEM_EXT_PUBLIC_SEPOLICY_DIRS += \
 SYSTEM_EXT_PRIVATE_SEPOLICY_DIRS += \
     $(PIXEL_EXTRA_PARTS_PATH)/policy/sepolicy/system_ext/private
 
-# Stock thermal HAL is removed here (plain include above runs this file
-# immediately in global scope, after common.mk added stock). The pep fork
-# uses its own output name (no shared stem: Soong emits edges for every
-# in-scope module, so a shared path is fatal) + overrides:.
-# labels: policy/sepolicy/vendor/file_contexts maps the pep binary to
-# hal_thermal_default_exec (zuma labels only the stock path).
-PRODUCT_PACKAGES := $(filter-out android.hardware.thermal-service.pixel,$(PRODUCT_PACKAGES))
+# Stock thermal removal: Soong overrides (thermal_hal/Android.bp).
+#
+# Make-side filter-outs CANNOT work here, harness-proven: inherit-product
+# only appends @inherit: markers (merged later in import-nodes, each node in
+# an emptied scope), so no position in this file ever observes vendor-added
+# entries -- proven by $(warning) probes (this file sees only PEP entries +
+# markers). Enforcement is the pep cc_binary's
+# overrides: [stock binary, stock VINTF xml, thermal-budget-interface-ndk]
+# (its only consumer was the stock binary) + pep sh_binary's
+# overrides: [thermal_symlinks], applied order-independently at install-set
+# assembly. All four were direct PRODUCT_PACKAGES entries, so transitive
+# removal was blocked -- explicit overrides were required.
+# The two stock init rc copies (PRODUCT_COPY_FILES, unreachable by overrides)
+# survive: benign -- init keeps the first `service vendor.thermal-hal`
+# definition and the pep rc sorts before the stock one; the orphaned stock
+# symlinks rc logs one missing-binary error at boot while the pep flow runs
+# on its own service. If that line annoys: prepend empty shims for those two
+# dest paths at the very TOP of lineage_shiba.mk (before all inherits,
+# first-wins).

@@ -1,2 +1,3 @@
 /data/vendor/pixelparts(/.*)? u:object_r:pixelparts_vendor_data_file:s0
 /vendor/bin/hw/android\.hardware\.thermal-service\.pixel\.pep u:object_r:hal_thermal_default_exec:s0
+/vendor/bin/thermal_symlinks_pep u:object_r:thermal_symlinks_pep_exec:s0

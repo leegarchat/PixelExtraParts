@@ -1,0 +1,16 @@
+# PEP-owned thermal sysfs symlink setup service (mirrors the stock
+# init-thermal-symlinks-sh domain with pep-unique type names so there are
+# zero same-name Soong/policy objects vs stock).
+type thermal_symlinks_pep, domain;
+type thermal_symlinks_pep_exec, exec_type, file_type, vendor_file_type;
+
+init_daemon_domain(thermal_symlinks_pep)
+
+set_prop(thermal_symlinks_pep, vendor_thermal_prop)
+
+allow thermal_symlinks_pep sysfs_thermal:dir r_dir_perms;
+allow thermal_symlinks_pep sysfs_thermal:file r_file_perms;
+allow thermal_symlinks_pep sysfs_thermal:lnk_file r_file_perms;
+allow thermal_symlinks_pep thermal_link_device:dir rw_dir_perms;
+allow thermal_symlinks_pep thermal_link_device:lnk_file create_file_perms;
+allow thermal_symlinks_pep vendor_toolbox_exec:file rx_file_perms;

@@ -21,7 +21,21 @@ cc_binary {
     // install/symbols edges for every in-scope module regardless of
     // PRODUCT_PACKAGES, so sharing the stock output path is a fatal
     // "multiple rules" at ninja load. overrides: keeps make-side sane.
-    overrides: ["android.hardware.thermal-service.pixel"],
+    //
+    // The stock VINTF fragment is overridden HERE (not on the pep
+    // vintf_fragment module): fsgen/removeOverriddenDeps collects Overrides
+    // only from modules in the filesystem install set, and vintf fragments
+    // pulled via vintf_fragment_modules never enter that set -- so an
+    // overrides: on the pep fragment is silently ignored and the stock xml
+    // stays in the image (VINTF dup IThermal/default). The cc_binary IS in
+    // PRODUCT_PACKAGES, so its override strings are honored and the stock
+    // prebuilt_etc_xml is dropped at install-set assembly. Overrides match
+    // by plain module name, cross-type is legal.
+    overrides: [
+        "android.hardware.thermal-service.pixel",
+        "android.hardware.thermal-service.pixel.xml",
+        "thermal-budget-interface-ndk",
+    ],
     srcs: [
         // Build-time generated (//packages/apps/PixelExtraParts/soong/weave_gen):
         // live vanilla + soong/weave/specs, see device.mk regen stanza.
@@ -83,12 +97,27 @@ cc_binary {
     ],
 }
 
+sh_binary {
+    name: "thermal_symlinks_pep",
+    src: "thermal_symlinks_pep.sh",
+    vendor: true,
+    // Kills the stock symlinks script (direct PRODUCT_PACKAGES entry, so
+    // transitive removal would be blocked -- needs an explicit override).
+    // Pep script is a full mirror (links + link_ready=1), stock is redundant.
+    // NOTE: the stock pixel-thermal-symlinks.rc (PRODUCT_COPY_FILES, not a
+    // module) survives and will log one missing-binary error at boot;
+    // harmless -- pep flow uses its own service. See device.mk.
+    overrides: ["thermal_symlinks"],
+}
+
 vintf_fragment {
     name: "android.hardware.thermal-service.pixel.pep.xml",
     src: "android.hardware.thermal-service.pixel.pep.xml",
     vendor: true,
-    // Same-name vendor prebuilt (prebuilt_etc_xml) is overridden here so the
-    // fork wins the install set regardless of inherit order. The stock
-    // fragment declares the identical IThermal/default FqInstance.
-    overrides: ["android.hardware.thermal-service.pixel.xml"],
+    // NOTE: intentionally NO overrides: here. The stock fragment is
+    // suppressed via the pep cc_binary's overrides instead (see above):
+    // a vintf_fragment's own overrides: never reaches
+    // fsgen/removeOverriddenDeps (vintf deps are not in the filesystem
+    // install set), so it is silently ignored on this tree -- and on some
+    // trees it trips Soong's "found in multiple namespaces" error.
 }
