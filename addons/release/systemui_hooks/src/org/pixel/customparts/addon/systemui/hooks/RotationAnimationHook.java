@@ -25,9 +25,11 @@ public class RotationAnimationHook extends BaseSystemUIHook {
 
     private static final String KEY_ROTATION_STYLE = "rotation_animation_style";
     private static final String KEY_ROTATION_CUSTOM_PACKAGE = "rotation_animation_custom_package";
+    private static final String KEY_ROTATION_SPEED = "rotation_animation_speed";
 
     private static final int STYLE_DEFAULT = 0;
     private static final int STYLE_CUSTOM_APK = -1;
+    private static final int STYLE_DISABLED = -2;
 
     private static final String ANIM_ROTATE_EXIT = "custom_rotate_exit";
     private static final String ANIM_ROTATE_ENTER = "custom_rotate_enter";
@@ -59,6 +61,8 @@ public class RotationAnimationHook extends BaseSystemUIHook {
         STYLES.put(6, new AnimDef("flip_exit", "flip_enter", "flip_alpha"));
         STYLES.put(7, new AnimDef("fade_rotate_exit", "fade_rotate_enter", "fade_rotate_alpha"));
         STYLES.put(8, new AnimDef("bounce_exit", "bounce_enter", "bounce_alpha"));
+        // Rotation effectively off: empty triple (alpha 1->1), pair still loads.
+        STYLES.put(STYLE_DISABLED, new AnimDef("no_anim", "no_anim", "no_anim"));
     }
 
     private static volatile boolean sResolved;
@@ -68,6 +72,17 @@ public class RotationAnimationHook extends BaseSystemUIHook {
     private static volatile String sCustomThemePackage;
 
     private static final ThreadLocal<Boolean> sInHook =
+            new ThreadLocal<Boolean>() {
+                @Override
+                protected Boolean initialValue() {
+                    return Boolean.FALSE;
+                }
+            };
+
+    // Set when the ROTATION_0 exit slot was skipped, so the shared enter slot
+    // loaded right after it on the same thread is skipped too (pair stays
+    // stock-consistent). buildAnimation loads exit -> enter sequentially.
+    private static final ThreadLocal<Boolean> sSkipSharedEnter =
             new ThreadLocal<Boolean>() {
                 @Override
                 protected Boolean initialValue() {
@@ -141,23 +156,49 @@ public class RotationAnimationHook extends BaseSystemUIHook {
         if (!isExit && !isEnter && !isAlpha) {
             return null;
         }
+        // Zero-delta display change (resize/fold/density, incl. reconfig
+        // transitions around process start): the Shell ROTATION_0 build loads
+        // screen_rotate_0_exit + rotation_animation_enter with no rotation at
+        // all. Stock is a gentle fade; substituting the flip OUT half would
+        // collapse the whole screen. Keep the pair stock.
+        if ("screen_rotate_0_exit".equals(entryName)
+                || "screen_rotate_0_enter".equals(entryName)) {
+            sSkipSharedEnter.set(Boolean.TRUE);
+            return null;
+        }
+        // The ROTATION_0 enter slot is the shared rotation_animation_enter,
+        // loaded on this thread right after the exit above: skip it too so
+        // the pair stays stock-consistent (real +/-90/180 builds use their
+        // own enter names; jumpcut/xfade loads a different exit first).
+        if ("rotation_animation_enter".equals(entryName)
+                && Boolean.TRUE.equals(sSkipSharedEnter.get())) {
+            sSkipSharedEnter.set(Boolean.FALSE);
+            return null;
+        }
+        sSkipSharedEnter.set(Boolean.FALSE);
         observeThemeKeysOnce(context);
         sInHook.set(Boolean.TRUE);
         try {
+            Animation result = null;
             if (style == STYLE_CUSTOM_APK) {
                 String animName = isExit ? ANIM_ROTATE_EXIT
                         : isEnter ? ANIM_ROTATE_ENTER : ANIM_ROTATE_ALPHA;
-                return loadFromCustomTheme(context, animName);
+                result = loadFromCustomTheme(context, animName);
+            } else {
+                AnimDef def = STYLES.get(style);
+                if (def == null || !ensureResources(context)) {
+                    return null;
+                }
+                int targetId = isExit ? def.exitId : isEnter ? def.enterId : def.alphaId;
+                if (targetId == 0) {
+                    return null;
+                }
+                result = AnimationUtils.loadAnimation(sModuleCtx, targetId);
             }
-            AnimDef def = STYLES.get(style);
-            if (def == null || !ensureResources(context)) {
-                return null;
+            if (result != null) {
+                applySpeed(result, getRotationSpeed(context));
             }
-            int targetId = isExit ? def.exitId : isEnter ? def.enterId : def.alphaId;
-            if (targetId == 0) {
-                return null;
-            }
-            return AnimationUtils.loadAnimation(sModuleCtx, targetId);
+            return result;
         } catch (Throwable t) {
             Log.e(TAG, "maybeCustomRotation failed", t);
             return null;
@@ -182,6 +223,37 @@ public class RotationAnimationHook extends BaseSystemUIHook {
                     context.getContentResolver(), KEY_ROTATION_STYLE, STYLE_DEFAULT);
         } catch (Throwable t) {
             return STYLE_DEFAULT;
+        }
+    }
+
+    private static float getRotationSpeed(Context context) {
+        try {
+            float speed = Settings.Global.getFloat(
+                    context.getContentResolver(), KEY_ROTATION_SPEED, 1f);
+            if (speed < 0.1f) return 0.1f;
+            if (speed > 10f) return 10f;
+            return speed;
+        } catch (Throwable t) {
+            return 1f;
+        }
+    }
+
+    private static void applySpeed(Animation anim, float speed) {
+        if (anim == null || speed == 1f) return;
+        scaleDurations(anim, 1f / speed);
+    }
+
+    private static void scaleDurations(Animation anim, float factor) {
+        if (anim instanceof android.view.animation.AnimationSet) {
+            for (Animation child :
+                    ((android.view.animation.AnimationSet) anim).getAnimations()) {
+                scaleDurations(child, factor);
+            }
+            return;
+        }
+        anim.setDuration(Math.max(1L, (long) (anim.getDuration() * factor)));
+        if (anim.getStartOffset() > 0) {
+            anim.setStartOffset((long) (anim.getStartOffset() * factor));
         }
     }
 
