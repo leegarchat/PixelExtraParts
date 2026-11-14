@@ -129,6 +129,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
     var selectedAddon by remember { mutableStateOf<AddonUiModel?>(null) }
     var showDeleteDialog by remember { mutableStateOf<AddonUiModel?>(null) }
     var safeModeActive by remember { mutableStateOf(isSafeModeActive(context)) }
+    val apkModulesEnabled = remember { ApkModulesGate.isEnabled(context) }
     var highlightedAddonId by remember { mutableStateOf<String?>(null) }
     val bringIntoViewRequesters = remember { mutableMapOf<String, BringIntoViewRequester>() }
 
@@ -254,7 +255,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
         PrimaryTabRow(selectedTabIndex = modulesTab) {
             Tab(selected = modulesTab == 0, onClick = { modulesTab = 0 },
                 text = { Text(stringResource(R.string.addon_tab_jars)) })
-            if (ApkModulesGate.ENABLED) {
+            if (apkModulesEnabled) {
                 Tab(selected = modulesTab == 1, onClick = { modulesTab = 1 },
                     text = { Text(stringResource(R.string.addon_tab_modules)) })
             }
@@ -530,7 +531,7 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
     }
     }
     // TEMPORARY: APK-modules tab content disabled behind ApkModulesGate.
-    if (modulesTab == 1 && ApkModulesGate.ENABLED) {
+    if (modulesTab == 1 && apkModulesEnabled) {
         // === APK modules tab ===
         XposedModulesSection(
             modules = xposedModules,

@@ -22,12 +22,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -100,15 +103,16 @@ private class CoordsRef(var value: LayoutCoordinates? = null)
 class SliderMorphHostState {
     var request by mutableStateOf<SliderMorphRequest?>(null)
         private set
-    /**
-     * Eased 0..1 flight progress of the currently open morph (0 when idle).
-     * Published by [SliderMorphOverlay] every frame; screens read it to drive
-     * header effects (tint boost) at exactly the modal expand speed.
-     */
     var morphProgress by mutableStateOf(0f)
+    var closeSignal by mutableStateOf(0)
+        private set
 
     fun open(request: SliderMorphRequest) {
         this.request = request
+    }
+
+    fun requestAnimatedClose() {
+        if (request != null) closeSignal++
     }
 
     fun close(target: SliderMorphRequest? = null) {
@@ -209,7 +213,7 @@ fun SliderMorphRoot(
 }
 
 /** Smoothstep window over a shared progress (float-bar reveal pattern). */
-private fun sstep(x: Float, a: Float, b: Float): Float {
+internal fun sstep(x: Float, a: Float, b: Float): Float {
     if (b <= a) return if (x >= b) 1f else 0f
     val t = ((x - a) / (b - a)).coerceIn(0f, 1f)
     return t * t * (3f - 2f * t)
@@ -347,6 +351,13 @@ fun SliderMorphOverlay(
 
     BackHandler(enabled = !closing) {
         closeAnimated(req.onDismiss)
+    }
+
+    val initialCloseSignal = remember(req.sessionId) { host.closeSignal }
+    LaunchedEffect(host.closeSignal) {
+        if (host.closeSignal > initialCloseSignal && !closing) {
+            closeAnimated(req.onDismiss)
+        }
     }
 
     // (Early scroll release watcher lives next to the docking math below: it
@@ -608,9 +619,14 @@ fun SliderMorphOverlay(
                     }
 
                     val padVert = lerp(12.dp, 18.dp, sstep(morphT, 0.18f, 0.88f))
+                    val visibleMaxH = (this@BoxWithConstraints.maxHeight - 24.dp).coerceAtLeast(160.dp)
+                    val maxCardH = lerp(this@BoxWithConstraints.maxHeight, visibleMaxH, sstep(morphT, 0.18f, 0.88f))
+                    val editorScrollState = rememberScrollState()
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(max = maxCardH)
+                            .verticalScroll(editorScrollState, enabled = morphT > 0.7f)
                             .padding(horizontal = innerPadH, vertical = padVert)
                     ) {
                         SliderMorphEditorContent(
@@ -630,7 +646,7 @@ fun SliderMorphOverlay(
 /**
  * Unfolds a pill element smoothly from left-to-right and vertically without popping/bouncing.
  */
-private fun Modifier.unfoldPill(progress: Float): Modifier = this.layout { measurable, constraints ->
+internal fun Modifier.unfoldPill(progress: Float): Modifier = this.layout { measurable, constraints ->
     val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
     val p = progress.coerceIn(0f, 1f)
     if (p <= 0.001f) {

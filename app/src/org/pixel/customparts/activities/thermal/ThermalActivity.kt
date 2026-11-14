@@ -2,50 +2,108 @@ package org.pixel.customparts.activities
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.BatteryStd
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp as lerpColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.util.lerp as lerpFloat
+import androidx.compose.ui.zIndex
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.AppConfig
@@ -53,15 +111,26 @@ import org.pixel.customparts.R
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.ui.ExpandableWarningCard
-import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.RebootBubble
+import org.pixel.customparts.ui.GraphicsLayerRecordingState
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import org.pixel.customparts.utils.AutoHbmController
 import org.pixel.customparts.utils.ThermalProfileController
+import kotlin.math.roundToInt
+
+@Stable
+private data class ThermalRebootFlightRequest(
+    val sectionKey: String,
+    val modeId: Int,
+    val modeLabel: String,
+    val isRiskyConfig: Boolean,
+    val sourceRect: Rect = Rect.Zero,
+    val sourceBoundsProvider: () -> Rect = { sourceRect },
+    val sessionId: Long = System.nanoTime()
+)
 
 class ThermalActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,16 +160,25 @@ class ThermalActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThermalScreen(onBack: () -> Unit) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val blurState = rememberGraphicsLayerRecordingState()
-    val lazyListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val density = LocalDensity.current
+
+    val scrollBlur = rememberGraphicsLayerRecordingState()
+    val modalBlur = rememberGraphicsLayerRecordingState()
+    val lazyListState = rememberLazyListState()
+
     var batteryProfile by remember { mutableIntStateOf(0) }
     var socProfile by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
-    var showRebootDialog by remember { mutableStateOf(false) }
-    var isRiskyConfig by remember { mutableStateOf(false) }
+
+    var rebootFlight by remember { mutableStateOf<ThermalRebootFlightRequest?>(null) }
+    var rebootFlightT by remember { mutableFloatStateOf(0f) }
+    var closeSignal by remember { mutableIntStateOf(0) }
+
+    val socModel = remember { AutoHbmController.getSocModel() }
+    var socTempC by remember { mutableStateOf(AutoHbmController.readSocTemperatureC()) }
+
     LaunchedEffect(Unit) {
         val (batIndex, socIndex) = ThermalManager.getCurrentProfiles(context)
         batteryProfile = batIndex
@@ -108,169 +186,497 @@ fun ThermalScreen(onBack: () -> Unit) {
         isLoading = false
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        floatingActionButton = { RebootBubble() },
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(stringResource(R.string.thermal_title),
-                    fontWeight = FontWeight.Bold) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                )
-            )
+    LaunchedEffect(Unit) {
+        while (true) {
+            socTempC = withContext(Dispatchers.IO) { AutoHbmController.readSocTemperatureC() }
+            delay(1500L)
         }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                state = lazyListState,
+    }
+
+    val statusBarTopDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottomDp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val topBarRowHeightDp = 56.dp
+    val effectiveHeaderHeightDp = statusBarTopDp + topBarRowHeightDp
+    val effectiveHeaderHeightPx = with(density) { effectiveHeaderHeightDp.toPx() }
+    val anyModalOpen = rebootFlight != null
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (anyModalOpen) {
+                        Modifier.recordLayer(
+                            state = modalBlur,
+                            backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+        ) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
-                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    top = innerPadding.calculateTopPadding() + 16.dp,
-                    end = 16.dp,
-                    bottom = innerPadding.calculateBottomPadding() + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-                ),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .recordLayer(
+                        state = scrollBlur,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
             ) {
-            
-            item {
-                ExpandableWarningCard(
-                    title = stringResource(R.string.thermal_info_title),
-                    text = stringResource(R.string.thermal_info_summary)
-                )
+                LazyColumn(
+                    state = lazyListState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = effectiveHeaderHeightDp + 12.dp,
+                        end = 16.dp,
+                        bottom = navBottomDp + 28.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item(key = "thermal_warning") {
+                        ExpandableWarningCard(
+                            title = stringResource(R.string.thermal_info_title),
+                            text = stringResource(R.string.thermal_info_summary)
+                        )
+                    }
+
+                    item(key = "thermal_battery_section") {
+                        ThermalSection(
+                            title = stringResource(R.string.thermal_sec_battery),
+                            icon = Icons.Rounded.BatteryStd,
+                            currentMode = batteryProfile,
+                            modes = ThermalManager.getModes(),
+                            isLoading = isLoading,
+                            hiddenModeId = if (rebootFlight?.sectionKey == "battery") rebootFlight?.modeId else null,
+                            onModeSelect = { newModeIndex, modeLabel, bounds, provider ->
+                                batteryProfile = newModeIndex
+                                scope.launch {
+                                    ThermalManager.setBatteryProfile(context, newModeIndex)
+                                }
+                                rebootFlight = ThermalRebootFlightRequest(
+                                    sectionKey = "battery",
+                                    modeId = newModeIndex,
+                                    modeLabel = modeLabel,
+                                    isRiskyConfig = newModeIndex >= 3,
+                                    sourceRect = bounds,
+                                    sourceBoundsProvider = provider
+                                )
+                            },
+                            getDescription = { mode -> ThermalManager.getBatteryDescription(mode) }
+                        )
+                    }
+
+                    item(key = "thermal_soc_section") {
+                        ThermalSection(
+                            title = "$socModel • ${stringResource(R.string.thermal_sec_soc)}" +
+                                (socTempC?.let { String.format(" (%.1f°C)", it) } ?: ""),
+                            icon = Icons.Rounded.Memory,
+                            currentMode = socProfile,
+                            modes = ThermalManager.getModes(),
+                            isLoading = isLoading,
+                            hiddenModeId = if (rebootFlight?.sectionKey == "soc") rebootFlight?.modeId else null,
+                            onModeSelect = { newModeIndex, modeLabel, bounds, provider ->
+                                socProfile = newModeIndex
+                                scope.launch {
+                                    ThermalManager.setSocProfile(context, newModeIndex)
+                                }
+                                rebootFlight = ThermalRebootFlightRequest(
+                                    sectionKey = "soc",
+                                    modeId = newModeIndex,
+                                    modeLabel = modeLabel,
+                                    isRiskyConfig = newModeIndex >= 3,
+                                    sourceRect = bounds,
+                                    sourceBoundsProvider = provider
+                                )
+                            },
+                            getDescription = { mode -> ThermalManager.getSocDescription(mode) }
+                        )
+                    }
+                }
             }
 
-            item {
-                ThermalSection(
-                    title = stringResource(R.string.thermal_sec_battery),
-                    icon = Icons.Rounded.BatteryStd,
-                    currentMode = batteryProfile,
-                    modes = ThermalManager.getModes(),
-                    isLoading = isLoading,
-                    onModeSelect = { newModeIndex ->
-                        batteryProfile = newModeIndex
-                        scope.launch {
-                            ThermalManager.setBatteryProfile(context, newModeIndex)
-                        }
-                        isRiskyConfig = newModeIndex >= 3
-                        showRebootDialog = true
-                    },
-                    getDescription = { mode -> ThermalManager.getBatteryDescription(mode) }
-                )
-            }
-
-            item {
-                ThermalSection(
-                    title = stringResource(R.string.thermal_sec_soc),
-                    icon = Icons.Rounded.Memory,
-                    currentMode = socProfile,
-                    modes = ThermalManager.getModes(),
-                    isLoading = isLoading,
-                    onModeSelect = { newModeIndex ->
-                        socProfile = newModeIndex
-                        scope.launch {
-                            ThermalManager.setSocProfile(context, newModeIndex)
-                        }
-                        isRiskyConfig = newModeIndex >= 3
-                        showRebootDialog = true
-                    },
-                    getDescription = { mode -> ThermalManager.getSocDescription(mode) }
-                )
-            }
+            ThermalRebootFlightOverlay(
+                request = rebootFlight,
+                scrollBlur = scrollBlur,
+                topInsetPx = effectiveHeaderHeightPx,
+                closeSignal = closeSignal,
+                onProgress = { rebootFlightT = it },
+                onClose = { rebootFlight = null },
+                onConfirmReboot = {
+                    rebootFlight = null
+                    rebootDevice(context)
+                }
+            )
         }
 
-            TopBarBlurOverlay(
-                modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-                topBarHeight = innerPadding.calculateTopPadding(),
-                blurState = blurState
+        TopBarBlurOverlay(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
+            topBarHeight = effectiveHeaderHeightDp,
+            blurState = scrollBlur,
+            morphBlurState = modalBlur,
+            morphActive = anyModalOpen,
+            tintBoost = 0.25f * rebootFlightT
+        )
+
+        TopStatusVeil(
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            veilHeight = statusBarTopDp + 14.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .zIndex(4f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
+                .padding(top = statusBarTopDp)
+                .height(topBarRowHeightDp)
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back)
+                )
+            }
+            Text(
+                text = stringResource(R.string.thermal_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
-            TopStatusVeil(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
-                modifier = Modifier.fillMaxWidth()
+        }
+
+        if (anyModalOpen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(effectiveHeaderHeightDp)
+                    .align(Alignment.TopCenter)
+                    .zIndex(5f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { closeSignal++ }
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThermalRebootFlightOverlay(
+    request: ThermalRebootFlightRequest?,
+    scrollBlur: GraphicsLayerRecordingState,
+    topInsetPx: Float,
+    closeSignal: Int,
+    onProgress: (Float) -> Unit,
+    onClose: () -> Unit,
+    onConfirmReboot: () -> Unit
+) {
+    val req = request ?: return
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+
+    val flightAnim = remember(req.sessionId) { Animatable(0f) }
+    var closing by remember(req.sessionId) { mutableStateOf(false) }
+
+    val hostCoordsRef = remember(req.sessionId) { StudioCoordsRef() }
+    val cardCoordsRef = remember(req.sessionId) { StudioCoordsRef() }
+    val flightCoordsRef = remember(req.sessionId) { StudioCoordsRef() }
+
+    LaunchedEffect(req.sessionId) {
+        withFrameNanos { }
+        if (!closing) {
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            flightAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    stiffness = 115f,
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    visibilityThreshold = 0.002f
+                )
             )
         }
     }
 
-    if (showRebootDialog) {
-        val msg = if (isRiskyConfig) {
-            stringResource(R.string.thermal_dialog_risk_msg)
-        } else {
-            stringResource(R.string.thermal_dialog_safe_msg)
+    fun closeAnimated(afterClose: (() -> Unit)? = null) {
+        if (closing) return
+        closing = true
+        scope.launch {
+            flightAnim.stop()
+            try {
+                flightAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = spring(
+                        stiffness = 165f,
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        visibilityThreshold = 0.005f
+                    )
+                )
+            } finally {
+                onProgress(0f)
+                afterClose?.invoke()
+                onClose()
+            }
         }
+    }
 
-        Dialog(onDismissRequest = { showRebootDialog = false }) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 6.dp,
-                shadowElevation = 8.dp, 
+    BackHandler(enabled = !closing) {
+        closeAnimated()
+    }
+
+    val initialCloseSignal = remember(req.sessionId) { closeSignal }
+    LaunchedEffect(closeSignal) {
+        if (closeSignal > initialCloseSignal && !closing) {
+            closeAnimated()
+        }
+    }
+
+    val rawT = flightAnim.value.coerceIn(0f, 1f)
+    val morphT = sstepE(rawT, 0f, 1f)
+    DisposableEffect(morphT) {
+        onProgress(morphT)
+        onDispose { }
+    }
+
+    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val scrimAlpha = 0.42f * sstepE(morphT, 0.35f, 0.90f)
+    val blurReveal = sstepE(morphT, 0.35f, 0.95f)
+    val cornerProgress = sstepE(morphT, 0.20f, 0.85f)
+    val modalShape = RoundedCornerShape(lerp(14.dp, 26.dp, cornerProgress))
+    val cardBorderColor = containerColor.edgeOutline()
+    val flightProgress = sstepE(morphT, 0.0f, 0.96f)
+    val bodyUnfold = sstepE(morphT, 0.16f, 0.88f)
+
+    val topInsetDp = with(density) { topInsetPx.coerceAtLeast(0f).toDp() }
+    val navBottomDp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navBottomPx = with(density) { navBottomDp.toPx() }
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .zIndex(1f)
+    ) {
+        val maxW = maxWidth
+        val fallbackWpx = with(density) { maxWidth.toPx() }
+        val fallbackHpx = with(density) { maxHeight.toPx() }
+
+        val liveSource = req.sourceBoundsProvider().let {
+            if (it.width > 1f && it.height > 1f) it else req.sourceRect
+        }
+        val endW = (maxW - 32.dp).coerceAtLeast(0.dp)
+        val startW = if (liveSource.width > 1f) {
+            with(density) { liveSource.width.roundToInt().toDp() }
+        } else {
+            endW
+        }.coerceIn(0.dp, maxW)
+
+        val cardWidth: Dp = lerp(startW, endW, sstepE(morphT, 0f, 0.90f))
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = scrimAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { if (!closing) closeAnimated() }
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topInsetDp, bottom = navBottomDp)
+                .onPlaced { hostCoordsRef.value = it }
+                .onGloballyPositioned { hostCoordsRef.value = it },
+            contentAlignment = Alignment.Center
+        ) {
+            val hostBounds = hostCoordsRef.value?.boundsInRoot()
+            val targetHost = when {
+                hostBounds != null && hostBounds.width > 1f && hostBounds.height > 1f -> hostBounds
+                else -> Rect(
+                    0f,
+                    topInsetPx.coerceAtMost(fallbackHpx),
+                    fallbackWpx,
+                    (fallbackHpx - navBottomPx).coerceAtLeast(topInsetPx + 1f)
+                )
+            }
+            val src = liveSource
+            val dockW = 1f - flightProgress
+            val cardWpx = with(density) { cardWidth.toPx() }.roundToInt()
+            val cardHpx = flightCoordsRef.value?.takeIf { it.isAttached }?.size?.height
+                ?.takeIf { it > 0 }
+                ?: src.height.roundToInt().coerceAtLeast(1)
+            val hostWpx = targetHost.width.roundToInt()
+            val hostHpx = targetHost.height.roundToInt()
+            val e0x = (hostWpx - cardWpx) / 2 + cardWpx / 2f - targetHost.width / 2f
+            val e0y = (hostHpx - cardHpx) / 2 + cardHpx / 2f - targetHost.height / 2f
+
+            val dx = if (targetHost.width > 1f && src.width > 1f) {
+                (src.center.x - targetHost.center.x - e0x) * dockW
+            } else 0f
+            val dy = if (targetHost.height > 1f && src.height > 1f) {
+                (src.center.y - targetHost.center.y - e0y) * dockW
+            } else 0f
+
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.surfaceContainerHigh.thermalEdgeOutline(),
-                        RoundedCornerShape(24.dp)
+                    .width(cardWidth)
+                    .onPlaced { flightCoordsRef.value = it }
+                    .graphicsLayer {
+                        translationX = dx
+                        translationY = dy
+                    }
+                    .clip(modalShape)
+                    .border(1.dp, cardBorderColor, modalShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        enabled = !closing,
+                        onClick = {}
                     )
             ) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(containerColor.copy(alpha = 0.88f))
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer {
+                                clip = true
+                                alpha = blurReveal
+                            }
+                            .onPlaced { cardCoordsRef.value = it }
+                            .onGloballyPositioned { cardCoordsRef.value = it }
+                            .cardFlightBlurMask(
+                                state = scrollBlur,
+                                coordsProvider = { cardCoordsRef.value }
+                            )
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(containerColor.copy(alpha = 0.66f))
+                    )
+                }
+
+                val msg = if (req.isRiskyConfig) {
+                    stringResource(R.string.thermal_dialog_risk_msg)
+                } else {
+                    stringResource(R.string.thermal_dialog_safe_msg)
+                }
+                val accentTint = if (req.isRiskyConfig) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                }
+
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = lerp(14.dp, 22.dp, cornerProgress),
+                            vertical = lerp(13.dp, 20.dp, cornerProgress)
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Rounded.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    
-                    Text(
-                        text = stringResource(R.string.thermal_dialog_reboot_title),
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        text = msg,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(Modifier.height(24.dp))
-
+                    // 1:1 Header Row matching the selected mode row in ThermalSection at morphT = 0f
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        TextButton(onClick = { showRebootDialog = false }) {
-                            Text(stringResource(R.string.btn_ok))
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Button(
-                            onClick = { 
-                                showRebootDialog = false
-                                rebootDevice(context)
+                        Text(
+                            text = req.modeLabel,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Icon(
+                            imageVector = if (req.isRiskyConfig && cornerProgress > 0.5f) {
+                                Icons.Rounded.Warning
+                            } else {
+                                Icons.Rounded.CheckCircle
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
+                            contentDescription = null,
+                            tint = accentTint
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .unfoldVerticalSlot(bodyUnfold)
+                            .alpha(bodyUnfold),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            text = stringResource(R.string.thermal_dialog_reboot_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = msg,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Text(stringResource(R.string.btn_reboot))
+                            SecondaryActionPill(
+                                icon = Icons.Rounded.Close,
+                                label = stringResource(R.string.btn_ok),
+                                enabled = !closing,
+                                onClick = { closeAnimated() },
+                                modifier = Modifier.weight(1f)
+                            )
+                            SecondaryActionPill(
+                                icon = Icons.Rounded.Refresh,
+                                label = stringResource(R.string.btn_reboot),
+                                enabled = !closing,
+                                onClick = {
+                                    closeAnimated { onConfirmReboot() }
+                                },
+                                modifier = Modifier.weight(1.2f),
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         }
                     }
                 }
@@ -300,17 +706,18 @@ fun ThermalSection(
     currentMode: Int,
     modes: List<ThermalMode>,
     isLoading: Boolean,
-    onModeSelect: (Int) -> Unit,
+    hiddenModeId: Int? = null,
+    onModeSelect: (Int, String, Rect, () -> Rect) -> Unit,
     getDescription: @Composable (Int) -> String
 ) {
     val haptics = LocalHapticFeedback.current
-    val isDangerous = currentMode >= 3 
+    val isDangerous = currentMode >= 3
     val targetContainerColor = if (isDangerous) {
         MaterialTheme.colorScheme.errorContainer
     } else {
         MaterialTheme.colorScheme.surface
     }
-    
+
     val containerColor by animateColorAsState(
         targetContainerColor,
         animationSpec = spring(
@@ -323,21 +730,19 @@ fun ThermalSection(
     Card(
         colors = CardDefaults.cardColors(containerColor = containerColor),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize()
-            .border(1.dp, containerColor.thermalEdgeOutline(), RoundedCornerShape(24.dp))
+        border = BorderStroke(1.dp, containerColor.edgeOutline()),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
-                modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                modifier = Modifier.padding(start = 6.dp, end = 6.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.65f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -352,26 +757,27 @@ fun ThermalSection(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                
+
                 if (isLoading) {
-                    Spacer(Modifier.weight(1f))
                     CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp), 
+                        modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
 
-            Spacer(Modifier.height(4.dp))
-
             modes.forEach { mode ->
                 val isSelected = mode.id == currentMode && !isLoading
-                
+                var rowBounds by remember { mutableStateOf(Rect.Zero) }
+
                 val selectedColor = if (isDangerous) {
-                    MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    MaterialTheme.colorScheme.error.copy(alpha = 0.16f)
                 } else {
                     MaterialTheme.colorScheme.secondaryContainer
                 }
@@ -386,7 +792,7 @@ fun ThermalSection(
                 )
 
                 val weightVal by animateIntAsState(
-                    targetValue = if (isSelected) 700 else 400,
+                    targetValue = if (isSelected) 700 else 500,
                     animationSpec = spring(
                         stiffness = Spring.StiffnessMedium,
                         dampingRatio = Spring.DampingRatioNoBouncy
@@ -394,18 +800,40 @@ fun ThermalSection(
                     label = "weight"
                 )
 
+                val modeLabel = stringResource(mode.labelRes)
+                val isHiddenForFlight = hiddenModeId == mode.id
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 2.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(rowBackgroundColor)
-                        .border(1.dp, rowBackgroundColor.thermalEdgeOutline(), RoundedCornerShape(12.dp))
-                        .clickable {
-                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
-                            onModeSelect(mode.id)
+                        .onPlaced {
+                            val r = it.unclippedBoundsInRoot()
+                            if (r.width > 1f && r.height > 1f) rowBounds = r
                         }
-                        .padding(horizontal = 8.dp, vertical = 14.dp),
+                        .onGloballyPositioned {
+                            val r = it.unclippedBoundsInRoot()
+                            if (r.width > 1f && r.height > 1f) rowBounds = r
+                        }
+                        .alpha(if (isHiddenForFlight) 0f else 1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(rowBackgroundColor)
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(
+                                    1.dp,
+                                    rowBackgroundColor.edgeOutline(),
+                                    RoundedCornerShape(14.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .clickable(enabled = !isHiddenForFlight) {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onModeSelect(mode.id, modeLabel, rowBounds) { rowBounds }
+                        }
+                        .padding(horizontal = 14.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -416,7 +844,7 @@ fun ThermalSection(
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    
+
                     AnimatedVisibility(
                         visible = isSelected,
                         modifier = Modifier.padding(start = 12.dp),
@@ -429,24 +857,24 @@ fun ThermalSection(
                         exit = scaleOut() + fadeOut()
                     ) {
                         Icon(
-                            Icons.Rounded.CheckCircle, 
-                            null, 
+                            Icons.Rounded.CheckCircle,
+                            null,
                             tint = if (isDangerous) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.3f), 
-                        RoundedCornerShape(12.dp)
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.35f),
+                        RoundedCornerShape(14.dp)
                     )
-                    .padding(8.dp)
+                    .padding(10.dp)
             ) {
                 Text(
                     text = getDescription(currentMode),
@@ -460,24 +888,7 @@ fun ThermalSection(
 
 data class ThermalMode(val id: Int, val labelRes: Int)
 
-/**
- * Локальная адаптивная микрообводка 1.dp по гайдлайну (раздел 3):
- * на светлом контейнере затемняет, на тёмном — осветляет к белому.
- * Локально для Thermal, чтобы не трогать общие компоненты.
- */
-internal fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color {
-    val luminance = 0.2126f * red + 0.7152f * green + 0.0722f * blue
-    val shifted = if (luminance > 0.55f) {
-        copy(red = red * 0.8f, green = green * 0.8f, blue = blue * 0.8f)
-    } else {
-        copy(
-            red = (red + (1f - red) * 0.22f).coerceIn(0f, 1f),
-            green = (green + (1f - green) * 0.22f).coerceIn(0f, 1f),
-            blue = (blue + (1f - blue) * 0.22f).coerceIn(0f, 1f)
-        )
-    }
-    return shifted.copy(alpha = alpha)
-}
+internal fun Color.thermalEdgeOutline(alpha: Float = 0.45f): Color = edgeOutline(alpha)
 
 object ThermalManager {
     private const val TAG = "PixelPartsThermal"
@@ -506,7 +917,7 @@ object ThermalManager {
 
     @Composable
     fun getBatteryDescription(mode: Int): String {
-        val resId = when(mode) {
+        val resId = when (mode) {
             MODE_STOCK -> R.string.thermal_desc_bat_stock
             MODE_SOFT -> R.string.thermal_desc_bat_soft
             MODE_MEDIUM -> R.string.thermal_desc_bat_medium
@@ -519,7 +930,7 @@ object ThermalManager {
 
     @Composable
     fun getSocDescription(mode: Int): String {
-        val resId = when(mode) {
+        val resId = when (mode) {
             MODE_STOCK -> R.string.thermal_desc_soc_stock
             MODE_SOFT -> R.string.thermal_desc_soc_soft
             MODE_MEDIUM -> R.string.thermal_desc_soc_medium
@@ -573,7 +984,7 @@ object ThermalManager {
         val batteryMode = prefs.getString(KEY_THERMAL_BATTERY, "stock") ?: "stock"
         val socMode = prefs.getString(KEY_THERMAL_SOC, "stock") ?: "stock"
 
-        Log.d(TAG, "Updating thermal props. Battery: $batteryMode, SoC: $socMode")
+        Log.d(TAG, "Updating thermal props. Battery: $batteryMode, SoC:$socMode")
 
         setSystemProperty(PROP_BATTERY, batteryMode)
         setSystemProperty(PROP_SOC, socMode)
@@ -603,11 +1014,10 @@ object ThermalManager {
         }
 
         try {
-            return Runtime.getRuntime().exec(arrayOf("su", "-c", "setprop $key $value")).waitFor() == 0
+            return Runtime.getRuntime().exec(arrayOf("su", "-c", "svc power reboot")).waitFor() == 0
         } catch (e: Exception) {
             Log.e(TAG, "Root set failed for $key", e)
         }
         return false
     }
-
 }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rotation_anim_disabled">关闭</string>
+    <string name="rotation_anim_tab_builtin">内置</string>
+    <string name="rotation_anim_tab_collected">已组装</string>
+    <string name="rotation_anim_tab_builder">构建器</string>
+    <string name="rotation_anim_speed">动画速度</string>
+    <string name="rotation_anim_delete_theme">删除主题</string>
+    <string name="rotation_anim_add_custom">添加自定义</string>
+    <string name="icon_shape_mode_star">星形 / 齿轮</string>
+    <string name="icon_shape_mode_asymmetric">非对称</string>
+    <string name="icon_shape_corner_smoothing">圆角平滑</string>
+    <string name="icon_shape_petal_sharpness">花瓣锐度</string>
+    <string name="icon_shape_inner_radius">内半径</string>
+    <string name="icon_shape_tip_smoothing">尖端平滑</string>
+    <string name="icon_shape_corner_top_left">左上角</string>
+    <string name="icon_shape_corner_top_right">右上角</string>
+    <string name="icon_shape_corner_bottom_right">右下角</string>
+    <string name="icon_shape_corner_bottom_left">左下角</string>
+    <string name="icon_shape_barrel_pinch">桶形 / 挤压</string>
+    <string name="icon_shape_spiral_twist">螺旋扭曲</string>
+    <string name="icon_shape_skew_x">倾斜 X</string>
+    <string name="icon_shape_skew_y">倾斜 Y</string>
+    <string name="icon_shape_brightness">亮度</string>
+    <string name="anim_constructor_style_hint">例如：我的动画</string>
+    <string name="anim_direction_enter">进入</string>
+    <string name="anim_direction_close">关闭</string>
+    <string name="anim_phase_start">开始</string>
+    <string name="anim_phase_end">结束</string>
+</resources>

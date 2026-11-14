@@ -125,7 +125,7 @@ internal fun ConstructorExportButton(
                         value = buildThemeName,
                         onValueChange = { buildThemeName = filterThemeNameInput(it) },
                         label = { Text(stringResource(R.string.anim_constructor_style_name)) },
-                        placeholder = { Text("e.g. my animation") },
+                        placeholder = { Text(stringResource(R.string.anim_constructor_style_hint)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

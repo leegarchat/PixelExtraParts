@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview-only: exact copy of the stock AOSP activity open-enter animation
+     (frameworks/base/core/res/res/anim/activity_open_enter.xml). Framework
+     @interpolator/* refs mapped to @android:interpolator/* (both are public
+     SDK resources). All durations, offsets, deltas and fill flags are
+     byte-identical to stock. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+
+    <alpha
+        android:fromAlpha="0"
+        android:toAlpha="1.0"
+        android:fillEnabled="true"
+        android:fillBefore="true"
+        android:fillAfter="true"
+        android:interpolator="@android:interpolator/linear"
+        android:startOffset="50"
+        android:duration="83" />
+
+    <translate
+        android:fromXDelta="96dp"
+        android:toXDelta="0"
+        android:fillEnabled="true"
+        android:fillBefore="true"
+        android:fillAfter="true"
+        android:interpolator="@android:interpolator/fast_out_extra_slow_in"
+        android:duration="450" />
+
+    <extend
+        android:fromExtendLeft="96dp"
+        android:fromExtendTop="0"
+        android:fromExtendRight="0"
+        android:fromExtendBottom="0"
+        android:toExtendLeft="96dp"
+        android:toExtendTop="0"
+        android:toExtendRight="0"
+        android:toExtendBottom="0"
+        android:interpolator="@android:interpolator/fast_out_extra_slow_in"
+        android:startOffset="0"
+        android:duration="450" />
+</set>

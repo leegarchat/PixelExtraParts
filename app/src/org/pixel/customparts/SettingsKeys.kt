@@ -376,6 +376,12 @@ object SettingsKeys {
     /** Package name of the custom animation theme APK for close transitions. */
     const val ACTIVITY_CLOSE_CUSTOM_PACKAGE = "activity_close_custom_package"
 
+    /** Speed multiplier for activity open transitions (0.1f..10f, default 1f). */
+    const val ACTIVITY_OPEN_TRANSITION_SPEED = "activity_open_transition_speed"
+
+    /** Speed multiplier for activity close transitions (0.1f..10f, default 1f). */
+    const val ACTIVITY_CLOSE_TRANSITION_SPEED = "activity_close_transition_speed"
+
     /** Disable predictive back gesture animation (0 = default, 1 = disable). */
     const val DISABLE_PREDICTIVE_BACK_ANIM = "disable_predictive_back_anim"
 

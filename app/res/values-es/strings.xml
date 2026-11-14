@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="rotation_anim_disabled">Desactivado</string>
+    <string name="rotation_anim_tab_builtin">Integrados</string>
+    <string name="rotation_anim_tab_collected">Ensamblados</string>
+    <string name="rotation_anim_tab_builder">Constructor</string>
+    <string name="rotation_anim_speed">Velocidad de animación</string>
+    <string name="rotation_anim_delete_theme">Eliminar tema</string>
+    <string name="rotation_anim_add_custom">Añadir el tuyo</string>
+    <string name="icon_shape_mode_star">Estrella / Engranaje</string>
+    <string name="icon_shape_mode_asymmetric">Asimétrico</string>
+    <string name="icon_shape_corner_smoothing">Suavizado de esquinas</string>
+    <string name="icon_shape_petal_sharpness">Nitidez de pétalos</string>
+    <string name="icon_shape_inner_radius">Radio interior</string>
+    <string name="icon_shape_tip_smoothing">Suavizado de puntas</string>
+    <string name="icon_shape_corner_top_left">Esquina superior izquierda</string>
+    <string name="icon_shape_corner_top_right">Esquina superior derecha</string>
+    <string name="icon_shape_corner_bottom_right">Esquina inferior derecha</string>
+    <string name="icon_shape_corner_bottom_left">Esquina inferior izquierda</string>
+    <string name="icon_shape_barrel_pinch">Barril / Pellizco</string>
+    <string name="icon_shape_spiral_twist">Giro en espiral</string>
+    <string name="icon_shape_skew_x">Inclinación X</string>
+    <string name="icon_shape_skew_y">Inclinación Y</string>
+    <string name="icon_shape_brightness">Brillo</string>
+    <string name="anim_constructor_style_hint">p. ej. mi animación</string>
+    <string name="anim_direction_enter">Entrada</string>
+    <string name="anim_direction_close">Cierre</string>
+    <string name="anim_phase_start">Inicio</string>
+    <string name="anim_phase_end">Fin</string>
+</resources>

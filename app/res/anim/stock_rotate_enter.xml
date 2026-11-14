@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview-only: stock-like rotation enter (new face rotates in). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <rotate
+        android:fromDegrees="90" android:toDegrees="0"
+        android:pivotX="50%" android:pivotY="50%"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/decelerate_quad"
+        android:startOffset="60"
+        android:duration="240" />
+    <alpha
+        android:fromAlpha="0.0" android:toAlpha="1.0"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/linear"
+        android:startOffset="60"
+        android:duration="240" />
+</set>

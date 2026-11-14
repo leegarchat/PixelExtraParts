@@ -1,150 +1,110 @@
 package org.pixel.customparts.activities
 
-import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
-import android.net.Uri
-import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
+import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.Image
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.core.graphics.drawable.toBitmap
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
-import org.pixel.customparts.SettingsKeys
-import org.pixel.customparts.dynamicDarkColorScheme
-import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.icons.AppIconCandidate
-import org.pixel.customparts.icons.AppIconShapeOverrides
-import org.pixel.customparts.icons.IconApplyMode
 import org.pixel.customparts.icons.IconApplyProgress
-import org.pixel.customparts.icons.IconApplyResult
-import org.pixel.customparts.icons.IconDashboardState
-import org.pixel.customparts.icons.IconMapSnapshot
+import androidx.compose.ui.unit.Dp
 import org.pixel.customparts.icons.IconPackApplyStatus
-import org.pixel.customparts.icons.IconPackEntry
 import org.pixel.customparts.icons.IconPackInfo
 import org.pixel.customparts.icons.IconPackManager
-import org.pixel.customparts.icons.IconPackPreviewItem
-import org.pixel.customparts.icons.IconShapeAreaConfig
 import org.pixel.customparts.icons.InstalledIconApp
-import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.ColorPickerDialog
-import org.pixel.customparts.ui.RebootBubble
-import org.pixel.customparts.ui.RebootBubbleMenuAction
+import org.pixel.customparts.ui.GenericSwitchRow
+import org.pixel.customparts.ui.GraphicsLayerRecordingState
+import org.pixel.customparts.ui.RadioSelectionGroup
 import org.pixel.customparts.ui.SettingsGroupCard
 import org.pixel.customparts.ui.SliderSettingFloat
-import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.addons.AddonMainEntry
 import org.pixel.customparts.ui.addons.AddonMainEntryRow
-import org.pixel.customparts.ui.addons.flattenSettings
-import org.pixel.customparts.ui.addons.scanAddonActivityEntries
-import org.pixel.customparts.ui.performRebootSystem
-import org.pixel.customparts.ui.recordLayer
-import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.utils.SettingsCompat
-import java.util.Locale
-import androidx.compose.ui.res.stringResource
+import org.pixel.customparts.ui.edgeOutline
 
 internal data class AppIconModuleFlags(
     val moduleEnabled: Boolean,
@@ -185,26 +145,593 @@ internal data class AppIconChooserItem(
     val appPackageName: String?
 )
 
+@Stable
+internal data class IconPackFlightTarget(
+    val key: String,
+    val pack: IconPackInfo,
+    val initialTab: Int = 0,
+    val source: Rect = Rect.Zero,
+    val sourceBoundsProvider: () -> Rect = { source },
+    val isTrashArmedProvider: () -> Boolean = { false },
+    val sessionId: Long = System.nanoTime()
+)
+
+@Stable
+internal data class AppDetailFlightTarget(
+    val app: InstalledIconApp,
+    val source: Rect = Rect.Zero,
+    val sourceBoundsProvider: () -> Rect = { source },
+    val sessionId: Long = System.nanoTime()
+)
+
+@Stable
+internal data class ColorPickerFlightTarget(
+    val key: String,
+    val title: String,
+    val initialColor: Int,
+    val source: Rect = Rect.Zero,
+    val sourceBoundsProvider: () -> Rect = { source },
+    val onColorSelected: (Int) -> Unit,
+    val sessionId: Long = System.nanoTime()
+)
+
 private const val APP_ICON_TINT_MODE_OFF = 0
 private const val APP_ICON_TINT_MODE_CUSTOM = 1
 private const val APP_ICON_TINT_MODE_AUTO = 2
-private const val DEFAULT_SHAPE_BACKGROUND_TINT_COLOR = 0x00000000
-private const val DEFAULT_SHAPE_FOREGROUND_TINT_COLOR = -0x1
+
+// ── Fixed-Geometry Shimmer Skeletons (Zero Layout Jumps on Initial Load) ──
 
 @Composable
 internal fun LoadingCard() {
+    SkeletonPackPlaceholderCard()
+}
+
+@Composable
+internal fun SkeletonPackPlaceholderCard() {
+    val pulse = rememberInfiniteTransition(label = "SkeletonPackPulse")
+    val alpha by pulse.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.75f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "SkeletonAlpha"
+    )
+    val bgColor = MaterialTheme.colorScheme.surface
+    val blockColor = MaterialTheme.colorScheme.surfaceContainerHighest
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .height(216.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        border = BorderStroke(1.dp, bgColor.edgeOutline())
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .alpha(alpha),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(blockColor)
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.55f)
+                            .height(16.dp)
+                            .clip(CircleShape)
+                            .background(blockColor)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.38f)
+                            .height(12.dp)
+                            .clip(CircleShape)
+                            .background(blockColor)
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(CircleShape)
+                    .background(blockColor)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(blockColor)
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(blockColor)
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(blockColor)
+                )
+            }
         }
     }
 }
+
+@Composable
+internal fun SkeletonAppStreamCard() {
+    val pulse = rememberInfiniteTransition(label = "SkeletonStreamPulse")
+    val alpha by pulse.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.75f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "SkeletonStreamAlpha"
+    )
+    val bgColor = MaterialTheme.colorScheme.surface
+    val blockColor = MaterialTheme.colorScheme.surfaceContainerHighest
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        border = BorderStroke(1.dp, bgColor.edgeOutline())
+    ) {
+        Column(modifier = Modifier.alpha(alpha)) {
+            repeat(6) { idx ->
+                if (idx > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(blockColor)
+                    )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.48f)
+                                .height(15.dp)
+                                .clip(CircleShape)
+                                .background(blockColor)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.32f)
+                                .height(11.dp)
+                                .clip(CircleShape)
+                                .background(blockColor)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Tab 2: Seamless Unified App Stream Row (1:1 Flight Ready) ─────────────
+
+@Composable
+internal fun InstalledAppStreamRow(
+    app: InstalledIconApp,
+    sectionTitle: String?,
+    isFirst: Boolean,
+    isLast: Boolean,
+    hasShapeOverride: Boolean,
+    cachedCustomBitmap: Bitmap?,
+    onCacheBitmap: (Bitmap?) -> Unit,
+    isHiddenForFlight: Boolean,
+    onOpenFlight: (Rect, () -> Rect) -> Unit
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val density = LocalDensity.current
+    val iconSizePx = with(density) { 48.dp.roundToPx() }
+
+    var rowBounds by remember { mutableStateOf(Rect.Zero) }
+
+    LaunchedEffect(app.packageName, app.appliedIconFileName) {
+        if (app.appliedIconFileName != null && cachedCustomBitmap == null) {
+            val loaded = IconPackManager.loadAppliedIconBitmap(context, app.packageName, iconSizePx)
+            if (loaded != null) onCacheBitmap(loaded)
+        }
+    }
+
+    val shape = when {
+        isFirst && isLast -> RoundedCornerShape(24.dp)
+        isFirst -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        isLast -> RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+        else -> RoundedCornerShape(0.dp)
+    }
+
+    val bgColor = MaterialTheme.colorScheme.surface
+    val outlineColor = bgColor.edgeOutline()
+    val strokePx = with(density) { 1.dp.toPx() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(bgColor)
+            .then(
+                if (isFirst || isLast) {
+                    Modifier.border(1.dp, outlineColor, shape)
+                } else {
+                    Modifier.drawWithContent {
+                        drawContent()
+                        drawLine(
+                            color = outlineColor,
+                            start = Offset(0f, 0f),
+                            end = Offset(0f, size.height),
+                            strokeWidth = strokePx
+                        )
+                        drawLine(
+                            color = outlineColor,
+                            start = Offset(size.width, 0f),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = strokePx
+                        )
+                    }
+                }
+            )
+    ) {
+        if (isFirst && !sectionTitle.isNullOrBlank()) {
+            Text(
+                text = sectionTitle,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 6.dp)
+            )
+        }
+
+        if (!isFirst) {
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onPlaced {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) rowBounds = r
+                }
+                .onGloballyPositioned {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) rowBounds = r
+                }
+                .alpha(if (isHiddenForFlight) 0f else 1f)
+                .clickable(enabled = !isHiddenForFlight) {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onOpenFlight(rowBounds) { rowBounds }
+                }
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 13.dp,
+                    bottom = if (isLast) 16.dp else 13.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val activeBitmap = if (app.appliedIconFileName != null) cachedCustomBitmap else null
+            if (activeBitmap != null) {
+                BitmapIcon(bitmap = activeBitmap, size = 44.dp, fallback = Icons.Rounded.Apps)
+            } else {
+                DrawableIcon(drawable = app.icon, size = 44.dp, fallback = Icons.Rounded.Apps)
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp, end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = app.label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = app.appliedIconPackLabel?.let {
+                        stringResource(R.string.app_icons_applied_from_format, it)
+                    } ?: app.packageName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (app.appliedIconPackLabel != null) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            if (hasShapeOverride) {
+                val shapeBadgeBg = MaterialTheme.colorScheme.tertiaryContainer
+                Box(
+                    modifier = Modifier
+                        .padding(end = 6.dp)
+                        .clip(CircleShape)
+                        .background(shapeBadgeBg)
+                        .border(1.dp, shapeBadgeBg.edgeOutline(), CircleShape)
+                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "S",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier.size(28.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+    }
+}
+
+// ── Tab 1: Clean Icon Pack Card with 1:1 Flight Trigger ───────────────────
+
+@Composable
+internal fun IconPackSummaryBlock(
+    pack: IconPackInfo,
+    modifier: Modifier = Modifier
+) {
+    val coverageFraction by animateFloatAsState(
+        targetValue = if (pack.supportedPackageCount > 0) {
+            (pack.appliedPackageCount.toFloat() / pack.supportedPackageCount.toFloat()).coerceIn(0f, 1f)
+        } else 0f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "PackCoverageFraction"
+    )
+
+    val badgeBg by animateColorAsState(
+        targetValue = when {
+            !pack.installed -> MaterialTheme.colorScheme.errorContainer
+            pack.status == IconPackApplyStatus.APPLIED_FULL -> MaterialTheme.colorScheme.primaryContainer
+            pack.status == IconPackApplyStatus.APPLIED_PARTIAL -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "PackStatusBadgeBg"
+    )
+    val badgeFg by animateColorAsState(
+        targetValue = when {
+            !pack.installed -> MaterialTheme.colorScheme.onErrorContainer
+            pack.status == IconPackApplyStatus.APPLIED_FULL -> MaterialTheme.colorScheme.onPrimaryContainer
+            pack.status == IconPackApplyStatus.APPLIED_PARTIAL -> MaterialTheme.colorScheme.onSecondaryContainer
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "PackStatusBadgeFg"
+    )
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = stringResource(
+                R.string.app_icons_supported_count_format,
+                pack.supportedPackageCount,
+                pack.supportedIconCount,
+                pack.appliedPackageCount
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        LinearProgressIndicator(
+            progress = { coverageFraction },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(CircleShape)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(badgeBg)
+                    .border(1.dp, badgeBg.edgeOutline(), CircleShape)
+                    .padding(horizontal = 12.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = if (pack.installed) {
+                        iconPackStatusText(pack.status)
+                    } else {
+                        stringResource(R.string.app_icons_pack_missing_status)
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = badgeFg,
+                    maxLines = 1
+                )
+            }
+
+            if (pack.installed && pack.requiresUpdate) {
+                val updBg = MaterialTheme.colorScheme.tertiaryContainer
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(updBg)
+                        .border(1.dp, updBg.edgeOutline(), CircleShape)
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_icons_requires_update),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun IconPackCard(
+    pack: IconPackInfo,
+    busy: Boolean,
+    trashArmed: Boolean,
+    isHiddenForFlight: Boolean = false,
+    onExpand: (Int, Rect, () -> Rect) -> Unit,
+    onApplyUpdate: () -> Unit,
+    onTrashClick: () -> Unit
+) {
+    val haptics = LocalHapticFeedback.current
+    var cardBounds by remember { mutableStateOf(Rect.Zero) }
+
+    val isAppliedAny = pack.appliedPackageCount > 0
+    val cardBg by animateColorAsState(
+        targetValue = if (isAppliedAny) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "PackCardBg"
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .onPlaced {
+                val r = it.unclippedBoundsInRoot()
+                if (r.width > 1f && r.height > 1f) cardBounds = r
+            }
+            .onGloballyPositioned {
+                val r = it.unclippedBoundsInRoot()
+                if (r.width > 1f && r.height > 1f) cardBounds = r
+            }
+            .alpha(if (isHiddenForFlight) 0f else 1f)
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(enabled = !isHiddenForFlight && !busy) {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onExpand(0, cardBounds) { cardBounds }
+            },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.dp, cardBg.edgeOutline())
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DrawableIcon(drawable = pack.icon, size = 52.dp, fallback = Icons.Rounded.Apps)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = pack.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = pack.packageName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Box(
+                    modifier = Modifier.size(36.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            IconPackSummaryBlock(pack = pack)
+        }
+    }
+}
+
+// ── Tab 3: Structured Settings Content (Flight Color Picker Ready) ───────
 
 @Composable
 internal fun AppIconsAddonInjectedSettings(
@@ -241,9 +768,11 @@ internal fun AppIconsAddonInjectedSettings(
 }
 
 @Composable
-internal fun AppIconsModuleSwitch(
+internal fun AppIconsSettingsTabContent(
     checked: Boolean,
     launcherOnlyChecked: Boolean,
+    selectedAreaTab: Int,
+    onAreaTabSelected: (Int) -> Unit,
     systemStretchShapeChecked: Boolean,
     systemRemoveShapeChecked: Boolean,
     notificationStretchShapeChecked: Boolean,
@@ -257,9 +786,8 @@ internal fun AppIconsModuleSwitch(
     backgroundTintColor: Int,
     foregroundTintMode: Int,
     foregroundTintColor: Int,
-    advancedExpanded: Boolean,
-    showHardcodedControls: Boolean,
     showLauncherControls: Boolean,
+    activeColorFlightKey: String?,
     onIconShapeClick: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
     onLauncherOnlyChange: (Boolean) -> Unit,
@@ -273,35 +801,28 @@ internal fun AppIconsModuleSwitch(
     onNotificationShapeScaleChange: (Float) -> Unit,
     onLauncherShapeScaleChange: (Float) -> Unit,
     onBackgroundTintModeChange: (Int) -> Unit,
-    onBackgroundTintColorChange: (Int) -> Unit,
+    onOpenBackgroundColorFlight: (Rect, () -> Rect) -> Unit,
     onForegroundTintModeChange: (Int) -> Unit,
-    onForegroundTintColorChange: (Int) -> Unit,
-    onAdvancedExpandedChange: (Boolean) -> Unit
+    onOpenForegroundColorFlight: (Rect, () -> Rect) -> Unit
 ) {
     val systemOptionsEnabled = checked && !launcherOnlyChecked
     val launcherOptionsEnabled = checked
-    Card(
+
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp)
-        ) {
-            if (showHardcodedControls) {
-                AppIconsSwitchRow(
-                    title = stringResource(R.string.app_icons_module_enabled_title),
-                    summary = stringResource(R.string.app_icons_module_enabled_summary),
-                    checked = checked,
-                    enabled = true,
-                    onCheckedChange = onCheckedChange
-                )
-            }
-            if (showHardcodedControls && showLauncherControls) {
+        SettingsGroupCard(title = stringResource(R.string.app_icons_title)) {
+            GenericSwitchRow(
+                title = stringResource(R.string.app_icons_module_enabled_title),
+                summary = stringResource(R.string.app_icons_module_enabled_summary),
+                checked = checked,
+                enabled = true,
+                onCheckedChange = onCheckedChange
+            )
+            if (showLauncherControls) {
                 HorizontalDivider()
-                AppIconsSwitchRow(
+                GenericSwitchRow(
                     title = stringResource(R.string.app_icons_launcher_only_title),
                     summary = stringResource(R.string.app_icons_launcher_only_summary),
                     checked = checked && launcherOnlyChecked,
@@ -309,125 +830,166 @@ internal fun AppIconsModuleSwitch(
                     onCheckedChange = onLauncherOnlyChange
                 )
             }
-            if (showHardcodedControls) {
-                ExpandableSectionHeaderContent(
-                    title = stringResource(R.string.app_icons_advanced_settings_title),
-                    subtitle = stringResource(R.string.app_icons_advanced_settings_summary),
-                    icon = Icons.Rounded.Apps,
-                    expanded = advancedExpanded,
-                    onExpandChange = onAdvancedExpandedChange
-                )
-                AnimatedVisibility(
-                    visible = advancedExpanded,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                    AppIconsNavigationRow(
-                        title = stringResource(R.string.icon_shape_title),
-                        summary = stringResource(R.string.icon_shape_summary),
-                        onClick = onIconShapeClick
-                    )
-                    HorizontalDivider()
-                    AppIconsSwitchRow(
-                        title = stringResource(R.string.app_icons_system_stretch_shape_title),
-                        summary = stringResource(R.string.app_icons_system_stretch_shape_summary),
-                        checked = systemOptionsEnabled && systemStretchShapeChecked,
-                        enabled = systemOptionsEnabled,
-                        onCheckedChange = onSystemStretchShapeChange
-                    )
-                    if (systemStretchShapeChecked) {
-                        HorizontalDivider()
-                        AppIconsScaleSliderRow(
-                            title = stringResource(R.string.app_icons_system_shape_scale_title),
-                            value = systemShapeScalePercent,
-                            enabled = systemOptionsEnabled,
-                            onValueChange = onSystemShapeScaleChange
+            HorizontalDivider()
+            AppIconsNavigationRow(
+                title = stringResource(R.string.icon_shape_title),
+                summary = stringResource(R.string.icon_shape_summary),
+                onClick = onIconShapeClick
+            )
+        }
+
+        val areaTitles = buildList {
+            add(stringResource(R.string.app_icons_per_app_system_area))
+            add(stringResource(R.string.app_icons_per_app_notification_area))
+            if (showLauncherControls) {
+                add(stringResource(R.string.app_icons_per_app_launcher_area))
+            }
+        }
+        val clampedAreaTab = selectedAreaTab.coerceIn(0, (areaTitles.size - 1).coerceAtLeast(0))
+        val animatedAreaPos by animateFloatAsState(
+            targetValue = clampedAreaTab.toFloat(),
+            animationSpec = spring(
+                stiffness = Spring.StiffnessMediumLow,
+                dampingRatio = Spring.DampingRatioNoBouncy
+            ),
+            label = "GlobalShapeAreaTabPos"
+        )
+
+        SettingsGroupCard(
+            title = stringResource(R.string.app_icons_per_app_shape_title),
+            enabled = checked
+        ) {
+            AppIconsTabs(
+                titles = areaTitles,
+                position = animatedAreaPos,
+                onTabClick = onAreaTabSelected
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            AnimatedContent(
+                targetState = clampedAreaTab,
+                transitionSpec = {
+                    val dir = if (targetState > initialState) 1 else -1
+                    (slideInHorizontally(
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessMediumLow,
+                            dampingRatio = Spring.DampingRatioNoBouncy
                         )
-                    }
-                    HorizontalDivider()
-                    AppIconsSwitchRow(
-                        title = stringResource(R.string.app_icons_system_remove_shape_title),
-                        summary = stringResource(R.string.app_icons_system_remove_shape_summary),
-                        checked = systemOptionsEnabled && systemRemoveShapeChecked,
-                        enabled = systemOptionsEnabled,
-                        onCheckedChange = onSystemRemoveShapeChange
-                    )
-                    HorizontalDivider()
-                    AppIconsSwitchRow(
-                        title = stringResource(R.string.app_icons_notification_stretch_shape_title),
-                        summary = stringResource(R.string.app_icons_notification_stretch_shape_summary),
-                        checked = systemOptionsEnabled && notificationStretchShapeChecked,
-                        enabled = systemOptionsEnabled,
-                        onCheckedChange = onNotificationStretchShapeChange
-                    )
-                    if (notificationStretchShapeChecked) {
-                        HorizontalDivider()
-                        AppIconsScaleSliderRow(
-                            title = stringResource(R.string.app_icons_notification_shape_scale_title),
-                            value = notificationShapeScalePercent,
-                            enabled = systemOptionsEnabled,
-                            onValueChange = onNotificationShapeScaleChange
-                        )
-                    }
-                    HorizontalDivider()
-                    AppIconsSwitchRow(
-                        title = stringResource(R.string.app_icons_notification_remove_shape_title),
-                        summary = stringResource(R.string.app_icons_notification_remove_shape_summary),
-                        checked = systemOptionsEnabled && notificationRemoveShapeChecked,
-                        enabled = systemOptionsEnabled,
-                        onCheckedChange = onNotificationRemoveShapeChange
-                    )
-                    if (showLauncherControls) {
-                        HorizontalDivider()
-                        AppIconsSwitchRow(
-                            title = stringResource(R.string.app_icons_launcher_stretch_shape_title),
-                            summary = stringResource(R.string.app_icons_launcher_stretch_shape_summary),
-                            checked = launcherOptionsEnabled && launcherStretchShapeChecked,
-                            enabled = launcherOptionsEnabled,
-                            onCheckedChange = onLauncherStretchShapeChange
-                        )
-                        if (launcherStretchShapeChecked) {
+                    ) { fullW -> dir * fullW } + fadeIn(tween(180))) togetherWith
+                        (slideOutHorizontally(
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMediumLow,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            )
+                        ) { fullW -> -dir * fullW } + fadeOut(tween(140)))
+                },
+                label = "GlobalShapeAreaSlide"
+            ) { tab ->
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    when (tab) {
+                        0 -> {
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_system_stretch_shape_title),
+                                summary = stringResource(R.string.app_icons_system_stretch_shape_summary),
+                                checked = systemOptionsEnabled && systemStretchShapeChecked,
+                                enabled = systemOptionsEnabled,
+                                onCheckedChange = onSystemStretchShapeChange
+                            )
+                            HorizontalDivider()
+                            AppIconsScaleSliderRow(
+                                title = stringResource(R.string.app_icons_system_shape_scale_title),
+                                value = systemShapeScalePercent,
+                                enabled = systemOptionsEnabled && systemStretchShapeChecked && !systemRemoveShapeChecked,
+                                onValueChange = onSystemShapeScaleChange
+                            )
+                            HorizontalDivider()
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_system_remove_shape_title),
+                                summary = stringResource(R.string.app_icons_system_remove_shape_summary),
+                                checked = systemOptionsEnabled && systemRemoveShapeChecked,
+                                enabled = systemOptionsEnabled,
+                                onCheckedChange = onSystemRemoveShapeChange
+                            )
+                        }
+                        1 -> {
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_notification_stretch_shape_title),
+                                summary = stringResource(R.string.app_icons_notification_stretch_shape_summary),
+                                checked = systemOptionsEnabled && notificationStretchShapeChecked,
+                                enabled = systemOptionsEnabled,
+                                onCheckedChange = onNotificationStretchShapeChange
+                            )
+                            HorizontalDivider()
+                            AppIconsScaleSliderRow(
+                                title = stringResource(R.string.app_icons_notification_shape_scale_title),
+                                value = notificationShapeScalePercent,
+                                enabled = systemOptionsEnabled && notificationStretchShapeChecked && !notificationRemoveShapeChecked,
+                                onValueChange = onNotificationShapeScaleChange
+                            )
+                            HorizontalDivider()
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_notification_remove_shape_title),
+                                summary = stringResource(R.string.app_icons_notification_remove_shape_summary),
+                                checked = systemOptionsEnabled && notificationRemoveShapeChecked,
+                                enabled = systemOptionsEnabled,
+                                onCheckedChange = onNotificationRemoveShapeChange
+                            )
+                        }
+                        else -> {
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_launcher_stretch_shape_title),
+                                summary = stringResource(R.string.app_icons_launcher_stretch_shape_summary),
+                                checked = launcherOptionsEnabled && launcherStretchShapeChecked,
+                                enabled = launcherOptionsEnabled,
+                                onCheckedChange = onLauncherStretchShapeChange
+                            )
                             HorizontalDivider()
                             AppIconsScaleSliderRow(
                                 title = stringResource(R.string.app_icons_launcher_shape_scale_title),
                                 value = launcherShapeScalePercent,
-                                enabled = launcherOptionsEnabled,
+                                enabled = launcherOptionsEnabled && launcherStretchShapeChecked && !launcherRemoveShapeChecked,
                                 onValueChange = onLauncherShapeScaleChange
                             )
+                            HorizontalDivider()
+                            GenericSwitchRow(
+                                title = stringResource(R.string.app_icons_launcher_remove_shape_title),
+                                summary = stringResource(R.string.app_icons_launcher_remove_shape_summary),
+                                checked = launcherOptionsEnabled && launcherRemoveShapeChecked,
+                                enabled = launcherOptionsEnabled,
+                                onCheckedChange = onLauncherRemoveShapeChange
+                            )
                         }
-                        HorizontalDivider()
-                        AppIconsSwitchRow(
-                            title = stringResource(R.string.app_icons_launcher_remove_shape_title),
-                            summary = stringResource(R.string.app_icons_launcher_remove_shape_summary),
-                            checked = launcherOptionsEnabled && launcherRemoveShapeChecked,
-                            enabled = launcherOptionsEnabled,
-                            onCheckedChange = onLauncherRemoveShapeChange
-                        )
                     }
-                    HorizontalDivider()
-                    AppIconsTintControlRow(
-                        title = stringResource(R.string.app_icons_shape_background_tint_title),
-                        summary = stringResource(R.string.app_icons_shape_background_tint_summary),
-                        mode = backgroundTintMode,
-                        color = backgroundTintColor,
-                        enabled = checked,
-                        onModeChange = onBackgroundTintModeChange,
-                        onColorChange = onBackgroundTintColorChange
-                    )
-                    HorizontalDivider()
-                    AppIconsTintControlRow(
-                        title = stringResource(R.string.app_icons_shape_foreground_tint_title),
-                        summary = stringResource(R.string.app_icons_shape_foreground_tint_summary),
-                        mode = foregroundTintMode,
-                        color = foregroundTintColor,
-                        enabled = checked,
-                        onModeChange = onForegroundTintModeChange,
-                        onColorChange = onForegroundTintColorChange
-                    )
                 }
             }
-            }
+        }
+
+        SettingsGroupCard(
+            title = stringResource(R.string.app_icons_shape_background_tint_title),
+            enabled = checked
+        ) {
+            AppIconsTintSection(
+                title = stringResource(R.string.app_icons_shape_background_tint_title),
+                summary = stringResource(R.string.app_icons_shape_background_tint_summary),
+                mode = backgroundTintMode,
+                color = backgroundTintColor,
+                enabled = checked,
+                isHiddenForFlight = activeColorFlightKey == "bg_tint",
+                onModeChange = onBackgroundTintModeChange,
+                onOpenColorFlight = onOpenBackgroundColorFlight
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            AppIconsTintSection(
+                title = stringResource(R.string.app_icons_shape_foreground_tint_title),
+                summary = stringResource(R.string.app_icons_shape_foreground_tint_summary),
+                mode = foregroundTintMode,
+                color = foregroundTintColor,
+                enabled = checked,
+                isHiddenForFlight = activeColorFlightKey == "fg_tint",
+                onModeChange = onForegroundTintModeChange,
+                onOpenColorFlight = onOpenForegroundColorFlight
+            )
         }
     }
 }
@@ -440,36 +1002,13 @@ internal fun AppIconsSwitchRow(
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled) { onCheckedChange(!checked) }
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-                modifier = Modifier.padding(top = 2.dp)
-            )
-        }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled,
-            modifier = Modifier.padding(start = 12.dp)
-        )
-    }
+    GenericSwitchRow(
+        title = title,
+        summary = summary,
+        checked = checked,
+        enabled = enabled,
+        onCheckedChange = onCheckedChange
+    )
 }
 
 @Composable
@@ -478,22 +1017,31 @@ private fun AppIconsNavigationRow(
     summary: String,
     onClick: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .clickable {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
+            }
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        val iconBg = MaterialTheme.colorScheme.primaryContainer
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBg)
+                .border(1.dp, iconBg.edgeOutline(), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Rounded.Apps,
                 contentDescription = null,
-                modifier = Modifier.padding(10.dp)
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
             )
         }
         Spacer(Modifier.width(16.dp))
@@ -512,113 +1060,109 @@ private fun AppIconsNavigationRow(
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
-        Icon(Icons.Filled.ChevronRight, contentDescription = null)
-    }
-}
-
-@Composable
-private fun AppIconsTintControlRow(
-    title: String,
-    summary: String,
-    mode: Int,
-    color: Int,
-    enabled: Boolean,
-    onModeChange: (Int) -> Unit,
-    onColorChange: (Int) -> Unit
-) {
-    var showColorPicker by remember { mutableStateOf(false) }
-    val swatchBorderColor = if (isSystemInDarkTheme()) Color.White else Color.Black
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 10.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(Color(color))
-                        .border(1.dp, swatchBorderColor, CircleShape)
-                    .clickable(enabled = enabled) { showColorPicker = true }
-            )
-        }
-        Row(
-            modifier = Modifier.padding(top = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppIconsTintModeButton(
-                text = stringResource(R.string.app_icons_tint_mode_off),
-                selected = mode == APP_ICON_TINT_MODE_OFF,
-                enabled = enabled,
-                onClick = { onModeChange(APP_ICON_TINT_MODE_OFF) }
-            )
-            AppIconsTintModeButton(
-                text = stringResource(R.string.app_icons_tint_mode_auto),
-                selected = mode == APP_ICON_TINT_MODE_AUTO,
-                enabled = enabled,
-                onClick = { onModeChange(APP_ICON_TINT_MODE_AUTO) }
-            )
-            AppIconsTintModeButton(
-                text = stringResource(R.string.app_icons_tint_mode_custom),
-                selected = mode == APP_ICON_TINT_MODE_CUSTOM,
-                enabled = enabled,
-                onClick = { onModeChange(APP_ICON_TINT_MODE_CUSTOM) }
-            )
-        }
-    }
-
-    if (showColorPicker) {
-        ColorPickerDialog(
-            initialColor = color,
-            onColorSelected = { selectedColor ->
-                showColorPicker = false
-                onColorChange(selectedColor)
-            },
-            onDismissRequest = { showColorPicker = false }
+        Icon(
+            Icons.Filled.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun AppIconsTintModeButton(
-    text: String,
-    selected: Boolean,
+private fun AppIconsTintSection(
+    title: String,
+    summary: String,
+    mode: Int,
+    color: Int,
     enabled: Boolean,
-    onClick: () -> Unit
+    isHiddenForFlight: Boolean,
+    onModeChange: (Int) -> Unit,
+    onOpenColorFlight: (Rect, () -> Rect) -> Unit
 ) {
-    if (selected) {
-        Button(
-            onClick = onClick,
+    val haptics = LocalHapticFeedback.current
+    var swatchBounds by remember { mutableStateOf(Rect.Zero) }
+
+    val options = listOf(
+        stringResource(R.string.app_icons_tint_mode_off),
+        stringResource(R.string.app_icons_tint_mode_auto),
+        stringResource(R.string.app_icons_tint_mode_custom)
+    )
+    val selectedIdx = when (mode) {
+        APP_ICON_TINT_MODE_AUTO -> 1
+        APP_ICON_TINT_MODE_CUSTOM -> 2
+        else -> 0
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        RadioSelectionGroup(
+            title = title,
+            options = options,
+            selectedIndex = selectedIdx,
             enabled = enabled,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+            onSelect = { index ->
+                val newMode = when (index) {
+                    1 -> APP_ICON_TINT_MODE_AUTO
+                    2 -> APP_ICON_TINT_MODE_CUSTOM
+                    else -> APP_ICON_TINT_MODE_OFF
+                }
+                onModeChange(newMode)
+            }
+        )
+
+        Text(
+            text = summary,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.4f),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+        )
+
+        val rowBg = MaterialTheme.colorScheme.surfaceContainerHigh
+        val rowShape = RoundedCornerShape(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .onPlaced {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) swatchBounds = r
+                }
+                .onGloballyPositioned {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) swatchBounds = r
+                }
+                .alpha(if (isHiddenForFlight) 0f else if (enabled) 1f else 0.4f)
+                .clip(rowShape)
+                .background(rowBg)
+                .border(1.dp, rowBg.edgeOutline(), rowShape)
+                .clickable(enabled = enabled && !isHiddenForFlight) {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onOpenColorFlight(swatchBounds) { swatchBounds }
+                }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            enabled = enabled,
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-        ) {
-            Text(text = text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val swatchColor = Color(color)
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(swatchColor)
+                    .border(1.dp, swatchColor.edgeOutline(alpha = 0.7f), CircleShape)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = String.format("#%08X", color),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Rounded.Palette,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
@@ -630,133 +1174,172 @@ internal fun AppIconsScaleSliderRow(
     enabled: Boolean,
     onValueChange: (Float) -> Unit
 ) {
+    val defaultScale = IconPackManager.DEFAULT_SHAPE_SCALE_PERCENT
     SliderSettingFloat(
         title = title,
         value = value,
         range = IconPackManager.MIN_SHAPE_SCALE_PERCENT..IconPackManager.MAX_SHAPE_SCALE_PERCENT,
         unit = "%",
         enabled = enabled,
+        stepSize = 1f,
+        defaultValue = defaultScale,
+        defaultValueText = stringResource(R.string.app_icons_shape_scale_value_format, defaultScale),
         onValueChange = { onValueChange(normalizeShapeScale(it)) },
-        onDefault = { onValueChange(IconPackManager.DEFAULT_SHAPE_SCALE_PERCENT) },
+        onDefault = { onValueChange(defaultScale) },
         valueText = stringResource(R.string.app_icons_shape_scale_value_format, value),
         showDefaultButton = true
-    )
-    Text(
-        text = stringResource(R.string.app_icons_shape_scale_summary),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.56f),
-        modifier = Modifier.padding(horizontal = 20.dp)
     )
 }
 
 @Composable
-internal fun ApplyProgressCard(progress: IconApplyProgress) {
-    val progressValue = (progress.percent / 100f).coerceIn(0f, 1f)
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (!progress.completed) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(10.dp))
-                }
-                Text(
-                    text = if (progress.completed) {
-                        stringResource(R.string.app_icons_progress_completed)
-                    } else {
-                        progress.label
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(R.string.app_icons_progress_percent_format, progress.percent),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+internal fun SecondaryActionPill(
+    icon: ImageVector,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    val haptics = LocalHapticFeedback.current
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier = modifier
+            .height(40.dp)
+            .alpha(if (enabled) 1f else 0.42f)
+            .clip(shape)
+            .background(containerColor)
+            .border(1.dp, containerColor.edgeOutline(), shape)
+            .clickable(enabled = enabled) {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
             }
-            LinearProgressIndicator(
-                progress = { progressValue },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                text = stringResource(
-                    R.string.app_icons_progress_counts_format,
-                    progress.processed,
-                    progress.total,
-                    progress.applied,
-                    progress.removed,
-                    progress.skipped,
-                    progress.failed
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = contentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
-internal fun IconPacksBlock(
-    packs: List<IconPackInfo>,
-    expanded: Boolean,
-    busy: Boolean,
-    onExpandChange: (Boolean) -> Unit,
-    onApplyAll: (IconPackInfo) -> Unit,
-    onApplyPartial: (IconPackInfo) -> Unit,
-    onViewPack: (IconPackInfo) -> Unit,
-    onApplyUpdate: (IconPackInfo) -> Unit,
-    onCancelAll: (IconPackInfo) -> Unit
+internal fun AppIconsFilterPillsRow(
+    showSystemApps: Boolean,
+    showHiddenApps: Boolean,
+    onToggleSystem: () -> Unit,
+    onToggleHidden: () -> Unit
 ) {
-    Column(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        ExpandableSectionHeader(
-            title = stringResource(R.string.app_icons_packs_section),
-            subtitle = stringResource(R.string.app_icons_pack_count_format, packs.size),
-            icon = Icons.Rounded.Apps,
-            expanded = expanded,
-            onExpandChange = onExpandChange
+        ExpressiveFilterPill(
+            label = stringResource(R.string.app_icons_show_system_title),
+            selected = showSystemApps,
+            onClick = onToggleSystem,
+            modifier = Modifier.weight(1f)
         )
+        ExpressiveFilterPill(
+            label = stringResource(R.string.app_icons_show_hidden_title),
+            selected = showHiddenApps,
+            onClick = onToggleHidden,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
 
-        AnimatedVisibility(
-            visible = expanded,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (packs.isEmpty()) {
-                    EmptyStateText(stringResource(R.string.app_icons_no_icon_packs))
-                } else {
-                    packs.forEach { pack ->
-                        IconPackCard(
-                            pack = pack,
-                            busy = busy,
-                            onApplyAll = { onApplyAll(pack) },
-                            onApplyPartial = { onApplyPartial(pack) },
-                            onViewPack = { onViewPack(pack) },
-                            onApplyUpdate = { onApplyUpdate(pack) },
-                            onCancelAll = { onCancelAll(pack) }
-                        )
-                    }
-                }
+@Composable
+private fun ExpressiveFilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptics = LocalHapticFeedback.current
+    val selFraction by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "FilterPillFraction"
+    )
+    val corner by animateDpAsState(
+        targetValue = if (selected) 24.dp else 14.dp,
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "FilterPillCorner"
+    )
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "FilterPillBg"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "FilterPillFg"
+    )
+    val shape = RoundedCornerShape(corner)
+
+    Row(
+        modifier = modifier
+            .height(42.dp)
+            .graphicsLayer {
+                val scale = 0.97f + 0.03f * selFraction
+                scaleX = scale
+                scaleY = scale
             }
-        }
+            .clip(shape)
+            .background(bgColor)
+            .border(1.dp, bgColor.edgeOutline(), shape)
+            .clickable {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
+            }
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (selFraction >= 0.5f) FontWeight.Bold else FontWeight.Medium,
+            color = contentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -768,10 +1351,12 @@ internal fun ExpandableSectionHeader(
     expanded: Boolean,
     onExpandChange: (Boolean) -> Unit
 ) {
+    val bgColor = MaterialTheme.colorScheme.surface
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        border = BorderStroke(1.dp, bgColor.edgeOutline())
     ) {
         ExpandableSectionHeaderContent(
             title = title,
@@ -831,400 +1416,6 @@ internal fun ExpandableSectionHeaderContent(
             contentDescription = null,
             modifier = Modifier.rotate(rotation),
             tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun IconPackCard(
-    pack: IconPackInfo,
-    busy: Boolean,
-    onApplyAll: () -> Unit,
-    onApplyPartial: () -> Unit,
-    onViewPack: () -> Unit,
-    onApplyUpdate: () -> Unit,
-    onCancelAll: () -> Unit
-) {
-    var actionsExpanded by rememberSaveable(pack.packageName) { mutableStateOf(false) }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable { actionsExpanded = !actionsExpanded },
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DrawableIcon(drawable = pack.icon, size = 48.dp, fallback = Icons.Rounded.Apps)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp)
-                ) {
-                    Text(
-                        text = pack.label,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = pack.packageName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = if (pack.installed) {
-                            iconPackStatusText(pack.status)
-                        } else {
-                            stringResource(R.string.app_icons_pack_missing_status)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (pack.installed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Rounded.ExpandMore,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(if (actionsExpanded) 180f else 0f),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (busy) {
-                    CircularProgressIndicator(modifier = Modifier.size(26.dp), strokeWidth = 2.dp)
-                }
-            }
-
-            Text(
-                text = stringResource(
-                    R.string.app_icons_supported_count_format,
-                    pack.supportedPackageCount,
-                    pack.supportedIconCount,
-                    pack.appliedPackageCount
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (pack.requiresUpdate) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.28f))
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.app_icons_requires_update),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(onClick = onApplyUpdate, enabled = !busy) {
-                        Text(stringResource(R.string.app_icons_apply_update), maxLines = 1)
-                    }
-                }
-            }
-
-            AnimatedVisibility(
-                visible = actionsExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (!pack.installed) {
-                        Text(
-                            text = stringResource(R.string.app_icons_pack_missing_message),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.28f))
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                    }
-                    if (pack.installed) {
-                        Button(
-                            onClick = onApplyAll,
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.app_icons_apply_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = onApplyPartial,
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Search, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.app_icons_apply_partial), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                    if (pack.installed) {
-                        OutlinedButton(
-                            onClick = onViewPack,
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.app_icons_view_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                    OutlinedButton(
-                        onClick = onCancelAll,
-                        enabled = !busy && pack.appliedPackageCount > 0,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.app_icons_cancel_all), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun AppIconsFilterSwitchRow(
-    title: String,
-    summary: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) },
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                modifier = Modifier.padding(start = 12.dp)
-            )
-        }
-    }
-}
-
-@Composable
-internal fun InstalledAppCard(
-    app: InstalledIconApp,
-    iconMap: IconMapSnapshot,
-    iconPacks: List<IconPackInfo>,
-    expanded: Boolean,
-    busy: Boolean,
-    onExpandChange: (Boolean) -> Unit,
-    onRestore: () -> Unit,
-    onApply: (AppIconCandidate) -> Unit,
-    onImportCustomIcon: (Uri) -> Unit,
-    onSaveShapeOverrides: (AppIconShapeOverrides?) -> Unit
-) {
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    val previewSizePx = with(density) { 56.dp.roundToPx() }
-    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) onImportCustomIcon(uri)
-    }
-    var loading by remember(app.packageName, iconMap) { mutableStateOf(false) }
-    var candidates by remember(app.packageName, iconMap) { mutableStateOf<List<AppIconCandidate>>(emptyList()) }
-    var appliedBitmap by remember(app.packageName, iconMap) { mutableStateOf<Bitmap?>(null) }
-    var shapeOverrides by remember(app.packageName, iconMap) {
-        mutableStateOf(iconMap.shapeOverrides[app.packageName] ?: app.shapeOverrides ?: AppIconShapeOverrides())
-    }
-    var chooserOpen by rememberSaveable(app.packageName) { mutableStateOf(false) }
-
-    LaunchedEffect(expanded, app.packageName, iconMap) {
-        if (!expanded) return@LaunchedEffect
-        loading = true
-        candidates = IconPackManager.loadCandidatesForApp(context, app.packageName)
-        appliedBitmap = IconPackManager.loadAppliedIconBitmap(context, app.packageName, previewSizePx)
-        loading = false
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable { onExpandChange(!expanded) },
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 10.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                DrawableIcon(drawable = app.icon, size = 42.dp, fallback = Icons.Rounded.Apps)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp)
-                ) {
-                    Text(
-                        text = app.label,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = app.appliedIconPackLabel?.let {
-                            stringResource(R.string.app_icons_applied_from_format, it)
-                        } ?: stringResource(R.string.app_icons_not_applied_to_app),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (app.appliedIconPackLabel != null) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Rounded.ExpandMore,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(if (expanded) 180f else 0f),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    AppIconCurrentIconCard(app = app, appliedBitmap = appliedBitmap)
-
-                    if (app.appliedIconFileName != null) {
-                        OutlinedButton(
-                            onClick = onRestore,
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Rounded.Refresh, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.app_icons_restore_default), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-
-                    OutlinedButton(
-                        onClick = { importLauncher.launch(arrayOf("image/*", "application/xml", "text/xml")) },
-                        enabled = !busy,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Apps, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.app_icons_import_custom_icon), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-
-                    OutlinedButton(
-                        onClick = { chooserOpen = true },
-                        enabled = !busy && iconPacks.any { it.installed },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Search, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.app_icons_choose_from_pack), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-
-                    PerAppShapeSettingsCard(
-                        overrides = shapeOverrides,
-                        onOverridesChange = { shapeOverrides = it },
-                        onSave = { onSaveShapeOverrides(shapeOverrides.normalizedOrNull()) },
-                        onReset = {
-                            shapeOverrides = AppIconShapeOverrides()
-                            onSaveShapeOverrides(null)
-                        }
-                    )
-
-                    Text(
-                        text = stringResource(R.string.app_icons_available_icons_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    when {
-                        loading -> LoadingDialogContent()
-                        candidates.isEmpty() -> EmptyStateText(stringResource(R.string.app_icons_no_app_candidates))
-                        else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val appliedSource = iconMap.sources[app.packageName]
-                            candidates.forEach { candidate ->
-                                val applied = appliedSource?.iconPackPackage == candidate.iconPackPackage &&
-                                    appliedSource.drawableName == candidate.drawableName
-                                AppIconCandidateRow(
-                                    candidate = candidate,
-                                    applied = applied,
-                                    busy = busy,
-                                    onApply = { onApply(candidate) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if (chooserOpen) {
-        AppIconChooserDialog(
-            app = app,
-            iconMap = iconMap,
-            iconPacks = iconPacks.filter { it.installed },
-            onDismiss = { chooserOpen = false },
-            onApply = { item ->
-                chooserOpen = false
-                onApply(AppIconCandidate(item.iconPackPackage, item.iconPackLabel, item.drawableName))
-            }
         )
     }
 }

@@ -327,7 +327,7 @@ private fun ParamSlider(
                         onValueChange(v.coerceIn(min, max))
                     }
                     showInputDialog = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.anim_compile_dialog_ok)) }
             },
             dismissButton = {
                 TextButton(onClick = { showInputDialog = false }) { Text(stringResource(R.string.anim_dialog_cancel)) }

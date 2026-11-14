@@ -55,6 +55,7 @@ object IconPackManager {
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG)
     @Volatile private var activeProgress: IconApplyProgress? = null
+    @Volatile private var cancelledTaskId: String? = null
     @Volatile private var dashboardCache: IconDashboardState? = null
 
 
@@ -67,6 +68,17 @@ object IconPackManager {
     )
 
     fun getActiveProgress(): IconApplyProgress? = activeProgress
+
+    fun cancelActiveOperation() {
+        val current = activeProgress
+        if (current != null && !current.completed) {
+            cancelledTaskId = current.taskId
+        }
+    }
+
+    private fun isTaskCancelled(taskId: String?): Boolean {
+        return taskId != null && cancelledTaskId == taskId
+    }
 
     fun getCachedDashboardState(): IconDashboardState? = dashboardCache
 
@@ -453,7 +465,8 @@ object IconPackManager {
 
             updateProgress(progressTaskId, totalWork, processed, applied, failed, removed, skipped)
 
-            removals.forEach { packageName ->
+            for (packageName in removals) {
+                if (isTaskCancelled(progressTaskId)) break
                 val fileName = icons.remove(packageName)
                 sources.remove(packageName)
                 shapeOverrides.remove(packageName)
@@ -468,7 +481,8 @@ object IconPackManager {
 
             ensureStorageDirs()
 
-            selectedEntries.forEach { entry ->
+            for (entry in selectedEntries) {
+                if (isTaskCancelled(progressTaskId)) break
                 val fileName = fileNameForPackage(entry.appPackageName)
                 val currentSource = sources[entry.appPackageName]
                 val alreadyCurrent = icons[entry.appPackageName] == fileName &&
@@ -551,7 +565,8 @@ object IconPackManager {
             var removed = 0
             updateProgress(progressTaskId, targets.size, processed, 0, 0, removed, 0)
 
-            targets.forEach { packageName ->
+            for (packageName in targets) {
+                if (isTaskCancelled(progressTaskId)) break
                 val fileName = icons.remove(packageName)
                 sources.remove(packageName)
                 shapeOverrides.remove(packageName)
@@ -609,21 +624,30 @@ object IconPackManager {
             var removed = 0
             updateProgress(progressTaskId, packageNames.size, processed, 0, 0, removed, 0)
 
-            packageNames.forEach { _ ->
+            for (pkg in packageNames) {
+                if (isTaskCancelled(progressTaskId)) break
+                val fileName = current.icons[pkg]
+                if (fileName != null) {
+                    deleteIconFiles(fileName)
+                }
                 removed++
                 processed++
                 updateProgress(progressTaskId, packageNames.size, processed, 0, 0, removed, 0)
             }
 
-            densities.forEach { density ->
-                File(iconRoot, density.folder).listFiles()?.forEach { file ->
-                    if (file.isFile) file.delete()
+            if (!isTaskCancelled(progressTaskId)) {
+                densities.forEach { density ->
+                    File(iconRoot, density.folder).listFiles()?.forEach { file ->
+                        if (file.isFile) file.delete()
+                    }
                 }
+                if (iconMapFile.exists()) {
+                    iconMapFile.delete()
+                }
+                writeIconMap(IconMapSnapshot.EMPTY)
+            } else {
+                clearDashboardCache()
             }
-            if (iconMapFile.exists()) {
-                iconMapFile.delete()
-            }
-            writeIconMap(IconMapSnapshot.EMPTY)
             sendReloadBroadcast(context)
 
             IconApplyResult(
@@ -643,6 +667,7 @@ object IconPackManager {
         val taskId = "icon_task_" + System.currentTimeMillis()
         synchronized(ioLock) {
             if (activeProgress?.completed == false) return false
+            cancelledTaskId = null
             activeProgress = IconApplyProgress(
                 taskId = taskId,
                 label = initialLabel,
@@ -658,7 +683,19 @@ object IconPackManager {
         managerScope.launch {
             val result = runCatching { block(taskId) }
                 .getOrElse { IconApplyResult(0, 0, 1) }
-            completeProgress(taskId, result)
+            if (isTaskCancelled(taskId)) {
+                clearDashboardCache()
+                synchronized(ioLock) {
+                    if (activeProgress?.taskId == taskId) {
+                        activeProgress = null
+                    }
+                    if (cancelledTaskId == taskId) {
+                        cancelledTaskId = null
+                    }
+                }
+            } else {
+                completeProgress(taskId, result)
+            }
         }
         return true
     }

@@ -196,7 +196,7 @@ object OverscrollManager {
             KEY_PHYSICS_MIN_VEL to 8.0f, KEY_PHYSICS_MIN_VAL to 0.6f,
             KEY_ANIMATION_SPEED to 168.5232f, KEY_INPUT_SMOOTH_FACTOR to 0.5f,
             KEY_LERP_MAIN_IDLE to 0.4f, KEY_LERP_MAIN_RUN to 0.6999f, KEY_COMPOSE_SCALE to 3.3299f,
-            KEY_NORM_REF_DELTA to 9.9999f, KEY_NORM_DETECT_MUL to 0f, KEY_NORM_FACTOR to 0.33f
+            KEY_NORM_REF_DELTA to 0.015f, KEY_NORM_DETECT_MUL to 1.5f, KEY_NORM_FACTOR to 0.33f
         )
         for ((k, def) in floatKeysDefaults) json.put(stripSuffix(k), Settings.Global.getFloat(context.contentResolver, k, def).toDouble())
 
@@ -309,8 +309,8 @@ object OverscrollManager {
         Settings.Global.putFloat(cr, KEY_H_SCALE_ANCHOR_Y_HORIZ, 0.5f)
         // Delta normalization (stock: off)
         Settings.Global.putInt(cr, KEY_NORM_ENABLED, 0)
-        Settings.Global.putFloat(cr, KEY_NORM_REF_DELTA, 9.9999f)
-        Settings.Global.putFloat(cr, KEY_NORM_DETECT_MUL, 0f)
+        Settings.Global.putFloat(cr, KEY_NORM_REF_DELTA, 0.015f)
+        Settings.Global.putFloat(cr, KEY_NORM_DETECT_MUL, 1.5f)
         Settings.Global.putFloat(cr, KEY_NORM_FACTOR, 0.33f)
         Settings.Global.putFloat(cr, KEY_NORM_WINDOW, 2f)
         Settings.Global.putFloat(cr, KEY_NORM_RAMP, 1f)

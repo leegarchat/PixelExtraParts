@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Experimental feature flags (PixelExtraParts).
+  Flip a flag to true to enable the experiment, rebuild, restart the app
+  (UI flags) or target process (engine flags) to pick it up.
+  Booleans are not localizable — single file, no per-locale copies.
+-->
+<resources>
+    <!-- Transition-screen expanded-preview speed sliders (open/close).
+         Backend scaling is currently unimplemented: keep false to hide
+         the sliders. -->
+    <bool name="exp_transition_speed_sliders">false</bool>
+
+    <!-- APK-module (Xposed/LSPosed/Vector) addon manager implementation.
+         TEMPORARY kill-switch: all module code stays in the tree. -->
+    <bool name="exp_apk_modules_manager">false</bool>
+</resources>

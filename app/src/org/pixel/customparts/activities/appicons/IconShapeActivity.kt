@@ -1,110 +1,177 @@
 package org.pixel.customparts.activities
 
+import android.content.ClipData
 import android.content.Context
-import android.graphics.Canvas
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.provider.MediaStore
+import android.provider.Settings
+import android.provider.Telephony
 import android.util.PathParser
-import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Error
-import androidx.compose.material.icons.rounded.FileOpen
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asComposePath
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp as lerpColor
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp as lerpFloat
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -112,45 +179,57 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
-import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.icons.IconPackManager
 import org.pixel.customparts.icons.IconShapeOverlayManager
 import org.pixel.customparts.icons.IconShapeOverlayManager.ShapeOption
 import org.pixel.customparts.icons.IconShapeOverlayManager.ShapeSource
+import org.pixel.customparts.ui.GraphicsLayerRecordingState
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.InfoDialog
 import org.pixel.customparts.ui.RebootBubble
 import org.pixel.customparts.ui.SettingsGroupCard
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.statusBars
+import org.pixel.customparts.ui.SliderMorphRoot
+import org.pixel.customparts.ui.SliderSetting
+import org.pixel.customparts.ui.SliderSettingFloat
+import org.pixel.customparts.ui.SliderTitleText
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
-import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.ui.rememberSliderMorphHostState
-import org.pixel.customparts.utils.SettingsCompat
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.abs
-import androidx.compose.ui.res.stringResource
+import kotlin.math.roundToInt
 
-private const val DEFAULT_CUSTOM_SHAPE_SIDES = 6
-private const val DEFAULT_CUSTOM_SHAPE_ROUNDNESS = 4.5f
-private const val DEFAULT_CUSTOM_SHAPE_INSET = 0f
-private const val DEFAULT_CUSTOM_SHAPE_WAVE = 0.12f
-private const val DEFAULT_CUSTOM_SHAPE_ROTATION = 0f
-private const val DEFAULT_CUSTOM_SHAPE_SCALE = 1f
-private const val DEFAULT_CUSTOM_SHAPE_OFFSET = 0f
-private const val DEFAULT_CUSTOM_SHAPE_NAME = "PixelParts custom"
+internal const val DEFAULT_CUSTOM_SHAPE_SIDES = 6
+internal const val DEFAULT_CUSTOM_SHAPE_ROUNDNESS = 4.5f
+internal const val DEFAULT_CUSTOM_SHAPE_INSET = 0f
+internal const val DEFAULT_CUSTOM_SHAPE_WAVE = 0.12f
+internal const val DEFAULT_CUSTOM_SHAPE_ROTATION = 0f
+internal const val DEFAULT_CUSTOM_SHAPE_SCALE = 1f
+internal const val DEFAULT_CUSTOM_SHAPE_OFFSET = 0f
+
+private const val TAB_SHAPE_PRESETS = 0
+private const val TAB_SHAPE_BUILDER = 1
+
+@Stable
+internal data class ShapeFlightTarget(
+    val key: String,
+    val option: ShapeOption,
+    val source: Rect = Rect.Zero,
+    val sourceBoundsProvider: () -> Rect = { source },
+    val isTrashArmedProvider: () -> Boolean = { false },
+    val sessionId: Long = System.nanoTime()
+)
 
 class IconShapeActivity : ComponentActivity() {
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         setContent {
             val context = LocalContext.current
             val darkTheme = isSystemInDarkTheme()
@@ -172,29 +251,62 @@ class IconShapeActivity : ComponentActivity() {
 private fun IconShapeScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val blurState = rememberGraphicsLayerRecordingState()
-    // Morph-time header blur (scroll+modal) + hoisted morph host so the header
-    // tint boost runs at exactly the modal expand speed.
-    val morphBlurState = rememberGraphicsLayerRecordingState()
-    val morphHost = rememberSliderMorphHostState()
-    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+
+    // 3-Pass Non-Cyclic Blur Stack:
+    // Pass 1 (scrollBlur): records pager content
+    // Pass 2 (cardModalBlur): records [Pass 1 + Level-1 Flight Pseudo-Modals]
+    // Pass 3 (sliderModalBlur): records [Pass 2 + Level-2 SliderMorphOverlay]
+    val scrollBlur = rememberGraphicsLayerRecordingState()
+    val cardModalBlur = rememberGraphicsLayerRecordingState()
+    val sliderModalBlur = rememberGraphicsLayerRecordingState()
+    val sliderMorphHost = rememberSliderMorphHostState()
+
+    val pagerState = rememberStudioPagerState(2)
+    val presetsGridState = rememberLazyGridState()
+    val builderListState = rememberLazyListState()
 
     var options by remember { mutableStateOf<List<ShapeOption>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    var isInitialLoading by remember { mutableStateOf(true) }
+    var isSilentRefreshing by remember { mutableStateOf(false) }
     var isBusy by remember { mutableStateOf(false) }
-    var customName by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_NAME) }
+
+    // Builder parameters
     var mode by rememberSaveable { mutableIntStateOf(IconShapeOverlayManager.MODE_SUPERELLIPSE) }
     var sides by rememberSaveable { mutableIntStateOf(DEFAULT_CUSTOM_SHAPE_SIDES) }
-    var roundness by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) }
-    var inset by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_INSET) }
-    var wave by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_WAVE) }
-    var rotation by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_ROTATION) }
-    var scaleX by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
-    var scaleY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
-    var offsetX by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
-    var offsetY by rememberSaveable { mutableStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
+    var roundness by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) }
+    var inset by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_INSET) }
+    var wave by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_WAVE) }
+    var rotation by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_ROTATION) }
+    var scaleX by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
+    var scaleY by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_SCALE) }
+    var offsetX by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
+    var offsetY by rememberSaveable { mutableFloatStateOf(DEFAULT_CUSTOM_SHAPE_OFFSET) }
+    var cornerRadius by rememberSaveable { mutableFloatStateOf(0f) }
+    var innerRadius by rememberSaveable { mutableFloatStateOf(0.55f) }
+    var pinch by rememberSaveable { mutableFloatStateOf(0f) }
+    var twist by rememberSaveable { mutableFloatStateOf(0f) }
+    var skewX by rememberSaveable { mutableFloatStateOf(0f) }
+    var skewY by rememberSaveable { mutableFloatStateOf(0f) }
+    var cornerTL by rememberSaveable { mutableFloatStateOf(24f) }
+    var cornerTR by rememberSaveable { mutableFloatStateOf(24f) }
+    var cornerBR by rememberSaveable { mutableFloatStateOf(24f) }
+    var cornerBL by rememberSaveable { mutableFloatStateOf(24f) }
+
+    var importedUri by remember { mutableStateOf<android.net.Uri?>(null) }
     var importedPath by rememberSaveable { mutableStateOf("") }
-    var resultLog by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // Compile & Flight Pseudo-Modal states (ZERO Dialogs!)
+    var shapeFlight by remember { mutableStateOf<ShapeFlightTarget?>(null) }
+    var shapeFlightT by remember { mutableFloatStateOf(0f) }
+    var shapeFlightClosing by remember { mutableStateOf(false) }
+    val armedCustomShapes = remember { mutableStateMapOf<String, Long>() }
+
+    var builderPreviewOpen by remember { mutableStateOf(false) }
+    var builderPreviewSource by remember { mutableStateOf(Rect.Zero) }
+    var builderPreviewBoundsProvider by remember { mutableStateOf<() -> Rect>({ builderPreviewSource }) }
+    var builderModalT by remember { mutableFloatStateOf(0f) }
+
     var compileLog by remember { mutableStateOf<List<String>>(emptyList()) }
     var isCompiling by remember { mutableStateOf(false) }
     var compileDialogState by remember { mutableStateOf<AnimationCompileState?>(null) }
@@ -202,77 +314,147 @@ private fun IconShapeScreen(onBack: () -> Unit) {
     var compileCancellation by remember { mutableStateOf<AtomicBoolean?>(null) }
     var compileOperationId by remember { mutableIntStateOf(0) }
     var compiledPackageName by remember { mutableStateOf<String?>(null) }
-    var highlightedShapeId by remember { mutableStateOf<String?>(null) }
-    var infoDialogTitle by remember { mutableStateOf<String?>(null) }
-    var infoDialogText by remember { mutableStateOf<String?>(null) }
-    var infoDialogVideo by remember { mutableStateOf<String?>(null) }
+    var level1CloseSignal by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(highlightedShapeId) {
-        if (highlightedShapeId != null) {
-            delay(3500)
-            highlightedShapeId = null
+    val params = remember(
+        mode, sides, roundness, inset, wave, rotation, scaleX, scaleY, offsetX, offsetY,
+        cornerRadius, innerRadius, pinch, twist, skewX, skewY, cornerTL, cornerTR, cornerBR, cornerBL
+    ) {
+        IconShapeOverlayManager.CustomParams(
+            mode = mode,
+            sides = sides,
+            roundness = roundness,
+            inset = inset,
+            wave = wave,
+            rotation = rotation,
+            scaleX = scaleX,
+            scaleY = scaleY,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            cornerRadius = cornerRadius,
+            innerRadius = innerRadius,
+            pinch = pinch,
+            twist = twist,
+            skewX = skewX,
+            skewY = skewY,
+            cornerTL = cornerTL,
+            cornerTR = cornerTR,
+            cornerBR = cornerBR,
+            cornerBL = cornerBL
+        )
+    }
+    val generatedPath = remember(params) { IconShapeOverlayManager.generatePath(params) }
+
+    // Collapsible Frosted Header state
+    val statusBarTopDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottomDp = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val topBarRowHeightDp = 56.dp
+    val statusPlusTopBarPx = with(density) { (statusBarTopDp + topBarRowHeightDp).toPx() }
+
+    var collapsibleMaxHeightPx by remember { mutableFloatStateOf(with(density) { 64.dp.toPx() }) }
+    var collapseOffsetPx by remember { mutableFloatStateOf(0f) }
+    var headerRevealJob by remember { mutableStateOf<Job?>(null) }
+
+    fun revealHeaderSmoothly() {
+        if (collapseOffsetPx > -0.5f || headerRevealJob?.isActive == true) return
+        headerRevealJob = scope.launch {
+            val anim = Animatable(collapseOffsetPx)
+            anim.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
+                )
+            ) {
+                collapseOffsetPx = value
+            }
         }
     }
 
-    val params = IconShapeOverlayManager.CustomParams(
-        mode = mode,
-        sides = sides,
-        roundness = roundness,
-        inset = inset,
-        wave = wave,
-        rotation = rotation,
-        scaleX = scaleX,
-        scaleY = scaleY,
-        offsetX = offsetX,
-        offsetY = offsetY
-    )
-    val generatedPath = remember(params) { IconShapeOverlayManager.generatePath(params) }
-
-    suspend fun refreshOptions(showLoading: Boolean = true) {
-        if (showLoading) isLoading = true
-        options = withContext(Dispatchers.IO) { IconShapeOverlayManager.loadOptions(context) }
-        isLoading = false
+    suspend fun refreshOptionsSilent() {
+        if (options.isEmpty()) {
+            isInitialLoading = true
+        } else {
+            isSilentRefreshing = true
+        }
+        val loaded = withContext(Dispatchers.IO) { IconShapeOverlayManager.loadOptions(context) }
+        options = loaded
+        shapeFlight?.let { current ->
+            val updated = loaded.find { it.id == current.option.id }
+            if (updated != null) {
+                shapeFlight = current.copy(option = updated)
+            }
+        }
+        isInitialLoading = false
+        isSilentRefreshing = false
     }
 
-    fun showApplyResult(success: Boolean) {
-        Toast.makeText(
-            context,
-            context.getString(if (success) R.string.icon_shape_apply_success else R.string.icon_shape_apply_failed),
-            Toast.LENGTH_SHORT
-        ).show()
+    fun triggerManualSilentRefresh() {
+        if (isSilentRefreshing || isBusy) return
+        revealHeaderSmoothly()
+        scope.launch {
+            if (pagerState.anchor == TAB_SHAPE_PRESETS) {
+                if (presetsGridState.firstVisibleItemIndex > 0 || presetsGridState.firstVisibleItemScrollOffset > 0) {
+                    presetsGridState.animateScrollToItem(0)
+                }
+            } else {
+                if (builderListState.firstVisibleItemIndex > 0 || builderListState.firstVisibleItemScrollOffset > 0) {
+                    builderListState.animateScrollToItem(0)
+                }
+            }
+        }
+        scope.launch { refreshOptionsSilent() }
     }
 
-    fun applyOption(option: ShapeOption) {
+    fun applyOptionOptimistic(option: ShapeOption) {
         if (isBusy) return
+        // Optimistic update so card & flight morph back in the new active state immediately
+        options = options.map { it.copy(active = it.id == option.id) }
+        shapeFlight?.let { current ->
+            if (current.option.id == option.id) {
+                shapeFlight = current.copy(option = option.copy(active = true))
+            }
+        }
         scope.launch {
             isBusy = true
-            val success = withContext(Dispatchers.IO) { IconShapeOverlayManager.applyOption(context, option) }
-            showApplyResult(success)
+            val success = withContext(Dispatchers.IO) {
+                IconShapeOverlayManager.applyOption(context, option)
+            }
+            Toast.makeText(
+                context,
+                context.getString(
+                    if (success) R.string.icon_shape_apply_success else R.string.icon_shape_apply_failed
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
             if (success) {
                 IconPackManager.requestIconReload(context)
             }
-            refreshOptions()
+            refreshOptionsSilent()
             isBusy = false
         }
     }
 
-    fun progressForLog(phase: AnimationCompilePhase, line: String, current: Float): Float {
-        if (phase == AnimationCompilePhase.INSTALLING) {
-            return when {
-                line.contains("Installing via") -> 0.94f
-                line.contains("successful", ignoreCase = true) -> 1f
-                else -> maxOf(current, 0.92f)
+    fun deleteOption(option: ShapeOption) {
+        if (isBusy) return
+        armedCustomShapes.remove(option.id)
+        scope.launch {
+            isBusy = true
+            val success = withContext(Dispatchers.IO) {
+                IconShapeOverlayManager.deleteCustomOverlay(context, option)
             }
-        }
-        return when {
-            line.startsWith("Package:") -> 0.08f
-            line.contains("Overlay files written", ignoreCase = true) -> 0.18f
-            line.contains("AndroidManifest", ignoreCase = true) -> 0.25f
-            line.contains("aapt2 binary", ignoreCase = true) -> 0.32f
-            line.contains("compile output", ignoreCase = true) -> 0.58f
-            line.contains("Signing APK", ignoreCase = true) -> 0.78f
-            line.contains("Signed APK", ignoreCase = true) -> 0.9f
-            else -> current
+            Toast.makeText(
+                context,
+                context.getString(
+                    if (success) R.string.icon_shape_delete_success else R.string.icon_shape_delete_failed
+                ),
+                Toast.LENGTH_SHORT
+            ).show()
+            if (success) {
+                IconPackManager.requestIconReload(context)
+            }
+            refreshOptionsSilent()
+            isBusy = false
         }
     }
 
@@ -285,19 +467,15 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 state.phase == AnimationCompilePhase.ERROR ||
                 state.phase == AnimationCompilePhase.CANCELLED
             ) return@launch
-            val effectivePhase = if (
-                state.phase == AnimationCompilePhase.INSTALLING &&
-                    phase == AnimationCompilePhase.COMPILING
-            ) AnimationCompilePhase.INSTALLING else phase
             compileDialogState = state.copy(
-                phase = effectivePhase,
-                progress = progressForLog(effectivePhase, line, state.progress),
+                phase = phase,
+                progress = if (phase == AnimationCompilePhase.INSTALLING) 0.85f else 0.45f,
                 detail = line
             )
         }
     }
 
-    fun startCompile(label: String, pathData: String) {
+    fun startCompileAndApply(label: String, pathData: String) {
         if (isCompiling || isBusy || pathData.isBlank()) return
         val operationId = compileOperationId + 1
         compileOperationId = operationId
@@ -305,9 +483,9 @@ private fun IconShapeScreen(onBack: () -> Unit) {
         compileCancellation = cancellation
         isCompiling = true
         isBusy = true
-        resultLog = emptyList()
         compileLog = emptyList()
-        compileDialogState = AnimationCompileState(AnimationCompilePhase.COMPILING, 0.02f)
+        compileDialogState = AnimationCompileState(AnimationCompilePhase.COMPILING, 0.15f)
+        builderPreviewOpen = true
 
         val job = scope.launch {
             try {
@@ -326,15 +504,26 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                 }
                 if (cancellation.get()) throw CancellationException()
 
-                resultLog = result.log + listOfNotNull(result.error)
-                val packageName = result.packageName
-                if (result.success && packageName != null) {
-                    refreshOptions()
-                    compiledPackageName = packageName
+                val pkg = result.packageName
+                if (result.success && pkg != null) {
+                    val tempOption = ShapeOption(
+                        id = pkg,
+                        label = label,
+                        packageName = pkg,
+                        pathData = pathData,
+                        source = ShapeSource.CUSTOM_OVERLAY,
+                        active = false
+                    )
+                    withContext(Dispatchers.IO) {
+                        IconShapeOverlayManager.applyOption(context, tempOption)
+                    }
+                    IconPackManager.requestIconReload(context)
+                    refreshOptionsSilent()
+                    compiledPackageName = pkg
                     compileDialogState = AnimationCompileState(
                         AnimationCompilePhase.SUCCESS,
                         1f,
-                        packageName
+                        label
                     )
                 } else {
                     compileDialogState = AnimationCompileState(
@@ -349,7 +538,6 @@ private fun IconShapeScreen(onBack: () -> Unit) {
                     compileDialogState?.progress ?: 0f
                 )
             } catch (t: Throwable) {
-                resultLog = resultLog + listOfNotNull(t.message)
                 compileDialogState = AnimationCompileState(
                     AnimationCompilePhase.ERROR,
                     0f,
@@ -365,690 +553,534 @@ private fun IconShapeScreen(onBack: () -> Unit) {
         compileJob = job
     }
 
-    fun compileCustom(pathData: String) {
-        startCompile(customName, pathData)
-    }
-
-    fun compilePreset(option: ShapeOption) {
-        startCompile(option.label, option.pathData)
-    }
-
     fun cancelCompile() {
         compileCancellation?.set(true)
         compileJob?.cancel()
     }
 
-    fun dismissCompileDialog() {
-        val packageName = compiledPackageName
+    fun dismissCompileModal() {
+        val pkg = compiledPackageName
         compiledPackageName = null
         compileDialogState = null
-        if (packageName != null) {
-            highlightedShapeId = packageName
+        builderPreviewOpen = false
+        if (pkg != null) {
             scope.launch {
-                repeat(5) { attempt ->
-                    val index = options.indexOfFirst { it.packageName == packageName }
-                    if (index >= 0) {
-                        listState.animateScrollToItem(2 + index)
-                        return@launch
-                    }
-                    refreshOptions(showLoading = false)
-                    if (attempt < 4) delay(100)
+                delay(60)
+                pagerState.animateScrollToPage(TAB_SHAPE_PRESETS, isDirectTap = true)
+                val idx = options.indexOfFirst { it.packageName == pkg || it.id == pkg }
+                if (idx >= 0) {
+                    presetsGridState.animateScrollToItem(idx)
                 }
             }
         }
-    }
-
-    fun deleteOption(option: ShapeOption) {
-        if (isBusy) return
-        val anchor = listState.layoutInfo.visibleItemsInfo
-            .mapNotNull { itemInfo ->
-                val optionIndex = itemInfo.index - 2
-                options.getOrNull(optionIndex)
-                    ?.takeIf { it.id != option.id }
-                    ?.let { it.id to itemInfo.offset }
-            }
-            .firstOrNull()
-        scope.launch {
-            isBusy = true
-            val success = withContext(Dispatchers.IO) { IconShapeOverlayManager.deleteCustomOverlay(context, option) }
-            Toast.makeText(
-                context,
-                context.getString(if (success) R.string.icon_shape_delete_success else R.string.icon_shape_delete_failed),
-                Toast.LENGTH_SHORT
-            ).show()
-            if (success) {
-                IconPackManager.requestIconReload(context)
-            }
-            refreshOptions(showLoading = false)
-            if (success && anchor != null) {
-                val (anchorId, anchorOffset) = anchor
-                val anchorIndex = options.indexOfFirst { it.id == anchorId }
-                if (anchorIndex >= 0) {
-                    listState.scrollToItem(2 + anchorIndex, anchorOffset)
-                }
-            }
-            isBusy = false
-        }
-    }
-
-    val showInfoDialog: (String, String, String?) -> Unit = { title, text, video ->
-        infoDialogTitle = title
-        infoDialogText = text
-        infoDialogVideo = video
     }
 
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
             scope.launch {
-                importedPath = withContext(Dispatchers.IO) { IconShapeOverlayManager.readCustomPath(context, uri) }
-                if (!IconShapeOverlayManager.isValidPath(importedPath)) {
-                    Toast.makeText(context, context.getString(R.string.icon_shape_custom_invalid), Toast.LENGTH_SHORT).show()
+                val parsed = withContext(Dispatchers.IO) {
+                    IconShapeOverlayManager.readCustomPath(context, uri)
+                }
+                if (!IconShapeOverlayManager.isValidPath(parsed)) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.icon_shape_custom_invalid),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(context, context.getString(R.string.icon_shape_import_success), Toast.LENGTH_SHORT).show()
+                    importedUri = uri
+                    importedPath = parsed
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.icon_shape_import_success),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
     }
 
-    LaunchedEffect(Unit) { refreshOptions() }
-
-    if (infoDialogTitle != null && infoDialogText != null) {
-        InfoDialog(
-            title = infoDialogTitle.orEmpty(),
-            text = infoDialogText.orEmpty(),
-            videoResName = infoDialogVideo,
-            onDismiss = {
-                infoDialogTitle = null
-                infoDialogText = null
-                infoDialogVideo = null
-            }
-        )
+    LaunchedEffect(Unit) {
+        refreshOptionsSilent()
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets.navigationBars,
-        floatingActionButton = { RebootBubble() },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        stringResource(R.string.icon_shape_title),
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { scope.launch { refreshOptions() } }, enabled = !isBusy) {
-                        Icon(Icons.Rounded.Refresh, stringResource(R.string.app_icons_refresh))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                )
-            )
+    val anyLevel1ModalOpen = shapeFlight != null || builderPreviewOpen || compileDialogState != null
+    val nestedMorphOpen = sliderMorphHost.request != null
+    val anyModalOpen = anyLevel1ModalOpen || nestedMorphOpen
+    val activeModalProgress = maxOf(shapeFlightT, builderModalT)
+
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (shapeFlight != null ||
+                    builderPreviewOpen ||
+                    compileDialogState != null ||
+                    sliderMorphHost.request != null
+                ) {
+                    return Offset.Zero
+                }
+                if (available.y > 0.5f) {
+                    headerRevealJob?.cancel()
+                    collapseOffsetPx = (collapseOffsetPx + available.y)
+                        .coerceIn(-collapsibleMaxHeightPx, 0f)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (shapeFlight != null ||
+                    builderPreviewOpen ||
+                    compileDialogState != null ||
+                    sliderMorphHost.request != null
+                ) {
+                    return Offset.Zero
+                }
+                if (consumed.y < -0.5f && collapsibleMaxHeightPx > 1f) {
+                    headerRevealJob?.cancel()
+                    collapseOffsetPx = (collapseOffsetPx + consumed.y)
+                        .coerceIn(-collapsibleMaxHeightPx, 0f)
+                }
+                return Offset.Zero
+            }
         }
-    ) { innerPadding ->
-        // Parent for the header overlays: they must stay OUTSIDE SliderMorphRoot.
-        // The morph-time header blur is baked from the Root's subtree — a header
-        // reading it from inside would reference itself (RenderNode cycle = SIGSEGV).
-        Box(modifier = Modifier.fillMaxSize()) {
+    }
+
+    LaunchedEffect(pagerState.anchor) {
+        revealHeaderSmoothly()
+    }
+
+    val visibleCollapsiblePx = (collapsibleMaxHeightPx + collapseOffsetPx).coerceAtLeast(0f)
+    val effectiveHeaderHeightPx = statusPlusTopBarPx + visibleCollapsiblePx
+    val effectiveHeaderHeightDp = with(density) { effectiveHeaderHeightPx.toDp() }
+    val listTopPaddingDp = with(density) { (statusPlusTopBarPx + collapsibleMaxHeightPx).toDp() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .nestedScroll(nestedScrollConnection)
+    ) {
         SliderMorphRoot(
-            host = morphHost,
-            blurState = blurState,
-            morphBlurState = morphBlurState,
+            host = sliderMorphHost,
+            blurState = cardModalBlur,
+            morphBlurState = sliderModalBlur,
             morphBackgroundColor = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            LazyColumn(
-                state = listState,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
-                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    top = innerPadding.calculateTopPadding() + 16.dp,
-                    end = 16.dp,
-                    bottom = innerPadding.calculateBottomPadding() + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .then(
+                        if (anyLevel1ModalOpen || nestedMorphOpen) {
+                            Modifier.recordLayer(
+                                state = cardModalBlur,
+                                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.icon_shape_custom_section)) {
-                        CustomShapeBuilder(
-                            mode = mode,
-                            sides = sides,
-                            roundness = roundness,
-                            inset = inset,
-                            wave = wave,
-                            rotation = rotation,
-                            scaleX = scaleX,
-                            scaleY = scaleY,
-                            offsetX = offsetX,
-                            offsetY = offsetY,
-                            pathData = generatedPath,
-                            customName = customName,
-                            importedPath = importedPath,
-                            isBusy = isBusy,
-                            resultLog = resultLog,
-                            onModeChange = { mode = it },
-                            onSidesChange = { sides = it },
-                            onRoundnessChange = { roundness = it },
-                            onInsetChange = { inset = it },
-                            onWaveChange = { wave = it },
-                            onRotationChange = { rotation = it },
-                            onScaleXChange = { scaleX = it },
-                            onScaleYChange = { scaleY = it },
-                            onOffsetXChange = { offsetX = it },
-                            onOffsetYChange = { offsetY = it },
-                            onNameChange = { customName = it },
-                            onCompileGenerated = { compileCustom(generatedPath) },
-                            onPickFile = { importLauncher.launch("*/*") },
-                            onCompileImported = { compileCustom(importedPath) }
+                // Pass 1: Pager content recorded into scrollBlur
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .recordLayer(
+                            state = scrollBlur,
+                            backgroundColor = MaterialTheme.colorScheme.surfaceContainer
                         )
-                    }
-                }
+                ) {
+                    EffectStudioPager(
+                        state = pagerState,
+                        userScrollEnabled = !anyModalOpen,
+                        onHorizontalDragDetected = { revealHeaderSmoothly() },
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (page) {
+                            TAB_SHAPE_PRESETS -> {
+                                StudioGrid(
+                                    gridState = presetsGridState,
+                                    topPadding = listTopPaddingDp + 12.dp
+                                ) {
+                                    if (isInitialLoading && options.isEmpty()) {
+                                        items(6, key = { "shape_skeleton_$it" }) {
+                                            SkeletonShapeGridCard()
+                                        }
+                                    } else {
+                                        items(options, key = { it.id }) { option ->
+                                            val cardKey = "shape_${option.id}"
+                                            val armedTime = armedCustomShapes[option.id] ?: 0L
+                                            val isTrashArmed = armedTime > 0L
 
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.icon_shape_presets_section)) {
-                        if (isLoading) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
+                                            LaunchedEffect(armedTime) {
+                                                if (armedTime <= 0L) return@LaunchedEffect
+                                                val totalDurationMs = 3000L
+                                                while (true) {
+                                                    val now = SystemClock.uptimeMillis()
+                                                    val remaining = (armedTime + totalDurationMs) - now
+                                                    if (remaining <= 0L) break
+                                                    delay(remaining.coerceAtMost(80L))
+                                                }
+                                                while (shapeFlight?.key == cardKey &&
+                                                    !shapeFlightClosing &&
+                                                    shapeFlightT < 0.99f
+                                                ) {
+                                                    delay(25L)
+                                                }
+                                                if (shapeFlight?.key == cardKey && shapeFlightClosing) {
+                                                    while (shapeFlight?.key == cardKey) {
+                                                        delay(25L)
+                                                    }
+                                                    delay(90L)
+                                                }
+                                                if (armedCustomShapes[option.id] == armedTime) {
+                                                    armedCustomShapes.remove(option.id)
+                                                }
+                                            }
+
+                                            ShapeStudioGridCard(
+                                                option = option,
+                                                busy = isBusy,
+                                                trashArmed = isTrashArmed,
+                                                isHiddenForFlight = shapeFlight?.key == cardKey,
+                                                onExpand = { bounds, provider ->
+                                                    val curArmed = armedCustomShapes[option.id]
+                                                    if (curArmed != null) {
+                                                        val now = SystemClock.uptimeMillis()
+                                                        val rem = (curArmed + 3000L) - now
+                                                        if (rem in 1L..450L) {
+                                                            armedCustomShapes[option.id] =
+                                                                now - 3000L + 500L
+                                                        }
+                                                    }
+                                                    shapeFlight = ShapeFlightTarget(
+                                                        key = cardKey,
+                                                        option = option,
+                                                        source = bounds,
+                                                        sourceBoundsProvider = provider,
+                                                        isTrashArmedProvider = {
+                                                            armedCustomShapes.containsKey(option.id)
+                                                        }
+                                                    )
+                                                },
+                                                onApply = { applyOptionOptimistic(option) },
+                                                onTrashClick = if (option.source == ShapeSource.CUSTOM_OVERLAY) {
+                                                    {
+                                                        if (isTrashArmed) {
+                                                            deleteOption(option)
+                                                        } else {
+                                                            armedCustomShapes[option.id] =
+                                                                SystemClock.uptimeMillis()
+                                                        }
+                                                    }
+                                                } else null
+                                            )
+                                        }
+
+                                        item(key = "shape_add_custom_card") {
+                                            ShapeStudioAddCard {
+                                                scope.launch {
+                                                    pagerState.animateScrollToPage(
+                                                        TAB_SHAPE_BUILDER,
+                                                        isDirectTap = true
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            else -> {
+                                LazyColumn(
+                                    state = builderListState,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        start = 16.dp,
+                                        top = listTopPaddingDp + 12.dp,
+                                        end = 16.dp,
+                                        bottom = navBottomDp + REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING + 120.dp
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    item(key = "shape_builder_import") {
+                                        ShapeImportCard(
+                                            importedUri = importedUri,
+                                            importedPath = importedPath,
+                                            isBusy = isBusy,
+                                            onPickFile = { importLauncher.launch("*/*") },
+                                            onCompileImported = { customName ->
+                                                startCompileAndApply(customName, importedPath)
+                                            }
+                                        )
+                                    }
+
+                                    item(key = "shape_builder_parametric") {
+                                        ShapeParametricConstructorCard(
+                                            params = params,
+                                            onParamsChange = { next ->
+                                                mode = next.mode
+                                                sides = next.sides
+                                                roundness = next.roundness
+                                                inset = next.inset
+                                                wave = next.wave
+                                                rotation = next.rotation
+                                                scaleX = next.scaleX
+                                                scaleY = next.scaleY
+                                                offsetX = next.offsetX
+                                                offsetY = next.offsetY
+                                                cornerRadius = next.cornerRadius
+                                                innerRadius = next.innerRadius
+                                                pinch = next.pinch
+                                                twist = next.twist
+                                                skewX = next.skewX
+                                                skewY = next.skewY
+                                                cornerTL = next.cornerTL
+                                                cornerTR = next.cornerTR
+                                                cornerBR = next.cornerBR
+                                                cornerBL = next.cornerBL
+                                            }
+                                        )
+                                    }
+
+                                    if (compileLog.isNotEmpty()) {
+                                        item(key = "shape_builder_compile_log") {
+                                            StudioCompileLogCard(compileLog = compileLog)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                if (!isLoading) {
-                    items(options, key = { it.id }) { option ->
-                        ShapeOptionCard(
-                            option = option,
-                            isBusy = isBusy,
-                            isHighlighted = highlightedShapeId != null &&
-                                (highlightedShapeId == option.id ||
-                                    highlightedShapeId == option.packageName),
-                            onApply = { applyOption(option) },
-                            onBuild = if (option.source == ShapeSource.BUILTIN_PRESET) {
-                                { compilePreset(option) }
-                            } else null,
-                            onDelete = if (option.source == ShapeSource.CUSTOM_OVERLAY) {
-                                { deleteOption(option) }
-                            } else null
-                        )
-                    }
-                }
+                // Level-1 Pseudo-Modal A: Shape Card Flight Overlay
+                ShapeCardFlightOverlay(
+                    target = shapeFlight,
+                    busy = isBusy,
+                    scrollBlur = scrollBlur,
+                    topInsetPx = effectiveHeaderHeightPx,
+                    closeSignal = level1CloseSignal,
+                    onProgress = { shapeFlightT = it },
+                    onClosingChanged = { isClosing ->
+                        shapeFlightClosing = isClosing
+                        if (isClosing) {
+                            val optId = shapeFlight?.option?.id
+                            val curArmed = if (optId != null) armedCustomShapes[optId] else null
+                            if (optId != null && curArmed != null) {
+                                val now = SystemClock.uptimeMillis()
+                                val rem = (curArmed + 3000L) - now
+                                if (rem in 1L..450L) {
+                                    armedCustomShapes[optId] = now - 3000L + 450L
+                                }
+                            }
+                        }
+                    },
+                    onClose = {
+                        shapeFlightClosing = false
+                        shapeFlight = null
+                    },
+                    onApply = { option -> applyOptionOptimistic(option) },
+                    onDelete = { option -> deleteOption(option) }
+                )
+
+                // Level-1 Pseudo-Modal B: Builder Preview & Compile Flight Overlay
+                ShapeBuilderModalOverlay(
+                    open = builderPreviewOpen,
+                    sourceRect = builderPreviewSource,
+                    sourceBoundsProvider = builderPreviewBoundsProvider,
+                    pathData = generatedPath,
+                    mode = mode,
+                    compileState = compileDialogState,
+                    onBuildAndApply = { customName ->
+                        startCompileAndApply(customName, generatedPath)
+                    },
+                    onCancelCompile = ::cancelCompile,
+                    onDismissCompile = ::dismissCompileModal,
+                    onClose = { builderPreviewOpen = false },
+                    scrollBlur = scrollBlur,
+                    onProgress = { builderModalT = it },
+                    topInsetPx = effectiveHeaderHeightPx,
+                    closeSignal = level1CloseSignal
+                )
             }
+        } // end SliderMorphRoot
 
-        } // end SliderMorphRoot content — header below stays outside the recorded subtree
+        // Floating Frosted Shape Builder Preview Bar at the bottom of Tab 2 (outside SliderMorphRoot)
+        val floatBarPageVisibility = sstepE(pagerState.position, 0.15f, 0.95f)
+        val floatBarCompileFade = if (compileDialogState != null) {
+            (1f - builderModalT).coerceIn(0f, 1f)
+        } else {
+            1f
+        }
+        ShapeBuilderFloatBar(
+            pathData = generatedPath,
+            mode = mode,
+            blurState = scrollBlur,
+            morphBlurState = if (nestedMorphOpen) sliderModalBlur else cardModalBlur,
+            morphActive = nestedMorphOpen,
+            tintBoost = 0.25f * sliderMorphHost.morphProgress,
+            visibleFraction = floatBarPageVisibility * floatBarCompileFade,
+            isHiddenForFlight = builderPreviewOpen && compileDialogState == null,
+            onExpand = { bounds, provider ->
+                if (nestedMorphOpen) {
+                    sliderMorphHost.requestAnimatedClose()
+                } else if (!anyLevel1ModalOpen) {
+                    builderPreviewSource = bounds
+                    builderPreviewBoundsProvider = provider
+                    builderPreviewOpen = true
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(if (anyLevel1ModalOpen) 0.5f else 3f)
+        )
 
+
+        // Frosted Blur Overlay over Pinned Header
         TopBarBlurOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
-            blurState = blurState,
-            morphBlurState = morphBlurState,
-            morphActive = morphHost.request != null,
-            tintBoost = 0.25f * morphHost.morphProgress,
-            topBarHeight = innerPadding.calculateTopPadding()
+            topBarHeight = effectiveHeaderHeightDp,
+            blurState = scrollBlur,
+            morphBlurState = if (nestedMorphOpen) sliderModalBlur else cardModalBlur,
+            morphActive = anyLevel1ModalOpen || nestedMorphOpen,
+            tintBoost = maxOf(0.25f * activeModalProgress, 0.25f * sliderMorphHost.morphProgress)
         )
+
+        // Status bar veil
         TopStatusVeil(
             backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-            veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
-            modifier = Modifier.fillMaxWidth()
+            veilHeight = statusBarTopDp + 14.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
         )
-        }
-    }
 
-    compileDialogState?.let { state ->
-        AnimationCompileDialog(
-            state = state,
-            labels = CompileDialogLabels(
-                compiling = R.string.icon_shape_compile_dialog_compiling,
-                installing = R.string.icon_shape_compile_dialog_installing,
-                success = R.string.icon_shape_compile_dialog_success,
-                error = R.string.icon_shape_compile_dialog_error,
-                cancelled = R.string.icon_shape_compile_dialog_cancelled,
-                progress = R.string.icon_shape_compile_dialog_progress,
-                cancel = R.string.icon_shape_compile_dialog_cancel,
-                ok = R.string.icon_shape_compile_dialog_ok
-            ),
-            onCancel = ::cancelCompile,
-            onDismiss = ::dismissCompileDialog
-        )
-    }
-}
-
-@Composable
-private fun CustomShapeBuilder(
-    mode: Int,
-    sides: Int,
-    roundness: Float,
-    inset: Float,
-    wave: Float,
-    rotation: Float,
-    scaleX: Float,
-    scaleY: Float,
-    offsetX: Float,
-    offsetY: Float,
-    pathData: String,
-    customName: String,
-    importedPath: String,
-    isBusy: Boolean,
-    resultLog: List<String>,
-    onModeChange: (Int) -> Unit,
-    onSidesChange: (Int) -> Unit,
-    onRoundnessChange: (Float) -> Unit,
-    onInsetChange: (Float) -> Unit,
-    onWaveChange: (Float) -> Unit,
-    onRotationChange: (Float) -> Unit,
-    onScaleXChange: (Float) -> Unit,
-    onScaleYChange: (Float) -> Unit,
-    onOffsetXChange: (Float) -> Unit,
-    onOffsetYChange: (Float) -> Unit,
-    onNameChange: (String) -> Unit,
-    onCompileGenerated: () -> Unit,
-    onPickFile: () -> Unit,
-    onCompileImported: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconShapePreview(pathData = pathData, modifier = Modifier.size(88.dp), active = true)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = customName,
-                    onValueChange = onNameChange,
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.icon_shape_custom_name)) },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth()
+        // Crisp Pinned Header UI above the frost overlay (zIndex = 4f)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .zIndex(4f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
                 )
-                Button(onClick = onCompileGenerated, enabled = !isBusy) {
-                    Text(stringResource(R.string.icon_shape_custom_apply))
-                }
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ShapeModeChip(
-                selected = mode == IconShapeOverlayManager.MODE_SUPERELLIPSE,
-                label = stringResource(R.string.icon_shape_mode_superellipse),
-                onClick = { onModeChange(IconShapeOverlayManager.MODE_SUPERELLIPSE) }
-            )
-            ShapeModeChip(
-                selected = mode == IconShapeOverlayManager.MODE_POLYGON,
-                label = stringResource(R.string.icon_shape_mode_polygon),
-                onClick = { onModeChange(IconShapeOverlayManager.MODE_POLYGON) }
-            )
-            ShapeModeChip(
-                selected = mode == IconShapeOverlayManager.MODE_FLOWER,
-                label = stringResource(R.string.icon_shape_mode_flower),
-                onClick = { onModeChange(IconShapeOverlayManager.MODE_FLOWER) }
-            )
-        }
-
-        if (mode == IconShapeOverlayManager.MODE_SUPERELLIPSE) {
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_roundness),
-                value = roundness,
-                valueRange = 1.5f..8f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_ROUNDNESS,
-                onReset = { onRoundnessChange(DEFAULT_CUSTOM_SHAPE_ROUNDNESS) },
-                onValueChange = onRoundnessChange
-            )
-        } else {
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_sides),
-                value = sides.toFloat(),
-                valueRange = 3f..12f,
-                steps = 8,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_SIDES.toFloat(),
-                onReset = { onSidesChange(DEFAULT_CUSTOM_SHAPE_SIDES) },
-                onValueChange = { onSidesChange(it.toInt().coerceIn(3, 12)) }
-            )
-        }
-        ShapeSlider(
-            title = stringResource(R.string.icon_shape_inset),
-            value = inset,
-            valueRange = 0f..24f,
-            defaultValue = DEFAULT_CUSTOM_SHAPE_INSET,
-            onReset = { onInsetChange(DEFAULT_CUSTOM_SHAPE_INSET) },
-            onValueChange = onInsetChange
-        )
-        if (mode == IconShapeOverlayManager.MODE_FLOWER) {
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_wave),
-                value = wave,
-                valueRange = 0f..0.35f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_WAVE,
-                onReset = { onWaveChange(DEFAULT_CUSTOM_SHAPE_WAVE) },
-                onValueChange = onWaveChange
-            )
-        }
-        ShapeSlider(
-            title = stringResource(R.string.icon_shape_rotation),
-            value = rotation,
-            valueRange = -180f..180f,
-            defaultValue = DEFAULT_CUSTOM_SHAPE_ROTATION,
-            onReset = { onRotationChange(DEFAULT_CUSTOM_SHAPE_ROTATION) },
-            onValueChange = onRotationChange
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_scale_x),
-                value = scaleX,
-                valueRange = 0.5f..1.5f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
-                onReset = { onScaleXChange(DEFAULT_CUSTOM_SHAPE_SCALE) },
-                onValueChange = onScaleXChange,
-                modifier = Modifier.weight(1f)
-            )
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_scale_y),
-                value = scaleY,
-                valueRange = 0.5f..1.5f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_SCALE,
-                onReset = { onScaleYChange(DEFAULT_CUSTOM_SHAPE_SCALE) },
-                onValueChange = onScaleYChange,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_offset_x),
-                value = offsetX,
-                valueRange = -25f..25f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
-                onReset = { onOffsetXChange(DEFAULT_CUSTOM_SHAPE_OFFSET) },
-                onValueChange = onOffsetXChange,
-                modifier = Modifier.weight(1f)
-            )
-            ShapeSlider(
-                title = stringResource(R.string.icon_shape_offset_y),
-                value = offsetY,
-                valueRange = -25f..25f,
-                defaultValue = DEFAULT_CUSTOM_SHAPE_OFFSET,
-                onReset = { onOffsetYChange(DEFAULT_CUSTOM_SHAPE_OFFSET) },
-                onValueChange = onOffsetYChange,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedButton(onClick = onPickFile, enabled = !isBusy) {
-                Icon(Icons.Rounded.FileOpen, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.icon_shape_import))
-            }
-            Spacer(Modifier.width(8.dp))
-            TextButton(
-                onClick = onCompileImported,
-                enabled = !isBusy && IconShapeOverlayManager.isValidPath(importedPath)
-            ) {
-                Text(stringResource(R.string.icon_shape_import_apply))
-            }
-        }
-        AnimatedVisibility(
-            visible = importedPath.isNotBlank() && IconShapeOverlayManager.isValidPath(importedPath),
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+                .padding(top = statusBarTopDp)
         ) {
-            IconShapePreview(pathData = importedPath, modifier = Modifier.size(72.dp), active = false)
-        }
-        AnimatedVisibility(visible = resultLog.isNotEmpty()) {
-            Text(
-                text = resultLog.takeLast(4).joinToString("\n"),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis
+            val spinTransition = rememberInfiniteTransition(label = "ShapeSilentRefreshSpin")
+            val spinAngle by spinTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 750, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "ShapeSilentRefreshAngle"
             )
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ShapeModeChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    FilterChip(selected = selected, onClick = onClick, label = { Text(label, maxLines = 1) })
-}
-
-@Composable
-private fun ShapeSlider(
-    title: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int = 0,
-    defaultValue: Float? = null,
-    modifier: Modifier = Modifier,
-    onReset: (() -> Unit)? = null,
-    onValueChange: (Float) -> Unit
-) {
-    Column(modifier = modifier) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = String.format(Locale.US, "%.2f", value),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (onReset != null && defaultValue != null) {
-                val canReset = abs(value - defaultValue) > 0.001f
-                IconButton(
-                    onClick = onReset,
-                    enabled = canReset,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.Refresh,
-                        stringResource(R.string.anim_cd_reset),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-        }
-        Slider(value = value, onValueChange = onValueChange, valueRange = valueRange, steps = steps)
-    }
-}
-
-@Composable
-private fun ShapeOptionCard(
-    option: ShapeOption,
-    isBusy: Boolean,
-    isHighlighted: Boolean = false,
-    onApply: () -> Unit,
-    onBuild: (() -> Unit)? = null,
-    onDelete: (() -> Unit)? = null
-) {
-    var showConfirmDelete by remember { mutableStateOf(false) }
-    val pulse = rememberInfiniteTransition(label = "icon_shape_highlight")
-    val pulseAlpha by pulse.animateFloat(
-        initialValue = 0f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(300, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "icon_shape_highlight_alpha"
-    )
-    val cardBorder = if (isHighlighted) {
-        BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
-    } else if (option.source != ShapeSource.DEFAULT) {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    } else null
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = cardBorder
-    ) {
-        Box {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = !isBusy && !option.active && onBuild == null) { onApply() }
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .height(topBarRowHeightDp)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-            IconShapePreview(pathData = option.pathData, modifier = Modifier.size(56.dp), active = option.active)
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = option.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = shapeSourceLabel(option.source),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (option.active) {
-                    Icon(Icons.Rounded.Check, stringResource(R.string.icon_shape_active))
-                } else if (onBuild != null) {
-                    Button(onClick = onBuild, enabled = !isBusy) {
-                        Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.icon_shape_custom_apply))
-                    }
-                } else {
-                    TextButton(onClick = onApply, enabled = !isBusy) {
-                        Text(stringResource(R.string.icon_shape_apply))
-                    }
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.nav_back)
+                    )
                 }
-                if (onDelete != null) {
-                    if (!showConfirmDelete) {
-                        IconButton(onClick = { showConfirmDelete = true }, enabled = !isBusy) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                stringResource(R.string.icon_shape_delete),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    } else {
-                        IconButton(onClick = {
-                            showConfirmDelete = false
-                            onDelete()
-                        }, enabled = !isBusy) {
-                            Icon(
-                                Icons.Rounded.Check,
-                                stringResource(R.string.icon_shape_delete_confirm),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        IconButton(onClick = { showConfirmDelete = false }, enabled = !isBusy) {
-                            Icon(
-                                Icons.Rounded.Close,
-                                stringResource(R.string.anim_dialog_cancel),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                Text(
+                    text = stringResource(R.string.icon_shape_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = { triggerManualSilentRefresh() },
+                    enabled = !isInitialLoading && !isBusy
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Refresh,
+                        contentDescription = stringResource(R.string.app_icons_refresh),
+                        tint = if (isSilentRefreshing) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        modifier = Modifier.rotate(if (isSilentRefreshing) spinAngle else 0f)
+                    )
                 }
             }
+
+            // Clipped Collapsible Container for AppIconsTabs
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clipToBounds()
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val fullH = placeable.height.toFloat()
+                        collapsibleMaxHeightPx = fullH
+                        val visH = (fullH + collapseOffsetPx).roundToInt().coerceAtLeast(0)
+                        val yOff = collapseOffsetPx.roundToInt().coerceIn(-placeable.height, 0)
+                        layout(placeable.width, visH) {
+                            placeable.placeRelative(0, yOff)
+                        }
+                    }
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(4.dp))
+                    AppIconsTabs(
+                        titles = listOf(
+                            stringResource(R.string.icon_shape_presets_section),
+                            stringResource(R.string.icon_shape_custom_section)
+                        ),
+                        position = pagerState.position,
+                        pagerState = pagerState,
+                        onTabClick = { index ->
+                            scope.launch {
+                                pagerState.animateScrollToPage(index, isDirectTap = true)
+                            }
+                        }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
             }
-            if (isHighlighted) {
-                Box(
-                    Modifier
-                        .matchParentSize()
-                        .background(Color.White.copy(alpha = pulseAlpha))
-                )
-            }
+        }
+
+        // Full-header tap/swipe blocker when any pseudo-modal is open
+        if (anyModalOpen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(effectiveHeaderHeightDp)
+                    .align(Alignment.TopCenter)
+                    .zIndex(5f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            if (nestedMorphOpen) {
+                                sliderMorphHost.requestAnimatedClose()
+                            } else {
+                                level1CloseSignal++
+                            }
+                        }
+                    )
+            )
         }
     }
 }
 
-@Composable
-private fun shapeSourceLabel(source: ShapeSource): String {
-    return when (source) {
-        ShapeSource.DEFAULT -> stringResource(R.string.icon_shape_source_default)
-        ShapeSource.INSTALLED_OVERLAY -> stringResource(R.string.icon_shape_source_installed)
-        ShapeSource.BUILTIN_PRESET -> stringResource(R.string.icon_shape_source_builtin)
-        ShapeSource.CUSTOM_OVERLAY -> stringResource(R.string.icon_shape_source_custom)
-    }
-}
-
-@Composable
-private fun IconShapePreview(pathData: String, modifier: Modifier = Modifier, active: Boolean) {
-    val fillColor = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
-    val strokeColor = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline
-    AndroidView(
-        modifier = modifier,
-        factory = { IconShapePreviewView(it) },
-        update = { view ->
-            view.setShape(pathData, fillColor.toArgb(), strokeColor.toArgb())
-        }
-    )
-}
-
-private class IconShapePreviewView(context: Context) : View(context) {
-    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 2f * resources.displayMetrics.density
-    }
-    private val bounds = RectF()
-    private var pathData: String = ""
-
-    fun setShape(pathData: String, fillColor: Int, strokeColor: Int) {
-        this.pathData = pathData
-        fillPaint.color = fillColor
-        strokePaint.color = strokeColor
-        invalidate()
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val size = minOf(width, height).toFloat().coerceAtLeast(1f)
-        val left = (width - size) / 2f
-        val top = (height - size) / 2f
-        bounds.set(left, top, left + size, top + size)
-        canvas.drawRoundRect(bounds, size * 0.18f, size * 0.18f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = fillPaint.color and 0x33ffffff
-        })
-        try {
-            val path = PathParser.createPathFromPathData(pathData)
-            val matrix = Matrix().apply {
-                setScale(size / 100f, size / 100f)
-                postTranslate(left, top)
-            }
-            path.transform(matrix)
-            canvas.drawPath(path, fillPaint)
-            canvas.drawPath(path, strokePaint)
-        } catch (_: Throwable) {
-            canvas.drawOval(bounds, fillPaint)
-            canvas.drawOval(bounds, strokePaint)
-        }
-    }
-}

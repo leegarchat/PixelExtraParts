@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview-only: exact copy of the stock AOSP activity open-exit animation
+     (frameworks/base/core/res/res/anim/activity_open_exit.xml). Framework
+     @interpolator/* refs mapped to @android:interpolator/*, EXCEPT the alpha
+     child's @interpolator/standard_accelerate, which is NOT a public SDK
+     resource and cannot be referenced from an app: it is mapped to
+     @android:interpolator/accelerate_quad. This is output-identical because
+     that alpha holds 1.0 -> 1.0, so any interpolator yields the same frames.
+     All durations, offsets, deltas and fill flags are byte-identical. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="1.0"
+        android:fillEnabled="true"
+        android:fillBefore="true"
+        android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_quad"
+        android:startOffset="0"
+        android:duration="450" />
+
+    <translate
+        android:fromXDelta="0"
+        android:toXDelta="-96dp"
+        android:fillEnabled="true"
+        android:fillBefore="true"
+        android:fillAfter="true"
+        android:interpolator="@android:interpolator/fast_out_extra_slow_in"
+        android:startOffset="0"
+        android:duration="450" />
+
+    <extend
+        android:fromExtendLeft="0"
+        android:fromExtendTop="0"
+        android:fromExtendRight="96dp"
+        android:fromExtendBottom="0"
+        android:toExtendLeft="0"
+        android:toExtendTop="0"
+        android:toExtendRight="96dp"
+        android:toExtendBottom="0"
+        android:interpolator="@android:interpolator/fast_out_extra_slow_in"
+        android:startOffset="0"
+        android:duration="450" />
+</set>

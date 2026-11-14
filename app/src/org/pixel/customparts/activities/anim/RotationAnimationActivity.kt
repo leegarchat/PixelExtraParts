@@ -1,68 +1,101 @@
 package org.pixel.customparts.activities
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
-import android.view.Gravity
-import android.view.View
-import android.view.animation.AnimationUtils
-import android.widget.FrameLayout
-import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -70,21 +103,58 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.pixel.customparts.R
+import org.pixel.customparts.SettingsKeys
 import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
+import org.pixel.customparts.ui.GenericSwitchRow
 import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.SettingsGroupCard
+import org.pixel.customparts.ui.SliderMorphRoot
 import org.pixel.customparts.ui.TopBarBlurOverlay
 import org.pixel.customparts.ui.TopStatusVeil
 import org.pixel.customparts.ui.recordLayer
 import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.rememberSliderMorphHostState
 import org.pixel.customparts.utils.AnimThemeCompiler
-import org.pixel.customparts.utils.filterThemeNameInput
 import java.util.concurrent.atomic.AtomicBoolean
-import androidx.compose.ui.res.stringResource
+import kotlin.math.roundToInt
 
 private const val ROTATION_STYLE_DEFAULT = 0
 private const val ROTATION_STYLE_CUSTOM_APK = -1
+private const val ROTATION_STYLE_DISABLED = -2
+
+private const val KEY_ROTATION_STYLE = "rotation_animation_style"
+private const val KEY_ROTATION_CUSTOM_PACKAGE = "rotation_animation_custom_package"
+private const val KEY_ROTATION_SPEED = "rotation_animation_speed"
+private const val ROTATION_THEME_PACKAGE_PREFIX = "org.pixel.customparts.rotation."
+
+private fun readRotationSpeed(context: Context): Float {
+    return try {
+        val v = Settings.Global.getFloat(context.contentResolver, KEY_ROTATION_SPEED, 1f)
+        v.coerceIn(0.1f, 10f)
+    } catch (_: Exception) {
+        1f
+    }
+}
+
+private fun scanInstalledRotationThemes(context: Context): List<String> {
+    val result = linkedSetOf<String>()
+    runCatching {
+        context.packageManager.getInstalledPackages(0).forEach { pi ->
+            if (pi.packageName.startsWith(ROTATION_THEME_PACKAGE_PREFIX)) {
+                result.add(pi.packageName)
+            }
+        }
+    }
+    runCatching {
+        context.packageManager.getInstalledApplications(0).forEach { ai ->
+            if (ai.packageName.startsWith(ROTATION_THEME_PACKAGE_PREFIX)) {
+                result.add(ai.packageName)
+            }
+        }
+    }
+    return result.sorted()
+}
+
 private const val ROTATION_STYLE_WINDOWS_PHONE = 1
 private const val ROTATION_STYLE_WIN10_11 = 2
 private const val ROTATION_STYLE_CUBE = 3
@@ -93,10 +163,6 @@ private const val ROTATION_STYLE_SLIDE = 5
 private const val ROTATION_STYLE_FLIP = 6
 private const val ROTATION_STYLE_FADE = 7
 private const val ROTATION_STYLE_BOUNCE = 8
-
-private const val KEY_ROTATION_STYLE = "rotation_animation_style"
-private const val KEY_ROTATION_CUSTOM_PACKAGE = "rotation_animation_custom_package"
-private const val ROTATION_THEME_PACKAGE_PREFIX = "org.pixel.customparts.rotation."
 
 private data class RotationStyle(
     val styleId: Int,
@@ -108,29 +174,71 @@ private data class RotationStyle(
 
 private val BUILTIN_STYLES: List<RotationStyle> by lazy {
     listOf(
-        RotationStyle(ROTATION_STYLE_WINDOWS_PHONE, R.string.rotation_style_windows_phone,
-            R.anim.wp_exit, R.anim.wp_enter, R.anim.wp_alpha),
-        RotationStyle(ROTATION_STYLE_WIN10_11, R.string.rotation_style_win10_11,
-            R.anim.win10_11_exit, R.anim.win10_11_enter, R.anim.win10_11_alpha),
-        RotationStyle(ROTATION_STYLE_CUBE, R.string.rotation_style_cube,
-            R.anim.cube_exit, R.anim.cube_enter, R.anim.cube_alpha),
-        RotationStyle(ROTATION_STYLE_ZOOM, R.string.rotation_style_zoom,
-            R.anim.zoom_rotate_exit, R.anim.zoom_rotate_enter, R.anim.zoom_rotate_alpha),
-        RotationStyle(ROTATION_STYLE_SLIDE, R.string.rotation_style_slide,
-            R.anim.slide_rotate_exit, R.anim.slide_rotate_enter, R.anim.slide_rotate_alpha),
-        RotationStyle(ROTATION_STYLE_FLIP, R.string.rotation_style_flip,
-            R.anim.flip_exit, R.anim.flip_enter, R.anim.flip_alpha),
-        RotationStyle(ROTATION_STYLE_FADE, R.string.rotation_style_fade,
-            R.anim.fade_rotate_exit, R.anim.fade_rotate_enter, R.anim.fade_rotate_alpha),
-        RotationStyle(ROTATION_STYLE_BOUNCE, R.string.rotation_style_bounce,
-            R.anim.bounce_exit, R.anim.bounce_enter, R.anim.bounce_alpha)
+        RotationStyle(
+            ROTATION_STYLE_WINDOWS_PHONE,
+            R.string.rotation_style_windows_phone,
+            R.anim.wp_exit,
+            R.anim.wp_enter,
+            R.anim.wp_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_WIN10_11,
+            R.string.rotation_style_win10_11,
+            R.anim.win10_11_exit,
+            R.anim.win10_11_enter,
+            R.anim.win10_11_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_CUBE,
+            R.string.rotation_style_cube,
+            R.anim.cube_exit,
+            R.anim.cube_enter,
+            R.anim.cube_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_ZOOM,
+            R.string.rotation_style_zoom,
+            R.anim.zoom_rotate_exit,
+            R.anim.zoom_rotate_enter,
+            R.anim.zoom_rotate_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_SLIDE,
+            R.string.rotation_style_slide,
+            R.anim.slide_rotate_exit,
+            R.anim.slide_rotate_enter,
+            R.anim.slide_rotate_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_FLIP,
+            R.string.rotation_style_flip,
+            R.anim.flip_exit,
+            R.anim.flip_enter,
+            R.anim.flip_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_FADE,
+            R.string.rotation_style_fade,
+            R.anim.fade_rotate_exit,
+            R.anim.fade_rotate_enter,
+            R.anim.fade_rotate_alpha
+        ),
+        RotationStyle(
+            ROTATION_STYLE_BOUNCE,
+            R.string.rotation_style_bounce,
+            R.anim.bounce_exit,
+            R.anim.bounce_enter,
+            R.anim.bounce_alpha
+        )
     )
 }
 
 class RotationAnimationActivity : ComponentActivity() {
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         setContent {
             val darkTheme = isSystemInDarkTheme()
             val context = LocalContext.current
@@ -150,28 +258,53 @@ class RotationAnimationActivity : ComponentActivity() {
 private fun RotationAnimationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val blurState = rememberGraphicsLayerRecordingState()
-    val lazyListState = rememberLazyListState()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE ||
+        configuration.screenWidthDp >= 600
 
     var currentStyle by remember {
-        mutableIntStateOf(try {
-            Settings.Global.getInt(context.contentResolver, KEY_ROTATION_STYLE)
-        } catch (_: Exception) { ROTATION_STYLE_DEFAULT })
+        mutableIntStateOf(
+            try {
+                Settings.Global.getInt(context.contentResolver, KEY_ROTATION_STYLE)
+            } catch (_: Exception) {
+                ROTATION_STYLE_DEFAULT
+            }
+        )
     }
     var customPackage by remember {
-        mutableStateOf(try {
-            Settings.Global.getString(context.contentResolver, KEY_ROTATION_CUSTOM_PACKAGE) ?: ""
-        } catch (_: Exception) { "" })
+        mutableStateOf(
+            try {
+                Settings.Global.getString(context.contentResolver, KEY_ROTATION_CUSTOM_PACKAGE) ?: ""
+            } catch (_: Exception) {
+                ""
+            }
+        )
     }
-    var installedThemes by remember { mutableStateOf<List<String>>(emptyList()) }
+    var installedThemes by remember { mutableStateOf(scanInstalledRotationThemes(context)) }
+    var speed by remember { mutableFloatStateOf(readRotationSpeed(context)) }
+    val pagerState = rememberStudioPagerState(3)
+
+    var flight by remember { mutableStateOf<StudioCard?>(null) }
+    var flightT by remember { mutableFloatStateOf(0f) }
+    var flightClosing by remember { mutableStateOf(false) }
+    val armedThemes = remember { mutableStateMapOf<String, Long>() }
+
+    var builderPreviewOpen by remember { mutableStateOf(false) }
+    var builderPreviewSource by remember { mutableStateOf(Rect.Zero) }
+    var builderPreviewBoundsProvider by remember { mutableStateOf<() -> Rect>({ builderPreviewSource }) }
+    var builderModalT by remember { mutableFloatStateOf(0f) }
+
+    var interpolatorRequest by remember { mutableStateOf<InterpolatorMorphRequest?>(null) }
+    var interpolatorModalT by remember { mutableFloatStateOf(0f) }
+
+    val builtinGridState = rememberLazyGridState()
+    val collectedGridState = rememberLazyGridState()
+    val builderListState = rememberLazyListState()
 
     fun refreshThemes() {
-        installedThemes = try {
-            context.packageManager.getInstalledPackages(0)
-                .filter { it.packageName.startsWith(ROTATION_THEME_PACKAGE_PREFIX) }
-                .map { it.packageName }
-                .sorted()
-        } catch (_: Exception) { emptyList() }
+        installedThemes = scanInstalledRotationThemes(context)
     }
 
     fun applyStyle(styleId: Int) {
@@ -186,9 +319,54 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
         currentStyle = ROTATION_STYLE_CUSTOM_APK
     }
 
-    LaunchedEffect(Unit) { refreshThemes() }
+    fun updateSpeed(value: Float) {
+        val clamped = value.coerceIn(0.1f, 10f)
+        speed = clamped
+        try {
+            Settings.Global.putFloat(context.contentResolver, KEY_ROTATION_SPEED, clamped)
+        } catch (_: Exception) {
+        }
+    }
 
-    var styleName by remember { mutableStateOf("") }
+    fun uninstallTheme(packageName: String) {
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                AnimThemeCompiler.uninstall(context, packageName)
+            }
+            if (ok && customPackage == packageName) {
+                Settings.Global.putString(context.contentResolver, KEY_ROTATION_CUSTOM_PACKAGE, null)
+                if (currentStyle == ROTATION_STYLE_CUSTOM_APK) {
+                    Settings.Global.putInt(context.contentResolver, KEY_ROTATION_STYLE, ROTATION_STYLE_DEFAULT)
+                    currentStyle = ROTATION_STYLE_DEFAULT
+                }
+                customPackage = ""
+            }
+            refreshThemes()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        refreshThemes()
+    }
+
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                refreshThemes()
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
+            addDataScheme("package")
+        }
+        context.registerReceiver(receiver, filter)
+        onDispose {
+            runCatching { context.unregisterReceiver(receiver) }
+        }
+    }
+
     var exitUri by remember { mutableStateOf<Uri?>(null) }
     var enterUri by remember { mutableStateOf<Uri?>(null) }
     var compileLog by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -199,28 +377,31 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
     var compileCancellation by remember { mutableStateOf<AtomicBoolean?>(null) }
     var compileOperationId by remember { mutableIntStateOf(0) }
     var compiledPackageName by remember { mutableStateOf<String?>(null) }
-    var highlightedThemePackage by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(highlightedThemePackage) {
-        if (highlightedThemePackage != null) {
-            delay(3500)
-            highlightedThemePackage = null
-        }
-    }
 
     var constructorTab by remember { mutableIntStateOf(0) }
     var constructorExit by remember {
-        mutableStateOf(AnimParams(
-            alphaFrom = 1f, alphaTo = 0f, rotateFrom = 0f, rotateTo = -90f, duration = 320
-        ))
+        mutableStateOf(
+            AnimParams(
+                alphaFrom = 1f,
+                alphaTo = 0f,
+                rotateFrom = 0f,
+                rotateTo = -90f,
+                duration = 320
+            )
+        )
     }
     var constructorEnter by remember {
-        mutableStateOf(AnimParams(
-            alphaFrom = 0f, alphaTo = 1f, rotateFrom = 90f, rotateTo = 0f,
-            duration = 320, startOffset = 80
-        ))
+        mutableStateOf(
+            AnimParams(
+                alphaFrom = 0f,
+                alphaTo = 1f,
+                rotateFrom = 90f,
+                rotateTo = 0f,
+                duration = 320,
+                startOffset = 80
+            )
+        )
     }
-    var constructorPreviewKey by remember { mutableIntStateOf(0) }
 
     val exitPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
         if (it != null) exitUri = it
@@ -260,7 +441,7 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
             ) return@launch
             val effectivePhase = if (
                 state.phase == AnimationCompilePhase.INSTALLING &&
-                    phase == AnimationCompilePhase.COMPILING
+                phase == AnimationCompilePhase.COMPILING
             ) AnimationCompilePhase.INSTALLING else phase
             compileDialogState = state.copy(
                 phase = effectivePhase,
@@ -313,23 +494,29 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                     if (cancellation.get()) throw CancellationException()
 
                     if (installed) {
-                        compileLog = compileLog + "Installed successfully"
+                        compileLog = compileLog + "✓ Installed successfully"
                         refreshThemes()
                         compiledPackageName = result.packageName
                         compileDialogState = AnimationCompileState(
-                            AnimationCompilePhase.SUCCESS, 1f, result.packageName
+                            AnimationCompilePhase.SUCCESS,
+                            1f,
+                            result.packageName
                         )
                     } else {
                         compileError = context.getString(R.string.anim_install_failed)
                         compileLog = compileLog + context.getString(R.string.anim_install_failed_log)
                         compileDialogState = AnimationCompileState(
-                            AnimationCompilePhase.ERROR, 0.98f, compileError.orEmpty()
+                            AnimationCompilePhase.ERROR,
+                            0.98f,
+                            compileError.orEmpty()
                         )
                     }
                 } else {
                     compileError = result.error ?: context.getString(R.string.anim_compile_failed)
                     compileDialogState = AnimationCompileState(
-                        AnimationCompilePhase.ERROR, 0f, compileError.orEmpty()
+                        AnimationCompilePhase.ERROR,
+                        0f,
+                        compileError.orEmpty()
                     )
                 }
             } catch (_: CancellationException) {
@@ -340,7 +527,9 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
             } catch (t: Throwable) {
                 compileError = t.message ?: context.getString(R.string.anim_compile_failed)
                 compileDialogState = AnimationCompileState(
-                    AnimationCompilePhase.ERROR, 0f, compileError.orEmpty()
+                    AnimationCompilePhase.ERROR,
+                    0f,
+                    compileError.orEmpty()
                 )
             } finally {
                 isCompiling = false
@@ -360,24 +549,26 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
         val packageName = compiledPackageName
         compiledPackageName = null
         compileDialogState = null
+        builderPreviewOpen = false
         if (packageName != null) {
-            highlightedThemePackage = packageName
+            refreshThemes()
             scope.launch {
-                delay(100)
+                delay(80)
+                pagerState.animateScrollToPage(STUDIO_TAB_COLLECTED, isDirectTap = true)
                 val index = installedThemes.indexOf(packageName)
                 if (index >= 0) {
-                    lazyListState.animateScrollToItem(3 + BUILTIN_STYLES.size + index)
+                    collectedGridState.animateScrollToItem(index)
                 }
             }
         }
     }
 
-    fun doCompile() {
-        if (styleName.isBlank() || exitUri == null || enterUri == null) return
+    fun doCompileImported(name: String) {
+        if (name.isBlank() || exitUri == null || enterUri == null) return
         startCompile { cancellation, logCallback ->
             AnimThemeCompiler.compileRotation(
                 context = context,
-                styleName = styleName,
+                styleName = name,
                 exitUri = exitUri!!,
                 enterUri = enterUri!!,
                 logCallback = AnimThemeCompiler.LogCallback(logCallback),
@@ -400,218 +591,393 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
         }
     }
 
-    val canCompile = !isCompiling && styleName.isNotBlank() && exitUri != null && enterUri != null
+    // 3-pass non-cyclic blur states:
+    // 1. scrollBlur: records pager content + floating builder preview bar
+    // 2. cardModalBlur: records [Pass 1 + Level-1 Modal] when any Level-1 modal is open
+    // 3. sliderModalBlur: records [Pass 2 + SliderMorphOverlay] when Level-2 slider modal is open
+    val scrollBlur = rememberGraphicsLayerRecordingState()
+    val cardModalBlur = rememberGraphicsLayerRecordingState()
+    val sliderModalBlur = rememberGraphicsLayerRecordingState()
+    val sliderMorphHost = rememberSliderMorphHostState()
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.rotation_anim_title), fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
+    val constructorClockState = rememberConstructorPreviewClockState()
+    var level1CloseSignal by remember { mutableIntStateOf(0) }
+
+    val anyLevel1ModalOpen = flight != null ||
+        builderPreviewOpen ||
+        compileDialogState != null ||
+        interpolatorRequest != null
+    val nestedMorphOpen = sliderMorphHost.request != null
+    val anyModalOpen = anyLevel1ModalOpen || nestedMorphOpen
+    val activeModalProgress = maxOf(flightT, builderModalT, interpolatorModalT)
+
+    // Scroll-driven collapsible Switcher + Tabs logic (clipped strictly at the
+    // bottom edge of the TopAppBar so it never overlaps the transparent title bar)
+    val statusBarTopDp = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val topBarRowHeightDp = 56.dp
+    val statusPlusTopBarPx = with(density) { (statusBarTopDp + topBarRowHeightDp).toPx() }
+
+    var collapsibleMaxHeightPx by remember { mutableFloatStateOf(with(density) { 128.dp.toPx() }) }
+    var collapseOffsetPx by remember { mutableFloatStateOf(0f) }
+    var headerRevealJob by remember { mutableStateOf<Job?>(null) }
+
+    fun revealHeaderSmoothly() {
+        if (collapseOffsetPx > -0.5f || headerRevealJob?.isActive == true) return
+        headerRevealJob = scope.launch {
+            val anim = Animatable(collapseOffsetPx)
+            anim.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    stiffness = Spring.StiffnessMediumLow,
+                    dampingRatio = Spring.DampingRatioNoBouncy
                 )
-            )
+            ) {
+                collapseOffsetPx = value
+            }
         }
-    ) { innerPadding ->
-        Box(Modifier.fillMaxSize()) {
-            LazyColumn(
-                state = lazyListState,
+    }
+
+    // Header follows REAL list scroll, not the swipe gesture itself: collapse runs on
+    // post-scroll (consumed delta), so a short list that cannot scroll (e.g. Collected
+    // with a single theme) never hides the Switcher + Tabs. Reveal stays on pre-scroll
+    // so pull-down at the top edge still brings the header back immediately.
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // Block header motion when scrolling inside any open pseudo-modal
+                if (flight != null ||
+                    builderPreviewOpen ||
+                    compileDialogState != null ||
+                    interpolatorRequest != null ||
+                    sliderMorphHost.request != null
+                ) {
+                    return Offset.Zero
+                }
+                if (available.y > 0.5f) {
+                    headerRevealJob?.cancel()
+                    collapseOffsetPx = (collapseOffsetPx + available.y)
+                        .coerceIn(-collapsibleMaxHeightPx, 0f)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                // Same modal guard as pre-scroll
+                if (flight != null ||
+                    builderPreviewOpen ||
+                    compileDialogState != null ||
+                    interpolatorRequest != null ||
+                    sliderMorphHost.request != null
+                ) {
+                    return Offset.Zero
+                }
+                // Collapse only by the distance the list really scrolled
+                if (consumed.y < -0.5f && collapsibleMaxHeightPx > 1f) {
+                    headerRevealJob?.cancel()
+                    collapseOffsetPx = (collapseOffsetPx + consumed.y)
+                        .coerceIn(-collapsibleMaxHeightPx, 0f)
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
+    // Smoothly reveal header when user switches pages
+    LaunchedEffect(pagerState.anchor) {
+        revealHeaderSmoothly()
+    }
+
+    val visibleCollapsiblePx = (collapsibleMaxHeightPx + collapseOffsetPx).coerceAtLeast(0f)
+    val effectiveHeaderHeightPx = statusPlusTopBarPx + visibleCollapsiblePx
+    val effectiveHeaderHeightDp = with(density) { effectiveHeaderHeightPx.toDp() }
+    val listTopPaddingDp = with(density) { (statusPlusTopBarPx + collapsibleMaxHeightPx).toDp() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .nestedScroll(nestedScrollConnection)
+    ) {
+        SliderMorphRoot(
+            host = sliderMorphHost,
+            blurState = cardModalBlur,
+            morphBlurState = sliderModalBlur,
+            morphBackgroundColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .recordLayer(state = blurState, backgroundColor = MaterialTheme.colorScheme.surfaceContainer)
-                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    top = 16.dp + innerPadding.calculateTopPadding(),
-                    end = 16.dp,
-                    bottom = REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING + innerPadding.calculateBottomPadding()
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .then(
+                        if (anyLevel1ModalOpen || nestedMorphOpen) {
+                            Modifier.recordLayer(
+                                state = cardModalBlur,
+                                backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
-                item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text(
-                                String.format(
-                                    stringResource(R.string.rotation_anim_current),
-                                    styleDisplayName(context, currentStyle)
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            if (currentStyle != ROTATION_STYLE_DEFAULT) {
-                                Spacer(Modifier.height(8.dp))
-                                Button(
-                                    onClick = { applyStyle(ROTATION_STYLE_DEFAULT) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = MaterialTheme.colorScheme.onError
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
-                                ) {
-                                    Text(stringResource(R.string.rotation_anim_reset))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    Text(
-                        stringResource(R.string.rotation_anim_builtin_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
-                    )
-                }
-
-                items(BUILTIN_STYLES, key = { it.styleId }) { style ->
-                    RotationStyleItem(
-                        style = style,
-                        isActive = style.styleId == currentStyle,
-                        onApply = { applyStyle(style.styleId) }
-                    )
-                }
-
-                item {
-                    Text(
-                        stringResource(R.string.rotation_anim_custom_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                    )
-                }
-
-                if (installedThemes.isEmpty()) {
-                    item {
-                        Card(
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Text(
-                                stringResource(R.string.rotation_anim_no_themes),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
-                            )
-                        }
-                    }
-                }
-
-                items(installedThemes, key = { it }) { packageName ->
-                    CustomThemeItem(
-                        packageName = packageName,
-                        isHighlighted = highlightedThemePackage == packageName,
-                        isActive = currentStyle == ROTATION_STYLE_CUSTOM_APK && packageName == customPackage,
-                        onApply = { applyCustomTheme(packageName) },
-                        onUninstall = {
-                            scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    AnimThemeCompiler.uninstall(context, packageName)
-                                }
-                                refreshThemes()
-                            }
-                        }
-                    )
-                }
-
-                item {
-                    SettingsGroupCard(title = stringResource(R.string.rotation_anim_import_title)) {
-                        Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                            OutlinedTextField(
-                                value = styleName,
-                                onValueChange = { styleName = filterThemeNameInput(it) },
-                                label = { Text(stringResource(R.string.rotation_anim_style_name)) },
-                                placeholder = { Text("e.g. windows phone") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Ascii,
-                                    imeAction = ImeAction.Done
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            FilePickerRow(
-                                label = stringResource(R.string.rotation_anim_exit_file),
-                                uri = exitUri,
-                                required = true,
-                                onClick = { exitPicker.launch("text/xml") }
-                            )
-                            FilePickerRow(
-                                label = stringResource(R.string.rotation_anim_enter_file),
-                                uri = enterUri,
-                                required = true,
-                                onClick = { enterPicker.launch("text/xml") }
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            Button(
-                                onClick = { doCompile() },
-                                enabled = canCompile,
-                                modifier = Modifier.fillMaxWidth()
+                // Pass 1: Full-screen scroll content recorded into scrollBlur (origin = 0,0)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .recordLayer(
+                            state = scrollBlur,
+                            backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                ) {
+                    EffectStudioPager(
+                        state = pagerState,
+                        userScrollEnabled = !anyModalOpen,
+                        onHorizontalDragDetected = { revealHeaderSmoothly() },
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (page) {
+                            STUDIO_TAB_BUILTIN -> StudioGrid(
+                                gridState = builtinGridState,
+                                topPadding = listTopPaddingDp + 12.dp
                             ) {
-                                if (isCompiling) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.onPrimary
+                                item(key = "pep_default") {
+                                    val title = stringResource(R.string.rotation_anim_default)
+                                    val active = currentStyle == ROTATION_STYLE_DEFAULT
+                                    val cardKey = "pep_default"
+                                    LoopEffectCard(
+                                        title = title,
+                                        isActive = active,
+                                        isHiddenForFlight = flight?.key == cardKey,
+                                        onExpand = { bounds, provider ->
+                                            flight = StudioCard.Builtin(
+                                                key = cardKey,
+                                                title = title,
+                                                source = bounds,
+                                                sourceBoundsProvider = provider,
+                                                styleId = ROTATION_STYLE_DEFAULT,
+                                                exitAnim = R.anim.stock_rotate_exit,
+                                                enterAnim = R.anim.stock_rotate_enter
+                                            )
+                                        },
+                                        applyLabel = stringResource(R.string.rotation_anim_apply),
+                                        activeLabel = stringResource(R.string.rotation_anim_active),
+                                        onApply = { applyStyle(ROTATION_STYLE_DEFAULT) },
+                                        preview = {
+                                            RotationAnimPreview(
+                                                exitAnimRes = R.anim.stock_rotate_exit,
+                                                enterAnimRes = R.anim.stock_rotate_enter,
+                                                speedMultiplier = 1f
+                                            )
+                                        }
                                     )
-                                    Spacer(Modifier.width(8.dp))
                                 }
-                                Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.rotation_anim_compile_btn))
+                                item(key = "pep_disabled") {
+                                    val title = stringResource(R.string.rotation_anim_disabled)
+                                    val active = currentStyle == ROTATION_STYLE_DISABLED
+                                    val cardKey = "pep_disabled"
+                                    LoopEffectCard(
+                                        title = title,
+                                        isActive = active,
+                                        isHiddenForFlight = flight?.key == cardKey,
+                                        onExpand = { bounds, provider ->
+                                            flight = StudioCard.Builtin(
+                                                key = cardKey,
+                                                title = title,
+                                                source = bounds,
+                                                sourceBoundsProvider = provider,
+                                                styleId = ROTATION_STYLE_DISABLED,
+                                                exitAnim = R.anim.no_anim,
+                                                enterAnim = R.anim.no_anim
+                                            )
+                                        },
+                                        applyLabel = stringResource(R.string.rotation_anim_apply),
+                                        activeLabel = stringResource(R.string.rotation_anim_active),
+                                        onApply = { applyStyle(ROTATION_STYLE_DISABLED) },
+                                        preview = {
+                                            RotationAnimPreview(
+                                                exitAnimRes = R.anim.no_anim,
+                                                enterAnimRes = R.anim.no_anim,
+                                                speedMultiplier = speed
+                                            )
+                                        }
+                                    )
+                                }
+                                items(BUILTIN_STYLES, key = { it.styleId }) { style ->
+                                    val title = stringResource(style.nameRes)
+                                    val active = style.styleId == currentStyle
+                                    val cardKey = "builtin_${style.styleId}"
+                                    LoopEffectCard(
+                                        title = title,
+                                        isActive = active,
+                                        isHiddenForFlight = flight?.key == cardKey,
+                                        onExpand = { bounds, provider ->
+                                            flight = StudioCard.Builtin(
+                                                key = cardKey,
+                                                title = title,
+                                                source = bounds,
+                                                sourceBoundsProvider = provider,
+                                                styleId = style.styleId,
+                                                exitAnim = style.exitAnimRes,
+                                                enterAnim = style.enterAnimRes
+                                            )
+                                        },
+                                        applyLabel = stringResource(R.string.rotation_anim_apply),
+                                        activeLabel = stringResource(R.string.rotation_anim_active),
+                                        onApply = { applyStyle(style.styleId) },
+                                        preview = {
+                                            RotationAnimPreview(
+                                                exitAnimRes = style.exitAnimRes,
+                                                enterAnimRes = style.enterAnimRes,
+                                                speedMultiplier = speed
+                                            )
+                                        }
+                                    )
+                                }
                             }
-                            if (compileError != null) {
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    compileError!!,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    }
-                }
 
-                if (compileLog.isNotEmpty()) {
-                    item {
-                        SettingsGroupCard(title = stringResource(R.string.rotation_anim_log_title)) {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                            STUDIO_TAB_COLLECTED -> StudioGrid(
+                                gridState = collectedGridState,
+                                topPadding = listTopPaddingDp + 12.dp
                             ) {
-                                Column(Modifier.padding(12.dp).heightIn(max = 200.dp)) {
-                                    compileLog.forEach { line ->
-                                        Text(
-                                            line,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontFamily = FontFamily.Monospace,
-                                            fontSize = 11.sp,
-                                            lineHeight = 15.sp,
-                                            color = when {
-                                                line.startsWith("ERROR") || line.startsWith("✗") ->
-                                                    MaterialTheme.colorScheme.error
-                                                line.startsWith("✓") -> MaterialTheme.colorScheme.primary
-                                                else -> MaterialTheme.colorScheme.onSurface
+                                items(installedThemes, key = { it }) { packageName ->
+                                    val cardKey = "theme_$packageName"
+                                    val armedTimestamp = armedThemes[packageName] ?: 0L
+                                    val confirmDelete = armedTimestamp > 0L
+
+                                    LaunchedEffect(armedTimestamp) {
+                                        if (armedTimestamp <= 0L) return@LaunchedEffect
+                                        val totalDurationMs = 3000L
+                                        while (true) {
+                                            val now = android.os.SystemClock.uptimeMillis()
+                                            val remaining = (armedTimestamp + totalDurationMs) - now
+                                            if (remaining <= 0L) break
+                                            delay(remaining.coerceAtMost(80L))
+                                        }
+                                        // Boundary / mid-flight guard:
+                                        // 1) If the modal is currently opening, wait until it finishes opening
+                                        //    (at full open the button is a full-width capsule anyway).
+                                        while (flight?.key == cardKey && !flightClosing && flightT < 0.99f) {
+                                            delay(25L)
+                                        }
+                                        // 2) If the modal is closing (or started closing right at the boundary),
+                                        //    keep it as a circle until the close flight completely finishes,
+                                        //    and only then morph from circle to square on the card!
+                                        if (flight?.key == cardKey && flightClosing) {
+                                            while (flight?.key == cardKey) {
+                                                delay(25L)
+                                            }
+                                            delay(90L)
+                                        }
+                                        if (armedThemes[packageName] == armedTimestamp) {
+                                            armedThemes.remove(packageName)
+                                        }
+                                    }
+
+                                    val active = currentStyle == ROTATION_STYLE_CUSTOM_APK &&
+                                        packageName == customPackage
+                                    val displayTitle = packageName.removePrefix(ROTATION_THEME_PACKAGE_PREFIX)
+                                    LoopEffectCard(
+                                        title = displayTitle,
+                                        subtitle = null,
+                                        packageName = packageName,
+                                        isActive = active,
+                                        isHiddenForFlight = flight?.key == cardKey,
+                                        onExpand = { bounds, provider ->
+                                            // If the timer is in the boundary window (< 450ms left) when opening,
+                                            // extend it slightly so it doesn't flip mid-open flight.
+                                            val curArmed = armedThemes[packageName]
+                                            if (curArmed != null) {
+                                                val now = android.os.SystemClock.uptimeMillis()
+                                                val rem = (curArmed + 3000L) - now
+                                                if (rem in 1L..450L) {
+                                                    armedThemes[packageName] = now - 3000L + 500L
+                                                }
+                                            }
+                                            flight = StudioCard.Theme(
+                                                key = cardKey,
+                                                title = displayTitle,
+                                                subtitle = null,
+                                                source = bounds,
+                                                sourceBoundsProvider = provider,
+                                                packageName = packageName,
+                                                isTrashArmedProvider = { armedThemes.containsKey(packageName) }
+                                            )
+                                        },
+                                        applyLabel = stringResource(R.string.rotation_anim_apply),
+                                        activeLabel = stringResource(R.string.rotation_anim_active),
+                                        onApply = { applyCustomTheme(packageName) },
+                                        showTrash = true,
+                                        trashArmed = confirmDelete,
+                                        onTrash = {
+                                            if (confirmDelete) {
+                                                armedThemes.remove(packageName)
+                                                uninstallTheme(packageName)
+                                            } else {
+                                                armedThemes[packageName] = android.os.SystemClock.uptimeMillis()
+                                            }
+                                        },
+                                        preview = {
+                                            RotationCustomAnimPreview(
+                                                packageName = packageName,
+                                                speedMultiplier = speed
+                                            )
+                                        }
+                                    )
+                                }
+                                item(key = "pep_add") {
+                                    StudioAddCard {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(STUDIO_TAB_BUILDER, isDirectTap = true)
+                                        }
+                                    }
+                                }
+                            }
+
+                            else -> {
+                                LazyColumn(
+                                    state = builderListState,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(
+                                        start = 16.dp,
+                                        top = listTopPaddingDp + 12.dp,
+                                        end = 16.dp,
+                                        bottom = REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING + 120.dp
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                                ) {
+                                    item(key = "builder_import") {
+                                        StudioImportCard(
+                                            exitUri = exitUri,
+                                            enterUri = enterUri,
+                                            isCompiling = isCompiling,
+                                            compileError = compileError,
+                                            onPickExit = { exitPicker.launch("text/xml") },
+                                            onPickEnter = { enterPicker.launch("text/xml") },
+                                            onCompile = ::doCompileImported
+                                        )
+                                    }
+
+                                    item(key = "builder_constructor") {
+                                        StudioConstructorCard(
+                                            selectedTab = constructorTab,
+                                            onTabSelected = { constructorTab = it },
+                                            exitParams = constructorExit,
+                                            enterParams = constructorEnter,
+                                            onExitChange = { constructorExit = it },
+                                            onEnterChange = { constructorEnter = it },
+                                            isInterpolatorMorphOpen = interpolatorRequest != null,
+                                            onOpenInterpolatorMorph = { req ->
+                                                interpolatorRequest = req
                                             }
                                         )
+                                    }
+
+                                    if (compileLog.isNotEmpty()) {
+                                        item(key = "builder_compile_log") {
+                                            StudioCompileLogCard(compileLog = compileLog)
+                                        }
                                     }
                                 }
                             }
@@ -619,599 +985,259 @@ private fun RotationAnimationScreen(onBack: () -> Unit) {
                     }
                 }
 
-                item {
-                    Text(
-                        stringResource(R.string.rotation_anim_constructor_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                    )
-                }
-                item {
-                    RotationConstructorBlock(
-                        selectedTab = constructorTab,
-                        onTabSelected = { constructorTab = it },
-                        exit = constructorExit,
-                        enter = constructorEnter,
-                        onExitChange = { constructorExit = it; constructorPreviewKey++ },
-                        onEnterChange = { constructorEnter = it; constructorPreviewKey++ }
-                    )
-                }
-                item {
-                    RotationConstructorPreview(
-                        exit = constructorExit,
-                        enter = constructorEnter,
-                        previewKey = constructorPreviewKey
-                    )
-                }
-                item {
-                    RotationConstructorExportButton(onBuildTheme = ::doCompileConstructor)
-                }
+                // (BuilderPreviewFloatBar lives outside SliderMorphRoot so sliders morph underneath it)
+
+                // Level-1 Modal A: Card Flight Overlay (Builtin / Collected cards)
+                CardFlightOverlay(
+                    target = flight,
+                    onClose = {
+                        flightClosing = false
+                        flight = null
+                    },
+                    applyLabel = stringResource(R.string.rotation_anim_apply),
+                    activeLabel = stringResource(R.string.rotation_anim_active),
+                    isActive = { card ->
+                        when (card) {
+                            is StudioCard.Builtin -> card.styleId == currentStyle
+                            is StudioCard.Theme -> currentStyle == ROTATION_STYLE_CUSTOM_APK &&
+                                card.packageName == customPackage
+                        }
+                    },
+                    onApplyCard = { card ->
+                        when (card) {
+                            is StudioCard.Builtin -> applyStyle(card.styleId)
+                            is StudioCard.Theme -> applyCustomTheme(card.packageName)
+                        }
+                    },
+                    onDeleteCard = { card ->
+                        if (card is StudioCard.Theme) {
+                            armedThemes.remove(card.packageName)
+                            uninstallTheme(card.packageName)
+                        }
+                    },
+                    speed = speed,
+                    onSpeedChange = ::updateSpeed,
+                    showSpeedSliderFor = { card ->
+                        !(card is StudioCard.Builtin && card.styleId == ROTATION_STYLE_DEFAULT)
+                    },
+                    scrollBlur = scrollBlur,
+                    onProgress = { flightT = it },
+                    previewContent = { card ->
+                        StudioLoopPreview(
+                            spec = card.loopSpec,
+                            width = 110.dp,
+                            height = 190.dp,
+                            speedMultiplier = if (card is StudioCard.Builtin &&
+                                card.styleId == ROTATION_STYLE_DEFAULT
+                            ) 1f else speed
+                        )
+                    },
+                    topInsetPx = effectiveHeaderHeightPx,
+                    closeSignal = level1CloseSignal,
+                    onClosingChanged = { isClosing ->
+                        flightClosing = isClosing
+                        if (isClosing) {
+                            // If closing starts when the trash button is in the boundary window
+                            // (< 450ms left), hold the circle state until close finishes!
+                            val pkg = (flight as? StudioCard.Theme)?.packageName
+                            val curArmed = if (pkg != null) armedThemes[pkg] else null
+                            if (pkg != null && curArmed != null) {
+                                val now = android.os.SystemClock.uptimeMillis()
+                                val rem = (curArmed + 3000L) - now
+                                if (rem in 1L..450L) {
+                                    armedThemes[pkg] = now - 3000L + 450L
+                                }
+                            }
+                        }
+                    }
+                )
+
+                // Level-1 Modal B: Builder Preview & In-Place Morphed Compile Progress Modal
+                BuilderPreviewModalOverlay(
+                    open = builderPreviewOpen,
+                    sourceRect = builderPreviewSource,
+                    sourceBoundsProvider = builderPreviewBoundsProvider,
+                    exitParams = constructorExit,
+                    enterParams = constructorEnter,
+                    compileState = compileDialogState,
+                    clockState = constructorClockState,
+                    onBuildTheme = ::doCompileConstructor,
+                    onCancelCompile = ::cancelCompile,
+                    onDismissCompile = ::dismissCompileDialog,
+                    onClose = { builderPreviewOpen = false },
+                    scrollBlur = scrollBlur,
+                    onProgress = { builderModalT = it },
+                    topInsetPx = effectiveHeaderHeightPx,
+                    closeSignal = level1CloseSignal
+                )
+
+                // Level-1 Modal C: Interpolator Selection Morph Modal
+                InterpolatorMorphOverlay(
+                    request = interpolatorRequest,
+                    onClose = { interpolatorRequest = null },
+                    scrollBlur = scrollBlur,
+                    onProgress = { interpolatorModalT = it },
+                    topInsetPx = effectiveHeaderHeightPx,
+                    closeSignal = level1CloseSignal
+                )
             }
+        } // end SliderMorphRoot
 
-            TopBarBlurOverlay(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter),
-                blurState = blurState,
-                topBarHeight = innerPadding.calculateTopPadding()
-            )
-            TopStatusVeil(
-                backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                veilHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 14.dp,
-                modifier = Modifier.fillMaxWidth()
-            )
+        // Floating Frosted Builder Preview Bar at the bottom of Screen 3:
+        // Placed OUTSIDE SliderMorphRoot (zIndex = 2f when idle / slider open) so
+        // constructor sliders morph from UNDERNEATH it with real-time 2-pass blur!
+        // When compile info modal closes, smoothly fades in via (1f - builderModalT).
+        val floatBarPageVisibility = sstepE(pagerState.position, 1.15f, 1.95f)
+        val floatBarCompileFade = if (compileDialogState != null) {
+            (1f - builderModalT).coerceIn(0f, 1f)
+        } else {
+            1f
         }
-    }
-
-    compileDialogState?.let { state ->
-        AnimationCompileDialog(
-            state = state,
-            onCancel = ::cancelCompile,
-            onDismiss = ::dismissCompileDialog
+        BuilderPreviewFloatBar(
+            exitParams = constructorExit,
+            enterParams = constructorEnter,
+            clockState = constructorClockState,
+            blurState = scrollBlur,
+            morphBlurState = if (nestedMorphOpen) sliderModalBlur else cardModalBlur,
+            morphActive = nestedMorphOpen,
+            tintBoost = 0.25f * sliderMorphHost.morphProgress,
+            visibleFraction = floatBarPageVisibility * floatBarCompileFade,
+            isHiddenForFlight = builderPreviewOpen && compileDialogState == null,
+            onExpand = { bounds, provider ->
+                if (nestedMorphOpen) {
+                    sliderMorphHost.requestAnimatedClose()
+                } else if (!anyLevel1ModalOpen) {
+                    builderPreviewSource = bounds
+                    builderPreviewBoundsProvider = provider
+                    builderPreviewOpen = true
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .zIndex(if (anyLevel1ModalOpen) 0.5f else 2f)
         )
-    }
-}
 
-@Composable
-private fun RotationStyleItem(
-    style: RotationStyle,
-    isActive: Boolean,
-    onApply: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.surfaceContainerHigh
-            else MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column {
+        // Common frost mask over Pinned Header zone (zIndex = 2f inside TopBarBlurOverlay)
+        TopBarBlurOverlay(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter),
+            topBarHeight = effectiveHeaderHeightDp,
+            blurState = scrollBlur,
+            morphBlurState = if (nestedMorphOpen) sliderModalBlur else cardModalBlur,
+            morphActive = anyLevel1ModalOpen || nestedMorphOpen,
+            tintBoost = maxOf(0.25f * activeModalProgress, 0.25f * sliderMorphHost.morphProgress)
+        )
+
+        // Status bar edge veil (zIndex = 3f inside TopStatusVeil)
+        TopStatusVeil(
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            veilHeight = statusBarTopDp + 14.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+        )
+
+        // Crisp Pinned Header UI above the frost overlay (zIndex = 4f)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .zIndex(4f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
+                .padding(top = statusBarTopDp)
+        ) {
+            // 1. Pinned TopAppBar Row (always visible; collapsible area clips strictly below it)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .height(topBarRowHeightDp)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(style.nameRes),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (isActive) {
-                        Text(
-                            stringResource(R.string.rotation_anim_active),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                IconButton(onClick = { expanded = !expanded }) {
+                IconButton(onClick = onBack) {
                     Icon(
-                        if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                        stringResource(R.string.rotation_anim_preview)
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.nav_back)
                     )
                 }
-            }
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-                ) {
-                    HorizontalDivider(Modifier.padding(bottom = 12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                        RotationAnimPreview(style.exitAnimRes, style.enterAnimRes)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    FilledTonalButton(
-                        onClick = onApply,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isActive
-                    ) {
-                        if (isActive) {
-                            Icon(Icons.Rounded.Check, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text(
-                            stringResource(
-                                if (isActive) R.string.rotation_anim_active
-                                else R.string.rotation_anim_apply
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CustomThemeItem(
-    packageName: String,
-    isHighlighted: Boolean,
-    isActive: Boolean,
-    onApply: () -> Unit,
-    onUninstall: () -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var showConfirmDelete by remember { mutableStateOf(false) }
-    val styleName = packageName.removePrefix(ROTATION_THEME_PACKAGE_PREFIX)
-    val pulse = rememberInfiniteTransition(label = "rotation_theme_highlight")
-    val pulseAlpha by pulse.animateFloat(
-        initialValue = 0f,
-        targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(300, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "rotation_theme_highlight_alpha"
-    )
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.surfaceContainerHigh
-            else MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier.fillMaxWidth(),
-        border = if (isHighlighted) {
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
-        } else null
-    ) {
-        Box {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = !expanded }
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(styleName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            packageName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 10.sp
-                        )
-                        if (isActive) {
-                            Text(
-                                stringResource(R.string.rotation_anim_active),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(
-                            if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                            stringResource(R.string.rotation_anim_preview)
-                        )
-                    }
-                    if (!showConfirmDelete) {
-                        IconButton(onClick = { showConfirmDelete = true }) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                stringResource(R.string.rotation_anim_delete),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    } else {
-                        IconButton(onClick = { showConfirmDelete = false; onUninstall() }) {
-                            Icon(
-                                Icons.Rounded.Check,
-                                stringResource(R.string.rotation_anim_delete_confirm),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        IconButton(onClick = { showConfirmDelete = false }) {
-                            Icon(Icons.Rounded.Close, stringResource(R.string.rotation_anim_cancel))
-                        }
-                    }
-                }
-                AnimatedVisibility(
-                    visible = expanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-                    ) {
-                        HorizontalDivider(Modifier.padding(bottom = 12.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                            RotationCustomAnimPreview(packageName)
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        FilledTonalButton(
-                            onClick = onApply,
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !isActive
-                        ) {
-                            if (isActive) {
-                                Icon(Icons.Rounded.Check, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                            }
-                            Text(
-                                stringResource(
-                                    if (isActive) R.string.rotation_anim_active
-                                    else R.string.rotation_anim_apply
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            if (isHighlighted) {
-                Box(
-                    Modifier
-                        .matchParentSize()
-                        .background(Color.White.copy(alpha = pulseAlpha))
+                Text(
+                    text = stringResource(R.string.rotation_anim_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
-        }
-    }
-}
 
-
-private val ROTATION_CONSTRUCTOR_TAB_LABELS = listOf(
-    R.string.rotation_anim_constructor_exit,
-    R.string.rotation_anim_constructor_enter
-)
-
-@Composable
-private fun RotationConstructorBlock(
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    exit: AnimParams,
-    enter: AnimParams,
-    onExitChange: (AnimParams) -> Unit,
-    onEnterChange: (AnimParams) -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            PrimaryTabRow(selectedTabIndex = selectedTab, containerColor = Color.Transparent) {
-                ROTATION_CONSTRUCTOR_TAB_LABELS.forEachIndexed { index, labelRes ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { onTabSelected(index) },
-                        text = { Text(stringResource(labelRes)) }
-                    )
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-            if (selectedTab == 0) {
-                ParamEditor(params = exit, onParamsChange = onExitChange)
-            } else {
-                ParamEditor(params = enter, onParamsChange = onEnterChange)
-            }
-        }
-    }
-}
-
-@Composable
-private fun RotationConstructorPreview(
-    exit: AnimParams,
-    enter: AnimParams,
-    previewKey: Int
-) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                stringResource(R.string.rotation_anim_constructor_preview),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(12.dp))
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                modifier = Modifier.size(width = 150.dp, height = 250.dp)
-            ) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(12.dp))
-                ) {
-                    key(previewKey) {
-                        AndroidView(
-                            factory = { ctx -> createConstructorPreview(ctx, enter, exit, true) },
-                            modifier = Modifier.fillMaxSize()
-                        )
+            // 2. Clipped Collapsible Container for Switcher + Tabs:
+            // Clips strictly at its top edge (y = 0, right under TopAppBar),
+            // so scrolling hides Switcher + Tabs into an invisible clipped region
+            // without ever intersecting or passing behind the transparent TopAppBar!
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clipToBounds()
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        val fullH = placeable.height.toFloat()
+                        collapsibleMaxHeightPx = fullH
+                        val visH = (fullH + collapseOffsetPx).roundToInt().coerceAtLeast(0)
+                        val yOff = collapseOffsetPx.roundToInt().coerceIn(-placeable.height, 0)
+                        layout(placeable.width, visH) {
+                            placeable.placeRelative(0, yOff)
+                        }
                     }
+            ) {
+                val tabTitles = listOf(
+                    stringResource(R.string.rotation_anim_tab_builtin),
+                    stringResource(R.string.rotation_anim_tab_collected),
+                    stringResource(R.string.rotation_anim_tab_builder)
+                )
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(4.dp))
+                    StudioTabs(
+                        titles = tabTitles,
+                        position = pagerState.position,
+                        pagerState = pagerState,
+                        onTabClick = { index ->
+                            scope.launch {
+                                pagerState.animateScrollToPage(index, isDirectTap = true)
+                            }
+                        }
+                    )
+                    Spacer(Modifier.height(10.dp))
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun RotationConstructorExportButton(onBuildTheme: (String) -> Unit) {
-    var showXml by remember { mutableStateOf(false) }
-    var showBuildInput by remember { mutableStateOf(false) }
-    var buildThemeName by remember { mutableStateOf("") }
-
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            AnimatedVisibility(
-                visible = showBuildInput,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(Modifier.padding(bottom = 8.dp)) {
-                    OutlinedTextField(
-                        value = buildThemeName,
-                        onValueChange = { buildThemeName = filterThemeNameInput(it) },
-                        label = { Text(stringResource(R.string.rotation_anim_constructor_style_name)) },
-                        placeholder = { Text(stringResource(R.string.rotation_anim_constructor_style_hint)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Ascii,
-                            imeAction = ImeAction.Done
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Button(
+        // Full-header tap/swipe blocker when any pseudo-modal is open:
+        // intercepts touches on TopAppBar, Switcher, and Tabs and exits the active modal!
+        if (anyModalOpen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(effectiveHeaderHeightDp)
+                    .align(Alignment.TopCenter)
+                    .zIndex(5f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
                         onClick = {
-                            if (buildThemeName.isNotBlank()) {
-                                onBuildTheme(buildThemeName)
-                                showBuildInput = false
+                            if (nestedMorphOpen) {
+                                sliderMorphHost.requestAnimatedClose()
+                            } else {
+                                level1CloseSignal++
                             }
-                        },
-                        enabled = buildThemeName.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.rotation_anim_constructor_build))
-                    }
-                }
-            }
-            FilledTonalButton(
-                onClick = { showBuildInput = !showBuildInput },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Rounded.Build, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (showBuildInput) stringResource(R.string.rotation_anim_constructor_hide)
-                    else stringResource(R.string.rotation_anim_constructor_build)
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            FilledTonalButton(
-                onClick = { showXml = !showXml },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Rounded.Code, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (showXml) stringResource(R.string.rotation_anim_constructor_hide_xml)
-                    else stringResource(R.string.rotation_anim_constructor_show_xml)
-                )
-            }
-            if (showXml) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "Exit XML is generated from the selected parameters. Enter XML is generated separately.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+                        }
+                    )
+            )
         }
     }
-}
-
-private val rotationPreviewHandler = Handler(Looper.getMainLooper())
-private const val ROTATION_PREVIEW_START_DELAY = 450L
-private const val ROTATION_PREVIEW_HOLD_DELAY = 700L
-
-private data class RotationPreviewViews(
-    val frame: FrameLayout,
-    val purpleScreen: View,
-    val orangeScreen: View
-)
-
-@Composable
-private fun RotationAnimPreview(exitAnimRes: Int, enterAnimRes: Int) {
-    RotationPreviewCard { ctx -> createRotationPreview(ctx, exitAnimRes, enterAnimRes) }
-}
-
-@Composable
-private fun RotationCustomAnimPreview(packageName: String) {
-    RotationPreviewCard { ctx -> createRotationThemePreview(ctx, packageName) }
-}
-
-@Composable
-private fun RotationPreviewCard(factory: (Context) -> FrameLayout) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = Modifier.size(width = 110.dp, height = 190.dp)
-    ) {
-        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))) {
-            AndroidView(factory = factory, modifier = Modifier.fillMaxSize())
-        }
-    }
-}
-
-private fun createRotationPreview(
-    viewCtx: Context,
-    exitAnimRes: Int,
-    enterAnimRes: Int
-): FrameLayout {
-    val preview = createRotationPreviewViews(viewCtx)
-    preview.frame.post {
-        loopRotationAnim(viewCtx, preview, exitAnimRes, enterAnimRes, showPurple = true)
-    }
-    return preview.frame
-}
-
-private fun createRotationThemePreview(viewCtx: Context, packageName: String): FrameLayout {
-    val preview = createRotationPreviewViews(viewCtx)
-    preview.frame.post {
-        try {
-            val themeContext = viewCtx.createPackageContext(
-                packageName,
-                Context.CONTEXT_IGNORE_SECURITY
-            )
-            val exitAnimRes = themeContext.resources.getIdentifier(
-                "custom_rotate_exit", "anim", packageName
-            )
-            val enterAnimRes = themeContext.resources.getIdentifier(
-                "custom_rotate_enter", "anim", packageName
-            )
-            loopRotationAnim(themeContext, preview, exitAnimRes, enterAnimRes, showPurple = true)
-        } catch (_: Exception) {
-            preview.purpleScreen.visibility = View.INVISIBLE
-            preview.orangeScreen.visibility = View.VISIBLE
-        }
-    }
-    return preview.frame
-}
-
-private fun createRotationPreviewViews(viewCtx: Context): RotationPreviewViews {
-    val frame = FrameLayout(viewCtx).apply {
-        clipChildren = true
-        clipToPadding = true
-    }
-    val purpleScreen = TextView(viewCtx).apply {
-        text = "A"
-        textSize = 32f
-        gravity = Gravity.CENTER
-        setBackgroundColor(0xFF6750A4.toInt())
-        setTextColor(0xFFFFFFFF.toInt())
-    }
-    val orangeScreen = TextView(viewCtx).apply {
-        text = "B"
-        textSize = 32f
-        gravity = Gravity.CENTER
-        setBackgroundColor(0xFFE8874F.toInt())
-        setTextColor(0xFFFFFFFF.toInt())
-        visibility = View.INVISIBLE
-    }
-    frame.addView(purpleScreen, FrameLayout.LayoutParams(
-        FrameLayout.LayoutParams.MATCH_PARENT,
-        FrameLayout.LayoutParams.MATCH_PARENT
-    ))
-    frame.addView(orangeScreen, FrameLayout.LayoutParams(
-        FrameLayout.LayoutParams.MATCH_PARENT,
-        FrameLayout.LayoutParams.MATCH_PARENT
-    ))
-    return RotationPreviewViews(frame, purpleScreen, orangeScreen)
-}
-
-private fun loopRotationAnim(
-    ctx: Context,
-    preview: RotationPreviewViews,
-    exitAnimRes: Int,
-    enterAnimRes: Int,
-    showPurple: Boolean
-) {
-    val frame = preview.frame
-    if (!frame.isAttachedToWindow) return
-    val outgoing = if (showPurple) preview.purpleScreen else preview.orangeScreen
-    val incoming = if (showPurple) preview.orangeScreen else preview.purpleScreen
-    resetRotationPreviewView(outgoing)
-    resetRotationPreviewView(incoming)
-    outgoing.visibility = View.VISIBLE
-    incoming.visibility = View.INVISIBLE
-
-    rotationPreviewHandler.postDelayed({
-        if (!frame.isAttachedToWindow) return@postDelayed
-        var duration = 350L
-        incoming.visibility = View.VISIBLE
-        duration = maxOf(duration, playRotationPreviewAnimation(ctx, outgoing, exitAnimRes))
-        duration = maxOf(duration, playRotationPreviewAnimation(ctx, incoming, enterAnimRes))
-        rotationPreviewHandler.postDelayed({
-            if (!frame.isAttachedToWindow) return@postDelayed
-            resetRotationPreviewView(outgoing)
-            outgoing.visibility = View.INVISIBLE
-            resetRotationPreviewView(incoming)
-            incoming.visibility = View.VISIBLE
-            rotationPreviewHandler.postDelayed({
-                loopRotationAnim(ctx, preview, exitAnimRes, enterAnimRes, !showPurple)
-            }, ROTATION_PREVIEW_HOLD_DELAY)
-        }, duration + 120L)
-    }, ROTATION_PREVIEW_START_DELAY)
-}
-
-private fun playRotationPreviewAnimation(ctx: Context, view: View, animationRes: Int): Long {
-    if (animationRes == 0) return 350L
-    return try {
-        val animation = AnimationUtils.loadAnimation(ctx, animationRes).apply { fillAfter = true }
-        view.startAnimation(animation)
-        animation.duration + animation.startOffset
-    } catch (_: Exception) { 350L }
-}
-
-private fun resetRotationPreviewView(view: View) {
-    view.clearAnimation()
-    view.alpha = 1f
-    view.scaleX = 1f
-    view.scaleY = 1f
-    view.translationX = 0f
-    view.translationY = 0f
-    view.rotation = 0f
-}
-
-private fun styleDisplayName(context: Context, styleId: Int): String {
-    if (styleId == ROTATION_STYLE_DEFAULT) return context.getString(R.string.rotation_anim_default)
-    if (styleId == ROTATION_STYLE_CUSTOM_APK) return context.getString(R.string.rotation_anim_custom)
-    val style = BUILTIN_STYLES.find { it.styleId == styleId }
-    return if (style != null) context.getString(style.nameRes) else "Style $styleId"
 }
 
 internal enum class AnimationCompilePhase {
@@ -1286,7 +1312,8 @@ internal fun AnimationCompileDialog(
                 AnimatedContent(
                     targetState = terminal,
                     transitionSpec = {
-                        (fadeIn(tween(220, easing = FastOutSlowInEasing)) + scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing))) togetherWith
+                        (fadeIn(tween(220, easing = FastOutSlowInEasing)) +
+                            scaleIn(animationSpec = tween(220, easing = FastOutSlowInEasing))) togetherWith
                             fadeOut(tween(140, easing = FastOutSlowInEasing))
                     },
                     label = "compile_status"

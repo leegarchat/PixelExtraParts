@@ -168,7 +168,7 @@ internal fun removeModuleFromRegistry(context: Context, apkPath: String) {
  */
 internal fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
     // TEMPORARY: APK-module support disabled via ApkModulesGate — code kept.
-    if (!ApkModulesGate.ENABLED) return emptyList()
+    if (!ApkModulesGate.isEnabled(context)) return emptyList()
     val pm = context.packageManager
     val out = ArrayList<XposedModuleUiModel>()
     val apps = try {

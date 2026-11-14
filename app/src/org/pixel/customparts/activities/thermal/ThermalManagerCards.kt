@@ -1,160 +1,228 @@
 package org.pixel.customparts.activities
 
-import android.content.Context
-import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.net.Uri
-import android.os.Bundle
-import android.provider.OpenableColumns
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Save
-import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.UploadFile
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.core.graphics.drawable.toBitmap
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import org.json.JSONTokener
+import kotlinx.coroutines.delay
 import org.pixel.customparts.R
-import org.pixel.customparts.dynamicDarkColorScheme
-import org.pixel.customparts.dynamicLightColorScheme
-import org.pixel.customparts.services.ThermalManagerTileService
-import org.pixel.customparts.ui.REBOOT_BUBBLE_CONTENT_BOTTOM_PADDING
-import org.pixel.customparts.ui.RebootBubble
-import org.pixel.customparts.ui.RebootBubbleMenuAction
 import org.pixel.customparts.ui.SettingsGroupCard
-import org.pixel.customparts.ui.TopBarBlurOverlay
-import org.pixel.customparts.ui.TopStatusVeil
-import org.pixel.customparts.ui.recordLayer
-import org.pixel.customparts.ui.rememberGraphicsLayerRecordingState
+import org.pixel.customparts.ui.edgeOutline
 import org.pixel.customparts.utils.ThermalConfigChoice
 import org.pixel.customparts.utils.ThermalProfileController
-import org.pixel.customparts.utils.ThermalProfileMap
-import org.pixel.customparts.utils.TileUtils
-import java.io.File
-import java.text.DecimalFormat
-import java.text.Normalizer
 import java.util.Locale
-import androidx.compose.ui.res.stringResource
 
-private const val VENDOR_THERMAL_CONFIG = "/vendor/etc/thermal_info_config.json"
-private const val STOCK_THERMAL_CONFIG_FILE_NAME = "thermal_info_config.json"
-private const val RESERVED_CUSTOM_SUFFIX = "_custom"
-private const val EXTRA_OPEN_CREATE_PROFILE = "org.pixel.customparts.extra.OPEN_THERMAL_PROFILE_CREATOR"
+// ── Live SoC Telemetry Hero Card ─────────────────────────────────────────
 
-private val FILE_NAME_TRANSLIT = mapOf(
-    'а' to "a", 'б' to "b", 'в' to "v", 'г' to "g", 'д' to "d", 'е' to "e",
-    'ё' to "e", 'ж' to "zh", 'з' to "z", 'и' to "i", 'й' to "y", 'к' to "k",
-    'л' to "l", 'м' to "m", 'н' to "n", 'о' to "o", 'п' to "p", 'р' to "r",
-    'с' to "s", 'т' to "t", 'у' to "u", 'ф' to "f", 'х' to "h", 'ц' to "c",
-    'ч' to "ch", 'ш' to "sh", 'щ' to "sch", 'ъ' to "", 'ы' to "y", 'ь' to "",
-    'э' to "e", 'ю' to "yu", 'я' to "ya", 'і' to "i", 'ї' to "yi", 'є' to "ye",
-    'ґ' to "g"
-)
+@Composable
+internal fun ThermalLiveTelemetryCard(
+    socModel: String,
+    temperatureC: Float?,
+    activeGlobalChoice: ThermalConfigChoice,
+    assignedAppsCount: Int
+) {
+    val tempVal = temperatureC ?: 36f
+    val normalizedHeat by animateFloatAsState(
+        targetValue = ((tempVal - 25f) / 45f).coerceIn(0.06f, 1f),
+        animationSpec = spring(
+            stiffness = Spring.StiffnessMediumLow,
+            dampingRatio = Spring.DampingRatioNoBouncy
+        ),
+        label = "ThermalHeatGauge"
+    )
+
+    val tempAccent by animateColorAsState(
+        targetValue = when {
+            tempVal >= 52f -> MaterialTheme.colorScheme.error
+            tempVal >= 43f -> MaterialTheme.colorScheme.tertiary
+            else -> MaterialTheme.colorScheme.primary
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "ThermalHeatColor"
+    )
+
+    val cardBg = MaterialTheme.colorScheme.surface
+    Card(
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, cardBg.edgeOutline()),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(tempAccent.copy(alpha = 0.15f))
+                        .border(1.dp, tempAccent.edgeOutline(alpha = 0.45f), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Memory,
+                        contentDescription = null,
+                        tint = tempAccent,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = socModel,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = profileChoiceTitle(activeGlobalChoice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Text(
+                    text = temperatureC?.let { String.format(Locale.US, "%.1f°C", it) }
+                        ?: stringResource(R.string.auto_hbm_temperature_unknown),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = tempAccent
+                )
+            }
+
+            // Thermal Heat Spectrum Bar
+            val trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            val coolColor = MaterialTheme.colorScheme.primary
+            val warmColor = MaterialTheme.colorScheme.tertiary
+            val hotColor = MaterialTheme.colorScheme.error
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(CircleShape)
+            ) {
+                val r = size.height / 2f
+                drawRoundRect(
+                    color = trackColor,
+                    size = size,
+                    cornerRadius = CornerRadius(r, r)
+                )
+                val fillW = (size.width * normalizedHeat).coerceAtLeast(size.height)
+                drawRoundRect(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(coolColor, warmColor, hotColor),
+                        startX = 0f,
+                        endX = size.width
+                    ),
+                    topLeft = Offset.Zero,
+                    size = Size(fillW, size.height),
+                    cornerRadius = CornerRadius(r, r)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                ProfileTypeBadge(activeGlobalChoice)
+                Text(
+                    text = "${stringResource(R.string.thermal_manager_apps_title)}: $assignedAppsCount",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+// ── Saved User & System Config Cards (Inline Actions + 2-Tap Trash) ──────
 
 @Composable
 internal fun ProfileConfigSectionCard(
@@ -170,28 +238,31 @@ internal fun ProfileConfigSectionCard(
     onExport: (SavedThermalConfig) -> Unit,
     onDelete: (SavedThermalConfig) -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
+    val armedDeletes = remember { mutableStateMapOf<String, Long>() }
+    val cardBg = MaterialTheme.colorScheme.surface
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
-                RoundedCornerShape(24.dp)
-            )
+        border = BorderStroke(1.dp, cardBg.edgeOutline()),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onExpandedChange(!expanded) }
-                .padding(start = 20.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+                .clickable {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onExpandedChange(!expanded)
+                }
+                .padding(start = 20.dp, top = 14.dp, end = 12.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
@@ -204,17 +275,32 @@ internal fun ProfileConfigSectionCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            onImport?.let { importAction ->
-                IconButton(onClick = importAction) {
+            if (onImport != null) {
+                IconButton(onClick = onImport) {
                     Icon(
                         Icons.Rounded.UploadFile,
                         contentDescription = stringResource(R.string.thermal_manager_import),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+            if (onCreate != null) {
+                IconButton(onClick = onCreate) {
+                    Icon(
+                        Icons.Rounded.Add,
+                        contentDescription = stringResource(R.string.thermal_manager_create_config),
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
             }
             IconButton(onClick = { onExpandedChange(!expanded) }) {
-                Icon(if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, contentDescription = null)
+                Icon(
+                    if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
@@ -233,37 +319,63 @@ internal fun ProfileConfigSectionCard(
                 )
             ) + fadeOut()
         ) {
-            Column {
+            Column(modifier = Modifier.padding(bottom = 12.dp)) {
                 if (configs.isEmpty()) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
                             text = emptyText,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        onCreate?.let { createAction ->
-                            TextButton(onClick = createAction) {
-                                Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.thermal_manager_create_config))
-                            }
+                        if (onCreate != null) {
+                            SecondaryActionPill(
+                                icon = Icons.Rounded.Add,
+                                label = stringResource(R.string.thermal_manager_create_config),
+                                enabled = true,
+                                onClick = onCreate,
+                                modifier = Modifier.fillMaxWidth(),
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
                         }
                     }
                 } else {
                     configs.forEachIndexed { index, config ->
-                        SavedConfigRow(
+                        if (index > 0) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 20.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                            )
+                        }
+                        val armedTime = armedDeletes[config.name] ?: 0L
+                        val isArmed = armedTime > 0L
+
+                        LaunchedEffect(armedTime) {
+                            if (armedTime <= 0L) return@LaunchedEffect
+                            delay(3000L)
+                            if (armedDeletes[config.name] == armedTime) {
+                                armedDeletes.remove(config.name)
+                            }
+                        }
+
+                        SavedConfigInlineRow(
                             config = config,
+                            trashArmed = isArmed,
                             onEdit = { onEdit(config) },
                             onClone = { onClone(config) },
                             onExport = { onExport(config) },
-                            onDelete = { onDelete(config) }
+                            onTrashClick = {
+                                if (isArmed) {
+                                    armedDeletes.remove(config.name)
+                                    onDelete(config)
+                                } else {
+                                    armedDeletes[config.name] = SystemClock.uptimeMillis()
+                                }
+                            }
                         )
-                        if (index != configs.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
-                        }
                     }
                 }
             }
@@ -272,19 +384,24 @@ internal fun ProfileConfigSectionCard(
 }
 
 @Composable
-private fun SavedConfigRow(
+private fun SavedConfigInlineRow(
     config: SavedThermalConfig,
+    trashArmed: Boolean,
     onEdit: () -> Unit,
     onClone: () -> Unit,
     onExport: () -> Unit,
-    onDelete: () -> Unit
+    onTrashClick: () -> Unit
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 10.dp),
+            .clickable {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                if (config.locked) onClone() else onEdit()
+            }
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -292,6 +409,7 @@ private fun SavedConfigRow(
                 text = config.displayName,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -304,91 +422,134 @@ private fun SavedConfigRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = config.sizeText,
                     style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1
                 )
             }
         }
-        Box(modifier = Modifier.padding(start = 12.dp)) {
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Rounded.MoreVert, stringResource(R.string.thermal_manager_actions))
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-                shape = RoundedCornerShape(18.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 4.dp,
-                shadowElevation = 8.dp
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.thermal_manager_create_from)) },
-                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onClone()
-                    }
+
+        Spacer(Modifier.width(8.dp))
+
+        // Inline Action Chips (Clone, Export, Edit, 2-Tap Delete)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SmallIconActionChip(
+                icon = Icons.Rounded.ContentCopy,
+                contentDescription = stringResource(R.string.thermal_manager_create_from),
+                onClick = onClone
+            )
+            SmallIconActionChip(
+                icon = Icons.Rounded.Download,
+                contentDescription = stringResource(R.string.thermal_manager_export),
+                onClick = onExport
+            )
+            if (!config.locked) {
+                SmallIconActionChip(
+                    icon = Icons.Rounded.Edit,
+                    contentDescription = stringResource(R.string.thermal_manager_edit),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = onEdit
                 )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.thermal_manager_export)) },
-                    leadingIcon = { Icon(Icons.Rounded.Download, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onExport()
-                    }
+
+                val trashCorner by animateFloatAsState(
+                    targetValue = if (trashArmed) 18f else 10f,
+                    animationSpec = spring(
+                        stiffness = Spring.StiffnessMedium,
+                        dampingRatio = Spring.DampingRatioNoBouncy
+                    ),
+                    label = "ThermalConfigTrashCorner"
                 )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.thermal_manager_edit)) },
-                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
-                    enabled = !config.locked,
-                    onClick = {
-                        menuExpanded = false
-                        onEdit()
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.thermal_manager_delete)) },
-                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
-                    enabled = !config.locked,
-                    onClick = {
-                        menuExpanded = false
-                        onDelete()
-                    }
-                )
+                val trashBg = MaterialTheme.colorScheme.errorContainer
+                val trashShape = RoundedCornerShape(trashCorner.dp)
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(trashShape)
+                        .background(trashBg)
+                        .border(1.dp, trashBg.edgeOutline(), trashShape)
+                        .clickable {
+                            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onTrashClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (trashArmed) Icons.Rounded.Check else Icons.Rounded.Delete,
+                        contentDescription = stringResource(R.string.thermal_manager_delete),
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(17.dp)
+                    )
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SmallIconActionChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    contentColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: () -> Unit
+) {
+    val haptics = LocalHapticFeedback.current
+    val shape = RoundedCornerShape(10.dp)
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(shape)
+            .background(containerColor)
+            .border(1.dp, containerColor.edgeOutline(), shape)
+            .clickable {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onClick()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = contentColor,
+            modifier = Modifier.size(17.dp)
+        )
+    }
+}
+
+// ── Global Profile & QS Tile Queue Cards (1:1 Flight Ready) ──────────────
+
 @Composable
 internal fun GlobalProfileCard(
     selectedChoice: ThermalConfigChoice,
-    onClick: () -> Unit,
+    isHiddenForFlight: Boolean = false,
+    onOpenFlight: (Rect, () -> Rect) -> Unit,
     onCreateProfile: () -> Unit
 ) {
-    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    var rowBounds by remember { mutableStateOf(Rect.Zero) }
+    val cardBg = MaterialTheme.colorScheme.surface
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
-                RoundedCornerShape(24.dp)
-            )
+        border = BorderStroke(1.dp, cardBg.edgeOutline()),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 20.dp, top = 12.dp, end = 10.dp, bottom = 4.dp),
+                .padding(start = 20.dp, top = 14.dp, end = 16.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -398,38 +559,39 @@ internal fun GlobalProfileCard(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-            Surface(
-                modifier = Modifier
-                    .size(40.dp)
-                    .combinedClickable(
-                        onClick = onCreateProfile,
-                        onLongClick = {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.thermal_manager_create_profile_hint),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    ),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.Add,
-                        contentDescription = stringResource(R.string.thermal_manager_create_profile_short),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            SecondaryActionPill(
+                icon = Icons.Rounded.Add,
+                label = stringResource(R.string.thermal_manager_create_profile_short),
+                enabled = true,
+                onClick = onCreateProfile,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
+
+        val selectorBg = MaterialTheme.colorScheme.surfaceContainerHigh
+        val selectorShape = RoundedCornerShape(18.dp)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 14.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 16.dp)
+                .onPlaced {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) rowBounds = r
+                }
+                .onGloballyPositioned {
+                    val r = it.unclippedBoundsInRoot()
+                    if (r.width > 1f && r.height > 1f) rowBounds = r
+                }
+                .alpha(if (isHiddenForFlight) 0f else 1f)
+                .clip(selectorShape)
+                .background(selectorBg)
+                .border(1.dp, selectorBg.edgeOutline(), selectorShape)
+                .clickable(enabled = !isHiddenForFlight) {
+                    haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                    onOpenFlight(rowBounds) { rowBounds }
+                }
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -440,12 +602,13 @@ internal fun GlobalProfileCard(
                 Text(
                     text = profileChoiceTitle(selectedChoice),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 ProfileChoiceDetails(choice = selectedChoice, showPath = true)
             }
             Icon(
-                Icons.Rounded.ExpandMore,
+                Icons.Rounded.KeyboardArrowDown,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -457,14 +620,17 @@ internal fun GlobalProfileCard(
 internal fun ThermalTileQueueCard(
     queue: List<String>,
     choicesById: Map<String, ThermalConfigChoice>,
-    onAdd: () -> Unit,
+    isAddHiddenForFlight: Boolean = false,
+    onOpenAddFlight: (Rect, () -> Rect) -> Unit,
     onMoveUp: (Int) -> Unit,
     onMoveDown: (Int) -> Unit,
     onRemove: (Int) -> Unit
 ) {
+    var addBtnBounds by remember { mutableStateOf(Rect.Zero) }
+
     SettingsGroupCard(title = stringResource(R.string.thermal_manager_tile_queue)) {
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
@@ -481,19 +647,25 @@ internal fun ThermalTileQueueCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
-                Button(
-                    onClick = onAdd,
-                    enabled = queue.size < ThermalProfileController.MAX_TILE_QUEUE_SIZE,
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                Box(
+                    modifier = Modifier
+                        .onPlaced {
+                            val r = it.unclippedBoundsInRoot()
+                            if (r.width > 1f && r.height > 1f) addBtnBounds = r
+                        }
+                        .onGloballyPositioned {
+                            val r = it.unclippedBoundsInRoot()
+                            if (r.width > 1f && r.height > 1f) addBtnBounds = r
+                        }
+                        .alpha(if (isAddHiddenForFlight) 0f else 1f)
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.thermal_manager_tile_queue_add),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    SecondaryActionPill(
+                        icon = Icons.Rounded.Add,
+                        label = stringResource(R.string.thermal_manager_tile_queue_add),
+                        enabled = !isAddHiddenForFlight && queue.size < ThermalProfileController.MAX_TILE_QUEUE_SIZE,
+                        onClick = { onOpenAddFlight(addBtnBounds) { addBtnBounds } },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -532,31 +704,40 @@ private fun ThermalTileQueueRow(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val rowBg = MaterialTheme.colorScheme.surfaceContainerHigh
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.surface.thermalEdgeOutline(),
-                RoundedCornerShape(14.dp)
-            ),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface
+            .border(1.dp, rowBg.edgeOutline(), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        color = rowBg
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, top = 10.dp, end = 6.dp, bottom = 10.dp),
+                .padding(start = 14.dp, top = 10.dp, end = 8.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = (index + 1).toString(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.width(28.dp)
-            )
-            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = (index + 1).toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
                 Text(
                     text = profileChoiceTitle(choice),
                     style = MaterialTheme.typography.titleSmall,
@@ -643,13 +824,17 @@ private fun ProfileChoiceDetails(
 @Composable
 internal fun ProfileTypeBadge(choice: ThermalConfigChoice) {
     val isSystem = choice.builtIn || choice.source == ThermalProfileController.PROFILE_SOURCE_SYSTEM
+    val bgColor = if (isSystem) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer
+    }
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(
-                if (isSystem) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
-            )
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clip(CircleShape)
+            .background(bgColor)
+            .border(1.dp, bgColor.edgeOutline(), CircleShape)
+            .padding(horizontal = 8.dp, vertical = 2.dp)
     ) {
         Text(
             text = if (isSystem) {
@@ -658,7 +843,12 @@ internal fun ProfileTypeBadge(choice: ThermalConfigChoice) {
                 stringResource(R.string.thermal_manager_profile_user)
             },
             style = MaterialTheme.typography.labelSmall,
-            color = if (isSystem) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+            fontWeight = FontWeight.Bold,
+            color = if (isSystem) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            },
             maxLines = 1
         )
     }

@@ -281,6 +281,7 @@ fun SliderSettingFloat(
     defaultValueText: String? = null
 ) {
     var showManualInput by remember { mutableStateOf(false) }
+    var snapResetNext by remember { mutableStateOf(false) }
     var activeSessionId by remember { mutableLongStateOf(0L) }
     val haptics = LocalHapticFeedback.current
     val morphHost = LocalSliderMorphHost.current
@@ -414,16 +415,21 @@ fun SliderSettingFloat(
                 sourceInactiveTrackColor = morphSliderInactive,
                 sourceThumbColor = morphSliderActive,
                 onConfirm = {
+                    snapResetNext = true
                     onValueChange(it)
                     onValueChangeFinished?.invoke()
                     showManualInput = false
                 },
                 onDefault = {
+                    snapResetNext = true
                     triggerDefaultReset()
                     onValueChangeFinished?.invoke()
                     showManualInput = false
                 },
-                onDismiss = { showManualInput = false }
+                onDismiss = {
+                    snapResetNext = true
+                    showManualInput = false
+                }
             )
         )
     }
@@ -579,7 +585,28 @@ fun SliderSettingFloat(
                 }
             }
 
-            if (showResetBadge) {
+            val rowResetAnim = remember { Animatable(if (showResetBadge) 1f else 0f) }
+            val rowResetTarget = if (showResetBadge) 1f else 0f
+            LaunchedEffect(showResetBadge, rowHidden) {
+                if (rowHidden || snapResetNext) {
+                    snapResetNext = false
+                    rowResetAnim.snapTo(rowResetTarget)
+                } else if (rowResetAnim.targetValue != rowResetTarget) {
+                    rowResetAnim.animateTo(
+                        targetValue = rowResetTarget,
+                        animationSpec = spring(
+                            stiffness = 300f,
+                            dampingRatio = Spring.DampingRatioNoBouncy
+                        )
+                    )
+                }
+            }
+            // Pin to target while hidden or on the morph-handoff frame: the effect's
+            // snap lands post-commit, which would flash one stale frame on unhide.
+            // (Row is alpha-0 while hidden, so pinning is visually free there.)
+            val rowResetReveal = if (rowHidden || snapResetNext) rowResetTarget
+            else rowResetAnim.value
+            if (rowResetReveal > 0.001f) {
                 val resetText = if (defaultValueText.isNullOrEmpty()) {
                     stringResource(R.string.btn_default)
                 } else {
@@ -588,10 +615,14 @@ fun SliderSettingFloat(
                 val resetBg = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f)
                 Box(
                     modifier = Modifier
+                        .graphicsLayer {
+                            alpha = sstep(rowResetReveal, 0.02f, 0.35f)
+                        }
                         .clip(CircleShape)
                         .background(resetBg)
                         .border(1.dp, resetBg.edgeOutline(), CircleShape)
-                        .clickable(enabled = rowEnabled) {
+                        .unfoldPill(rowResetReveal)
+                        .clickable(enabled = rowEnabled && showResetBadge) {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             triggerDefaultReset()
                             onValueChangeFinished?.invoke()
@@ -601,6 +632,8 @@ fun SliderSettingFloat(
                         text = resetText,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1,
+                        softWrap = false,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                     )
                 }
@@ -630,13 +663,13 @@ fun SliderSettingFloat(
 }
 
 @Composable
-internal fun SliderTitleText(
+fun SliderTitleText(
     title: String,
     modifier: Modifier = Modifier,
     growProgress: Float = 0f,
-    maxGrow: Float = 2f
+    maxGrow: Float = 2f,
+    baseStyle: TextStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
 ) {
-    val baseStyle = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
     val baseSizeSp = baseStyle.fontSize.value
     val minSizeSp = (baseSizeSp * 0.7f).coerceAtLeast(10f)
     // Size at morph start: the exact number to return to on close.

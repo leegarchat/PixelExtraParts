@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview-only: stock-like rotation exit (old face rotates away). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <rotate
+        android:fromDegrees="0" android:toDegrees="-90"
+        android:pivotX="50%" android:pivotY="50%"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/accelerate_quad"
+        android:duration="240" />
+    <alpha
+        android:fromAlpha="1.0" android:toAlpha="0.0"
+        android:fillEnabled="true"
+        android:fillBefore="true" android:fillAfter="true"
+        android:interpolator="@android:interpolator/linear"
+        android:duration="240" />
+</set>

@@ -76,7 +76,17 @@ object IconShapeOverlayManager {
         val scaleX: Float = 1f,
         val scaleY: Float = 1f,
         val offsetX: Float = 0f,
-        val offsetY: Float = 0f
+        val offsetY: Float = 0f,
+        val cornerRadius: Float = 0f,
+        val innerRadius: Float = 0.55f,
+        val pinch: Float = 0f,
+        val twist: Float = 0f,
+        val skewX: Float = 0f,
+        val skewY: Float = 0f,
+        val cornerTL: Float = 24f,
+        val cornerTR: Float = 24f,
+        val cornerBR: Float = 24f,
+        val cornerBL: Float = 24f
     )
 
     data class CompileResult(
@@ -90,6 +100,8 @@ object IconShapeOverlayManager {
     const val MODE_SUPERELLIPSE = 0
     const val MODE_POLYGON = 1
     const val MODE_FLOWER = 2
+    const val MODE_STAR = 3
+    const val MODE_ASYM_RECT = 4
 
     private val builtinPresets = listOf(
         BuiltinShape("ios", "iOS", "M24,0L76,0A24 24 0 0 1 100,24L100,76A24 24 0 0 1 76,100L24,100A24 24 0 0 1 0,76L0,24A24 24 0 0 1 24,0z"),
@@ -282,10 +294,63 @@ object IconShapeOverlayManager {
 
     fun generatePath(params: CustomParams): String {
         return when (params.mode) {
-            MODE_POLYGON -> generatePolygonPath(params.sides.coerceIn(3, 12), params)
-            MODE_FLOWER -> generateFlowerPath(params.sides.coerceIn(3, 12), params)
+            MODE_POLYGON -> generatePolygonPath(params.sides.coerceIn(3, 16), params)
+            MODE_FLOWER -> generateFlowerPath(params.sides.coerceIn(3, 16), params)
+            MODE_STAR -> generateStarPath(params.sides.coerceIn(3, 16), params)
+            MODE_ASYM_RECT -> generateAsymRectPath(params)
             else -> generateSuperellipsePath(params)
         }
+    }
+
+    private fun generateAsymRectPath(params: CustomParams): String {
+        val half = (50f - params.inset.coerceIn(0f, 24f)).toDouble().coerceAtLeast(8.0)
+        val maxR = half
+        val rBR = (params.cornerBR.coerceIn(0f, 50f) / 50.0 * maxR)
+        val rBL = (params.cornerBL.coerceIn(0f, 50f) / 50.0 * maxR)
+        val rTL = (params.cornerTL.coerceIn(0f, 50f) / 50.0 * maxR)
+        val rTR = (params.cornerTR.coerceIn(0f, 50f) / 50.0 * maxR)
+        val n = params.roundness.coerceIn(1.2f, 8f).toDouble()
+
+        val points = mutableListOf<Pair<Double, Double>>()
+        val stepsPerCorner = 28
+
+        fun addCornerArc(cx: Double, cy: Double, r: Double, startAngle: Double, endAngle: Double) {
+            if (r <= 0.2) {
+                points += cx to cy
+                return
+            }
+            for (i in 0..stepsPerCorner) {
+                val a = startAngle + (endAngle - startAngle) * i / stepsPerCorner
+                val c = cos(a)
+                val s = sin(a)
+                val x = cx + sign(c) * abs(c).pow(2.0 / n) * r
+                val y = cy + sign(s) * abs(s).pow(2.0 / n) * r
+                points += x to y
+            }
+        }
+
+        // Top-Right (-90°..0°), Bottom-Right (0°..90°), Bottom-Left (90°..180°), Top-Left (180°..270°)
+        addCornerArc(50.0 + half - rTR, 50.0 - half + rTR, rTR, -PI / 2.0, 0.0)
+        addCornerArc(50.0 + half - rBR, 50.0 + half - rBR, rBR, 0.0, PI / 2.0)
+        addCornerArc(50.0 - half + rBL, 50.0 + half - rBL, rBL, PI / 2.0, PI)
+        addCornerArc(50.0 - half + rTL, 50.0 - half + rTL, rTL, PI, 1.5 * PI)
+
+        return pointsToPath(transformPoints(points, params))
+    }
+
+
+    private fun generateStarPath(spikes: Int, params: CustomParams): String {
+        val outerR = 50.0 - params.inset.coerceIn(0f, 24f)
+        val innerR = outerR * params.innerRadius.coerceIn(0.2f, 0.95f).toDouble()
+        val angleOffset = Math.toRadians(-90.0)
+        val totalVertices = spikes * 2
+        val vertices = (0 until totalVertices).map { index ->
+            val r = if (index % 2 == 0) outerR else innerR
+            val angle = 2.0 * PI * index / totalVertices + angleOffset
+            50.0 + cos(angle) * r to 50.0 + sin(angle) * r
+        }
+        val sampled = sampleRoundedVertices(vertices, params.cornerRadius.coerceIn(0f, 45f) / 100.0)
+        return pointsToPath(transformPoints(sampled, params))
     }
 
     private fun registerFabricatedOverlay(
@@ -640,10 +705,10 @@ object IconShapeOverlayManager {
             .toList()
 
     private fun generateSuperellipsePath(params: CustomParams): String {
-        val n = params.roundness.coerceIn(1.5f, 8f).toDouble()
+        val n = params.roundness.coerceIn(0.6f, 12f).toDouble()
         val radius = (50f - params.inset.coerceIn(0f, 24f)).toDouble()
-        val points = (0 until 96).map { index ->
-            val angle = 2.0 * PI * index / 96.0
+        val points = (0 until 128).map { index ->
+            val angle = 2.0 * PI * index / 128.0
             val c = cos(angle)
             val s = sin(angle)
             val x = 50.0 + sign(c) * abs(c).pow(2.0 / n) * radius
@@ -656,20 +721,63 @@ object IconShapeOverlayManager {
     private fun generatePolygonPath(sides: Int, params: CustomParams): String {
         val radius = 50.0 - params.inset.coerceIn(0f, 24f)
         val angleOffset = Math.toRadians(-90.0)
-        val points = (0 until sides).map { index ->
+        val vertices = (0 until sides).map { index ->
             val angle = 2.0 * PI * index / sides + angleOffset
             50.0 + cos(angle) * radius to 50.0 + sin(angle) * radius
         }
-        return pointsToPath(transformPoints(points, params))
+        val sampled = sampleRoundedVertices(vertices, params.cornerRadius.coerceIn(0f, 45f) / 100.0)
+        return pointsToPath(transformPoints(sampled, params))
+    }
+
+    private fun sampleRoundedVertices(
+        vertices: List<Pair<Double, Double>>,
+        roundFraction: Double
+    ): List<Pair<Double, Double>> {
+        val n = vertices.size
+        if (n < 3) return vertices
+        val cut = roundFraction.coerceIn(0.0, 0.48)
+        val out = mutableListOf<Pair<Double, Double>>()
+        val edgeSteps = 8
+        val cornerSteps = 10
+
+        for (i in 0 until n) {
+            val prev = vertices[(i - 1 + n) % n]
+            val curr = vertices[i]
+            val next = vertices[(i + 1) % n]
+
+            if (cut <= 0.005) {
+                for (s in 0 until edgeSteps) {
+                    val t = s.toDouble() / edgeSteps
+                    out += (curr.first + (next.first - curr.first) * t) to
+                        (curr.second + (next.second - curr.second) * t)
+                }
+            } else {
+                val pStart = (curr.first + (prev.first - curr.first) * cut) to
+                    (curr.second + (prev.second - curr.second) * cut)
+                val pEnd = (curr.first + (next.first - curr.first) * cut) to
+                    (curr.second + (next.second - curr.second) * cut)
+                for (s in 0..cornerSteps) {
+                    val t = s.toDouble() / cornerSteps
+                    val omt = 1.0 - t
+                    val x = omt * omt * pStart.first + 2.0 * omt * t * curr.first + t * t * pEnd.first
+                    val y = omt * omt * pStart.second + 2.0 * omt * t * curr.second + t * t * pEnd.second
+                    out += x to y
+                }
+            }
+        }
+        return out
     }
 
     private fun generateFlowerPath(sides: Int, params: CustomParams): String {
         val baseRadius = 43.0 - params.inset.coerceIn(0f, 18f)
-        val amount = params.wave.coerceIn(0f, 0.35f)
+        val amount = params.wave.coerceIn(0f, 0.45f).toDouble()
+        val sharpness = params.innerRadius.coerceIn(0.25f, 2.5f).toDouble()
         val angleOffset = Math.toRadians(-90.0)
-        val points = (0 until 120).map { index ->
-            val angle = 2.0 * PI * index / 120.0 + angleOffset
-            val radius = baseRadius * (1.0 + amount * cos(sides * angle))
+        val points = (0 until 144).map { index ->
+            val angle = 2.0 * PI * index / 144.0 + angleOffset
+            val rawWave = cos(sides * angle)
+            val shapedWave = sign(rawWave) * abs(rawWave).pow(sharpness)
+            val radius = baseRadius * (1.0 + amount * shapedWave)
             50.0 + cos(angle) * radius to 50.0 + sin(angle) * radius
         }
         return pointsToPath(transformPoints(points, params))
@@ -679,18 +787,39 @@ object IconShapeOverlayManager {
         points: List<Pair<Double, Double>>,
         params: CustomParams
     ): List<Pair<Double, Double>> {
-        val rotation = Math.toRadians(params.rotation.toDouble())
-        val cosRotation = cos(rotation)
-        val sinRotation = sin(rotation)
+        val baseRotation = Math.toRadians(params.rotation.toDouble())
+        val twistRad = Math.toRadians(params.twist.coerceIn(-120f, 120f).toDouble())
+        val pinch = params.pinch.coerceIn(-0.45f, 0.45f).toDouble()
         val scaleX = params.scaleX.coerceIn(0.4f, 1.6f).toDouble()
         val scaleY = params.scaleY.coerceIn(0.4f, 1.6f).toDouble()
+        val skewX = Math.tan(Math.toRadians(params.skewX.coerceIn(-30f, 30f).toDouble()))
+        val skewY = Math.tan(Math.toRadians(params.skewY.coerceIn(-30f, 30f).toDouble()))
         val offsetX = params.offsetX.coerceIn(-35f, 35f).toDouble()
         val offsetY = params.offsetY.coerceIn(-35f, 35f).toDouble()
+
         return points.map { (x, y) ->
-            val centeredX = (x - 50.0) * scaleX
-            val centeredY = (y - 50.0) * scaleY
-            val rotatedX = centeredX * cosRotation - centeredY * sinRotation
-            val rotatedY = centeredX * sinRotation + centeredY * cosRotation
+            var dx = (x - 50.0) * scaleX
+            var dy = (y - 50.0) * scaleY
+
+            // Barrel / Pincushion radial distortion
+            val distNorm = (kotlin.math.hypot(dx, dy) / 50.0).coerceIn(0.0, 1.4)
+            if (abs(pinch) > 0.001) {
+                val factor = (1.0 + pinch * (distNorm * distNorm - 0.5)).coerceIn(0.35, 1.65)
+                dx *= factor
+                dy *= factor
+            }
+
+            // Skew / Shear
+            val shearedX = dx + dy * skewX
+            val shearedY = dy + dx * skewY
+
+            // Rotation + Radial Twist (Swirl)
+            val totalAngle = baseRotation + twistRad * distNorm
+            val cosA = cos(totalAngle)
+            val sinA = sin(totalAngle)
+            val rotatedX = shearedX * cosA - shearedY * sinA
+            val rotatedY = shearedX * sinA + shearedY * cosA
+
             50.0 + rotatedX + offsetX to 50.0 + rotatedY + offsetY
         }
     }
