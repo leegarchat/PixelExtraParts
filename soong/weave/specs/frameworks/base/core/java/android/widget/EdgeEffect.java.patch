@@ -187,6 +187,7 @@
 -                && edgeEffectBehavior == TYPE_GLOW) {
 +
 +        // ── Custom bounce logic ──
++        ensureComposeHostDetected();
 +        EdgeEffectBounceHelper.SettingsCache cache = getSettingsCache(mCustomContext, true);
 +        boolean strictHold = cache.disableArbitraryRendering;
 +
@@ -395,6 +396,7 @@
 +        }
 +
 +        // ── Custom bounce logic ──
++        ensureComposeHostDetected();
 +        if (mCustomSpring == null) return 0f;
 +
 +        // Idle ACTION_DOWN probe from RecyclerView/NestedScrollView: delta 0
@@ -1014,9 +1016,12 @@
 +        mNormWindowCount = 0;
 +        mNormCurrentFactor = 1.0f;
 +
-+        // Caller detection (stack trace, once per instance)
-+        mCallerInfo = EdgeEffectBounceHelper.detectCaller();
-+        mIsComposeCaller = mCallerInfo.startsWith("compose");
++        // Caller detection — лениво на первом onPull/onPullDistance
++        // (в конструкторе контента ещё нет): см. ensureComposeHostDetected().
++        // Контракт сохранён: mCallerInfo — "compose:*"/"view:*"/"unknown",
++        // mIsComposeCaller = mCallerInfo.startsWith("compose").
++        mCallerInfo = null;
++        mIsComposeCaller = false;
 +
 +        float[] screenSize = EdgeEffectBounceHelper.getScreenSize(context);
 +        mCustomScreenHeight = screenSize[0];
@@ -1028,6 +1033,28 @@
 +        mCfgScale = packageConfig.scale;
 +        mCfgFilter = packageConfig.filter;
 +        mCfgIgnore = packageConfig.ignore;
++    }
++
++    /**
++     * Ленивый R8-устойчивый детект Compose-хоста: резолвится на первом
++     * onPull/onPullDistance (в конструкторе decorView ещё пуст) и кэшируется
++     * на инстанс. Каскад — в EdgeEffectBounceHelper.resolveComposeHostCaller,
++     * фолбэк — detectCaller; контракт возвращаемого значения сохранён.
++     */
++    private void ensureComposeHostDetected() {
++        if (mCallerInfo != null) {
++            return;
++        }
++        String info = null;
++        try {
++            info = EdgeEffectBounceHelper.resolveComposeHostCaller(mCustomContext);
++        } catch (Throwable ignored) {
++        }
++        if (info == null) {
++            info = "unknown";
++        }
++        mCallerInfo = info;
++        mIsComposeCaller = mCallerInfo.startsWith("compose");
 +    }
 +
 +    // ═══════════════════════════════════════════════════════════════════

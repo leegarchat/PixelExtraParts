@@ -1,12 +1,17 @@
 package android.widget;
 
+import android.app.Activity;
+import android.app.ActivityThread;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.RenderNode;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 
 /**
@@ -193,8 +198,8 @@ public final class EdgeEffectBounceHelper {
 
         // ── Delta normalization keys ──
         cache.normEnabled = getIntSetting(context, KEY_NORM_ENABLED, 1) == 1;
-        cache.normRefDelta = getFloatSetting(context, KEY_NORM_REF_DELTA, 9.9999f);
-        cache.normDetectMul = getFloatSetting(context, KEY_NORM_DETECT_MUL, 0f);
+        cache.normRefDelta = getFloatSetting(context, KEY_NORM_REF_DELTA, 0.015f);
+        cache.normDetectMul = getFloatSetting(context, KEY_NORM_DETECT_MUL, 1.5f);
         cache.normFactor = getFloatSetting(context, KEY_NORM_FACTOR, 0.33f);
         cache.normWindow = (int) getFloatSetting(context, KEY_NORM_WINDOW, 2f);
         cache.normRamp = (int) getFloatSetting(context, KEY_NORM_RAMP, 1f);
@@ -269,6 +274,258 @@ public final class EdgeEffectBounceHelper {
         } catch (Exception ignored) {
         }
         return new float[]{screenHeight, screenWidth};
+    }
+
+    /**
+     * R8-устойчивый детект Compose-хоста (переживает переименование классов/пакетов).
+     *
+     * <p>Каскад (первое срабатывание побеждает, контракт как у {@link #detectCaller}:
+     * строка {@code "compose:..."}, {@code "view:..."} или {@code "unknown"}):
+     * <ol>
+     *   <li>Имя класса в живом дереве: Activity из {@code ctx} (развёртка
+     *       {@code ContextWrapper.getBaseContext()}, глубина ~10) → BFS по
+     *       {@code getWindow().getDecorView()} (лимит ~500 узлов) →
+     *       {@code getClass().getName().startsWith("androidx.compose.ui.platform.")}.
+     *       Затем тот же обход для текущей Activity из
+     *       {@code ActivityThread.currentActivityThread()} (прямой вызов публичного
+     *       {@code getLastCreatedActivity()}, без рефлексии — мы внутри фреймворка).</li>
+     *   <li>Runtime-тег (переживает R8): {@code getIdentifier(
+     *       "compose_view_saveable_id_tag", "id", packageName)} → если id != 0,
+     *       BFS по декору и {@code view.getTag(id) != null}. Ошибки
+     *       (SecurityException/NotFound) дают null-сигнал, не падают.</li>
+     *   <li>Фолбэк — существующий {@link #detectCaller()} как есть.</li>
+     * </ol>
+     *
+     * <p>Вызывать лениво на первом {@code onPull}/{@code onPullDistance}
+     * (в конструкторе контента ещё нет), результат кэшировать на инстанс.
+     * Никогда не возвращает null; никогда не бросает.
+     *
+     * @hide
+     */
+    public static String resolveComposeHostCaller(Context ctx) {
+        try {
+            Activity fromCtx = unwrapActivity(ctx);
+            if (fromCtx != null && decorHasComposeView(fromCtx)) {
+                return "compose:DecorView";
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            Activity fromThread = currentActivityFromThread();
+            if (fromThread != null && decorHasComposeView(fromThread)) {
+                return "compose:DecorView";
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            if (Boolean.TRUE.equals(decorHasComposeTag(ctx))) {
+                return "compose:SaveableTag";
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            return detectCaller();
+        } catch (Throwable ignored) {
+        }
+        return "unknown";
+    }
+
+    private static final String COMPOSE_HOST_VIEW_PREFIX = "androidx.compose.ui.platform.";
+    private static final int COMPOSE_HOST_UNWRAP_DEPTH = 10;
+    private static final int COMPOSE_HOST_MAX_NODES = 500;
+    private static final String COMPOSE_SAVEABLE_TAG_NAME = "compose_view_saveable_id_tag";
+
+    /** Разворачивает {@code ctx} по {@code ContextWrapper.getBaseContext()} до Activity. */
+    private static Activity unwrapActivity(Context ctx) {
+        try {
+            Context cur = ctx;
+            for (int i = 0; i < COMPOSE_HOST_UNWRAP_DEPTH && cur != null; i++) {
+                if (cur instanceof Activity) {
+                    return (Activity) cur;
+                }
+                if (cur instanceof ContextWrapper) {
+                    cur = ((ContextWrapper) cur).getBaseContext();
+                } else {
+                    return null;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
+    /**
+     * Текущая Activity напрямую из фреймворка, без рефлексии.
+     * {@code mActivities}/{@code paused}/{@code activity} изнутри {@code android.app}
+     * недоступны по package-видимости из {@code android.widget}, поэтому используется
+     * публичный {@code ActivityThread.getLastCreatedActivity()} — тот же процесс,
+     * тот же bootclasspath, R8 его не трогает.
+     */
+    private static Activity currentActivityFromThread() {
+        try {
+            ActivityThread thread = ActivityThread.currentActivityThread();
+            if (thread == null) {
+                return null;
+            }
+            return thread.getLastCreatedActivity();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static View decorViewOf(Activity activity) {
+        try {
+            if (activity == null || activity.getWindow() == null) {
+                return null;
+            }
+            return activity.getWindow().getDecorView();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    /** BFS по декору: имя класса начинается с compose-платформенного префикса. */
+    private static boolean decorHasComposeView(Activity activity) {
+        View decor = decorViewOf(activity);
+        if (decor == null) {
+            return false;
+        }
+        try {
+            java.util.ArrayDeque<View> queue = new java.util.ArrayDeque<View>();
+            queue.add(decor);
+            int visited = 0;
+            while (!queue.isEmpty() && visited < COMPOSE_HOST_MAX_NODES) {
+                View v = queue.poll();
+                visited++;
+                if (v == null) {
+                    continue;
+                }
+                String name = v.getClass().getName();
+                if (name != null && name.startsWith(COMPOSE_HOST_VIEW_PREFIX)) {
+                    return true;
+                }
+                if (v instanceof ViewGroup) {
+                    ViewGroup vg = (ViewGroup) v;
+                    int n = 0;
+                    try {
+                        n = vg.getChildCount();
+                    } catch (Throwable ignored) {
+                        continue;
+                    }
+                    for (int i = 0; i < n; i++) {
+                        try {
+                            View child = vg.getChildAt(i);
+                            if (child != null) {
+                                queue.add(child);
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    /**
+     * Runtime-тег, переживающий R8: ищет {@code compose_view_saveable_id_tag} через
+     * {@code getIdentifier} и проверяет {@code view.getTag(id)} по декору
+     * (сначала Activity из {@code ctx}, затем из ActivityThread).
+     *
+     * @return {@code Boolean.TRUE} — тег найден; {@code Boolean.FALSE} — проверено,
+     *         тега нет; {@code null} — indeterminate (id == 0 / SecurityException /
+     *         NotFound / нет Activity): продолжать каскад, не падать.
+     */
+    private static Boolean decorHasComposeTag(Context ctx) {
+        try {
+            Activity fromCtx = unwrapActivity(ctx);
+            Activity fromThread = null;
+            try {
+                fromThread = currentActivityFromThread();
+            } catch (Throwable ignored) {
+            }
+            Activity[] candidates;
+            if (fromCtx != null && fromThread != null && fromCtx != fromThread) {
+                candidates = new Activity[]{fromCtx, fromThread};
+            } else if (fromCtx != null) {
+                candidates = new Activity[]{fromCtx};
+            } else if (fromThread != null) {
+                candidates = new Activity[]{fromThread};
+            } else {
+                return null;
+            }
+            for (Activity activity : candidates) {
+                if (activity == null) {
+                    continue;
+                }
+                int id;
+                try {
+                    if (ctx == null || ctx.getResources() == null) {
+                        continue;
+                    }
+                    id = ctx.getResources().getIdentifier(
+                            COMPOSE_SAVEABLE_TAG_NAME, "id", activity.getPackageName());
+                } catch (SecurityException se) {
+                    return null;
+                } catch (Throwable ignored) {
+                    return null;
+                }
+                if (id == 0) {
+                    return null;
+                }
+                View decor = decorViewOf(activity);
+                if (decor == null) {
+                    continue;
+                }
+                try {
+                    java.util.ArrayDeque<View> queue = new java.util.ArrayDeque<View>();
+                    queue.add(decor);
+                    int visited = 0;
+                    while (!queue.isEmpty() && visited < COMPOSE_HOST_MAX_NODES) {
+                        View v = queue.poll();
+                        visited++;
+                        if (v == null) {
+                            continue;
+                        }
+                        try {
+                            if (v.getTag(id) != null) {
+                                return Boolean.TRUE;
+                            }
+                        } catch (SecurityException se) {
+                            return null;
+                        } catch (Throwable ignored) {
+                        }
+                        if (v instanceof ViewGroup) {
+                            ViewGroup vg = (ViewGroup) v;
+                            int n;
+                            try {
+                                n = vg.getChildCount();
+                            } catch (Throwable ignored) {
+                                continue;
+                            }
+                            for (int i = 0; i < n; i++) {
+                                try {
+                                    View child = vg.getChildAt(i);
+                                    if (child != null) {
+                                        queue.add(child);
+                                    }
+                                } catch (Throwable ignored) {
+                                }
+                            }
+                        }
+                    }
+                } catch (SecurityException se) {
+                    return null;
+                } catch (Throwable ignored) {
+                }
+            }
+            return Boolean.FALSE;
+        } catch (SecurityException se) {
+            return null;
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     /**

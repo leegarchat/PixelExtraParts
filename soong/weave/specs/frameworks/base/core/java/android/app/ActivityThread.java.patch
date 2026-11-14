@@ -1,10 +1,11 @@
+diff --git a/wact/orig.java b/wact/new.java
+index 1e47a53..17e4b49 100644
 --- a/frameworks/base/core/java/android/app/ActivityThread.java
 +++ b/frameworks/base/core/java/android/app/ActivityThread.java
-@@ -334,7 +334,15 @@
+@@ -334,6 +334,38 @@ public final class ActivityThread extends ClientTransactionHandler
      private static DdmSyncStageUpdater newDdmSyncStageUpdater() {
          return new DdmSyncStageUpdater();
      }
--
 +    // --- [PixelParts] CONSTANTS ---
 +    private static final java.util.Set<String> PIXEL_PARTS_DEFAULT_WHITELIST = new java.util.HashSet<>(java.util.Arrays.asList(
 +            "com.android.systemui",
@@ -14,15 +15,33 @@
 +    ));
 +    private static final String PIXEL_PARTS_INJECT_PREFIX = "pixel_extra_parts_inject_package_";
 +    // TEMPORARY: APK-module (Xposed/LSPosed/Vector) kill-switch.
-+    // Mirror of ApkModulesGate.ENABLED (framework cannot reference that class)
-+    // — false disables ONLY the system_server branch below that exists solely
-+    // for APK modules. Flip back to true to re-enable.
-+    private static final boolean PIXEL_PARTS_APK_MODULES_ENABLED = false;
++    // Reads Settings.Global pixel_addon_apk_modules_enabled at runtime
++    // (published by the app boot receiver from res/values/experimental_flags.xml;
++    // flip live via `settings put global` for tests). Framework cannot
++    // reference ApkModulesGate, hence the duplicated key.
 +    // ------------------------------
++
++    /**
++     * PixelExtraParts: runtime read of the APK-modules kill-switch.
++     * Key is published by the app boot receiver; tests flip it live.
++     */
++    private static boolean pixelPartsApkModulesEnabled(Context injectContext) {
++        try {
++            if (injectContext == null) {
++                return false;
++            }
++            return android.provider.Settings.Global.getInt(
++                    injectContext.getContentResolver(),
++                    "pixel_addon_apk_modules_enabled", 0) == 1;
++        } catch (Throwable t) {
++            android.util.Log.w("PixelParts", "Failed to check APK modules flag", t);
++            return false;
++        }
++    }
+ 
      /** @hide */
      public static final String TAG = "ActivityThread";
- 
-@@ -8376,6 +8384,101 @@
+@@ -8376,6 +8408,103 @@ public final class ActivityThread extends ClientTransactionHandler
                  throw new RuntimeException(
                      "Exception thrown in onCreate() of " + data.instrumentationName, e);
              }
@@ -59,10 +78,12 @@
 +                // `settings put global pixelparts_xposed_has_system 1`
 +                // (manager UI will own this later). HookEntry runs ONLY the
 +                // module system dispatch there (no globals, no addons).
-+                if ("android".equals(pkgName) && PIXEL_PARTS_APK_MODULES_ENABLED) {
++                if ("android".equals(pkgName)) {
 +                    try {
 +                        Context injectContextSs = ContextImpl.createAppContext(this, data.info);
-+                        if (injectContextSs != null && android.provider.Settings.Global
++                        if (injectContextSs != null
++                                && pixelPartsApkModulesEnabled(injectContextSs)
++                                && android.provider.Settings.Global
 +                                .getInt(injectContextSs.getContentResolver(),
 +                                        "pixelparts_xposed_has_system", 0) == 1) {
 +                            shouldInject = true;
