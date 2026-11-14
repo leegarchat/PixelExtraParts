@@ -39,7 +39,7 @@ public class HookEntry {
         }
         // TEMPORARY: APK-module (Xposed/LSPosed/Vector) support disabled
         // via ApkModulesGate — dispatches bypassed, code kept.
-        if (!ApkModulesGate.ENABLED) {
+        if (!ApkModulesGate.isEnabled(context)) {
             return;
         }
         if (XposedModuleHost.SYSTEM_PACKAGE.equals(packageName)) {
