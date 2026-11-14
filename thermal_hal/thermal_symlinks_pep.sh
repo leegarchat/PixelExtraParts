@@ -1,10 +1,10 @@
+#!/vendor/bin/sh
 # Copyright (C) 2026 PixelExtraParts contributors
 # SPDX-License-Identifier: Apache-2.0
 #
 # PEP-owned copy of the thermal sysfs symlink setup (mirrors the stock
 # pixel-thermal-symlinks flow with pep-unique names so there are zero
 # same-name Soong modules / files / services vs stock).
-#!/vendor/bin/sh
 
 # Fallback: the stock thermal_symlinks script is functionally identical and
 # may have already run (it coexists with this one on trees where its
