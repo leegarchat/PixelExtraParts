@@ -29,3 +29,8 @@
 /thermal_hal/config/gen/
 
 /audits/
+
+# kt bulk dumps (split_kt.py output)
+/split_kt.py
+/kt_split_*.txt
+/apk_label.py
