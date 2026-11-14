@@ -183,6 +183,7 @@ internal fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
         var minApi = 0
         val scopes = HashSet<String>()
         var entryCount = 0
+        var legacyZipMarker = false
         try {
             ZipFile(info.sourceDir).use { zip ->
                 if (zip.getEntry("META-INF/xposed/java_init.list") != null) {
@@ -206,11 +207,49 @@ internal fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
                         }
                     }
                     entryCount = 1
-                } else if (zip.getEntry("assets/xposed_init") != null) {
-                    entryCount = 1
+                } else {
+                    // Legacy markers: classic assets/xposed_init or the
+                    // YukiHookAPI-generated init (often WITHOUT a manifest
+                    // xposedminversion entry).
+                    if (zip.getEntry("assets/xposed_init") != null ||
+                        zip.getEntry("META-INF/yukihookapi_init") != null) {
+                        legacyZipMarker = true
+                        entryCount = 1
+                    }
+                    // Some hybrid legacy modules ship a bundled scope.list.
+                    zip.getEntry("META-INF/xposed/scope.list")?.let { e ->
+                        zip.getInputStream(e).bufferedReader().useLines { lines ->
+                            lines.forEach { l ->
+                                val t = l.trim()
+                                if (t.isNotEmpty() && !t.startsWith("#")) scopes.add(t)
+                            }
+                        }
+                    }
                 }
             }
         } catch (_: Throwable) { continue }
+        val isLegacy = (legacyMeta || legacyZipMarker) && !modern
+        if (!isLegacy && !modern && entryCount == 0) continue
+        if (isLegacy) {
+            // LSPosed/Vector parity for legacy default scopes: manifest
+            // "xposedscope" — array resource id first, then an inline
+            // ';'-separated string. No heuristics beyond that.
+            try {
+                val md = info.metaData
+                val resId = md?.getInt("xposedscope", 0) ?: 0
+                if (resId != 0) {
+                    try {
+                        scopes.addAll(pm.getResourcesForApplication(info).getStringArray(resId)
+                            .filter { it.isNotBlank() })
+                    } catch (_: Throwable) {}
+                } else {
+                    md?.getString("xposedscope")?.split(";")?.forEach { s ->
+                        val t = s.trim()
+                        if (t.isNotEmpty()) scopes.add(t)
+                    }
+                }
+            } catch (_: Throwable) {}
+        }
         if (!legacyMeta && !modern && entryCount == 0) continue
         val pkg = info.packageName
         val keyId = pkg
@@ -224,7 +263,7 @@ internal fun scanInstalledModules(context: Context): List<XposedModuleUiModel> {
         out.add(XposedModuleUiModel(
             keyId = keyId, id = pkg, packageName = pkg, label = label,
             apkPath = info.sourceDir, versionName = version, minApi = minApi,
-            scopes = scopes, isLegacy = legacyMeta && !modern,
+            scopes = scopes, isLegacy = isLegacy,
             enabled = enabled, scopeMode = scopeMode, customTargets = customTargets
         ))
     }

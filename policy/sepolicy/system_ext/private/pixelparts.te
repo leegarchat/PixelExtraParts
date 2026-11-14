@@ -22,6 +22,18 @@ allow init pixelparts_data_file:dir r_dir_perms;
 allow init pixelparts_data_file:file r_file_perms;
 allow appdomain pixelparts_data_file:dir r_dir_perms;
 allow appdomain pixelparts_data_file:file r_file_perms;
+# APK-module remote prefs (RemotePrefs cross-process SharedPreferences).
+# The rprefs dir is created by the manager app at boot; the name-scoped
+# transition labels it so any injected process can read/write INSIDE.
+# NOTE: core neverallow (app_neverallows) forbids untrusted apps from
+# creating/unlinking files outside their sandbox — so pre-existing files
+# only: the manager app (system_app) creates each module's prefs file at
+# enable/boot time; injected processes merely open/read/write it.
+type_transition system_app pixelparts_data_file:dir pixelparts_rprefs_file "rprefs";
+allow appdomain pixelparts_rprefs_file:dir { open read getattr search };
+allow appdomain pixelparts_rprefs_file:file { open read getattr write append };
+allow system_app pixelparts_rprefs_file:dir { open read getattr search write add_name remove_name };
+allow system_app pixelparts_rprefs_file:file { open read getattr write create unlink append };
 allow system_server pixelparts_data_file:dir r_dir_perms;
 allow system_server pixelparts_data_file:file r_file_perms;
 allow shell pixelparts_data_file:dir create_dir_perms;

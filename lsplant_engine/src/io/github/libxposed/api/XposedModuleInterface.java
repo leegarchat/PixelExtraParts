@@ -19,6 +19,9 @@ public interface XposedModuleInterface {
         ClassLoader getClassLoader();
 
         String getProcessName();
+
+        /** True when running inside system_server (package "android"). */
+        boolean isSystemServer();
     }
 
     /** Params for {@link #onPackageLoaded}. */
@@ -33,11 +36,10 @@ public interface XposedModuleInterface {
     /**
      * Params for {@link #onPackageReady}.
      *
-     * <p>HOST NOTE: {@code isFirstPackage} is currently always {@code true}
-     * (multi-package processes are not distinguished), and this callback
-     * fires in {@code handleBindApplication} <em>before</em>
-     * {@code Application.onCreate} — not when the app is "ready", unlike
-     * stock LSPosed where ready means ready. Modules must not assume an
+     * <p>HOST NOTE: fires in the phase-1 (pre-Application) dispatch,
+     * alongside {@code onPackageLoaded} — Vector/LSPosed parity, so that
+     * modules defeating provider-attach guards have their hooks installed
+     * before {@code installContentProviders}. Modules must not assume an
      * initialized Application here.
      */
     interface PackageReadyParam {

@@ -148,6 +148,8 @@ android_app {
         // TEMPORARY: single APK-modules kill-switch, shared with LsplantInject.
         // (LsplantInject compiles it via core/** glob; see ApkModulesGate.)
         "lsplant_engine/src/org/pixel/customparts/core/ApkModulesGate.java",
+        // Cross-process module prefs bridge (manager side creates the file).
+        "lsplant_engine/src/org/pixel/customparts/manager/lsplant/RemotePrefs.java",
     ],
     use_embedded_native_libs: false,
 
@@ -254,6 +256,9 @@ java_library {
         "lsplant_engine/src/de/robv/android/xposed/**/*.java",
         // Modern Xposed API 101 (модули Vector/LSPosed-формата)
         "lsplant_engine/src/io/github/libxposed/api/**/*.java",
+        // Classic android.content.res Xposed-compat types (XResources,
+        // XModuleResources, XResForwarder — нужны YukiHookAPI)
+        "lsplant_engine/src/android/content/res/**/*.java",
         
         // Затенённый commons-lang для XposedHelpers
         "lsplant_engine/src/external/org/apache/commons/lang3/**/*.java"

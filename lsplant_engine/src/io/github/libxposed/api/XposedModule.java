@@ -21,11 +21,14 @@ public abstract class XposedModule implements XposedModuleInterface {
 
     /** Called by the host before any callback. */
     public void attachHost(android.content.Context context, String modulePackage) {
+        android.content.Context appCtx = null;
         try {
-            this.hostContext = context.getApplicationContext();
+            if (context != null) appCtx = context.getApplicationContext();
         } catch (Throwable ignored) {
-            this.hostContext = context;
         }
+        // In phase 1 (pre-Application) getApplicationContext() returns null
+        // instead of throwing — keep the valid ContextImpl, never null it.
+        this.hostContext = appCtx != null ? appCtx : context;
         this.hostModulePackage = modulePackage;
     }
 
@@ -91,24 +94,25 @@ public abstract class XposedModule implements XposedModuleInterface {
 
     /**
      * Remote preferences of the module app, readable from a target process.
-     * Best-effort chain: module package prefs cross-package → own prefs →
-     * empty read-only stub (never null, never throws).
+     * Backed by {@link org.pixel.customparts.manager.lsplant.RemotePrefs}
+     * (shared files under /data/pixelparts/rprefs): the module's own
+     * shared_prefs dir is unreadable from a target UID (SELinux), so a
+     * plain cross-package read would silently return defaults there.
+     * Both the module UI process and target processes see the same values.
+     * Never returns null.
      */
     public android.content.SharedPreferences getRemotePreferences(String name) {
-        if (hostContext != null && hostModulePackage != null) {
-            try {
-                android.content.Context modCtx = hostContext.createPackageContext(
-                        hostModulePackage,
-                        android.content.Context.CONTEXT_IGNORE_SECURITY);
-                return modCtx.getSharedPreferences(name,
-                        android.content.Context.MODE_PRIVATE);
-            } catch (Throwable ignored) {
+        try {
+            if (hostModulePackage != null) {
+                return org.pixel.customparts.manager.lsplant.RemotePrefs
+                        .forModule(hostContext, hostModulePackage, name);
             }
+        } catch (Throwable ignored) {
         }
         if (hostContext != null) {
             try {
-                return hostContext.getSharedPreferences(name,
-                        android.content.Context.MODE_PRIVATE);
+                return org.pixel.customparts.manager.lsplant.RemotePrefs
+                        .forModule(hostContext, hostContext.getPackageName(), name);
             } catch (Throwable ignored) {
             }
         }

@@ -1,8 +1,8 @@
 diff --git a/wact/orig.java b/wact/new.java
-index 1e47a53..17e4b49 100644
+index 1e47a53..bf872cf 100644
 --- a/frameworks/base/core/java/android/app/ActivityThread.java
 +++ b/frameworks/base/core/java/android/app/ActivityThread.java
-@@ -334,6 +334,38 @@ public final class ActivityThread extends ClientTransactionHandler
+@@ -334,6 +334,41 @@ public final class ActivityThread extends ClientTransactionHandler
      private static DdmSyncStageUpdater newDdmSyncStageUpdater() {
          return new DdmSyncStageUpdater();
      }
@@ -19,6 +19,9 @@ index 1e47a53..17e4b49 100644
 +    // (published by the app boot receiver from res/values/experimental_flags.xml;
 +    // flip live via `settings put global` for tests). Framework cannot
 +    // reference ApkModulesGate, hence the duplicated key.
++    // Entry class of the injected engine, set by phase 1 and reused by
++    // phase 2 (late dispatch) in the same process.
++    private static Class<?> pixelPartsEntryClass = null;
 +    // ------------------------------
 +
 +    /**
@@ -41,21 +44,26 @@ index 1e47a53..17e4b49 100644
  
      /** @hide */
      public static final String TAG = "ActivityThread";
-@@ -8376,6 +8408,103 @@ public final class ActivityThread extends ClientTransactionHandler
-                 throw new RuntimeException(
-                     "Exception thrown in onCreate() of " + data.instrumentationName, e);
-             }
-+            // --- [PixelParts] INJECTION START ---
+@@ -8327,6 +8362,108 @@ public final class ActivityThread extends ClientTransactionHandler
+ 
+         long timestampApplicationOnCreateNs = 0;
+         try {
++            // --- [PixelParts] INJECTION START (phase 1) ---
++            // Decision + dex load + module early dispatch BEFORE Application
++            // creation, so onModuleLoaded/onPackageLoaded (modern) and
++            // initZygote/handleLoadPackage (legacy/Yuki) fire before
++            // Application.attach — LSPosed timing. All modern callbacks
++            // (incl. onPackageReady) fire in phase 1 so provider-attach
++            // guards can be hooked; JAR addons run in phase 2.
 +            // Global safe mode (Settings.Global pixel_addon_safe_mode=1):
 +            // skip the entire injection here — no dex, no native libs, no
 +            // hooks in this process. (AddonLoader keeps its own check as a
 +            // second layer for already-injected processes.)
 +            boolean pixelPartsSafeMode = false;
 +            try {
-+                Context pixelPartsSmCtx = ContextImpl.createAppContext(this, data.info);
-+                if (pixelPartsSmCtx != null) {
++                if (appContext != null) {
 +                    pixelPartsSafeMode = android.provider.Settings.Global.getInt(
-+                            pixelPartsSmCtx.getContentResolver(),
++                            appContext.getContentResolver(),
 +                            "pixel_addon_safe_mode", 0) == 1;
 +                }
 +            } catch (Throwable t) {
@@ -80,11 +88,10 @@ index 1e47a53..17e4b49 100644
 +                // module system dispatch there (no globals, no addons).
 +                if ("android".equals(pkgName)) {
 +                    try {
-+                        Context injectContextSs = ContextImpl.createAppContext(this, data.info);
-+                        if (injectContextSs != null
-+                                && pixelPartsApkModulesEnabled(injectContextSs)
++                        if (appContext != null
++                                && pixelPartsApkModulesEnabled(appContext)
 +                                && android.provider.Settings.Global
-+                                .getInt(injectContextSs.getContentResolver(),
++                                .getInt(appContext.getContentResolver(),
 +                                        "pixelparts_xposed_has_system", 0) == 1) {
 +                            shouldInject = true;
 +                        }
@@ -97,13 +104,11 @@ index 1e47a53..17e4b49 100644
 +                // Формируем ключ: pixel_extra_parts_inject_package_com.example.app
 +                try {
 +                    // чтобы не конфликтовать с существующей переменной AOSP.
-+                    Context injectContext = ContextImpl.createAppContext(this, data.info);
-+                    
-+                    if (injectContext != null) {
++                    if (appContext != null) {
 +                        String key = PIXEL_PARTS_INJECT_PREFIX + pkgName;
-+                        
++
 +                        int override = android.provider.Settings.Global.getInt(
-+                                injectContext.getContentResolver(), key, -1);
++                                appContext.getContentResolver(), key, -1);
 +
 +                        if (override == 1) {
 +                            shouldInject = true;
@@ -115,7 +120,8 @@ index 1e47a53..17e4b49 100644
 +                    android.util.Log.w("PixelParts", "Failed to check inject settings", t);
 +                }
 +
-+                // 3. Сама инъекция (только если shouldInject == true)
++                // 3. Сама инъекция (только если shouldInject == true):
++                // dex load + phase-1 module dispatch (pre-Application).
 +                if (shouldInject) {
 +                    try {
 +                        final String jarPath = "/system/framework/LsplantInject.jar";
@@ -126,13 +132,15 @@ index 1e47a53..17e4b49 100644
 +                            if (appCl instanceof dalvik.system.BaseDexClassLoader) {
 +                                dalvik.system.BaseDexClassLoader dexLoader =
 +                                        (dalvik.system.BaseDexClassLoader) appCl;
-+                                
++
 +                                dexLoader.addDexPath(jarPath);
 +
 +                                Class<?> entry = appCl.loadClass("org.pixel.customparts.lsplantinject.ModEntry");
-+                                java.lang.reflect.Method m = entry.getDeclaredMethod("init");
-+                                m.invoke(null);
-+                                
++                                pixelPartsEntryClass = entry;
++                                java.lang.reflect.Method m = entry.getDeclaredMethod("initEarly",
++                                        android.content.Context.class, ClassLoader.class, String.class);
++                                m.invoke(null, appContext, appCl, pkgName);
++
 +                                // android.util.Log.i("PixelParts", "Injected into: " + pkgName);
 +                            }
 +                        }
@@ -142,6 +150,27 @@ index 1e47a53..17e4b49 100644
 +                }
 +            }
 +            // --- [PixelParts] INJECTION END ---
+             // If the app is being launched for full backup or restore, bring it up in
+             // a restricted environment with the base application class.
+             app = data.info.makeApplicationInner(data.restrictedBackupMode, null);
+@@ -8376,6 +8513,20 @@ public final class ActivityThread extends ClientTransactionHandler
+                 throw new RuntimeException(
+                     "Exception thrown in onCreate() of " + data.instrumentationName, e);
+             }
++            // --- [PixelParts] LATE MODULES START ---
++            // Phase 2: JAR addons, after Application
++            // creation (ModEntry.init path, which also replays a missed
++            // phase 1). Runs only when phase 1 below injected this process.
++            try {
++                if (pixelPartsEntryClass != null) {
++                    java.lang.reflect.Method pixelPartsLateInit =
++                            pixelPartsEntryClass.getDeclaredMethod("init");
++                    pixelPartsLateInit.invoke(null);
++                }
++            } catch (Throwable t) {
++                android.util.Log.e("PixelParts", "Late module dispatch failed", t);
++            }
++            // --- [PixelParts] LATE MODULES END ---
              try {
                  timestampApplicationOnCreateNs = SystemClock.uptimeNanos();
                  mInstrumentation.callApplicationOnCreate(app);

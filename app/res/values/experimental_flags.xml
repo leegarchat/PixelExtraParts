@@ -13,5 +13,5 @@
 
     <!-- APK-module (Xposed/LSPosed/Vector) addon manager implementation.
          TEMPORARY kill-switch: all module code stays in the tree. -->
-    <bool name="exp_apk_modules_manager">false</bool>
+    <bool name="exp_apk_modules_manager">true</bool>
 </resources>

@@ -58,10 +58,12 @@ public class XposedModuleHost {
     static final class LoadedParamImpl implements XposedModuleInterface.ModuleLoadedParam {
         private final ClassLoader cl;
         private final String processName;
+        private final boolean systemServer;
 
-        LoadedParamImpl(ClassLoader cl, String processName) {
+        LoadedParamImpl(ClassLoader cl, String processName, boolean systemServer) {
             this.cl = cl;
             this.processName = processName;
+            this.systemServer = systemServer;
         }
 
         @Override
@@ -72,6 +74,11 @@ public class XposedModuleHost {
         @Override
         public String getProcessName() {
             return processName;
+        }
+
+        @Override
+        public boolean isSystemServer() {
+            return systemServer;
         }
     }
 
@@ -232,7 +239,7 @@ public class XposedModuleHost {
             ZipEntry init = zip.getEntry("META-INF/xposed/java_init.list");
             if (init == null) return; // not a modern module (legacy path ignores APKs)
             ModuleRecord rec = new ModuleRecord();
-            rec.id = apk.getName().replaceAll("\\.apk$", "");
+            rec.id = moduleIdFor(apk);
             rec.apkPath = apk.getAbsolutePath();
             BufferedReader br = null;
             try {
@@ -345,7 +352,7 @@ public class XposedModuleHost {
     }
 
     private static synchronized void ensureLoaded(Context context, ModuleRecord rec,
-            String processName) {
+            String packageName, String processName, ClassLoader appClassLoader) {
         if (rec.loaded) return;
         rec.loaded = true;
         String ownPkg = null;
@@ -355,8 +362,13 @@ public class XposedModuleHost {
         }
         try {
             File odexDir = context.getDir("xposed_modules", Context.MODE_PRIVATE);
+            // Module native libs (e.g. DexKit's libdexkit.so) live extracted
+            // next to base.apk (<dir>/lib/<arch>/); derive the dir from the
+            // APK path (no package visibility needed) so System.loadLibrary
+            // from module code resolves.
+            String libPath = nativeLibDirFor(rec.apkPath, odexDir);
             DexClassLoader loader = new DexClassLoader(rec.apkPath,
-                    odexDir.getAbsolutePath(), null, XposedModuleHost.class.getClassLoader());
+                    odexDir.getAbsolutePath(), libPath, appClassLoader);
             for (String name : rec.classNames) {
                 try {
                     Class<?> clazz = Class.forName(name, false, loader);
@@ -378,7 +390,8 @@ public class XposedModuleHost {
                 }
             }
             XposedModuleInterface.ModuleLoadedParam mp =
-                    new LoadedParamImpl(loader, processName);
+                    new LoadedParamImpl(loader, processName,
+                            SYSTEM_PACKAGE.equals(packageName));
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onModuleLoaded(mp);
@@ -390,6 +403,176 @@ public class XposedModuleHost {
         } catch (Throwable t) {
             Log.e(TAG, "Failed to load module " + rec.id, t);
         }
+    }
+
+    /**
+     * Native library dir for an installed module APK, derived from the APK
+     * path itself ({@code <dir>/base.apk} → {@code <dir>/lib/<arch>/}).
+     * Returns null when nothing usable exists (pure-Java modules).
+     */
+    static String nativeLibDirFor(String apkPath) {
+        return nativeLibDirFor(apkPath, null);
+    }
+
+    /**
+     * Native library search path for a module APK. Prefers the installed
+     * {@code lib/<arch>/} dir; when the installer left it empty
+     * (extractNativeLibs=false style — all BlueCat patchers), extracts the
+     * bundled {@code lib/<abi>/*.so} into {@code odexDir} so that
+     * {@code System.loadLibrary} from module code resolves. Returns null
+     * when the module ships no native libs at all.
+     */
+    static String nativeLibDirFor(String apkPath, File odexDir) {
+        String installed = installedLibDirFor(apkPath);
+        if (installed != null) return installed;
+        return extractNativeLibs(apkPath, odexDir);
+    }
+
+    private static String installedLibDirFor(String apkPath) {
+        if (apkPath == null) return null;
+        try {
+            File apk = new File(apkPath);
+            File parent = apk.getParentFile();
+            if (parent == null) return null;
+            for (String abi : candidateAbis()) {
+                String arch = abi;
+                int dash = abi.indexOf('-');
+                // Installed layout uses the short arch (lib/arm64, lib/arm, …).
+                if (dash > 0 && (abi.startsWith("arm") || abi.startsWith("x86"))) {
+                    if (abi.startsWith("armeabi")) arch = "arm";
+                    else if (abi.startsWith("arm64")) arch = "arm64";
+                    else arch = abi.substring(0, dash);
+                }
+                File dir = new File(parent, "lib" + File.separator + arch);
+                if (isNonEmptyDir(dir)) return dir.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
+    }
+
+    private static String[] candidateAbis() {
+        try {
+            String[] abis = android.os.Build.SUPPORTED_ABIS;
+            if (abis != null && abis.length > 0) return abis;
+        } catch (Throwable ignored) {
+        }
+        return new String[]{"arm64-v8a"};
+    }
+
+    private static boolean isNonEmptyDir(File dir) {
+        try {
+            if (dir != null && dir.isDirectory()) {
+                String[] kids = dir.list();
+                if (kids != null && kids.length > 0) return true;
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
+    /** Stable per-APK id (parent dir + file name — plain base.apk collides). */
+    static String moduleIdFor(File apk) {
+        String name = apk.getName().replaceAll("\\.apk$", "");
+        try {
+            File parent = apk.getParentFile();
+            if (parent != null && !parent.getName().isEmpty()) {
+                return parent.getName() + "-" + name;
+            }
+        } catch (Throwable ignored) {
+        }
+        return name;
+    }
+
+    /**
+     * Extracts bundled {@code lib/<abi>/*.so} from the module APK into
+     * {@code <odexDir>/lib-<id>/} (writable + executable by the host UID).
+     * Skips work when the target dir already holds .so files.
+     */
+    private static String extractNativeLibs(String apkPath, File odexDir) {
+        if (apkPath == null || odexDir == null) return null;
+        File outDir = null;
+        try {
+            outDir = new File(odexDir, "lib-"
+                    + moduleIdFor(new File(apkPath)).replaceAll("[^A-Za-z0-9_.-]", "_"));
+            if (isNonEmptyDir(outDir)) return outDir.getAbsolutePath();
+            outDir.mkdirs();
+            if (!outDir.isDirectory()) return null;
+            java.util.zip.ZipFile zip = new java.util.zip.ZipFile(apkPath);
+            try {
+                java.util.Enumeration<? extends java.util.zip.ZipEntry> entries =
+                        zip.entries();
+                String[] abis = candidateAbis();
+                int count = 0;
+                while (entries.hasMoreElements()) {
+                    java.util.zip.ZipEntry e = entries.nextElement();
+                    String n = e.getName();
+                    if (e.isDirectory() || !n.endsWith(".so")) continue;
+                    boolean wanted = false;
+                    for (String abi : abis) {
+                        if (n.startsWith("lib/" + abi + "/")) {
+                            wanted = true;
+                            break;
+                        }
+                    }
+                    if (!wanted) continue;
+                    String base = n.substring(n.lastIndexOf('/') + 1);
+                    File out = new File(outDir, base);
+                    if (out.exists() && out.length() == e.getSize()) {
+                        count++;
+                        continue;
+                    }
+                    java.io.InputStream in = null;
+                    java.io.FileOutputStream fos = null;
+                    try {
+                        in = zip.getInputStream(e);
+                        fos = new java.io.FileOutputStream(out);
+                        byte[] buf = new byte[65536];
+                        int r;
+                        while ((r = in.read(buf)) > 0) fos.write(buf, 0, r);
+                        fos.getFD().sync();
+                    } finally {
+                        if (fos != null) {
+                            try {
+                                fos.close();
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                        if (in != null) {
+                            try {
+                                in.close();
+                            } catch (Throwable ignored) {
+                            }
+                        }
+                    }
+                    out.setReadable(true, false);
+                    out.setExecutable(true, false);
+                    count++;
+                }
+                if (count > 0) {
+                    Log.d(TAG, "Extracted " + count + " native lib(s) for " + apkPath);
+                    return outDir.getAbsolutePath();
+                }
+            } finally {
+                try {
+                    zip.close();
+                } catch (Throwable ignored) {
+                }
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Native lib extract failed for " + apkPath, t);
+        }
+        return null;
+    }
+
+    /** Real process name; falls back to the package when unavailable. */
+    static String currentProcessName(String fallback) {
+        try {
+            String proc = android.app.Application.getProcessName();
+            if (proc != null && !proc.isEmpty()) return proc;
+        } catch (Throwable ignored) {
+        }
+        return fallback;
     }
 
     private static Set<String> getEffectiveScopes(Context context, ModuleRecord rec) {
@@ -429,42 +612,60 @@ public class XposedModuleHost {
         return false;
     }
 
-    /** Called from HookEntry for every injected app process. */
-    public static void dispatchPackage(Context context, ClassLoader appClassLoader,
+    /** Phase 1 (pre-Application): scan, load, onModuleLoaded + onPackageLoaded. */
+    public static void dispatchPackageEarly(Context context, ClassLoader appClassLoader,
             String packageName) {
         if (!ApkModulesGate.isEnabled(context)) return; // TEMPORARY kill-switch
         if (SYSTEM_PACKAGE.equals(packageName)) return;
         ensureScanned(context);
+        String processName = currentProcessName(packageName);
+        android.content.pm.ApplicationInfo ai = null;
+        try {
+            ai = context.getPackageManager().getApplicationInfo(packageName, 0);
+        } catch (Throwable ignored) {
+        }
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;
             // Self-targeting: enabled module always sees its own package
             // (Vector parity — otherwise "activated" status never shows).
             boolean self = false;
+            String ownPkg = null;
             try {
-                String own = getOwnPackage(context, rec.apkPath);
-                self = packageName.equals(own);
+                ownPkg = getOwnPackage(context, rec.apkPath);
+                self = packageName.equals(ownPkg);
             } catch (Throwable ignored) {
             }
             if (!self && !targetsPackage(getEffectiveScopes(context, rec), packageName)) {
                 continue;
             }
-            ensureLoaded(context, rec, packageName);
-            if (rec.instances.isEmpty()) continue;
-            android.content.pm.ApplicationInfo ai = null;
-            try {
-                ai = context.getPackageManager().getApplicationInfo(packageName, 0);
-            } catch (Throwable ignored) {
+            if (self) {
+                // Own process: mirror the module's private prefs into the
+                // shared store so targets (and status checks) see them.
+                // Runs even when instantiation below fails.
+                try {
+                    PrefsMirror.syncIfSelf(context, packageName, ownPkg);
+                } catch (Throwable ignored) {
+                }
             }
+            ensureLoaded(context, rec, packageName, processName, appClassLoader);
+            if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.PackageLoadedParam lp =
                     new PkgLoadedParamImpl(packageName, appClassLoader, true);
-            XposedModuleInterface.PackageReadyParam rp =
-                    new PkgReadyParamImpl(packageName, appClassLoader, true, ai);
             for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onPackageLoaded(lp);
                 } catch (Throwable t) {
                     Log.e(TAG, "onPackageLoaded failed for " + rec.id, t);
                 }
+            }
+            // onPackageReady fires here too (same early dispatch), NOT in
+            // phase 2: Vector/LSPosed parity. Modules that defeat
+            // provider-attach guards (e.g. bank patchers) must have their
+            // hooks installed BEFORE installContentProviders — a post-
+            // provider onPackageReady would arrive after the app is dead.
+            XposedModuleInterface.PackageReadyParam rp =
+                    new PkgReadyParamImpl(packageName, appClassLoader, true, ai);
+            for (XposedModuleInterface inst : rec.instances) {
                 try {
                     inst.onPackageReady(rp);
                 } catch (Throwable t) {
@@ -474,6 +675,118 @@ public class XposedModuleHost {
         }
     }
 
+    /**
+     * Phase 2 (post-Application, pre-onCreate): module service bind.
+     *
+     * <p>Modern modules declare {@code XposedProvider} in their manifest.
+     * On LSPosed, system_server calls its {@code call("SendBinder", ...)}
+     * to hand the module an {@code IXposedService} Binder, which fires the
+     * module's {@code OnServiceListener} (the "module activated" status).
+     * Our host has no system_server side, so the self-process replays this
+     * handshake locally in phase 2 (providers are installed by now).
+     * No-op for non-self packages.
+     */
+    public static void dispatchPackageLate(Context context, ClassLoader appClassLoader,
+            String packageName) {
+        if (!ApkModulesGate.isEnabled(context)) return;
+        if (SYSTEM_PACKAGE.equals(packageName)) return;
+        ensureScanned(context);
+        for (ModuleRecord rec : modules.values()) {
+            if (!isModuleEnabled(context, rec)) continue;
+            String own = null;
+            try {
+                own = getOwnPackage(context, rec.apkPath);
+            } catch (Throwable ignored) {
+            }
+            if (own == null || !packageName.equals(own)) continue;
+            try {
+                notifyModuleServiceBind(context, appClassLoader, own);
+            } catch (Throwable t) {
+                Log.w(TAG, "notifyModuleServiceBind failed for " + rec.id, t);
+            }
+        }
+    }
+
+    /**
+     * Replays LSPosed's system_server → XposedProvider "SendBinder"
+     * handshake inside the module's own process: builds a local
+     * {@code IXposedService} proxy and delivers it via
+     * {@code ContentResolver.call("content://<pkg>.XposedService",
+     * "SendBinder", ...)}. The provider then fires the module's
+     * {@code OnServiceListener} ("module activated").
+     */
+    private static void notifyModuleServiceBind(Context context, ClassLoader appCl,
+            String ownPkg) {
+        final String descriptor = "io.github.libxposed.service.IXposedService";
+        Class<?> iFace;
+        try {
+            // In the self process the app loader sees the module's own APK,
+            // so this is the same Class object the provider uses.
+            iFace = Class.forName(descriptor, false, appCl);
+        } catch (Throwable t) {
+            Log.d(TAG, "No IXposedService in " + ownPkg + ", skipping bind");
+            return;
+        }
+        final Class<?> iface = iFace;
+        Object proxy;
+        try {
+            proxy = java.lang.reflect.Proxy.newProxyInstance(
+                    appCl, new Class<?>[]{iface},
+                    new java.lang.reflect.InvocationHandler() {
+                        @Override
+                        public Object invoke(Object p, java.lang.reflect.Method method,
+                                Object[] args) {
+                            String m = method.getName();
+                            if ("asBinder".equals(m)) return null;
+                            if ("getAPIVersion".equals(m)) return 102;
+                            if ("getFrameworkName".equals(m)) return "PixelParts";
+                            if ("getFrameworkVersion".equals(m)) return "1.0";
+                            if ("getFrameworkVersionCode".equals(m)) return 102L;
+                            if ("getFrameworkPrivilege".equals(m)) return 0;
+                            if ("getScope".equals(m)) return new java.util.ArrayList<String>();
+                            Class<?> rt = method.getReturnType();
+                            if (rt == boolean.class) return false;
+                            if (rt == int.class) return 0;
+                            if (rt == long.class) return 0L;
+                            return null;
+                        }
+                    });
+        } catch (Throwable t) {
+            Log.w(TAG, "IXposedService proxy failed for " + ownPkg, t);
+            return;
+        }
+        final Object binderProxy = proxy;
+        android.os.Binder binder = new android.os.Binder() {
+            @Override
+            public android.os.IInterface queryLocalInterface(String desc) {
+                if (descriptor.equals(desc)
+                        && binderProxy instanceof android.os.IInterface) {
+                    return (android.os.IInterface) binderProxy;
+                }
+                return null;
+            }
+        };
+        try {
+            android.os.Bundle extras = new android.os.Bundle();
+            extras.putBinder("binder", binder);
+            // NOTE: method name is "SendBinder" (capital S) — verified
+            // against the module-bundled XposedProvider.call bytecode.
+            android.os.Bundle res = context.getContentResolver().call(
+                    android.net.Uri.parse("content://" + ownPkg + ".XposedService"),
+                    "SendBinder", null, extras);
+            Log.d(TAG, "sendBinder delivered for " + ownPkg + " -> " + res);
+        } catch (Throwable t) {
+            Log.w(TAG, "sendBinder call failed for " + ownPkg, t);
+        }
+    }
+
+    /** Called from HookEntry for every injected app process. */
+    public static void dispatchPackage(Context context, ClassLoader appClassLoader,
+            String packageName) {
+        dispatchPackageEarly(context, appClassLoader, packageName);
+        dispatchPackageLate(context, appClassLoader, packageName);
+    }
+
     /** Called once in system_server when a system-scope module is installed. */
     public static void dispatchSystem(Context context, ClassLoader ssClassLoader) {
         if (!ApkModulesGate.isEnabled(context)) return; // TEMPORARY kill-switch
@@ -481,7 +794,8 @@ public class XposedModuleHost {
         for (ModuleRecord rec : modules.values()) {
             if (!isModuleEnabled(context, rec)) continue;
             if (!rec.scopes.contains("system")) continue;
-            ensureLoaded(context, rec, SYSTEM_PACKAGE);
+            ensureLoaded(context, rec, SYSTEM_PACKAGE,
+                    currentProcessName(SYSTEM_PACKAGE), ssClassLoader);
             if (rec.instances.isEmpty()) continue;
             XposedModuleInterface.SystemServerStartingParam sp =
                     new SystemStartingParamImpl(ssClassLoader);

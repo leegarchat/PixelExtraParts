@@ -541,6 +541,17 @@ bool EnsureInit(JNIEnv* env) {
             return false;
         }
     }
+    // A bound foreign engine (Vector/LSPosed) already initialized its own
+    // LSPlant when it injected this process — calling Init again would
+    // re-hook ART symbols on top of it (double-hooked trampolines) or fail.
+    // Hook/Deoptimize entry points are usable as bound.
+    if (g_engine.foreign) {
+        g_init_ok = true;
+        __android_log_print(ANDROID_LOG_INFO, "LsplantBridge",
+                            "reusing already-initialized foreign engine (%s)",
+                            g_engine.origin.c_str());
+        return true;
+    }
     lsplant::InitInfo info{
         .inline_hooker = InlineHooker,
         .inline_unhooker = InlineUnhooker,

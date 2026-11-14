@@ -38,6 +38,29 @@ class BootCompletedReceiver : BroadcastReceiver() {
             } catch (e: Exception) {
                 Log.e("PixelParts", "Failed to publish experimental flags", e)
             }
+            try {
+                // RemotePrefs root for Xposed module shared preferences
+                // (cross-process; see RemotePrefs). system_app can create it;
+                // the rprefs type transition + appdomain rules cover the rest.
+                java.io.File("/data/pixelparts/rprefs").mkdirs()
+            } catch (e: Exception) {
+                Log.w("PixelParts", "Failed to create rprefs dir", e)
+            }
+            try {
+                // Manager (system_app) pre-creates each enabled module's
+                // prefs file — injected (untrusted) processes may not
+                // create files outside their sandbox (core neverallow).
+                if (org.pixel.customparts.core.ApkModulesGate.isEnabled(context)) {
+                    for (mod in org.pixel.customparts.ui.addons.scanInstalledModules(context)) {
+                        if (mod.enabled) {
+                            org.pixel.customparts.manager.lsplant.RemotePrefs
+                                .ensureModulePrefsFile(mod.packageName)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w("PixelParts", "Failed to ensure module prefs files", e)
+            }
         }
     }
 

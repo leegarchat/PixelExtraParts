@@ -9,6 +9,30 @@ import org.pixel.customparts.manager.lsplant.HookEntry;
 public class ModEntry {
     private static final String TAG = "LsplantInject";
 
+    /**
+     * Phase 1 — called from ActivityThread BEFORE Application creation.
+     * Loads the native glue, binds the LSPlant backend and runs the
+     * module early dispatch (no JAR addons here — those stay in phase 2).
+     */
+    public static void initEarly(android.content.Context context,
+            ClassLoader classLoader, String packageName) {
+        try {
+            System.loadLibrary("lspbridge");
+        } catch (Throwable t) {
+            Log.e(TAG, "Failed to load lspbridge glue", t);
+            return;
+        }
+        if (!LsplantBridge.init()) {
+            Log.e(TAG, "LSPlant backend unavailable, hooks disabled");
+            return;
+        }
+        try {
+            HookEntry.initModulesEarly(context, classLoader, packageName);
+        } catch (Throwable t) {
+            Log.e(TAG, "HookEntry.initModulesEarly failed", t);
+        }
+    }
+
     public static void init() {
         // LSPlant backend binds at runtime: if Vector/LSPosed already injected
         // its engine into this process, our glue reuses it (native probe

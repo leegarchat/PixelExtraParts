@@ -32,6 +32,18 @@ public final class LsplantBridge {
     private static volatile boolean libraryLoaded;
     private static volatile boolean initOk;
 
+    /**
+     * True when bound to an already-loaded foreign engine (Vector/LSPosed)
+     * instead of our own prebuilts. APK-module hosts must stand down then
+     * (the foreign framework routes modules itself); JAR addons keep
+     * working through this bridge.
+     */
+    private static volatile boolean foreignEngine;
+
+    public static boolean isForeignEngine() {
+        return foreignEngine;
+    }
+
     /** Member -> native backup (Method, or Constructor for <init> targets). */
     private static final Map<Member, Object> backups = new ConcurrentHashMap<>();
 
@@ -62,6 +74,7 @@ public final class LsplantBridge {
             }
             if (foreign) {
                 Log.i(TAG, "Reusing foreign LSPlant engine, own prebuilts skipped");
+                foreignEngine = true;
                 libraryLoaded = true;
             } else {
                 try {

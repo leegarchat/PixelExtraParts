@@ -95,6 +95,7 @@ import org.pixel.customparts.dynamicDarkColorScheme
 import org.pixel.customparts.dynamicLightColorScheme
 import org.pixel.customparts.activities.AddonPageActivity
 import org.pixel.customparts.core.ApkModulesGate
+import org.pixel.customparts.manager.lsplant.RemotePrefs
 import org.pixel.customparts.ui.ColorPickerDialog
 import org.pixel.customparts.ui.ExpandableWarningCard
 import org.pixel.customparts.utils.HookKeyCompat
@@ -545,6 +546,11 @@ fun AddonManagerSection(modifier: Modifier = Modifier) {
                         // for the module to see itself as active.
                         addToWhitelist(context, mod.packageName)
                         addModuleToRegistry(context, mod.apkPath)
+                        // RemotePrefs file must pre-exist (untrusted processes
+                        // may not create files outside their sandbox).
+                        try {
+                            RemotePrefs.ensureModulePrefsFile(mod.packageName)
+                        } catch (_: Throwable) {}
                     } else {
                         removeModuleFromRegistry(context, mod.apkPath)
                         if (mod.packageName !in BUILTIN_WHITELIST) {

@@ -360,6 +360,10 @@ public class AddonLoader {
             allTargets.addAll(XposedModuleHost.getAllModuleTargets(context));
         } catch (Throwable ignored) {
         }
+        try {
+            allTargets.addAll(LegacyModuleHost.getAllModuleTargets(context));
+        } catch (Throwable ignored) {
+        }
         for (String pkg : allTargets) {
             // Respect explicit per-app blocks (stored 0): boot/app sync must
             // never re-enable a package the user excluded. ActivityThread

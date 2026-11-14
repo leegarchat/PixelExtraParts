@@ -43,7 +43,7 @@ public final class XposedBridge {
 
 	/** @deprecated Use {@link #getXposedVersion()} instead. */
 	@Deprecated
-	public static int XPOSED_BRIDGE_VERSION = 90;
+	public static int XPOSED_BRIDGE_VERSION = 93;
 
 	// built-in handlers
 	private static final Map<Member, CopyOnWriteSortedSet<XC_MethodHook>> sHookedMethodCallbacks = new HashMap<>();
