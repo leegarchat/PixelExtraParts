@@ -38,7 +38,7 @@
                     "description": "Master switch. Turning it on also disables the system Camera flash toggle. Takes effect immediately.",
                     "type": "switch",
                     "provider": "global",
-                    "default": true,
+                    "default": false,
                     "settingsOn": [
                         {
                             "provider": "system",
